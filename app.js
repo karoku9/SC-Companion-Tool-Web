@@ -150,16 +150,17 @@ function routeMapMarkup(compact = false) {
   const currentStep = state.activeRoute.steps[state.activeRoute.stepIndex] || state.activeRoute.steps[0];
   const current = locationByName(currentStep.location);
   const next = locationByName(currentStep.nextLocation);
+  const showsTravel = currentStep.kind === 'travel' && current.id !== next.id;
   return `<div class="map-chassis">
     <div class="map-bezel"><span>NAV / STANTON</span><span>GRID 07-A · APP TRACK</span></div>
     <div class="map-canvas${compact ? ' hauling-map' : ''}">
     <div class="map-readout map-readout-left"><b>POS</b> ${current.x.toFixed(1)} / ${current.y.toFixed(1)}</div>
-    <div class="map-readout map-readout-right"><b>TGT</b> ${markupSafe(next.name).toUpperCase()}</div>
+    <div class="map-readout map-readout-right"><b>${showsTravel ? 'TGT' : 'OP AT'}</b> ${markupSafe(showsTravel ? next.name : current.name).toUpperCase()}</div>
     <div class="map-orbit orbit-1"></div><div class="map-orbit orbit-2"></div><div class="map-orbit orbit-3"></div>
     <div class="map-star" title="Stanton star"></div>
-    <svg class="route-line-svg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+    ${showsTravel ? `<svg class="route-line-svg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
       <path d="M ${current.x} ${current.y} L ${next.x} ${next.y}"/>
-    </svg>
+    </svg>` : ''}
     ${nodes.map(location => `<button class="map-node${location.id === state.ui.selectedLocationId ? ' is-selected' : ''}" type="button" data-location="${location.id}" style="left:${location.x}%;top:${location.y}%"><i></i><strong>${markupSafe(location.name)}</strong><small>${markupSafe(location.type)}</small></button>`).join('')}
     <div class="map-legend"><span>● CURRENT</span><span>◇ DESTINATION</span><span>— APP ROUTE</span></div>
     </div>
@@ -169,6 +170,7 @@ function routeMapMarkup(compact = false) {
 
 function renderDashboard() {
   const ship = selectedShip();
+  const haulingScu = Math.min(140, ship.capacity);
   return `<section class="page" data-page-view="dashboard">
     ${pageHeader('OPS CONTROL / READINESS', 'Cargo Operations Deck', 'Current vessel, contract load and route state for this local session.',
       '<button class="button button-primary" data-page="planner"><span>NEW</span> Add mission</button><button class="button button-secondary" data-page="active"><span>EXEC</span> Resume route</button>')}
@@ -201,12 +203,12 @@ function renderDashboard() {
             <button class="quick-action" data-page="tools" data-tools-tab="ocr"><i>▣</i><span><strong>Open OCR</strong><small>Mock parser</small></span></button>
             <button class="quick-action" data-page="tools" data-tools-tab="agent"><i>⌁</i><span><strong>Connect Log Agent</strong><small>Prototype only</small></span></button>
             <button class="quick-action" data-page="hauling"><i>⇄</i><span><strong>Plan hauling route</strong><small>Demo market data</small></span></button>
-            <button class="quick-action" data-page="active"><i>→</i><span><strong>Resume route</strong><small>Step ${state.activeRoute.stepIndex + 1} of 8</small></span></button>
+            <button class="quick-action" data-page="map"><i>◇</i><span><strong>Open nav display</strong><small>Orbital map and entity tree</small></span></button>
           </div>
         </section>
         <section class="panel panel-pad">
           <div class="panel-head"><div><span class="module-code">MARKET BUFFER // DEMO</span><h2>Recent hauling routes</h2><p>Fixed market opportunities</p></div><span class="chip warn">DEMO DATA</span></div>
-          <div class="list-stack">${DATA.haulingRoutes.slice(0,3).map(route => `<div class="list-row"><div><strong>${route.commodity}</strong><small>${route.buy} → ${route.sell}</small></div><b class="text-green">+${money(route.totalProfit)}</b></div>`).join('')}</div>
+          <div class="list-stack">${DATA.haulingRoutes.slice(0,3).map(route => `<div class="list-row"><div><strong>${route.commodity}</strong><small>${haulingScu} SCU · ${route.buy} → ${route.sell}</small></div><b class="text-green">+${money(route.profitScu * haulingScu)}</b></div>`).join('')}</div>
         </section>
       </aside>
     </div>
@@ -239,7 +241,7 @@ function renderPlanner() {
       ${shipSelector(state.selectedShipId, 'plannerShip')}
       ${locationSelector(state.startingLocationId, 'plannerStart')}
       <div class="ship-readout"><span>${money(ship.capacity)} SCU</span><small>${markupSafe(ship.role)}</small></div>
-      <button class="button button-secondary" data-action="phase-two"><span>CALC</span> Calculate route</button>
+      <button class="button button-primary" data-action="phase-two"><span>CALC</span> Calculate route</button>
     </section>
     <div class="planner-layout">
       <section class="panel panel-pad">
@@ -256,7 +258,7 @@ function renderPlanner() {
           </div>
         </div>
         <div class="route-steps">${state.activeRoute.steps.slice(0,6).map((step, index) => `<div class="route-step${index === 0 ? ' is-current' : ''}"><span class="step-index">${index + 1}</span><div><strong>${markupSafe(step.title)}</strong><small>${markupSafe(step.detail)}</small></div><span class="chip">${markupSafe(step.kind)}</span></div>`).join('')}</div>
-        <div class="button-row spacer-top"><button class="button button-secondary" data-action="phase-two">Calculate route</button><button class="button button-primary" data-page="active">Open sample route</button></div>
+        <div class="button-row spacer-top"><button class="button button-secondary" data-page="active">Open sample route</button></div>
       </section>
     </div>
   </section>`;
@@ -269,7 +271,9 @@ function renderActive() {
   const previous = steps[index - 1];
   const next = steps[index + 1];
   const manifestLots = state.missions.flatMap(mission => mission.cargo.map(lot => ({ ...lot, reference: mission.reference }))).filter(lot => ['lot-01', 'lot-03'].includes(lot.id));
-  const destination = locationByName(step.nextLocation);
+  const showsTravel = step.kind === 'travel' && step.location !== step.nextLocation;
+  const destination = locationByName(showsTravel ? step.nextLocation : step.location);
+  const locationContext = showsTravel ? `${markupSafe(step.location)} → ${markupSafe(step.nextLocation)}` : `Currently at ${markupSafe(step.location)}`;
   return `<section class="page" data-page-view="active">
     ${pageHeader('ROUTE CONTROL / EXECUTION', 'Active Route', 'App-tracked workflow. Confirm each physical cargo operation before advancing.',
       '<button class="button button-ghost" data-action="end-route"><span>TERM</span> End route</button>')}
@@ -296,7 +300,7 @@ function renderActive() {
           </div>
         </section>
         <section class="panel panel-pad">
-          <div class="panel-head"><div><h2>Current and next locations</h2><p>${markupSafe(step.location)} → ${markupSafe(step.nextLocation)}</p></div><button class="link-button" data-page="map">Open full map</button></div>
+          <div class="panel-head"><div><h2>${showsTravel ? 'Current and next locations' : 'Current operation location'}</h2><p>${locationContext}</p></div><button class="link-button" data-page="map">Open full map</button></div>
           ${routeMapMarkup(true)}
         </section>
       </div>
@@ -328,11 +332,15 @@ function renderActive() {
 
 function renderHauling() {
   const ship = selectedShip();
+  const runScu = Math.min(140, ship.capacity);
+  const activeTrade = DATA.haulingRoutes.find(route => route.id === state.hauling.activeRunId) || DATA.haulingRoutes[1];
+  const activeProfit = activeTrade.profitScu * runScu;
+  const bestTotalProfit = Math.max(...DATA.haulingRoutes.map(route => route.profitScu * runScu));
   return `<section class="page" data-page-view="hauling">
     ${pageHeader('MARKET TERMINAL / LOGISTICS', 'Commodity Hauling', 'Compare fixed demo opportunities separately from contract missions.',
       `<div class="segmented"><button class="${state.ui.haulingView === 'list' ? 'is-active' : ''}" data-hauling-view="list">LIST</button><button class="${state.ui.haulingView === 'map' ? 'is-active' : ''}" data-hauling-view="map">MAP</button></div>`)}
     <div class="notice is-demo">DEMO MARKET DATA — LIVE PROVIDER NOT CONNECTED</div>
-    ${state.hauling.activeRunId ? `<section class="panel active-run-card spacer-top"><div><span class="eyebrow">RUN CHANNEL 01 // ACTIVE</span><h2 class="spacer-top">Laranite · HDMS-Lathan → Lorville</h2><p>140 SCU planned · estimated profit 76,580 aUEC</p></div><div class="run-state"><span class="status-pill good">TRACKING</span><div class="button-row"><button class="button button-ghost" data-action="feature" data-feature="partial">Partial sell</button><button class="button button-primary" data-action="complete-run">Complete run</button></div></div></section>` : ''}
+    ${state.hauling.activeRunId ? `<section class="panel active-run-card spacer-top"><div><span class="eyebrow">RUN CHANNEL 01 // ACTIVE</span><h2 class="spacer-top">${markupSafe(activeTrade.commodity)} · ${markupSafe(activeTrade.buy)} → ${markupSafe(activeTrade.sell)}</h2><p>${runScu} SCU planned · estimated profit ${money(activeProfit)} aUEC</p></div><div class="run-state"><span class="status-pill good">TRACKING</span><div class="button-row"><button class="button button-ghost" data-action="feature" data-feature="partial">Partial sell</button><button class="button button-primary" data-action="complete-run">Complete run</button></div></div></section>` : ''}
     <section class="panel filter-bar spacer-top">
       <div class="filter-heading"><span class="module-code">FILTER BANK // MARKET QUERY</span><strong>ROUTE PARAMETERS</strong><small>All values use fixed Checkpoint 1 data</small></div>
       ${shipSelector(state.selectedShipId, 'haulingShip')}
@@ -346,12 +354,12 @@ function renderHauling() {
     </section>
     <div class="market-readouts spacer-top">
       ${metric('Routes found', '12', '3 strong matches')}
-      ${metric('Best total profit', '80,828', 'aUEC per run', true)}
+      ${metric('Best total profit', money(bestTotalProfit), `aUEC at ${runScu} SCU`, true)}
       ${metric('Best aUEC / hour', '211,000', 'Demo estimate')}
       ${metric('Best profit / SCU', '578', 'aUEC per SCU')}
     </div>
     <div class="hauling-toolbar"><div><span class="module-code">VESSEL LIMIT</span><strong>${money(ship.capacity)} SCU capacity</strong><small> · 1,250,000 aUEC available capital</small></div><button class="button button-secondary" data-action="phase-two"><span>CALC</span> Plan route</button></div>
-    ${state.ui.haulingView === 'list' ? `<div class="market-table">${DATA.haulingRoutes.map((route, routeIndex) => `<article class="panel route-card"><div class="route-code">R-${String(routeIndex + 1).padStart(2, '0')}</div><div class="route-card-main"><span class="chip good">${route.commodity}</span><strong class="spacer-top">${markupSafe(route.buy)} → ${markupSafe(route.sell)}</strong><small>${route.travel} · prices ${route.freshness}</small></div><div class="route-stat"><span>Profit / SCU</span><strong class="text-green">+${money(route.profitScu)}</strong></div><div class="route-stat"><span>Total profit</span><strong>${money(route.totalProfit)}</strong></div><div class="route-stat hide-small"><span>aUEC / hour</span><strong>${money(route.hourly)}</strong></div><div class="route-stat hide-medium"><span>Upfront cost</span><strong>${money(route.cost)}</strong></div><div class="route-card-actions"><button class="button button-small button-secondary" data-route-details="${route.id}">View details</button><button class="button button-small button-primary" data-start-run="${route.id}">Start run</button></div></article>`).join('')}</div>` : routeMapMarkup()}
+    ${state.ui.haulingView === 'list' ? `<div class="market-table">${DATA.haulingRoutes.map((route, routeIndex) => `<article class="panel route-card"><div class="route-code">R-${String(routeIndex + 1).padStart(2, '0')}</div><div class="route-card-main"><span class="chip good">${route.commodity}</span><strong class="spacer-top">${markupSafe(route.buy)} → ${markupSafe(route.sell)}</strong><small>${runScu} SCU load · ${route.travel} · prices ${route.freshness}</small></div><div class="route-stat"><span>Profit / SCU</span><strong class="text-green">+${money(route.profitScu)}</strong></div><div class="route-stat"><span>Total profit</span><strong>${money(route.profitScu * runScu)}</strong></div><div class="route-stat hide-small"><span>aUEC / hour</span><strong>${money(route.hourly)}</strong></div><div class="route-stat hide-medium"><span>Upfront cost</span><strong>${money(route.buyPrice * runScu)}</strong></div><div class="route-card-actions"><button class="button button-small button-secondary" data-route-details="${route.id}">View details</button><button class="button button-small button-primary" data-start-run="${route.id}">Start run</button></div></article>`).join('')}</div>` : routeMapMarkup()}
   </section>`;
 }
 
@@ -435,10 +443,10 @@ function renderSettings() {
     ${pageHeader('SYSTEM CONFIG / LOCAL', 'Interface Settings', 'Manufacturer identity is active in memory; persistence remains offline.')}
     <div class="system-strip"><span><b>CFG</b> INTERFACE CONTROL</span><span><i></i> CHANGES APPLY IMMEDIATELY</span><span>STORAGE // VOLATILE</span></div>
     <div class="settings-grid">
-      <section class="panel setting-group"><h2>Manufacturer interface</h2><div class="setting-row"><div><strong>Adaptive ship-brand theme</strong><small>Auto follows the selected ship manufacturer</small></div><button class="switch${state.ui.adaptiveTheme ? ' is-on' : ''}" data-theme-adaptive aria-label="Toggle adaptive ship-brand theme" aria-pressed="${state.ui.adaptiveTheme}"></button></div><label class="setting-row"><span><strong>Theme override</strong><small>Manual choice always takes precedence</small></span><select id="themeOverride"><option value="auto"${state.ui.themeOverride === 'auto' ? ' selected' : ''}>Auto</option><option value="neutral"${state.ui.themeOverride === 'neutral' ? ' selected' : ''}>Neutral</option><option value="drake"${state.ui.themeOverride === 'drake' ? ' selected' : ''}>Drake</option><option value="rsi"${state.ui.themeOverride === 'rsi' ? ' selected' : ''}>RSI</option><option value="misc"${state.ui.themeOverride === 'misc' ? ' selected' : ''}>MISC</option></select></label><div class="setting-row"><div><strong>Resolved system</strong><small>Applied across chassis, displays and controls</small></div><strong>${resolvedTheme().toUpperCase()}</strong></div><div class="setting-row"><div><strong>Reduced motion</strong><small>Limit interface transitions</small></div><button class="switch is-on" data-action="toggle-setting" aria-label="Toggle reduced motion"></button></div></section>
+      <section class="panel setting-group"><h2>Manufacturer interface</h2><div class="setting-row"><div><strong>Adaptive ship-brand theme</strong><small>Auto follows the selected ship manufacturer</small></div><button class="switch${state.ui.adaptiveTheme ? ' is-on' : ''}" data-theme-adaptive aria-label="Toggle adaptive ship-brand theme" aria-pressed="${state.ui.adaptiveTheme}"></button></div><label class="setting-row"><span><strong>Theme override</strong><small>Manual choice always takes precedence</small></span><select id="themeOverride"><option value="auto"${state.ui.themeOverride === 'auto' ? ' selected' : ''}>Auto</option><option value="neutral"${state.ui.themeOverride === 'neutral' ? ' selected' : ''}>Neutral</option><option value="drake"${state.ui.themeOverride === 'drake' ? ' selected' : ''}>Drake</option><option value="rsi"${state.ui.themeOverride === 'rsi' ? ' selected' : ''}>RSI</option><option value="misc"${state.ui.themeOverride === 'misc' ? ' selected' : ''}>MISC</option></select></label><div class="setting-row"><div><strong>Resolved system</strong><small>Applied across chassis, displays and controls</small></div><strong>${resolvedTheme().toUpperCase()}</strong></div><div class="setting-row"><div><strong>Reduced motion</strong><small>Follows the operating-system preference</small></div><span class="status-pill">SYSTEM</span></div></section>
       <section class="panel setting-group"><h2>Defaults</h2><div class="setting-row"><div><strong>Default ship</strong><small>Used when creating a plan</small></div><strong>Drake Caterpillar</strong></div><div class="setting-row"><div><strong>Starting location</strong><small>Default departure point</small></div><strong>Everus Harbor</strong></div><div class="setting-row"><div><strong>Map mode</strong><small>Initial map presentation</small></div><strong>Orbital Map</strong></div></section>
-      <section class="panel setting-group"><h2>Data and visibility</h2><div class="setting-row"><div><strong>Automatic local save</strong><small>Available in Checkpoint 2</small></div><button class="switch is-on" data-action="toggle-setting" aria-label="Toggle automatic save"></button></div><div class="setting-row"><div><strong>Show illegal commodities</strong><small>Include contraband in filters</small></div><button class="switch" data-action="toggle-setting" aria-label="Toggle illegal commodities"></button></div></section>
-      <section class="panel setting-group"><h2>Formatting and maintenance</h2><div class="setting-row"><div><strong>Units</strong><small>Cargo and distance</small></div><strong>SCU · Gm</strong></div><div class="setting-row"><div><strong>Numbers</strong><small>Locale formatting</small></div><strong>1,234.56</strong></div><div class="button-row spacer-top"><button class="button button-secondary" data-page="tools" data-tools-tab="transfer">Import / Export</button><button class="button button-danger" data-action="phase-three">Reset application</button></div></section>
+      <section class="panel setting-group"><h2>Data and visibility</h2><div class="setting-row"><div><strong>Automatic local save</strong><small>Persistence is unavailable in this checkpoint</small></div><span class="status-pill warn">LOCKED · CP2</span></div><div class="setting-row"><div><strong>Illegal commodity visibility</strong><small>Filter behaviour is planned for Hauling tools</small></div><span class="status-pill">PLANNED · CP3</span></div></section>
+      <section class="panel setting-group"><h2>Formatting and maintenance</h2><div class="setting-row"><div><strong>Units</strong><small>Cargo and distance</small></div><strong>SCU · Gm</strong></div><div class="setting-row"><div><strong>Numbers</strong><small>Locale formatting</small></div><strong>1,234.56</strong></div><div class="button-row spacer-top"><button class="button button-secondary" disabled title="Available in Checkpoint 3">Import / Export · Locked</button><button class="button button-danger" disabled title="Available in Checkpoint 3">Reset · Locked</button></div></section>
       <section class="panel setting-group planned-system"><div class="setting-title-line"><h2>Display texture</h2><span class="chip warn">PLANNED</span></div><div class="planned-display"><strong>INDEPENDENT DISPLAY RENDERING LAYER</strong><p>Future control for Clean, MFD Glass, CRT / Phosphor and Industrial LCD treatments.</p><div class="planned-map"><span>Drake <b>CRT / Phosphor</b></span><span>RSI <b>MFD Glass</b></span><span>MISC <b>Industrial LCD</b></span><span>Neutral <b>Clean</b></span></div></div><small>No control is enabled in Checkpoint 1. This system will remain separate from manufacturer chassis themes.</small></section>
     </div>
   </section>`;
