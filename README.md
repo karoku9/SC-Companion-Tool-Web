@@ -59,6 +59,21 @@ Target root architecture:
 
 This requirement is documented but intentionally not implemented during the currently approved visual checkpoint work.
 
-Route calculation, optimization, persistent fleet changes and localStorage are intentionally deferred to Checkpoint 2. Market APIs, OCR recognition and Game.log monitoring are not connected.
+## Checkpoint 2
 
-Production code uses only `index.html`, `styles.css`, `data.js` and `app.js`.
+The local application core is now functional:
+
+- versioned localStorage persistence with malformed-data recovery, automatic saving, manual saving and typed reset confirmation;
+- saved fleet instances, optional nicknames, duplicate protection, removal and manufacturer-adaptive selection;
+- validated mission CRUD, stable mission/cargo-lot identity and readable multi-block text import with preview;
+- deterministic coordinate-based route generation with grouped same-location operations and pickup-before-delivery constraints;
+- local distance, duration, handling, fuel-demand and orbital-marker-assist estimates;
+- resumable Active Route progress, reversible Previous/NEXT cargo status derivation and separate manual corrections;
+- route-aware Orbital Map, synchronized Entity Tree, custom/unmapped location support and fixed destination profiles;
+- working interface defaults, reduced motion, density, number formatting, theme override and illegal-commodity visibility.
+
+See [CHECKPOINT-2.md](CHECKPOINT-2.md) for the persisted schema, route algorithm, scenario results and known limitations.
+
+Market APIs, active commodity trading, JSON transfer, OCR recognition, Game.log monitoring and display textures remain deferred.
+
+The static application remains dependency-free. Automated core checks use Node's built-in test runner.
