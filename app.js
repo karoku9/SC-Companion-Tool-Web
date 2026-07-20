@@ -20,7 +20,10 @@ const state = {
     toolsTab: 'ocr',
     openMissionMenu: null,
     editingMissionId: null,
-    correctionOpen: false
+    correctionOpen: false,
+    adaptiveTheme: true,
+    themeOverride: 'auto',
+    manualTheme: 'neutral'
   },
   selectedShipId: 'caterpillar',
   startingLocationId: 'everus',
@@ -54,6 +57,27 @@ function selectedShip() {
 
 function selectedStart() {
   return DATA.locations.find(location => location.id === state.startingLocationId) || DATA.locations[0];
+}
+
+function manufacturerTheme(ship = selectedShip()) {
+  const maker = ship.maker.toLowerCase();
+  if (maker.includes('drake')) return 'drake';
+  if (maker.includes('roberts space industries')) return 'rsi';
+  if (maker.includes('musashi industrial')) return 'misc';
+  return 'neutral';
+}
+
+function resolvedTheme() {
+  if (state.ui.themeOverride !== 'auto') return state.ui.themeOverride;
+  if (state.ui.adaptiveTheme) return manufacturerTheme();
+  return state.ui.manualTheme || 'neutral';
+}
+
+function applyTheme() {
+  const theme = resolvedTheme();
+  document.documentElement.dataset.theme = theme;
+  const themeReadout = byId('headerTheme');
+  if (themeReadout) themeReadout.textContent = theme.toUpperCase() + ' SYS';
 }
 
 function locationByName(name) {
@@ -126,14 +150,20 @@ function routeMapMarkup(compact = false) {
   const currentStep = state.activeRoute.steps[state.activeRoute.stepIndex] || state.activeRoute.steps[0];
   const current = locationByName(currentStep.location);
   const next = locationByName(currentStep.nextLocation);
-  return `<div class="map-canvas${compact ? ' hauling-map' : ''}">
+  return `<div class="map-chassis">
+    <div class="map-bezel"><span>NAV / STANTON</span><span>GRID 07-A · APP TRACK</span></div>
+    <div class="map-canvas${compact ? ' hauling-map' : ''}">
+    <div class="map-readout map-readout-left"><b>POS</b> ${current.x.toFixed(1)} / ${current.y.toFixed(1)}</div>
+    <div class="map-readout map-readout-right"><b>TGT</b> ${markupSafe(next.name).toUpperCase()}</div>
     <div class="map-orbit orbit-1"></div><div class="map-orbit orbit-2"></div><div class="map-orbit orbit-3"></div>
     <div class="map-star" title="Stanton star"></div>
     <svg class="route-line-svg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
       <path d="M ${current.x} ${current.y} L ${next.x} ${next.y}"/>
     </svg>
     ${nodes.map(location => `<button class="map-node${location.id === state.ui.selectedLocationId ? ' is-selected' : ''}" type="button" data-location="${location.id}" style="left:${location.x}%;top:${location.y}%"><i></i><strong>${markupSafe(location.name)}</strong><small>${markupSafe(location.type)}</small></button>`).join('')}
-    <div class="map-legend">Teal route: current → next destination</div>
+    <div class="map-legend"><span>● CURRENT</span><span>◇ DESTINATION</span><span>— APP ROUTE</span></div>
+    </div>
+    <div class="map-controls"><button type="button" data-action="phase-two" aria-label="Zoom out">−</button><span>ORB 1.00X</span><button type="button" data-action="phase-two" aria-label="Zoom in">＋</button></div>
   </div>`;
 }
 
@@ -203,22 +233,23 @@ function renderPlanner() {
   const used = totalScu();
   const percent = Math.min(100, (used / ship.capacity) * 100);
   return `<section class="page" data-page-view="planner">
-    ${pageHeader('Contract hauling', 'Build a clear mission plan', 'Add each contract and cargo lot, then review capacity and the route before departure.',
-      '<button class="button button-secondary" data-action="import-mission">Import mission</button><button class="button button-primary" data-action="add-mission">Add mission</button>')}
+    ${pageHeader('CARGO CONTROL / LOAD PLAN', 'Mission Planner', 'Configure vessel, departure point and contract lots. Route optimization remains offline.',
+      '<button class="button button-secondary" data-action="import-mission"><span>IMP</span> Import mission</button><button class="button button-primary" data-action="add-mission"><span>NEW</span> Add mission</button>')}
+    <div class="system-strip"><span><b>SYS</b> CARGO PLANNER</span><span><i></i> SESSION READY</span><span>MEM // IN-MEMORY</span></div>
     <section class="panel setup-strip">
       ${shipSelector(state.selectedShipId, 'plannerShip')}
       ${locationSelector(state.startingLocationId, 'plannerStart')}
       <div class="ship-readout"><span>${money(ship.capacity)} SCU</span><small>${markupSafe(ship.role)}</small></div>
-      <button class="button button-secondary" data-action="phase-two">Calculate route</button>
+      <button class="button button-secondary" data-action="phase-two"><span>CALC</span> Calculate route</button>
     </section>
     <div class="planner-layout">
       <section class="panel panel-pad">
-        <div class="panel-head"><div><h2>Contract missions</h2><p>${state.missions.length} missions · ${used} planned SCU</p></div><span class="status-pill good">Ready</span></div>
+        <div class="panel-head"><div><span class="module-code">MODULE 01 // CONTRACT STACK</span><h2>Contract missions</h2><p>${state.missions.length} missions · ${used} planned SCU</p></div><span class="status-pill good">READY</span></div>
         <div class="mission-list">${state.missions.length ? state.missions.map(missionCard).join('') : '<div class="empty-state">No missions yet. Add or import a contract to begin.</div>'}</div>
       </section>
       <section class="panel panel-pad route-preview">
         <div>
-          <div class="panel-head"><div><h2>Route preview</h2><p>Predefined visual route for Checkpoint 1</p></div><span class="chip warn">Optimization in Checkpoint 2</span></div>
+          <div class="panel-head"><div><span class="module-code">MODULE 02 // ROUTE QUEUE</span><h2>Route preview</h2><p>Predefined visual route for Checkpoint 1</p></div><span class="chip warn">OPT OFFLINE</span></div>
           <div class="plan-summary">
             <div><span>Planned cargo</span><strong>${used} SCU</strong><div class="capacity-bar"><i style="width:${percent}%"></i></div><small>${Math.round(percent)}% of ${ship.capacity} SCU</small></div>
             <div><span>Total reward</span><strong>${money(totalReward())}</strong><small>aUEC declared</small></div>
@@ -241,18 +272,21 @@ function renderActive() {
   const manifestLots = state.missions.flatMap(mission => mission.cargo.map(lot => ({ ...lot, reference: mission.reference }))).filter(lot => ['lot-01', 'lot-03'].includes(lot.id));
   const destination = locationByName(step.nextLocation);
   return `<section class="page" data-page-view="active">
-    ${pageHeader('Guided route', 'Stay focused on one action', 'Progress is tracked only inside this application. No game telemetry or simulated movement.',
-      '<button class="button button-ghost" data-action="end-route">End route</button>')}
+    ${pageHeader('ROUTE CONTROL / EXECUTION', 'Active Route', 'App-tracked workflow. Confirm each physical cargo operation before advancing.',
+      '<button class="button button-ghost" data-action="end-route"><span>TERM</span> End route</button>')}
     <div class="notice">APP-TRACKED ROUTE — NOT LIVE GAME TELEMETRY</div>
     <div class="active-layout spacer-top">
       <div class="active-main">
         <section class="panel action-stage">
-          <div class="action-counter">STEP ${index + 1} OF ${steps.length}</div>
+          <div class="action-console-head"><span>EXECUTION CHANNEL A</span><span>STEP ${String(index + 1).padStart(2, '0')} / ${String(steps.length).padStart(2, '0')}</span></div>
+          <div class="action-counter">CURRENT COMMAND</div>
           <div class="action-kind">${markupSafe(step.kind)}</div>
           <h2>${markupSafe(step.title)}</h2>
           <p>${markupSafe(step.detail)}</p>
-          <button class="next-button" type="button" data-active-next${index >= steps.length - 1 ? ' disabled' : ''}>NEXT <span>→</span></button>
-          <button class="previous-button" type="button" data-active-previous${index === 0 ? ' disabled' : ''}>← Previous step</button>
+          <div class="command-deck">
+            <button class="previous-button" type="button" data-active-previous${index === 0 ? ' disabled' : ''}><span>◀</span><small>BACK</small><strong>Previous</strong></button>
+            <button class="next-button" type="button" data-active-next${index >= steps.length - 1 ? ' disabled' : ''}><small>CONFIRM PHYSICAL ACTION</small><strong>EXECUTE NEXT</strong><span>▶</span></button>
+          </div>
           <div class="step-neighbours">
             <div class="neighbour"><span>Previous</span><strong>${previous ? markupSafe(previous.title) : 'Route start'}</strong></div>
             <div class="neighbour"><span>Up next</span><strong>${next ? markupSafe(next.title) : 'Route complete'}</strong></div>
@@ -397,7 +431,7 @@ function renderSettings() {
   return `<section class="page" data-page-view="settings">
     ${pageHeader('Application preferences', 'Make the workspace yours', 'Settings are visually complete; persistence arrives in Checkpoint 2.')}
     <div class="settings-grid">
-      <section class="panel setting-group"><h2>Appearance</h2><div class="setting-row"><div><strong>UI density</strong><small>Comfortable spacing</small></div><div class="segmented"><button class="is-active">Comfortable</button><button>Compact</button></div></div><div class="setting-row"><div><strong>Reduced motion</strong><small>Limit interface transitions</small></div><button class="switch is-on" data-action="toggle-setting" aria-label="Toggle reduced motion"></button></div></section>
+      <section class="panel setting-group"><h2>Manufacturer interface</h2><div class="setting-row"><div><strong>Adaptive ship-brand theme</strong><small>Auto follows the selected ship manufacturer</small></div><button class="switch${state.ui.adaptiveTheme ? ' is-on' : ''}" data-theme-adaptive aria-label="Toggle adaptive ship-brand theme" aria-pressed="${state.ui.adaptiveTheme}"></button></div><label class="setting-row"><span><strong>Theme override</strong><small>Manual choice always takes precedence</small></span><select id="themeOverride"><option value="auto"${state.ui.themeOverride === 'auto' ? ' selected' : ''}>Auto</option><option value="neutral"${state.ui.themeOverride === 'neutral' ? ' selected' : ''}>Neutral</option><option value="drake"${state.ui.themeOverride === 'drake' ? ' selected' : ''}>Drake</option><option value="rsi"${state.ui.themeOverride === 'rsi' ? ' selected' : ''}>RSI</option><option value="misc"${state.ui.themeOverride === 'misc' ? ' selected' : ''}>MISC</option></select></label><div class="setting-row"><div><strong>Resolved system</strong><small>Applied across chassis, displays and controls</small></div><strong>${resolvedTheme().toUpperCase()}</strong></div><div class="setting-row"><div><strong>Reduced motion</strong><small>Limit interface transitions</small></div><button class="switch is-on" data-action="toggle-setting" aria-label="Toggle reduced motion"></button></div></section>
       <section class="panel setting-group"><h2>Defaults</h2><div class="setting-row"><div><strong>Default ship</strong><small>Used when creating a plan</small></div><strong>Drake Caterpillar</strong></div><div class="setting-row"><div><strong>Starting location</strong><small>Default departure point</small></div><strong>Everus Harbor</strong></div><div class="setting-row"><div><strong>Map mode</strong><small>Initial map presentation</small></div><strong>Orbital Map</strong></div></section>
       <section class="panel setting-group"><h2>Data and visibility</h2><div class="setting-row"><div><strong>Automatic local save</strong><small>Available in Checkpoint 2</small></div><button class="switch is-on" data-action="toggle-setting" aria-label="Toggle automatic save"></button></div><div class="setting-row"><div><strong>Show illegal commodities</strong><small>Include contraband in filters</small></div><button class="switch" data-action="toggle-setting" aria-label="Toggle illegal commodities"></button></div></section>
       <section class="panel setting-group"><h2>Formatting and maintenance</h2><div class="setting-row"><div><strong>Units</strong><small>Cargo and distance</small></div><strong>SCU · Gm</strong></div><div class="setting-row"><div><strong>Numbers</strong><small>Locale formatting</small></div><strong>1,234.56</strong></div><div class="button-row spacer-top"><button class="button button-secondary" data-page="tools" data-tools-tab="transfer">Import / Export</button><button class="button button-danger" data-action="phase-three">Reset application</button></div></section>
@@ -406,6 +440,7 @@ function renderSettings() {
 }
 
 function renderPage() {
+  applyTheme();
   const renderers = {
     dashboard: renderDashboard,
     planner: renderPlanner,
@@ -580,6 +615,13 @@ function closeMobileNav() {
 }
 
 function handleClick(event) {
+  const adaptiveTheme = event.target.closest('[data-theme-adaptive]');
+  if (adaptiveTheme) {
+    state.ui.adaptiveTheme = !state.ui.adaptiveTheme;
+    renderPage();
+    showToast('Interface theme updated', state.ui.adaptiveTheme ? 'Adaptive manufacturer mode enabled.' : 'Adaptive manufacturer mode disabled.');
+    return;
+  }
   const pageTarget = event.target.closest('[data-page]');
   if (pageTarget) {
     if (pageTarget.dataset.toolsTab) state.ui.toolsTab = pageTarget.dataset.toolsTab;
@@ -758,6 +800,11 @@ document.addEventListener('change', event => {
   }
   if (event.target.id === 'plannerStart') {
     state.startingLocationId = event.target.value;
+    renderPage();
+  }
+  if (event.target.id === 'themeOverride') {
+    state.ui.themeOverride = event.target.value;
+    if (event.target.value !== 'auto') state.ui.manualTheme = event.target.value;
     renderPage();
   }
 });
