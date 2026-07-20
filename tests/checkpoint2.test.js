@@ -8,6 +8,8 @@ const vm = require('node:vm');
 
 const root = path.resolve(__dirname, '..');
 const dataSource = fs.readFileSync(path.join(root, 'data.js'), 'utf8');
+const haulingSource = fs.readFileSync(path.join(root, 'hauling-core.js'), 'utf8');
+const transferSource = fs.readFileSync(path.join(root, 'transfer-core.js'), 'utf8');
 const appSource = fs.readFileSync(path.join(root, 'app.js'), 'utf8');
 const htmlSource = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const styleSource = fs.readFileSync(path.join(root, 'styles.css'), 'utf8');
@@ -28,6 +30,8 @@ function loadCore(savedValue = null) {
     clearTimeout
   });
   vm.runInContext(dataSource, context, { filename: 'data.js' });
+  vm.runInContext(haulingSource, context, { filename: 'hauling-core.js' });
+  vm.runInContext(transferSource, context, { filename: 'transfer-core.js' });
   vm.runInContext(`${definitions}\nglobalThis.__core = { state, normalizeMission, generateRoute, statusDerived, persistedState, fleetShipLabel, routeStartContext, plannerChangeNotice };`, context, { filename: 'app.js' });
   return context.__core;
 }
@@ -96,7 +100,7 @@ test('Scenario E: derived cargo status reverses with the step index', () => {
 
 test('Scenario H: malformed persisted data falls back to safe defaults', () => {
   const core = loadCore('{malformed json');
-  assert.equal(core.state.version, 1);
+  assert.equal(core.state.version, 2);
   assert.equal(core.state.ui.storageRecovery, true);
   assert.ok(core.state.fleet.length > 0);
   assert.ok(core.state.missions.length > 0);

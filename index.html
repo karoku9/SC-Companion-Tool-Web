@@ -169,6 +169,37 @@ Note: Front cargo grid</pre>
     </div>
   </dialog>
 
+  <dialog class="dialog dialog-small" id="transactionDialog" aria-labelledby="transactionDialogTitle">
+    <form class="dialog-card" id="transactionForm" novalidate>
+      <header class="dialog-header">
+        <div><span class="eyebrow" id="transactionEyebrow">Hauling ledger</span><h2 id="transactionDialogTitle">Record transaction</h2></div>
+        <button class="close-button" type="button" data-close-dialog aria-label="Close transaction editor">×</button>
+      </header>
+      <div class="dialog-body">
+        <div class="transaction-context" id="transactionContext"></div>
+        <div class="form-grid spacer-top">
+          <label class="field"><span>Actual quantity (SCU)</span><input id="transactionQuantity" type="number" min="0" step="1"><small class="field-error" data-transaction-error="quantity"></small></label>
+          <label class="field"><span>Actual price / SCU</span><input id="transactionPrice" type="number" min="0" step="1"><small class="field-error" data-transaction-error="price"></small></label>
+          <label class="field"><span>Fees</span><input id="transactionFees" type="number" min="0" step="1" value="0"><small class="field-error" data-transaction-error="fees"></small></label>
+          <label class="field field-wide"><span>Transaction note <em>Optional</em></span><textarea id="transactionNote" rows="2"></textarea></label>
+        </div>
+        <div class="form-error" id="transactionFormError" hidden></div>
+      </div>
+      <footer class="dialog-footer"><button class="button button-ghost" type="button" data-close-dialog>Cancel</button><button class="button button-primary" type="submit">Confirm transaction</button></footer>
+    </form>
+  </dialog>
+
+  <dialog class="dialog" id="transferDialog" aria-labelledby="transferDialogTitle">
+    <div class="dialog-card transfer-dialog-card">
+      <header class="dialog-header">
+        <div><span class="eyebrow" id="transferDialogEyebrow">Local data transfer</span><h2 id="transferDialogTitle">JSON backup</h2></div>
+        <button class="close-button" type="button" data-close-dialog aria-label="Close JSON transfer">×</button>
+      </header>
+      <div class="dialog-body" id="transferDialogBody"></div>
+      <footer class="dialog-footer"><button class="button button-ghost" type="button" data-close-dialog>Cancel</button></footer>
+    </div>
+  </dialog>
+
   <aside class="drawer" id="routeDrawer" aria-labelledby="drawerTitle" aria-hidden="true">
     <header class="drawer-header">
       <div><span class="eyebrow">Route intelligence</span><h2 id="drawerTitle">Trade route details</h2></div>
@@ -182,6 +213,8 @@ Note: Front cargo grid</pre>
   <datalist id="commodityList"></datalist>
 
   <script src="data.js"></script>
+  <script src="hauling-core.js"></script>
+  <script src="transfer-core.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

@@ -1,6 +1,6 @@
 # Waypoint Cargo Companion
 
-Greenfield, dependency-free frontend prototype for Star Citizen contract hauling and player commodity trading.
+Greenfield, dependency-free local application for Star Citizen contract hauling and player commodity trading.
 
 ## Run locally
 
@@ -74,6 +74,21 @@ The local application core is now functional:
 
 See [CHECKPOINT-2.md](CHECKPOINT-2.md) for the persisted schema, route algorithm, scenario results and known limitations.
 
-Market APIs, active commodity trading, JSON transfer, OCR recognition, Game.log monitoring and display textures remain deferred.
+## Checkpoint 3
+
+Checkpoint 3 adds a complete local commodity-hauling workflow and portable JSON data:
+
+- deterministic opportunity search over an immutable 26-record demo/reference market dataset;
+- ship-, availability-, demand-, budget- and quantity-constrained recommendations;
+- one-way and explained multi-stop plans with immutable ship, plan and price snapshots;
+- Previous / EXECUTE NEXT freight-ledger workflow with partial purchase and sale entry;
+- derived cargo state, separate manual adjustments, planned-versus-actual accounting and local history;
+- mission/hauling primary-workflow conflict protection plus Dashboard, Fleet and Map integration;
+- schema-version-2 persistence with an explicit version-1 migration;
+- full and partial JSON export, validated import preview, replace/merge controls and collision remapping.
+
+See [CHECKPOINT-3.md](CHECKPOINT-3.md) for formulas, schemas, migration and merge rules, QA evidence and known limitations.
+
+Live market APIs, OCR recognition, Game.log monitoring, cloud synchronization and display textures remain deferred.
 
 The static application remains dependency-free. Automated core checks use Node's built-in test runner.
