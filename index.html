@@ -3,261 +3,207 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#070a0b">
-  <meta name="description" content="SC Companion Tool — mission-aware cargo and route planning for Star Citizen.">
+  <meta name="theme-color" content="#080b10">
+  <meta name="description" content="SC Companion Tool — clean cargo mission and route planner for Star Citizen.">
   <title>SC Companion Tool</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <svg class="icon-sprite" aria-hidden="true">
-    <symbol id="icon-expand" viewBox="0 0 24 24"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"/></symbol>
-    <symbol id="icon-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
-    <symbol id="icon-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
-    <symbol id="icon-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="11" height="11" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></symbol>
-    <symbol id="icon-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13M10 11v5M14 11v5"/></symbol>
-    <symbol id="icon-edit" viewBox="0 0 24 24"><path d="m4 16-1 5 5-1L19 9l-4-4L4 16Z"/><path d="m13 7 4 4"/></symbol>
-    <symbol id="icon-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m16 16 4 4"/></symbol>
-    <symbol id="icon-pin" viewBox="0 0 24 24"><circle cx="12" cy="10" r="3"/><path d="M19 10c0 5-7 11-7 11S5 15 5 10a7 7 0 1 1 14 0Z"/></symbol>
-    <symbol id="icon-save" viewBox="0 0 24 24"><path d="M5 4h12l2 2v14H5z"/><path d="M8 4v6h8V4M8 20v-6h8v6"/></symbol>
-    <symbol id="icon-arrow" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
-    <symbol id="icon-play" viewBox="0 0 24 24"><path d="m8 5 11 7-11 7V5Z"/></symbol>
-    <symbol id="icon-upload" viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5M5 15v5h14v-5"/></symbol>
-    <symbol id="icon-drag" viewBox="0 0 24 24"><circle cx="8" cy="7" r="1"/><circle cx="8" cy="12" r="1"/><circle cx="8" cy="17" r="1"/><circle cx="16" cy="7" r="1"/><circle cx="16" cy="12" r="1"/><circle cx="16" cy="17" r="1"/></symbol>
-    <symbol id="icon-box" viewBox="0 0 24 24"><path d="m4 7 8-4 8 4-8 4-8-4Z"/><path d="M4 7v10l8 4 8-4V7M12 11v10"/></symbol>
-    <symbol id="icon-route" viewBox="0 0 24 24"><circle cx="6" cy="18" r="2"/><circle cx="18" cy="6" r="2"/><path d="M8 18h3a3 3 0 0 0 3-3V9a3 3 0 0 1 3-3"/></symbol>
-    <symbol id="icon-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
-    <symbol id="icon-ship" viewBox="0 0 24 24"><path d="M3 14 8 11l2-6h4l2 6 5 3-3 3-4-1-1 3h-2l-1-3-4 1-3-3Z"/></symbol>
-    <symbol id="icon-cog" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1l2-1.5-2-3.4-2.4 1A8 8 0 0 0 15 6l-.3-2.6h-4L10.4 6A8 8 0 0 0 8 7.1l-2.4-1-2 3.4L5.7 11a7 7 0 0 0 0 2l-2.1 1.5 2 3.4 2.4-1A8 8 0 0 0 10.4 18l.3 2.6h4L15 18a8 8 0 0 0 1.5-1.1l2.4 1 2-3.4L18.9 13a7 7 0 0 0 .1-1Z"/></symbol>
-  </svg>
-
-  <div class="app-shell">
+  <div class="app">
     <header class="topbar">
-      <button class="brand" type="button" data-nav-target="planner" aria-label="Open Planner">
-        <span class="brand-mark" aria-hidden="true">
-          <svg viewBox="0 0 32 32"><path d="M16 3 27 9.5v13L16 29 5 22.5v-13L16 3Z"/><path d="m11 12 5-3 5 3v3l-5 3-5-3v-3Z"/><path d="m11 18 5 3 5-3"/></svg>
-        </span>
-        <span><strong>SC Companion</strong><small>Route operations</small></span>
+      <button class="brand" type="button" data-view="planner" aria-label="Open Planner">
+        <span class="brand-icon">SC</span>
+        <span><strong>SC Companion</strong><small>Cargo operations</small></span>
       </button>
 
-      <nav class="primary-nav" aria-label="Primary navigation">
-        <button class="nav-item is-active" data-view="planner">Planner</button>
-        <button class="nav-item" data-view="active">Active Route</button>
-        <button class="nav-item" data-view="fleet">Fleet</button>
-        <button class="nav-item" data-view="intel">Intel</button>
-        <button class="nav-item" data-view="settings">Settings</button>
+      <nav class="tabs" aria-label="Primary navigation">
+        <button class="tab is-active" type="button" data-view="planner">Planner</button>
+        <button class="tab" type="button" data-view="active">Active Route</button>
+        <button class="tab" type="button" data-view="fleet">Fleet</button>
+        <button class="tab" type="button" data-view="intel">Intel</button>
+        <button class="tab" type="button" data-view="settings">Settings</button>
       </nav>
 
-      <div class="topbar-actions">
-        <div class="signal-status"><span></span><b>4.9 profile</b><small>local data</small></div>
-        <button class="icon-button" id="saveButton" type="button" aria-label="Save app state" title="Save">
-          <svg><use href="#icon-save"/></svg>
-        </button>
+      <div class="top-actions">
+        <div class="data-status"><i></i><span><b>4.9 profile</b><small>local data</small></span></div>
+        <button class="icon-btn" id="saveButton" type="button" title="Save">Save</button>
       </div>
     </header>
 
-    <main id="appMain">
-      <section class="app-view is-active" data-view-panel="planner" aria-label="Planner">
-        <div class="planner-layout">
-          <aside class="planner-panel setup-panel expandable-surface" id="setupPanel" data-overlay-title="Run setup" data-overlay-subtitle="Ship, starting location and complete mission workspace">
-            <div class="panel-heading">
-              <div><span class="eyebrow">Run setup</span><h1>Prepare your haul</h1></div>
-              <div class="heading-actions">
-                <button class="text-button" id="resetPlanner" type="button">Reset</button>
-                <button class="icon-button expand-button" type="button" data-expand-target="setupPanel" aria-label="Expand run setup" title="Open larger">
-                  <svg><use href="#icon-expand"/></svg>
-                </button>
-              </div>
+    <main>
+      <section class="view is-active" id="plannerView" data-view-panel="planner">
+        <div class="planner-grid">
+          <aside class="panel setup-panel">
+            <div class="panel-title">
+              <div><span class="kicker">Setup</span><h1>Hauling run</h1></div>
+              <button class="link-btn" id="resetButton" type="button">Reset</button>
             </div>
 
-            <section class="setup-section">
-              <div class="section-title-row">
-                <div class="step-number">01</div>
-                <div><h2>Ship</h2><p>Choose a family and functional variant.</p></div>
-              </div>
-
-              <div class="field autocomplete-field" data-autocomplete="ship">
-                <label for="shipSearch">Quick search</label>
-                <div class="input-shell">
-                  <svg><use href="#icon-search"/></svg>
-                  <input id="shipSearch" autocomplete="off" placeholder="Search Cutlass Red…" aria-autocomplete="list" aria-expanded="false">
-                </div>
-                <div class="autocomplete-menu" role="listbox"></div>
-              </div>
-
-              <div class="split-fields">
-                <div class="field"><label for="shipFamily">Family</label><select id="shipFamily"></select></div>
-                <div class="field"><label for="shipVariant">Variant</label><select id="shipVariant"></select></div>
-              </div>
-
-              <div class="ship-summary" id="shipSummary">
-                <div class="ship-glyph" aria-hidden="true"><svg viewBox="0 0 64 40"><path d="M5 23 19 17l7-10h12l7 10 14 6-7 5-11-2-5 8h-8l-5-8-11 2-7-5Z"/><path d="M27 17h10M18 23h28"/></svg></div>
-                <div><strong id="shipName">Drake Cutlass Black</strong><span id="shipMeta">46 SCU · Medium freight</span></div>
-                <span class="status-chip">Ready</span>
+            <section class="form-section">
+              <div class="section-head"><span>01</span><div><h2>Ship</h2><p>Fixed community cargo capacity.</p></div></div>
+              <label class="field"><span>Ship</span><select id="shipSelect"></select></label>
+              <div class="ship-card">
+                <div class="ship-silhouette">◇</div>
+                <div><strong id="shipName"></strong><small id="shipRole"></small></div>
+                <b id="shipCapacity"></b>
               </div>
             </section>
 
-            <section class="setup-section">
-              <div class="section-title-row">
-                <div class="step-number">02</div>
-                <div><h2>Starting location</h2><p>Where the ship is currently staged.</p></div>
-              </div>
-              <div class="field autocomplete-field" data-autocomplete="location">
-                <label for="startLocation">Location</label>
-                <div class="input-shell has-trailing">
-                  <svg><use href="#icon-pin"/></svg>
-                  <input id="startLocation" autocomplete="off" value="Everus Harbor" placeholder="Search station, city or outpost…" aria-autocomplete="list" aria-expanded="false">
-                  <span class="verified-dot" id="startVerified" title="Verified location"></span>
-                </div>
-                <div class="autocomplete-menu" role="listbox"></div>
-              </div>
+            <section class="form-section">
+              <div class="section-head"><span>02</span><div><h2>Starting location</h2><p>Current in-app position.</p></div></div>
+              <label class="field"><span>Location</span><select id="startSelect"></select></label>
             </section>
 
-            <section class="setup-section missions-section">
-              <div class="section-title-row compact mission-section-heading">
-                <div class="step-number">03</div>
-                <div><h2>Missions</h2><p id="missionSectionMeta">2 missions · 15 SCU</p></div>
-                <button class="mini-expand-button" id="openMissionWorkspace" type="button" title="Open mission workspace"><svg><use href="#icon-expand"/></svg><span>Workspace</span></button>
-              </div>
-
-              <div class="mission-toolbar">
-                <button class="secondary-button compact-button" id="importMission" type="button"><svg><use href="#icon-upload"/></svg>Import mission</button>
-                <button class="add-mission-button" id="addMission" type="button"><svg><use href="#icon-plus"/></svg>Add mission</button>
-              </div>
-
-              <div id="missionList" class="mission-list"></div>
+            <section class="form-section missions-section">
+              <div class="section-head with-action"><span>03</span><div><h2>Missions</h2><p id="missionSummary">0 missions · 0 SCU</p></div><button class="small-btn" id="importMissionButton" type="button">Import</button></div>
+              <div class="mission-list" id="missionList"></div>
+              <button class="primary-btn full" id="addMissionButton" type="button">+ Add mission</button>
             </section>
-
-            <details class="advanced-settings">
-              <summary><span><svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10M14 4v6M6 14v6"/></svg>Advanced preferences</span><svg class="chevron" viewBox="0 0 24 24"><path d="m8 10 4 4 4-4"/></svg></summary>
-              <div class="advanced-content">
-                <label class="toggle-row"><span><strong>Prefer orbital stops</strong><small>Reduce atmospheric travel when possible.</small></span><input type="checkbox" id="preferOrbital" checked><i></i></label>
-                <label class="toggle-row"><span><strong>Include refuel stops</strong><small>Add service stops for long routes.</small></span><input type="checkbox" id="includeRefuel"><i></i></label>
-                <div class="field"><label for="routePriority">Route priority</label><select id="routePriority"><option>Balanced</option><option>Shortest distance</option><option>Fewest stops</option><option>Highest reward</option></select></div>
-              </div>
-            </details>
           </aside>
 
-          <section class="map-workspace expandable-surface" id="mapWorkspace" data-overlay-title="Navigation canvas" data-overlay-subtitle="Interactive system and planetary map">
-            <div class="map-topbar">
-              <div><span class="eyebrow">Navigation canvas</span><div class="breadcrumbs" id="breadcrumbs"><button>UEE</button><span>/</span><button class="is-current">Stanton</button></div></div>
-              <div class="map-topbar-actions">
-                <span class="map-scale-note">RELATIVE MAP · NOT TO SCALE</span>
-                <div class="map-mode-switch" aria-label="Map mode"><button class="is-active" data-map-mode="plan">Plan</button><button data-map-mode="route">Route</button></div>
-                <button class="icon-button expand-button" type="button" data-expand-target="mapWorkspace" aria-label="Expand map" title="Open larger"><svg><use href="#icon-expand"/></svg></button>
+          <section class="map-panel">
+            <div class="map-header">
+              <div><span class="kicker">Stanton navigation</span><h2 id="mapTitle">Orbital map</h2></div>
+              <div class="map-controls">
+                <div class="segmented" id="mapModeSwitch">
+                  <button class="is-active" type="button" data-map-mode="orbital">Orbital</button>
+                  <button type="button" data-map-mode="tree">Entity tree</button>
+                </div>
+                <button class="small-btn" id="fitMapButton" type="button">Fit</button>
               </div>
             </div>
 
-            <div class="map-stage" id="mapStage">
-              <div class="map-grid" aria-hidden="true"></div>
-              <svg id="systemMap" viewBox="0 0 1000 680" role="img" aria-label="Interactive map of the Stanton system">
-                <defs>
-                  <radialGradient id="starGlow"><stop offset="0" stop-color="#f4e5ad" stop-opacity=".9"/><stop offset=".18" stop-color="#d8d08b" stop-opacity=".42"/><stop offset="1" stop-color="#d8d08b" stop-opacity="0"/></radialGradient>
-                  <filter id="softGlow"><feGaussianBlur stdDeviation="5" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-                  <filter id="routeGlow"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-                  <marker id="routeArrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 10 5 0 10Z" fill="#55d6a4"/></marker>
-                </defs>
-                <g id="mapViewport">
-                  <g class="orbit-layer" aria-hidden="true"><ellipse cx="500" cy="340" rx="205" ry="125"/><ellipse cx="500" cy="340" rx="345" ry="215"/><ellipse cx="500" cy="340" rx="455" ry="285"/></g>
-                  <g id="routeOverlay" class="route-overlay"></g>
-                  <g id="mapNodes"></g>
-                </g>
-              </svg>
-
-              <div class="map-toolbar" aria-label="Map controls">
-                <button id="zoomIn" type="button" title="Zoom in"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
-                <button id="zoomOut" type="button" title="Zoom out"><svg viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
-                <span></span>
-                <button id="fitMap" type="button" title="Fit map"><svg><use href="#icon-expand"/></svg></button>
+            <div class="map-body">
+              <div class="map-view is-active" id="orbitalMapView">
+                <svg id="systemMap" viewBox="0 0 1000 680" role="img" aria-label="Stanton orbital route map">
+                  <defs>
+                    <radialGradient id="starGradient"><stop offset="0" stop-color="#fff3b0"/><stop offset=".3" stop-color="#d3b35a"/><stop offset="1" stop-color="#9b7c2b"/></radialGradient>
+                    <filter id="softGlow"><feGaussianBlur stdDeviation="4" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+                  </defs>
+                  <g id="mapGrid"></g>
+                  <g id="mapOrbits"></g>
+                  <g id="routeLayer"></g>
+                  <g id="nodeLayer"></g>
+                </svg>
+                <div class="map-legend"><span><i class="start-dot"></i>Start</span><span><i class="pickup-dot"></i>Pickup</span><span><i class="delivery-dot"></i>Delivery</span><span><i class="route-line"></i>Route</span></div>
               </div>
 
-              <div class="map-legend"><span><i class="legend-start"></i>Start</span><span><i class="legend-pickup"></i>Pickup</span><span><i class="legend-delivery"></i>Delivery</span><span><i class="legend-route"></i>Route</span></div>
-              <div class="map-tooltip" id="mapTooltip" role="status"></div>
-              <div class="map-hint" id="mapHint"><svg viewBox="0 0 24 24"><path d="M9 11V6a2 2 0 0 1 4 0v4M13 10V7a2 2 0 0 1 4 0v5M17 11v-1a2 2 0 0 1 4 0v5c0 4-3 7-7 7h-2c-3 0-5-1-7-4l-2-3a2 2 0 0 1 3-2l3 2"/></svg>Drag to pan · scroll to zoom · double-click a world to focus</div>
+              <div class="map-view" id="entityTreeView">
+                <div class="tree-columns">
+                  <div class="tree-browser" id="treeBrowser"></div>
+                  <aside class="tree-inspector" id="treeInspector"></aside>
+                </div>
+              </div>
             </div>
 
-            <div class="context-drawer" id="contextDrawer">
-              <div class="context-summary"><span class="context-icon" id="contextIcon"></span><div><span class="eyebrow" id="contextType">System overview</span><h3 id="contextTitle">Stanton</h3><p id="contextDescription">Current in-game relative layout with playable and inactive gateway links.</p></div></div>
-              <div class="context-stats" id="contextStats"><div><span>Known stops</span><strong id="knownStops">26</strong></div><div><span>Route nodes</span><strong id="routeNodeCount">5</strong></div><div><span>Map level</span><strong id="mapLevelLabel">System</strong></div></div>
-              <button class="secondary-button" id="focusSelected" type="button" disabled>Focus selection</button>
+            <div class="map-footer">
+              <div><span class="kicker">Selected location</span><strong id="selectedLocationName">Stanton</strong><small id="selectedLocationMeta">System overview</small></div>
+              <div class="footer-stats"><span><b id="knownStopsCount">0</b> known stops</span><span><b id="routeStopsCount">0</b> route stops</span><span><b id="mapModeLabel">Orbital</b> mode</span></div>
             </div>
           </section>
 
-          <aside class="planner-panel route-panel expandable-surface" id="routePanel" data-overlay-title="Route brief" data-overlay-subtitle="Capacity, actions and complete route timeline">
-            <div class="panel-heading route-heading">
-              <div><span class="eyebrow">Route brief</span><h2>Mission preview</h2></div>
-              <div class="heading-actions"><span class="draft-pill" id="routeStatus"><i></i>Draft</span><button class="icon-button expand-button" type="button" data-expand-target="routePanel" aria-label="Expand route summary" title="Open larger"><svg><use href="#icon-expand"/></svg></button></div>
+          <aside class="panel route-panel">
+            <div class="panel-title">
+              <div><span class="kicker">Route brief</span><h2>Mission preview</h2></div>
+              <span class="status-pill" id="routeStatus">Draft</span>
             </div>
 
-            <div class="capacity-card">
-              <div class="capacity-row"><span>Planned cargo</span><strong><b id="plannedScu">15</b> / <b id="capacityScu">46</b> SCU</strong></div>
-              <div class="capacity-track"><span id="capacityBar" style="width:33%"></span></div>
-              <div class="capacity-foot"><span id="capacityText">33% capacity</span><span id="capacityFree">31 SCU free</span></div>
-            </div>
-
-            <div class="metric-grid">
-              <div class="metric"><span>Est. distance</span><strong id="distanceMetric">—</strong><small>Quantum path</small></div>
-              <div class="metric"><span>Total reward</span><strong id="rewardMetric">162,500</strong><small>aUEC declared</small></div>
-              <div class="metric"><span>Stops</span><strong id="stopsMetric">5</strong><small id="stopsMeta">2 pickup · 2 delivery</small></div>
-              <div class="metric"><span>Est. duration</span><strong id="durationMetric">—</strong><small>Travel + handling</small></div>
-            </div>
-
-            <section class="next-step-card" id="nextStepCard">
-              <span class="eyebrow">Next action</span>
-              <div class="next-step-content"><span class="action-icon"><svg viewBox="0 0 24 24"><path d="M5 19 19 5M9 5h10v10"/></svg></span><div><strong>Review missions and calculate</strong><p>The planner keeps every mission and container group separate through the route.</p></div></div>
+            <section class="capacity-box">
+              <div><span>Planned cargo</span><strong><b id="plannedScu">0</b> / <b id="capacityScu">0</b> SCU</strong></div>
+              <div class="capacity-track"><i id="capacityFill"></i></div>
+              <div><small id="capacityPercent">0% capacity</small><small id="capacityFree">0 SCU free</small></div>
             </section>
 
-            <section class="timeline-section" id="timelineSection" data-overlay-title="Route timeline" data-overlay-subtitle="All stops and mission-specific cargo actions">
-              <div class="timeline-heading"><h3>Route timeline</h3><button class="text-button" id="expandTimeline" type="button">Expand</button></div>
-              <ol class="route-timeline" id="routeTimeline"></ol>
+            <div class="metric-grid">
+              <article><span>Distance</span><strong id="distanceMetric">—</strong><small>Relative estimate</small></article>
+              <article><span>Reward</span><strong id="rewardMetric">0</strong><small>aUEC</small></article>
+              <article><span>Stops</span><strong id="stopsMetric">0</strong><small id="stopsMeta">0 pickup · 0 delivery</small></article>
+              <article><span>Fuel load</span><strong id="fuelMetric">—</strong><small>Route estimate</small></article>
+            </div>
+
+            <section class="arrival-card" id="arrivalCard">
+              <span class="kicker">Next destination</span>
+              <h3 id="arrivalName">No route calculated</h3>
+              <p id="arrivalDescription">Add or import missions, then calculate the route.</p>
+              <div class="chips" id="arrivalChips"></div>
+            </section>
+
+            <section class="timeline-card">
+              <div class="timeline-head"><h3>Route timeline</h3><span id="timelineCount">0 stops</span></div>
+              <ol class="timeline" id="routeTimeline"></ol>
             </section>
 
             <div class="route-actions">
-              <button class="calculate-button" id="calculateRoute" type="button"><span>Calculate route</span><svg><use href="#icon-arrow"/></svg></button>
-              <button class="start-button" id="startRoute" type="button" disabled><svg><use href="#icon-play"/></svg>Start route</button>
+              <button class="primary-btn" id="calculateButton" type="button">Calculate route</button>
+              <button class="secondary-btn" id="startRouteButton" type="button" disabled>Start route</button>
             </div>
           </aside>
         </div>
       </section>
 
-      <section class="app-view page-view" data-view-panel="active" aria-label="Active Route">
-        <div class="page-header"><div><span class="eyebrow">Live operations</span><h1>Active Route</h1><p>Work through stops without losing mission or container identity.</p></div><div class="page-header-actions"><button class="secondary-button" data-nav-target="planner">Back to Planner</button><button class="danger-button" id="endRoute" type="button">End route</button></div></div>
-        <div class="active-route-grid">
-          <section class="content-panel active-next-panel"><div class="panel-heading"><div><span class="eyebrow">Current objective</span><h2 id="activeStopTitle">No active route</h2></div><span class="draft-pill" id="activeRouteStatus"><i></i>Idle</span></div><div id="activeStopContent" class="empty-state"><svg><use href="#icon-route"/></svg><h3>Start a route from the Planner</h3><p>Your next stop, mission actions and cargo checks will appear here.</p></div></section>
-          <section class="content-panel active-timeline-panel"><div class="panel-heading"><div><span class="eyebrow">Execution order</span><h2>Route stops</h2></div><span class="small-counter" id="activeProgress">0 / 0</span></div><ol class="active-route-list" id="activeRouteList"></ol></section>
-          <section class="content-panel manifest-panel"><div class="panel-heading"><div><span class="eyebrow">Cargo control</span><h2>Mission manifest</h2></div><button class="icon-button" id="expandManifest" type="button" title="Open larger"><svg><use href="#icon-expand"/></svg></button></div><div class="manifest-list" id="manifestList"></div></section>
+      <section class="view page-view" id="activeView" data-view-panel="active">
+        <div class="page-heading"><div><span class="kicker">Live operations</span><h1>Active Route</h1><p>App-tracked progress. No fake telemetry or movement.</p></div><div><button class="secondary-btn" type="button" data-view="planner">Back to Planner</button><button class="danger-btn" id="endRouteButton" type="button">End route</button></div></div>
+        <div class="active-layout">
+          <section class="active-map-card">
+            <div class="card-head"><div><span class="kicker">Current leg</span><h2 id="activeLegTitle">No active route</h2></div><span class="status-pill" id="activeStatus">Idle</span></div>
+            <svg id="activeMap" viewBox="0 0 1000 680" role="img" aria-label="Current route leg map"></svg>
+          </section>
+          <aside class="active-side">
+            <section class="info-card"><span class="kicker">Current objective</span><h2 id="activeStopName">Start a route</h2><div id="activeActions" class="objective-list"></div><button class="primary-btn full" id="completeStopButton" type="button" disabled>Complete stop</button></section>
+            <section class="info-card"><span class="kicker">Arrival profile</span><h3 id="activeArrivalName">—</h3><p id="activeArrivalDescription">No destination selected.</p><div class="chips" id="activeArrivalChips"></div></section>
+            <section class="info-card route-queue-card"><div class="card-head compact"><h3>Route queue</h3><span id="activeProgress">0 / 0</span></div><ol class="queue" id="activeQueue"></ol></section>
+          </aside>
         </div>
       </section>
 
-      <section class="app-view page-view" data-view-panel="fleet" aria-label="Fleet">
-        <div class="page-header"><div><span class="eyebrow">Owned ships</span><h1>Fleet</h1><p>Keep a small operational fleet list and send any ship directly to the Planner.</p></div><button class="primary-button" id="addFleetShip" type="button"><svg><use href="#icon-plus"/></svg>Add ship</button></div>
-        <div class="fleet-layout"><section class="content-panel fleet-list-panel"><div class="panel-heading"><div><span class="eyebrow">Hangar</span><h2>Your ships</h2></div><span class="small-counter" id="fleetCount">0 ships</span></div><div class="fleet-list" id="fleetList"></div></section><section class="content-panel fleet-detail-panel" id="fleetDetail"></section></div>
+      <section class="view page-view" data-view-panel="fleet">
+        <div class="page-heading"><div><span class="kicker">Fleet</span><h1>Ship profiles</h1><p>Fixed cargo capacities used by the planner.</p></div></div>
+        <div class="simple-grid" id="fleetGrid"></div>
       </section>
 
-      <section class="app-view page-view" data-view-panel="intel" aria-label="Intel">
-        <div class="page-header"><div><span class="eyebrow">Reference data</span><h1>Intel</h1><p>Search the local location and commodity profile used by the Planner.</p></div><div class="intel-search input-shell"><svg><use href="#icon-search"/></svg><input id="intelSearch" placeholder="Search location, alias, commodity or gateway…"></div></div>
-        <div class="intel-tabs" role="tablist"><button class="is-active" data-intel-tab="gateways">Gateways</button><button data-intel-tab="locations">Locations</button><button data-intel-tab="commodities">Commodities</button></div>
-        <section class="intel-grid" id="intelGrid"></section>
+      <section class="view page-view" data-view-panel="intel">
+        <div class="page-heading"><div><span class="kicker">Intel</span><h1>Location reference</h1><p>Fixed service and risk profiles. Not real-time.</p></div></div>
+        <div class="simple-grid" id="intelGrid"></div>
       </section>
 
-      <section class="app-view page-view" data-view-panel="settings" aria-label="Settings">
-        <div class="page-header"><div><span class="eyebrow">Local preferences</span><h1>Settings</h1><p>Interface and persistence options. No account or backend is required.</p></div></div>
-        <div class="settings-grid">
-          <section class="content-panel settings-panel"><div class="panel-heading"><div><span class="eyebrow">Interface</span><h2>Display</h2></div></div><label class="setting-row"><span><strong>Compact density</strong><small>Reduce vertical spacing on smaller displays.</small></span><input id="compactDensity" type="checkbox"><i></i></label><label class="setting-row"><span><strong>Reduce motion</strong><small>Disable most interface transitions.</small></span><input id="reduceMotion" type="checkbox"><i></i></label></section>
-          <section class="content-panel settings-panel"><div class="panel-heading"><div><span class="eyebrow">Planning</span><h2>Behavior</h2></div></div><label class="setting-row"><span><strong>Autosave changes</strong><small>Persist edits locally while you work.</small></span><input id="autoSave" type="checkbox" checked><i></i></label><label class="setting-row"><span><strong>Open Active Route on start</strong><small>Switch pages immediately after starting a route.</small></span><input id="openActiveOnStart" type="checkbox" checked><i></i></label></section>
-          <section class="content-panel settings-panel data-panel"><div class="panel-heading"><div><span class="eyebrow">Local data</span><h2>Backup & reset</h2></div></div><p>Your ships, missions and settings live only in this browser.</p><div class="button-row"><button class="secondary-button" id="exportData" type="button">Export JSON</button><button class="secondary-button" id="importData" type="button">Import JSON</button><button class="danger-button" id="resetAllData" type="button">Reset all data</button></div><input id="importDataFile" type="file" accept="application/json" hidden></section>
-        </div>
+      <section class="view page-view" data-view-panel="settings">
+        <div class="page-heading"><div><span class="kicker">Settings</span><h1>Local data</h1><p>This build stores data only in this browser.</p></div></div>
+        <div class="settings-card"><button class="secondary-btn" id="exportButton" type="button">Export data</button><button class="secondary-btn" id="importDataButton" type="button">Import data</button><button class="danger-btn" id="clearDataButton" type="button">Clear local data</button><input id="importDataFile" type="file" accept="application/json" hidden></div>
       </section>
     </main>
+
+    <footer class="statusbar">
+      <span><i></i>Local planner ready</span>
+      <span id="footerRouteState">No active route</span>
+      <span id="footerCargoState">0 SCU planned</span>
+    </footer>
   </div>
 
-  <div class="overlay-backdrop" id="overlayBackdrop" hidden>
-    <section class="focus-overlay" id="focusOverlay" role="dialog" aria-modal="true" aria-labelledby="overlayTitle">
-      <header class="overlay-header"><div><span class="eyebrow" id="overlayEyebrow">Expanded workspace</span><h2 id="overlayTitle">Workspace</h2><p id="overlaySubtitle"></p></div><button class="icon-button overlay-close" id="closeOverlay" type="button" aria-label="Close overlay"><svg><use href="#icon-close"/></svg></button></header>
-      <div class="overlay-body" id="overlayBody"></div>
-    </section>
-  </div>
+  <dialog id="missionDialog">
+    <form method="dialog" class="dialog-shell" id="missionForm">
+      <div class="dialog-head"><div><span class="kicker">Mission editor</span><h2 id="missionDialogTitle">Add mission</h2></div><button class="icon-btn" value="cancel" type="submit">Close</button></div>
+      <input id="missionId" type="hidden">
+      <div class="dialog-grid">
+        <label class="field"><span>Name</span><input id="missionName" required></label>
+        <label class="field"><span>Reference</span><input id="missionReference"></label>
+        <label class="field"><span>Type</span><select id="missionType"><option>Hauling</option><option>Delivery</option><option>Priority</option><option>Manual logistics</option><option>Other</option></select></label>
+        <label class="field"><span>Reward (aUEC)</span><input id="missionReward" type="number" min="0" step="500"></label>
+      </div>
+      <div class="cargo-editor-head"><h3>Cargo items</h3><button class="small-btn" id="addCargoButton" type="button">+ Cargo item</button></div>
+      <div id="cargoEditorList" class="cargo-editor-list"></div>
+      <div class="dialog-actions"><button class="secondary-btn" value="cancel" type="submit">Cancel</button><button class="primary-btn" id="saveMissionButton" value="default" type="submit">Save mission</button></div>
+    </form>
+  </dialog>
 
-  <div class="toast-region" id="toastRegion" aria-live="polite"></div>
+  <dialog id="importMissionDialog">
+    <form method="dialog" class="dialog-shell import-dialog" id="importMissionForm">
+      <div class="dialog-head"><div><span class="kicker">Mission import</span><h2>Paste readable mission text</h2></div><button class="icon-btn" value="cancel" type="submit">Close</button></div>
+      <div class="format-help">Mission: Stanton freight run<br>Reference: TEST-01<br>Reward: 25000<br><br>Cargo:<br>Commodity: Neon<br>SCU: 4<br>Pickup: Baijini Point<br>Delivery: Area18</div>
+      <label class="field"><span>Mission text</span><textarea id="importMissionText" required></textarea></label>
+      <div class="dialog-actions"><button class="secondary-btn" value="cancel" type="submit">Cancel</button><button class="primary-btn" id="parseMissionButton" value="default" type="submit">Parse and review</button></div>
+    </form>
+  </dialog>
+
   <script src="app.js"></script>
 </body>
 </html>

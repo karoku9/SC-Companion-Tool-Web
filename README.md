@@ -1,17 +1,18 @@
 # SC Companion Tool Web
 
-Browser-based Star Citizen companion focused on cargo contracts, route planning, active runs, fleet management and operational intel.
+Dependency-free Star Citizen cargo mission and route planner.
 
-## Current prototype
+## Current build
 
-The first Planner implementation is a dependency-free HTML/CSS/JavaScript prototype with:
+The interface was rebuilt from scratch as a compact, stable three-column operations console.
 
-- family + variant ship selection and direct search;
-- editable, duplicable, deletable and reorderable cargo contracts;
-- commodity and location autocomplete with custom-value preservation;
-- interactive SVG map with pan, zoom, selection, breadcrumbs and planetary drill-down;
-- generated route overlay, route metrics, preview timeline and start-route state;
-- responsive desktop layouts;
-- browser-local planner persistence.
+- fixed community ship cargo profiles;
+- mission creation, editing, deletion and readable-text import;
+- manual SCU quantities without container breakdowns;
+- orbital map and entity-tree toggle;
+- route calculation with capacity, reward, distance, fuel and stop estimates;
+- fixed landing services, traffic, danger and reliability profiles;
+- app-tracked Active Route with no fake live telemetry or animated travel;
+- local browser persistence and JSON backup.
 
-GitHub Pages is deployed from `main` through the included Pages workflow.
+The production app consists of `index.html`, `styles.css` and `app.js`. GitHub Pages deploys from `main` through the included workflow.
