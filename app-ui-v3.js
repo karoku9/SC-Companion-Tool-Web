@@ -15,7 +15,7 @@
     const route = state.route?.length ? state.route : buildRoute();
     if (route.length < 2) return { route, from: route[0] || null, to: null, targetIndex: 0 };
     const targetIndex = state.active
-      ? Math.min(Math.max((Number(state.activeStopIndex) || 0) + 1, 1), route.length - 1)
+      ? Math.min(Math.max(Number(state.activeStopIndex) || 1, 1), route.length - 1)
       : 1;
     return { route, from: route[targetIndex - 1], to: route[targetIndex], targetIndex };
   }
