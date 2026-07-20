@@ -170,32 +170,31 @@ function routeMapMarkup(compact = false) {
 function renderDashboard() {
   const ship = selectedShip();
   return `<section class="page" data-page-view="dashboard">
-    ${pageHeader('Your next move', 'Cargo operations at a glance', 'Mission hauling and player trading share one calm workspace.',
-      '<button class="button button-primary" data-page="planner">Add mission</button><button class="button button-secondary" data-page="active">Resume route</button>')}
-    <div class="card-grid">
-      ${metric('Selected ship', ship.name, ship.role, true)}
-      ${metric('Cargo capacity', money(ship.capacity) + ' SCU', money(totalScu()) + ' SCU planned')}
-      ${metric('Active missions', String(state.missions.length), '2 contracts ready')}
-      ${metric('Declared reward', money(totalReward()) + ' aUEC', 'Across current missions')}
-    </div>
+    ${pageHeader('OPS CONTROL / READINESS', 'Cargo Operations Deck', 'Current vessel, contract load and route state for this local session.',
+      '<button class="button button-primary" data-page="planner"><span>NEW</span> Add mission</button><button class="button button-secondary" data-page="active"><span>EXEC</span> Resume route</button>')}
+    <div class="system-strip"><span><b>SYS</b> OPERATIONS DECK</span><span><i></i> LOCAL SESSION NOMINAL</span><span>LINK // OFFLINE</span></div>
+    <section class="panel readiness-console">
+      <div class="vessel-ident"><span class="module-code">VESSEL ASSIGNMENT // ${markupSafe(manufacturerTheme(ship)).toUpperCase()}</span><strong>${markupSafe(ship.name)}</strong><small>${markupSafe(ship.maker)} · ${markupSafe(ship.role)}</small></div>
+      <div class="readiness-grid"><div><span>CARGO ENVELOPE</span><strong>${money(ship.capacity)} <small>SCU</small></strong><em>${money(totalScu())} planned</em></div><div><span>CONTRACT STACK</span><strong>${state.missions.length.toString().padStart(2, '0')}</strong><em>ready in memory</em></div><div><span>DECLARED REWARD</span><strong>${money(totalReward())}</strong><em>aUEC total</em></div><div><span>ROUTE STATE</span><strong>${String(state.activeRoute.stepIndex + 1).padStart(2, '0')} / ${String(state.activeRoute.steps.length).padStart(2, '0')}</strong><em>app-tracked</em></div></div>
+    </section>
     <div class="dashboard-layout">
       <div class="dashboard-column">
         <section class="panel action-banner">
-          <div><span class="eyebrow">Current route · Step ${state.activeRoute.stepIndex + 1} of ${state.activeRoute.steps.length}</span><h2>${markupSafe(state.activeRoute.steps[state.activeRoute.stepIndex].title)}</h2><p>${markupSafe(state.activeRoute.steps[state.activeRoute.stepIndex].detail)}</p></div>
-          <button class="button button-primary button-large" data-page="active">Continue route →</button>
+          <div><span class="eyebrow">EXECUTION CHANNEL A · STEP ${state.activeRoute.stepIndex + 1} OF ${state.activeRoute.steps.length}</span><h2>${markupSafe(state.activeRoute.steps[state.activeRoute.stepIndex].title)}</h2><p>${markupSafe(state.activeRoute.steps[state.activeRoute.stepIndex].detail)}</p></div>
+          <button class="button button-primary button-large" data-page="active"><span>EXEC</span> Continue route →</button>
         </section>
         <section class="panel panel-pad">
-          <div class="panel-head"><div><h2>Route preview</h2><p>Everus Harbor → HDMS-Bezdek → Lorville</p></div><span class="status-pill good">In progress</span></div>
+          <div class="panel-head"><div><span class="module-code">NAV QUEUE // ROUTE 01</span><h2>Route preview</h2><p>Everus Harbor → HDMS-Bezdek → Lorville</p></div><span class="status-pill good">IN PROGRESS</span></div>
           <div class="route-mini"><div class="mini-route-line"></div><i class="mini-node one"></i><i class="mini-node two"></i><i class="mini-node three"></i><span class="mini-label one">Everus Harbor</span><span class="mini-label two">HDMS-Bezdek</span><span class="mini-label three">Lorville</span></div>
         </section>
         <section class="panel panel-pad">
-          <div class="panel-head"><div><h2>Recent missions</h2><p>Contract work prepared in this session</p></div><button class="link-button" data-page="planner">View planner</button></div>
+          <div class="panel-head"><div><span class="module-code">CONTRACT BUFFER</span><h2>Recent missions</h2><p>Contract work prepared in this session</p></div><button class="link-button" data-page="planner">View planner</button></div>
           <div class="list-stack">${state.missions.slice(0,3).map(mission => `<div class="list-row"><div><strong>${markupSafe(mission.reference)} · ${markupSafe(mission.title)}</strong><small>${mission.cargo.length} cargo lots · ${mission.cargo.reduce((sum, lot) => sum + lot.scu, 0)} SCU</small></div><b>${money(mission.reward)} aUEC</b></div>`).join('')}</div>
         </section>
       </div>
       <aside class="dashboard-column">
         <section class="panel panel-pad">
-          <div class="panel-head"><div><h2>Quick actions</h2><p>Start where you need to</p></div></div>
+          <div class="panel-head"><div><span class="module-code">CONTROL BANK // A</span><h2>Quick actions</h2><p>Direct access to local systems</p></div></div>
           <div class="quick-grid">
             <button class="quick-action" data-action="add-mission"><i>＋</i><span><strong>Add mission</strong><small>Build a contract</small></span></button>
             <button class="quick-action" data-action="import-mission"><i>↥</i><span><strong>Import mission</strong><small>Paste readable text</small></span></button>
@@ -206,7 +205,7 @@ function renderDashboard() {
           </div>
         </section>
         <section class="panel panel-pad">
-          <div class="panel-head"><div><h2>Recent hauling routes</h2><p>Demo market opportunities</p></div></div>
+          <div class="panel-head"><div><span class="module-code">MARKET BUFFER // DEMO</span><h2>Recent hauling routes</h2><p>Fixed market opportunities</p></div><span class="chip warn">DEMO DATA</span></div>
           <div class="list-stack">${DATA.haulingRoutes.slice(0,3).map(route => `<div class="list-row"><div><strong>${route.commodity}</strong><small>${route.buy} → ${route.sell}</small></div><b class="text-green">+${money(route.totalProfit)}</b></div>`).join('')}</div>
         </section>
       </aside>
@@ -330,11 +329,12 @@ function renderActive() {
 function renderHauling() {
   const ship = selectedShip();
   return `<section class="page" data-page-view="hauling">
-    ${pageHeader('Player trading', 'Find a practical commodity run', 'Explore fixed demo opportunities separately from contract missions.',
+    ${pageHeader('MARKET TERMINAL / LOGISTICS', 'Commodity Hauling', 'Compare fixed demo opportunities separately from contract missions.',
       `<div class="segmented"><button class="${state.ui.haulingView === 'list' ? 'is-active' : ''}" data-hauling-view="list">LIST</button><button class="${state.ui.haulingView === 'map' ? 'is-active' : ''}" data-hauling-view="map">MAP</button></div>`)}
     <div class="notice is-demo">DEMO MARKET DATA — LIVE PROVIDER NOT CONNECTED</div>
-    ${state.hauling.activeRunId ? `<section class="panel active-run-card spacer-top"><div><span class="eyebrow">Active hauling run</span><h2 class="spacer-top">Laranite · HDMS-Lathan → Lorville</h2><p>140 SCU planned · estimated profit 76,580 aUEC</p></div><div class="button-row"><button class="button button-ghost" data-action="feature" data-feature="partial">Partial sell</button><button class="button button-primary" data-action="complete-run">Complete run</button></div></section>` : ''}
+    ${state.hauling.activeRunId ? `<section class="panel active-run-card spacer-top"><div><span class="eyebrow">RUN CHANNEL 01 // ACTIVE</span><h2 class="spacer-top">Laranite · HDMS-Lathan → Lorville</h2><p>140 SCU planned · estimated profit 76,580 aUEC</p></div><div class="run-state"><span class="status-pill good">TRACKING</span><div class="button-row"><button class="button button-ghost" data-action="feature" data-feature="partial">Partial sell</button><button class="button button-primary" data-action="complete-run">Complete run</button></div></div></section>` : ''}
     <section class="panel filter-bar spacer-top">
+      <div class="filter-heading"><span class="module-code">FILTER BANK // MARKET QUERY</span><strong>ROUTE PARAMETERS</strong><small>All values use fixed Checkpoint 1 data</small></div>
       ${shipSelector(state.selectedShipId, 'haulingShip')}
       <label class="field"><span>Origin</span><select><option>Any origin</option><option>Hurston</option><option>ArcCorp</option><option>microTech</option></select></label>
       <label class="field"><span>Destination</span><select><option>Any destination</option><option>Lorville</option><option>Area18</option><option>New Babbage</option></select></label>
@@ -344,14 +344,14 @@ function renderHauling() {
       <label class="field"><span>Minimum stock</span><input type="number" value="100"></label>
       <label class="field"><span>Route priority</span><select><option>Best aUEC / hour</option><option>Total profit</option><option>Profit / SCU</option><option>Shortest run</option></select></label>
     </section>
-    <div class="card-grid spacer-top">
+    <div class="market-readouts spacer-top">
       ${metric('Routes found', '12', '3 strong matches')}
       ${metric('Best total profit', '80,828', 'aUEC per run', true)}
       ${metric('Best aUEC / hour', '211,000', 'Demo estimate')}
       ${metric('Best profit / SCU', '578', 'aUEC per SCU')}
     </div>
-    <div class="hauling-toolbar"><div><strong>${money(ship.capacity)} SCU capacity</strong><small> · 1,250,000 aUEC available capital</small></div><button class="button button-secondary" data-action="phase-two">Plan route</button></div>
-    ${state.ui.haulingView === 'list' ? `<div class="market-table">${DATA.haulingRoutes.map(route => `<article class="panel route-card"><div class="route-card-main"><span class="chip good">${route.commodity}</span><strong class="spacer-top">${markupSafe(route.buy)} → ${markupSafe(route.sell)}</strong><small>${route.travel} · prices ${route.freshness}</small></div><div class="route-stat"><span>Profit / SCU</span><strong class="text-green">+${money(route.profitScu)}</strong></div><div class="route-stat"><span>Total profit</span><strong>${money(route.totalProfit)}</strong></div><div class="route-stat hide-small"><span>aUEC / hour</span><strong>${money(route.hourly)}</strong></div><div class="route-stat hide-medium"><span>Upfront cost</span><strong>${money(route.cost)}</strong></div><div class="route-card-actions"><button class="button button-small button-secondary" data-route-details="${route.id}">View details</button><button class="button button-small button-primary" data-start-run="${route.id}">Start run</button></div></article>`).join('')}</div>` : routeMapMarkup()}
+    <div class="hauling-toolbar"><div><span class="module-code">VESSEL LIMIT</span><strong>${money(ship.capacity)} SCU capacity</strong><small> · 1,250,000 aUEC available capital</small></div><button class="button button-secondary" data-action="phase-two"><span>CALC</span> Plan route</button></div>
+    ${state.ui.haulingView === 'list' ? `<div class="market-table">${DATA.haulingRoutes.map((route, routeIndex) => `<article class="panel route-card"><div class="route-code">R-${String(routeIndex + 1).padStart(2, '0')}</div><div class="route-card-main"><span class="chip good">${route.commodity}</span><strong class="spacer-top">${markupSafe(route.buy)} → ${markupSafe(route.sell)}</strong><small>${route.travel} · prices ${route.freshness}</small></div><div class="route-stat"><span>Profit / SCU</span><strong class="text-green">+${money(route.profitScu)}</strong></div><div class="route-stat"><span>Total profit</span><strong>${money(route.totalProfit)}</strong></div><div class="route-stat hide-small"><span>aUEC / hour</span><strong>${money(route.hourly)}</strong></div><div class="route-stat hide-medium"><span>Upfront cost</span><strong>${money(route.cost)}</strong></div><div class="route-card-actions"><button class="button button-small button-secondary" data-route-details="${route.id}">View details</button><button class="button button-small button-primary" data-start-run="${route.id}">Start run</button></div></article>`).join('')}</div>` : routeMapMarkup()}
   </section>`;
 }
 
@@ -359,15 +359,16 @@ function renderMap() {
   const selected = DATA.locations.find(location => location.id === state.ui.selectedLocationId) || DATA.locations[0];
   const parents = ['Hurston', 'ArcCorp', 'Crusader', 'microTech'];
   return `<section class="page" data-page-view="map">
-    ${pageHeader('Stanton reference', 'Read the route without the noise', 'Select a location to inspect fixed services, risk and operational notes.',
+    ${pageHeader('NAV SYSTEM / STANTON', 'Orbital Navigation Reference', 'Select a location to inspect fixed services, risk and operational notes.',
       `<div class="segmented"><button class="${state.ui.mapMode === 'orbital' ? 'is-active' : ''}" data-map-mode="orbital">Orbital Map</button><button class="${state.ui.mapMode === 'tree' ? 'is-active' : ''}" data-map-mode="tree">Entity Tree</button></div>`)}
-    <div class="map-layout">
+    <div class="notice">APP-TRACKED ROUTE — NOT LIVE GAME TELEMETRY</div>
+    <div class="map-layout spacer-top">
       <section class="panel panel-pad">
         ${state.ui.mapMode === 'orbital' ? routeMapMarkup() : `<div class="entity-tree">${parents.map(parent => `<section class="tree-group"><strong>Stanton → ${parent}</strong><div class="tree-children">${DATA.locations.filter(location => location.parent === parent || DATA.locations.find(item => item.name === location.parent)?.parent === parent).map(location => `<button class="${location.id === selected.id ? 'is-selected' : ''}" data-location="${location.id}"><span>${markupSafe(location.name)}</span><small>${markupSafe(location.type)}</small></button>`).join('')}</div></section>`).join('')}</div>`}
       </section>
-      <aside class="inspector">
+      <aside class="inspector nav-inspector">
         <section class="panel panel-pad">
-          <span class="eyebrow">${markupSafe(selected.type)}</span><h2 class="spacer-top">${markupSafe(selected.name)}</h2><p class="spacer-top">${markupSafe(selected.note)}</p>
+          <span class="module-code">ENTITY RECORD // ${markupSafe(selected.id).toUpperCase()}</span><span class="eyebrow">${markupSafe(selected.type)}</span><h2 class="spacer-top">${markupSafe(selected.name)}</h2><p class="spacer-top">${markupSafe(selected.note)}</p>
           <div class="service-grid spacer-top">
             <div><span>Parent</span><strong>${markupSafe(selected.parent)}</strong></div>
             <div><span>Landing</span><strong>${markupSafe(selected.landing)}</strong></div>
@@ -387,9 +388,10 @@ function renderMap() {
 
 function renderFleet() {
   return `<section class="page" data-page-view="fleet">
-    ${pageHeader('Ship management', 'Your working fleet', 'Cargo capacity and role profiles use fixed community data.',
-      '<button class="button button-secondary" data-action="compare-ships">Compare two ships</button><button class="button button-primary" data-action="add-ship-preview">Add ship</button>')}
-    <div class="fleet-grid">${DATA.ships.map(ship => `<article class="panel ship-card-large${ship.id === state.selectedShipId ? ' is-selected' : ''}"><div class="ship-visual" aria-hidden="true">◇</div><div class="chip-row"><span class="chip">${markupSafe(ship.family)}</span><span class="chip info">${markupSafe(ship.variant)}</span></div><h3 class="spacer-top">${markupSafe(ship.name)}</h3><p>${markupSafe(ship.maker)} · ${markupSafe(ship.role)}</p><div class="ship-meta"><div><span>Cargo capacity</span><strong>${money(ship.capacity)} SCU</strong></div><button class="button button-small ${ship.id === state.selectedShipId ? 'button-primary' : 'button-secondary'}" data-select-ship="${ship.id}">${ship.id === state.selectedShipId ? 'Selected' : 'Use in Planner'}</button></div></article>`).join('')}</div>
+    ${pageHeader('VEHICLE SYSTEM / REGISTRY', 'Fleet Registry', 'Hangar records with fixed cargo capacity and role profiles.',
+      '<button class="button button-secondary" data-action="compare-ships"><span>COMP</span> Compare two ships</button><button class="button button-primary" data-action="add-ship-preview"><span>REG</span> Add ship</button>')}
+    <div class="system-strip"><span><b>SYS</b> VEHICLE MANAGEMENT</span><span><i></i> ${DATA.ships.length} RECORDS AVAILABLE</span><span>SOURCE // FIXED PROFILE</span></div>
+    <div class="fleet-grid">${DATA.ships.map((ship, shipIndex) => `<article class="panel ship-card-large${ship.id === state.selectedShipId ? ' is-selected' : ''}" data-maker="${manufacturerTheme(ship)}"><div class="ship-card-top"><span>REG ${String(shipIndex + 1).padStart(3, '0')}</span><b>${manufacturerTheme(ship).toUpperCase()} // ${markupSafe(ship.variant).toUpperCase()}</b></div><div class="ship-visual" aria-hidden="true"><span class="ship-schematic"><i></i><i></i><i></i></span><small>VEHICLE PROFILE // ${markupSafe(ship.family).toUpperCase()}</small></div><div class="ship-record"><div class="chip-row"><span class="chip">${markupSafe(ship.family)}</span><span class="chip info">${markupSafe(ship.variant)}</span></div><h3>${markupSafe(ship.name)}</h3><p>${markupSafe(ship.maker)} · ${markupSafe(ship.role)}</p><div class="ship-meta"><div><span>Cargo capacity</span><strong>${money(ship.capacity)} <small>SCU</small></strong></div><button class="button button-small ${ship.id === state.selectedShipId ? 'button-primary' : 'button-secondary'}" data-select-ship="${ship.id}">${ship.id === state.selectedShipId ? 'Selected' : 'Use in Planner'}</button></div></div></article>`).join('')}</div>
   </section>`;
 }
 
@@ -408,9 +410,10 @@ function renderIntel() {
     content = DATA.reports.map(report => `<article class="panel intel-card"><span class="eyebrow">${markupSafe(report.location)}</span><h3 class="spacer-top">Community terminal report</h3><p>${markupSafe(report.message)}</p><div class="chip-row"><span class="chip ${report.tone}">${markupSafe(report.age)}</span></div><div class="intel-card-footer"><span>Demo community report</span><span>Not verified live</span></div></article>`).join('');
   }
   return `<section class="page" data-page-view="intel">
-    ${pageHeader('Operational knowledge', 'Searchable fixed intel', 'Locations, cargo, services and known issues in one readable reference.',
+    ${pageHeader('DATABASE / LOCAL REFERENCE', 'Onboard Intel Database', 'Locations, cargo, services and known issues in one indexed reference.',
       '<label class="field search-bar"><span>Search intel</span><input id="intelSearch" type="search" placeholder="Search locations, commodities or reports"></label>')}
-    <div class="panel panel-pad"><div class="tab-list" role="tablist">${tabs.map(tab => `<button class="tab-button${state.ui.intelTab === tab ? ' is-active' : ''}" role="tab" aria-selected="${state.ui.intelTab === tab}" data-intel-tab="${tab}">${tab === 'issues' ? 'Known Issues' : tab === 'reports' ? 'Community Reports' : tab[0].toUpperCase() + tab.slice(1)}</button>`).join('')}</div><div class="intel-grid spacer-top" id="intelResults">${content}</div></div>
+    <div class="system-strip"><span><b>DB</b> STANTON OPERATIONS INDEX</span><span><i></i> READ-ONLY CACHE</span><span>LIVE LINK // OFFLINE</span></div>
+    <div class="panel panel-pad intel-console"><div class="tab-list" role="tablist">${tabs.map((tab, tabIndex) => `<button class="tab-button${state.ui.intelTab === tab ? ' is-active' : ''}" role="tab" aria-selected="${state.ui.intelTab === tab}" data-intel-tab="${tab}"><small>0${tabIndex + 1}</small>${tab === 'issues' ? 'Known Issues' : tab === 'reports' ? 'Community Reports' : tab[0].toUpperCase() + tab.slice(1)}</button>`).join('')}</div><div class="intel-grid spacer-top" id="intelResults">${content}</div></div>
   </section>`;
 }
 
@@ -418,23 +421,25 @@ function renderTools() {
   const tabs = ['ocr', 'agent', 'transfer'];
   let panel = '';
   if (state.ui.toolsTab === 'ocr') {
-    panel = `<div class="tool-grid spacer-top"><section class="panel panel-pad"><div class="panel-head"><div><h2>Mission OCR</h2><p>Visual workflow preview for future screenshot parsing</p></div><span class="chip warn">Mock parser</span></div><button class="upload-zone" data-action="mock-ocr"><span><b>Drop a mission screenshot here</b><p>or choose an image from your computer</p><span class="button button-secondary spacer-top">Choose screenshot</span></span></button><div class="button-row spacer-top"><button class="button button-ghost" data-action="mock-ocr">Paste screenshot</button><button class="button button-ghost" data-action="feature" data-feature="captures">Recent captures</button></div></section><section class="panel panel-pad"><div class="panel-head"><div><h2>Detected fields</h2><p>Example OCR preview</p></div><span class="status-pill warn">Review needed</span></div><div class="ocr-preview"><div class="detected-row"><div><strong>Mission</strong><small>Covalex freight transfer</small></div><span class="confidence">96%</span></div><div class="detected-row"><div><strong>Reward</strong><small>46,250 aUEC</small></div><span class="confidence">93%</span></div><div class="detected-row"><div><strong>Cargo</strong><small>8 SCU Agricium</small></div><span class="confidence">88%</span></div><div class="detected-row"><div><strong>Destination</strong><small>Area18</small></div><span class="confidence">91%</span></div></div><button class="button button-primary spacer-top" data-action="mock-ocr">Review and import</button></section></div>`;
+    panel = `<div class="tool-grid spacer-top"><section class="panel panel-pad"><div class="panel-head"><div><span class="module-code">TOOL 01 // CAPTURE INGEST</span><h2>Mission OCR</h2><p>Visual workflow preview for future screenshot parsing</p></div><span class="chip warn">MOCK PARSER</span></div><button class="upload-zone" data-action="mock-ocr"><span class="upload-reticle">＋</span><span><b>Drop a mission screenshot here</b><p>or choose an image from your computer</p><span class="button button-secondary spacer-top">Choose screenshot</span></span></button><div class="button-row spacer-top"><button class="button button-ghost" data-action="mock-ocr">Paste screenshot</button><button class="button button-ghost" data-action="feature" data-feature="captures">Recent captures</button></div></section><section class="panel panel-pad"><div class="panel-head"><div><span class="module-code">PARSER OUTPUT // EXAMPLE</span><h2>Detected fields</h2><p>Static preview only</p></div><span class="status-pill warn">REVIEW NEEDED</span></div><div class="ocr-preview"><div class="detected-row"><div><strong>Mission</strong><small>Covalex freight transfer</small></div><span class="confidence">96%</span></div><div class="detected-row"><div><strong>Reward</strong><small>46,250 aUEC</small></div><span class="confidence">93%</span></div><div class="detected-row"><div><strong>Cargo</strong><small>8 SCU Agricium</small></div><span class="confidence">88%</span></div><div class="detected-row"><div><strong>Destination</strong><small>Area18</small></div><span class="confidence">91%</span></div></div><button class="button button-primary spacer-top" data-action="mock-ocr">Review and import</button></section></div>`;
   } else if (state.ui.toolsTab === 'agent') {
     panel = `<div class="tool-grid spacer-top"><section class="panel panel-pad"><div class="panel-head"><div><h2>Log Agent / Datalink</h2><p>Future local Game.log companion</p></div><span class="status-pill danger">Disconnected</span></div><div class="notice is-demo">AGENT NOT CONNECTED IN THIS PROTOTYPE</div><label class="field spacer-top"><span>Game.log path</span><input value="C:\\Program Files\\Roberts Space Industries\\StarCitizen\\LIVE\\Game.log" readonly></label><div class="button-row spacer-top"><button class="button button-primary" data-action="mock-agent">Connect</button><button class="button button-secondary" disabled>Disconnect</button><button class="button button-secondary" data-action="mock-agent">Start monitoring</button></div><p class="spacer-top">Planned processing is local-only. No log contents will leave your device without explicit action.</p></section><section class="panel panel-pad"><div class="panel-head"><div><h2>Detected activity</h2><p>Illustrative event stream</p></div><span class="chip">Shard EU-090</span></div><div class="service-grid"><div><span>Last location</span><strong>Everus Harbor</strong></div><div><span>Cargo events</span><strong>3 detected</strong></div></div><div class="event-stream spacer-top"><div class="event-row"><div><strong>Location change</strong><small>Everus Harbor</small></div><time>18:42</time></div><div class="event-row"><div><strong>Purchase detected</strong><small>12 SCU Medical Supplies</small></div><time>18:39</time></div><div class="event-row"><div><strong>Cargo event</strong><small>Freight elevator transfer</small></div><time>18:36</time></div></div></section></div>`;
   } else {
     panel = `<div class="tool-grid spacer-top"><section class="panel panel-pad"><div class="panel-head"><div><h2>Import application data</h2><p>Restore a future Waypoint JSON backup</p></div></div><div class="upload-zone"><span><b>Choose a JSON backup</b><p>Validation and import arrive in Checkpoint 3.</p><button class="button button-secondary spacer-top" data-action="phase-three">Choose JSON</button></span></div></section><section class="panel panel-pad"><div class="panel-head"><div><h2>Export and reset</h2><p>Local data controls</p></div></div><div class="list-stack"><div class="list-row"><div><strong>Export JSON</strong><small>Download missions, fleet and settings</small></div><button class="button button-secondary" data-action="phase-three">Export</button></div><div class="list-row"><div><strong>Reset local data</strong><small>Restore the sample workspace</small></div><button class="button button-danger" data-action="phase-three">Reset</button></div></div></section></div>`;
   }
-  return `<section class="page" data-page-view="tools">${pageHeader('Local utilities', 'Tools that stay honest', 'Unavailable integrations are clearly marked and never pretend to be connected.')}<div class="panel panel-pad"><div class="tab-list" role="tablist">${tabs.map(tab => `<button class="tab-button${state.ui.toolsTab === tab ? ' is-active' : ''}" role="tab" aria-selected="${state.ui.toolsTab === tab}" data-tools-tab="${tab}">${tab === 'ocr' ? 'Mission OCR' : tab === 'agent' ? 'Log Agent / Datalink' : 'Import / Export'}</button>`).join('')}</div>${panel}</div></section>`;
+  return `<section class="page" data-page-view="tools">${pageHeader('UTILITY BAY / LOCAL SYSTEMS', 'Onboard Tools', 'Unavailable integrations remain explicitly marked and never report a false connection.')}<div class="system-strip"><span><b>SYS</b> UTILITY BAY</span><span><i></i> LOCAL INTERFACE READY</span><span>EXTERNAL LINKS // OFFLINE</span></div><div class="panel panel-pad tools-console"><div class="tab-list" role="tablist">${tabs.map((tab, tabIndex) => `<button class="tab-button${state.ui.toolsTab === tab ? ' is-active' : ''}" role="tab" aria-selected="${state.ui.toolsTab === tab}" data-tools-tab="${tab}"><small>0${tabIndex + 1}</small>${tab === 'ocr' ? 'Mission OCR' : tab === 'agent' ? 'Log Agent / Datalink' : 'Import / Export'}</button>`).join('')}</div>${panel}</div></section>`;
 }
 
 function renderSettings() {
   return `<section class="page" data-page-view="settings">
-    ${pageHeader('Application preferences', 'Make the workspace yours', 'Settings are visually complete; persistence arrives in Checkpoint 2.')}
+    ${pageHeader('SYSTEM CONFIG / LOCAL', 'Interface Settings', 'Manufacturer identity is active in memory; persistence remains offline.')}
+    <div class="system-strip"><span><b>CFG</b> INTERFACE CONTROL</span><span><i></i> CHANGES APPLY IMMEDIATELY</span><span>STORAGE // VOLATILE</span></div>
     <div class="settings-grid">
       <section class="panel setting-group"><h2>Manufacturer interface</h2><div class="setting-row"><div><strong>Adaptive ship-brand theme</strong><small>Auto follows the selected ship manufacturer</small></div><button class="switch${state.ui.adaptiveTheme ? ' is-on' : ''}" data-theme-adaptive aria-label="Toggle adaptive ship-brand theme" aria-pressed="${state.ui.adaptiveTheme}"></button></div><label class="setting-row"><span><strong>Theme override</strong><small>Manual choice always takes precedence</small></span><select id="themeOverride"><option value="auto"${state.ui.themeOverride === 'auto' ? ' selected' : ''}>Auto</option><option value="neutral"${state.ui.themeOverride === 'neutral' ? ' selected' : ''}>Neutral</option><option value="drake"${state.ui.themeOverride === 'drake' ? ' selected' : ''}>Drake</option><option value="rsi"${state.ui.themeOverride === 'rsi' ? ' selected' : ''}>RSI</option><option value="misc"${state.ui.themeOverride === 'misc' ? ' selected' : ''}>MISC</option></select></label><div class="setting-row"><div><strong>Resolved system</strong><small>Applied across chassis, displays and controls</small></div><strong>${resolvedTheme().toUpperCase()}</strong></div><div class="setting-row"><div><strong>Reduced motion</strong><small>Limit interface transitions</small></div><button class="switch is-on" data-action="toggle-setting" aria-label="Toggle reduced motion"></button></div></section>
       <section class="panel setting-group"><h2>Defaults</h2><div class="setting-row"><div><strong>Default ship</strong><small>Used when creating a plan</small></div><strong>Drake Caterpillar</strong></div><div class="setting-row"><div><strong>Starting location</strong><small>Default departure point</small></div><strong>Everus Harbor</strong></div><div class="setting-row"><div><strong>Map mode</strong><small>Initial map presentation</small></div><strong>Orbital Map</strong></div></section>
       <section class="panel setting-group"><h2>Data and visibility</h2><div class="setting-row"><div><strong>Automatic local save</strong><small>Available in Checkpoint 2</small></div><button class="switch is-on" data-action="toggle-setting" aria-label="Toggle automatic save"></button></div><div class="setting-row"><div><strong>Show illegal commodities</strong><small>Include contraband in filters</small></div><button class="switch" data-action="toggle-setting" aria-label="Toggle illegal commodities"></button></div></section>
       <section class="panel setting-group"><h2>Formatting and maintenance</h2><div class="setting-row"><div><strong>Units</strong><small>Cargo and distance</small></div><strong>SCU · Gm</strong></div><div class="setting-row"><div><strong>Numbers</strong><small>Locale formatting</small></div><strong>1,234.56</strong></div><div class="button-row spacer-top"><button class="button button-secondary" data-page="tools" data-tools-tab="transfer">Import / Export</button><button class="button button-danger" data-action="phase-three">Reset application</button></div></section>
+      <section class="panel setting-group planned-system"><div class="setting-title-line"><h2>Display texture</h2><span class="chip warn">PLANNED</span></div><div class="planned-display"><strong>INDEPENDENT DISPLAY RENDERING LAYER</strong><p>Future control for Clean, MFD Glass, CRT / Phosphor and Industrial LCD treatments.</p><div class="planned-map"><span>Drake <b>CRT / Phosphor</b></span><span>RSI <b>MFD Glass</b></span><span>MISC <b>Industrial LCD</b></span><span>Neutral <b>Clean</b></span></div></div><small>No control is enabled in Checkpoint 1. This system will remain separate from manufacturer chassis themes.</small></section>
     </div>
   </section>`;
 }

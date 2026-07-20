@@ -10,7 +10,7 @@ Serve this directory with any static HTTP server, then open `index.html` through
 python -m http.server 4173
 ```
 
-## Checkpoint 1 visual prototype
+## Checkpoint 1
 
 This checkpoint includes:
 
@@ -26,7 +26,9 @@ This checkpoint includes:
 - an original CSS-built display grid, scanlines, chassis texture and navigation map treatment;
 - a visible unofficial fan-tool disclaimer and link to the official Star Citizen website.
 
-The manufacturer visual language demonstrated on Mission Planner and Active Route is approved as the basis for the remaining interface work.
+The approved manufacturer MFD visual language now covers all nine pages. Dashboard, Hauling, Map, Fleet, Intel, Tools and Settings use page-specific operational compositions while sharing the same chassis, display, control and theme-token architecture established by Mission Planner and Active Route.
+
+Checkpoint 1 visual QA covers every page at 1680×900, plus Mission Planner and Active Route at 1920×1080 and 1366×768. The compact navigation and every dialog/drawer are also verified at 1366×768.
 
 ## Approved future visual setting: display texture
 
