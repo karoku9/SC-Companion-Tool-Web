@@ -1,5 +1,2 @@
 @import url("styles-base.css");
-@import url("styles-map-route.css");
-@import url("styles-pages.css");
-@import url("styles-overlay.css");
-@import url("styles-responsive.css");
+@import url("styles-active.css");
