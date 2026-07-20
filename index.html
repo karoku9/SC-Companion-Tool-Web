@@ -50,7 +50,7 @@
       </nav>
 
       <div class="sidebar-foot">
-        <div class="connection-dot"><i></i><span><strong>Local prototype</strong><small>No live telemetry</small></span></div>
+        <div class="connection-dot"><i></i><span><strong>Local application</strong><small>No live telemetry</small></span></div>
         <a class="fan-disclaimer" href="https://robertsspaceindustries.com/" target="_blank" rel="noreferrer">Unofficial fan tool · Star Citizen official site ↗</a>
         <button class="icon-text-button" id="collapseSidebar" type="button" title="Collapse sidebar"><span>‹</span><span class="nav-label">Collapse</span></button>
       </div>
@@ -82,17 +82,17 @@
   <div class="toast-region" id="toastRegion" aria-live="polite" aria-atomic="true"></div>
 
   <dialog class="dialog" id="missionDialog" aria-labelledby="missionDialogTitle">
-    <form class="dialog-card mission-form" id="missionForm">
+    <form class="dialog-card mission-form" id="missionForm" novalidate>
       <header class="dialog-header">
         <div><span class="eyebrow">Contract mission</span><h2 id="missionDialogTitle">Create mission</h2></div>
         <button class="close-button" type="button" data-close-dialog aria-label="Close mission editor">×</button>
       </header>
       <div class="dialog-body">
         <div class="form-grid">
-          <label class="field"><span>Mission title</span><input id="missionTitle" name="title" required maxlength="80"></label>
+          <label class="field"><span>Mission title</span><input id="missionTitle" name="title" required maxlength="80"><small class="field-error" data-error-for="title"></small></label>
           <label class="field"><span>Mission type</span><select id="missionType" name="type"><option>Hauling</option><option>Priority hauling</option><option>Delivery</option><option>Recovery</option></select></label>
           <label class="field"><span>Reference</span><input id="missionReference" name="reference" maxlength="30"></label>
-          <label class="field"><span>Reward (aUEC)</span><input id="missionReward" name="reward" type="number" min="0" step="50"></label>
+          <label class="field"><span>Reward (aUEC)</span><input id="missionReward" name="reward" type="number" min="0" step="50"><small class="field-error" data-error-for="reward"></small></label>
           <label class="field field-wide"><span>Notes <em>Optional</em></span><textarea id="missionNotes" name="notes" rows="2"></textarea></label>
         </div>
         <div class="lot-editor-heading">
@@ -100,6 +100,7 @@
           <button class="button button-secondary button-small" id="addCargoLot" type="button">Add cargo lot</button>
         </div>
         <div class="cargo-editor" id="cargoEditor"></div>
+        <div class="form-error" id="missionFormError" role="alert" hidden></div>
       </div>
       <footer class="dialog-footer">
         <button class="button button-ghost" type="button" data-close-dialog>Cancel</button>
@@ -109,7 +110,7 @@
   </dialog>
 
   <dialog class="dialog" id="importDialog" aria-labelledby="importDialogTitle">
-    <form class="dialog-card import-form" id="importForm">
+    <form class="dialog-card import-form" id="importForm" novalidate>
       <header class="dialog-header">
         <div><span class="eyebrow">Readable import</span><h2 id="importDialogTitle">Paste a hauling contract</h2></div>
         <button class="close-button" type="button" data-close-dialog aria-label="Close mission import">×</button>
@@ -132,6 +133,7 @@ Delivery: Area18
 Note: Front cargo grid</pre>
           </aside>
         </div>
+        <div class="import-preview" id="importPreview" aria-live="polite"></div>
       </div>
       <footer class="dialog-footer">
         <button class="button button-ghost" type="button" data-close-dialog>Cancel</button>
@@ -146,10 +148,10 @@ Note: Front cargo grid</pre>
         <div><span class="eyebrow">Please confirm</span><h2 id="confirmTitle">Remove mission?</h2></div>
         <button class="close-button" value="cancel" aria-label="Close confirmation">×</button>
       </header>
-      <div class="dialog-body"><p class="dialog-message" id="confirmMessage"></p></div>
+      <div class="dialog-body"><p class="dialog-message" id="confirmMessage"></p><label class="field spacer-top" id="confirmInputWrap" hidden><span id="confirmInputLabel">Type to confirm</span><input id="confirmInput" autocomplete="off"><small class="field-error" id="confirmInputError"></small></label></div>
       <footer class="dialog-footer">
-        <button class="button button-ghost" value="cancel">Keep it</button>
-        <button class="button button-danger" id="confirmAction" value="default">Remove</button>
+        <button class="button button-ghost" value="cancel">Cancel</button>
+        <button class="button button-danger" id="confirmAction" type="button">Remove</button>
       </footer>
     </form>
   </dialog>
@@ -175,6 +177,9 @@ Note: Front cargo grid</pre>
     <div class="drawer-body" id="drawerBody"></div>
   </aside>
   <div class="drawer-scrim" id="drawerScrim" hidden></div>
+
+  <datalist id="locationList"></datalist>
+  <datalist id="commodityList"></datalist>
 
   <script src="data.js"></script>
   <script src="app.js"></script>
