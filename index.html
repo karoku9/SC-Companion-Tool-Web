@@ -1,209 +1,182 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="drake">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#080b10">
-  <meta name="description" content="SC Companion Tool — clean cargo mission and route planner for Star Citizen.">
-  <title>SC Companion Tool</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#0b1013">
+  <meta name="description" content="A calm cargo companion for Star Citizen mission hauling and commodity runs.">
+  <title>Waypoint Cargo Companion</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23162025'/%3E%3Cpath d='M7 10 16 5l9 5v12l-9 5-9-5z' fill='none' stroke='%2355d7c6' stroke-width='2'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div class="app">
-    <header class="topbar">
-      <button class="brand" type="button" data-view="planner" aria-label="Open Planner">
-        <span class="brand-icon">SC</span>
-        <span><strong>SC Companion</strong><small>Cargo operations</small></span>
-      </button>
+  <div class="app-shell" id="appShell">
+    <aside class="sidebar" id="sidebar" aria-label="Application sidebar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 40 40"><path d="M7 11.5 20 4l13 7.5v17L20 36 7 28.5z"/><path d="m13 15 7-4 7 4v9l-7 4-7-4z"/></svg>
+        </div>
+        <div class="brand-copy"><strong>WAYPOINT</strong><span>FREIGHT // OPS</span></div>
+      </div>
 
-      <nav class="tabs" aria-label="Primary navigation">
-        <button class="tab is-active" type="button" data-view="planner">Planner</button>
-        <button class="tab" type="button" data-view="active">Active Route</button>
-        <button class="tab" type="button" data-view="fleet">Fleet</button>
-        <button class="tab" type="button" data-view="intel">Intel</button>
-        <button class="tab" type="button" data-view="settings">Settings</button>
+      <nav class="primary-nav" aria-label="Primary navigation">
+        <button class="nav-item is-active" type="button" data-page="dashboard" aria-label="Dashboard" title="Dashboard" aria-current="page">
+          <span class="nav-icon">⌂</span><span class="nav-label">Dashboard</span>
+        </button>
+        <button class="nav-item" type="button" data-page="planner" aria-label="Mission Planner" title="Mission Planner">
+          <span class="nav-icon">＋</span><span class="nav-label">Mission Planner</span>
+        </button>
+        <button class="nav-item" type="button" data-page="active" aria-label="Active Route" title="Active Route">
+          <span class="nav-icon">→</span><span class="nav-label">Active Route</span><span class="nav-badge">8</span>
+        </button>
+        <button class="nav-item" type="button" data-page="hauling" aria-label="Hauling" title="Hauling">
+          <span class="nav-icon">⇄</span><span class="nav-label">Hauling</span>
+        </button>
+        <button class="nav-item" type="button" data-page="map" aria-label="Map" title="Map">
+          <span class="nav-icon">◇</span><span class="nav-label">Map</span>
+        </button>
+        <button class="nav-item" type="button" data-page="fleet" aria-label="Fleet" title="Fleet">
+          <span class="nav-icon">▰</span><span class="nav-label">Fleet</span>
+        </button>
+        <button class="nav-item" type="button" data-page="intel" aria-label="Intel" title="Intel">
+          <span class="nav-icon">◎</span><span class="nav-label">Intel</span>
+        </button>
+        <button class="nav-item" type="button" data-page="tools" aria-label="Tools" title="Tools">
+          <span class="nav-icon">⌁</span><span class="nav-label">Tools</span>
+        </button>
+        <button class="nav-item" type="button" data-page="settings" aria-label="Settings" title="Settings">
+          <span class="nav-icon">⚙</span><span class="nav-label">Settings</span>
+        </button>
       </nav>
 
-      <div class="top-actions">
-        <div class="data-status"><i></i><span><b>4.9 profile</b><small>local data</small></span></div>
-        <button class="icon-btn" id="saveButton" type="button" title="Save">Save</button>
+      <div class="sidebar-foot">
+        <div class="connection-dot"><i></i><span><strong>Local prototype</strong><small>No live telemetry</small></span></div>
+        <a class="fan-disclaimer" href="https://robertsspaceindustries.com/" target="_blank" rel="noreferrer">Unofficial fan tool · Star Citizen official site ↗</a>
+        <button class="icon-text-button" id="collapseSidebar" type="button" title="Collapse sidebar"><span>‹</span><span class="nav-label">Collapse</span></button>
       </div>
-    </header>
+    </aside>
 
-    <main>
-      <section class="view is-active" id="plannerView" data-view-panel="planner">
-        <div class="planner-grid">
-          <aside class="panel setup-panel">
-            <div class="panel-title">
-              <div><span class="kicker">Setup</span><h1>Hauling run</h1></div>
-              <button class="link-btn" id="resetButton" type="button">Reset</button>
-            </div>
-
-            <section class="form-section">
-              <div class="section-head"><span>01</span><div><h2>Ship</h2><p>Fixed community cargo capacity.</p></div></div>
-              <label class="field"><span>Ship</span><select id="shipSelect"></select></label>
-              <div class="ship-card">
-                <div class="ship-silhouette">◇</div>
-                <div><strong id="shipName"></strong><small id="shipRole"></small></div>
-                <b id="shipCapacity"></b>
-              </div>
-            </section>
-
-            <section class="form-section">
-              <div class="section-head"><span>02</span><div><h2>Starting location</h2><p>Current in-app position.</p></div></div>
-              <label class="field"><span>Location</span><select id="startSelect"></select></label>
-            </section>
-
-            <section class="form-section missions-section">
-              <div class="section-head with-action"><span>03</span><div><h2>Missions</h2><p id="missionSummary">0 missions · 0 SCU</p></div><button class="small-btn" id="importMissionButton" type="button">Import</button></div>
-              <div class="mission-list" id="missionList"></div>
-              <button class="primary-btn full" id="addMissionButton" type="button">+ Add mission</button>
-            </section>
-          </aside>
-
-          <section class="map-panel">
-            <div class="map-header">
-              <div><span class="kicker">Stanton navigation</span><h2 id="mapTitle">Orbital map</h2></div>
-              <div class="map-controls">
-                <div class="segmented" id="mapModeSwitch">
-                  <button class="is-active" type="button" data-map-mode="orbital">Orbital</button>
-                  <button type="button" data-map-mode="tree">Entity tree</button>
-                </div>
-                <button class="small-btn" id="fitMapButton" type="button">Fit</button>
-              </div>
-            </div>
-
-            <div class="map-body">
-              <div class="map-view is-active" id="orbitalMapView">
-                <svg id="systemMap" viewBox="0 0 1000 680" role="img" aria-label="Stanton orbital route map">
-                  <defs>
-                    <radialGradient id="starGradient"><stop offset="0" stop-color="#fff3b0"/><stop offset=".3" stop-color="#d3b35a"/><stop offset="1" stop-color="#9b7c2b"/></radialGradient>
-                    <filter id="softGlow"><feGaussianBlur stdDeviation="4" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-                  </defs>
-                  <g id="mapGrid"></g>
-                  <g id="mapOrbits"></g>
-                  <g id="routeLayer"></g>
-                  <g id="nodeLayer"></g>
-                </svg>
-                <div class="map-legend"><span><i class="start-dot"></i>Start</span><span><i class="pickup-dot"></i>Pickup</span><span><i class="delivery-dot"></i>Delivery</span><span><i class="route-line"></i>Route</span></div>
-              </div>
-
-              <div class="map-view" id="entityTreeView">
-                <div class="tree-columns">
-                  <div class="tree-browser" id="treeBrowser"></div>
-                  <aside class="tree-inspector" id="treeInspector"></aside>
-                </div>
-              </div>
-            </div>
-
-            <div class="map-footer">
-              <div><span class="kicker">Selected location</span><strong id="selectedLocationName">Stanton</strong><small id="selectedLocationMeta">System overview</small></div>
-              <div class="footer-stats"><span><b id="knownStopsCount">0</b> known stops</span><span><b id="routeStopsCount">0</b> route stops</span><span><b id="mapModeLabel">Orbital</b> mode</span></div>
-            </div>
-          </section>
-
-          <aside class="panel route-panel">
-            <div class="panel-title">
-              <div><span class="kicker">Route brief</span><h2>Mission preview</h2></div>
-              <span class="status-pill" id="routeStatus">Draft</span>
-            </div>
-
-            <section class="capacity-box">
-              <div><span>Planned cargo</span><strong><b id="plannedScu">0</b> / <b id="capacityScu">0</b> SCU</strong></div>
-              <div class="capacity-track"><i id="capacityFill"></i></div>
-              <div><small id="capacityPercent">0% capacity</small><small id="capacityFree">0 SCU free</small></div>
-            </section>
-
-            <div class="metric-grid">
-              <article><span>Distance</span><strong id="distanceMetric">—</strong><small>Relative estimate</small></article>
-              <article><span>Reward</span><strong id="rewardMetric">0</strong><small>aUEC</small></article>
-              <article><span>Stops</span><strong id="stopsMetric">0</strong><small id="stopsMeta">0 pickup · 0 delivery</small></article>
-              <article><span>Fuel load</span><strong id="fuelMetric">—</strong><small>Route estimate</small></article>
-            </div>
-
-            <section class="arrival-card" id="arrivalCard">
-              <span class="kicker">Next destination</span>
-              <h3 id="arrivalName">No route calculated</h3>
-              <p id="arrivalDescription">Add or import missions, then calculate the route.</p>
-              <div class="chips" id="arrivalChips"></div>
-            </section>
-
-            <section class="timeline-card">
-              <div class="timeline-head"><h3>Route timeline</h3><span id="timelineCount">0 stops</span></div>
-              <ol class="timeline" id="routeTimeline"></ol>
-            </section>
-
-            <div class="route-actions">
-              <button class="primary-btn" id="calculateButton" type="button">Calculate route</button>
-              <button class="secondary-btn" id="startRouteButton" type="button" disabled>Start route</button>
-            </div>
-          </aside>
+    <div class="workspace">
+      <header class="topbar">
+        <button class="menu-button" id="menuButton" type="button" aria-label="Open navigation" aria-expanded="false">☰</button>
+        <div class="page-identity">
+          <span id="pageEyebrow">Operations overview</span>
+          <h1 id="pageTitle">Dashboard</h1>
         </div>
-      </section>
-
-      <section class="view page-view" id="activeView" data-view-panel="active">
-        <div class="page-heading"><div><span class="kicker">Live operations</span><h1>Active Route</h1><p>App-tracked progress. No fake telemetry or movement.</p></div><div><button class="secondary-btn" type="button" data-view="planner">Back to Planner</button><button class="danger-btn" id="endRouteButton" type="button">End route</button></div></div>
-        <div class="active-layout">
-          <section class="active-map-card">
-            <div class="card-head"><div><span class="kicker">Current leg</span><h2 id="activeLegTitle">No active route</h2></div><span class="status-pill" id="activeStatus">Idle</span></div>
-            <svg id="activeMap" viewBox="0 0 1000 680" role="img" aria-label="Current route leg map"></svg>
-          </section>
-          <aside class="active-side">
-            <section class="info-card"><span class="kicker">Current objective</span><h2 id="activeStopName">Start a route</h2><div id="activeActions" class="objective-list"></div><button class="primary-btn full" id="completeStopButton" type="button" disabled>Complete stop</button></section>
-            <section class="info-card"><span class="kicker">Arrival profile</span><h3 id="activeArrivalName">—</h3><p id="activeArrivalDescription">No destination selected.</p><div class="chips" id="activeArrivalChips"></div></section>
-            <section class="info-card route-queue-card"><div class="card-head compact"><h3>Route queue</h3><span id="activeProgress">0 / 0</span></div><ol class="queue" id="activeQueue"></ol></section>
-          </aside>
+        <div class="topbar-actions">
+          <div class="location-chip"><span>Current location</span><strong id="headerLocation">Everus Harbor</strong></div>
+          <div class="ship-chip"><span><b id="headerShipCapacity">576 SCU</b> · <b id="headerTheme">DRAKE SYS</b></span><strong id="headerShip">Drake Caterpillar</strong></div>
+          <button class="avatar-button" type="button" data-open-menu="profile" aria-label="Open pilot menu">WK</button>
+          <div class="popover" id="profileMenu" data-popover="profile" hidden>
+            <strong>Waypoint Pilot</strong><span>Local profile</span>
+            <button type="button" data-page="settings">Open settings</button>
+          </div>
         </div>
-      </section>
+      </header>
 
-      <section class="view page-view" data-view-panel="fleet">
-        <div class="page-heading"><div><span class="kicker">Fleet</span><h1>Ship profiles</h1><p>Fixed cargo capacities used by the planner.</p></div></div>
-        <div class="simple-grid" id="fleetGrid"></div>
-      </section>
-
-      <section class="view page-view" data-view-panel="intel">
-        <div class="page-heading"><div><span class="kicker">Intel</span><h1>Location reference</h1><p>Fixed service and risk profiles. Not real-time.</p></div></div>
-        <div class="simple-grid" id="intelGrid"></div>
-      </section>
-
-      <section class="view page-view" data-view-panel="settings">
-        <div class="page-heading"><div><span class="kicker">Settings</span><h1>Local data</h1><p>This build stores data only in this browser.</p></div></div>
-        <div class="settings-card"><button class="secondary-btn" id="exportButton" type="button">Export data</button><button class="secondary-btn" id="importDataButton" type="button">Import data</button><button class="danger-btn" id="clearDataButton" type="button">Clear local data</button><input id="importDataFile" type="file" accept="application/json" hidden></div>
-      </section>
-    </main>
-
-    <footer class="statusbar">
-      <span><i></i>Local planner ready</span>
-      <span id="footerRouteState">No active route</span>
-      <span id="footerCargoState">0 SCU planned</span>
-    </footer>
+      <main class="page-frame" id="pageFrame" tabindex="-1"></main>
+    </div>
   </div>
 
-  <dialog id="missionDialog">
-    <form method="dialog" class="dialog-shell" id="missionForm">
-      <div class="dialog-head"><div><span class="kicker">Mission editor</span><h2 id="missionDialogTitle">Add mission</h2></div><button class="icon-btn" value="cancel" type="submit">Close</button></div>
-      <input id="missionId" type="hidden">
-      <div class="dialog-grid">
-        <label class="field"><span>Name</span><input id="missionName" required></label>
-        <label class="field"><span>Reference</span><input id="missionReference"></label>
-        <label class="field"><span>Type</span><select id="missionType"><option>Hauling</option><option>Delivery</option><option>Priority</option><option>Manual logistics</option><option>Other</option></select></label>
-        <label class="field"><span>Reward (aUEC)</span><input id="missionReward" type="number" min="0" step="500"></label>
+  <div class="mobile-scrim" id="mobileScrim" hidden></div>
+  <div class="toast-region" id="toastRegion" aria-live="polite" aria-atomic="true"></div>
+
+  <dialog class="dialog" id="missionDialog" aria-labelledby="missionDialogTitle">
+    <form class="dialog-card mission-form" id="missionForm">
+      <header class="dialog-header">
+        <div><span class="eyebrow">Contract mission</span><h2 id="missionDialogTitle">Create mission</h2></div>
+        <button class="close-button" type="button" data-close-dialog aria-label="Close mission editor">×</button>
+      </header>
+      <div class="dialog-body">
+        <div class="form-grid">
+          <label class="field"><span>Mission title</span><input id="missionTitle" name="title" required maxlength="80"></label>
+          <label class="field"><span>Mission type</span><select id="missionType" name="type"><option>Hauling</option><option>Priority hauling</option><option>Delivery</option><option>Recovery</option></select></label>
+          <label class="field"><span>Reference</span><input id="missionReference" name="reference" maxlength="30"></label>
+          <label class="field"><span>Reward (aUEC)</span><input id="missionReward" name="reward" type="number" min="0" step="50"></label>
+          <label class="field field-wide"><span>Notes <em>Optional</em></span><textarea id="missionNotes" name="notes" rows="2"></textarea></label>
+        </div>
+        <div class="lot-editor-heading">
+          <div><h3>Cargo lots</h3><p>Each lot keeps its mission identity throughout the route.</p></div>
+          <button class="button button-secondary button-small" id="addCargoLot" type="button">Add cargo lot</button>
+        </div>
+        <div class="cargo-editor" id="cargoEditor"></div>
       </div>
-      <div class="cargo-editor-head"><h3>Cargo items</h3><button class="small-btn" id="addCargoButton" type="button">+ Cargo item</button></div>
-      <div id="cargoEditorList" class="cargo-editor-list"></div>
-      <div class="dialog-actions"><button class="secondary-btn" value="cancel" type="submit">Cancel</button><button class="primary-btn" id="saveMissionButton" value="default" type="submit">Save mission</button></div>
+      <footer class="dialog-footer">
+        <button class="button button-ghost" type="button" data-close-dialog>Cancel</button>
+        <button class="button button-primary" type="submit">Save mission</button>
+      </footer>
     </form>
   </dialog>
 
-  <dialog id="importMissionDialog">
-    <form method="dialog" class="dialog-shell import-dialog" id="importMissionForm">
-      <div class="dialog-head"><div><span class="kicker">Mission import</span><h2>Paste readable mission text</h2></div><button class="icon-btn" value="cancel" type="submit">Close</button></div>
-      <div class="format-help">Mission: Stanton freight run<br>Reference: TEST-01<br>Reward: 25000<br><br>Cargo:<br>Commodity: Neon<br>SCU: 4<br>Pickup: Baijini Point<br>Delivery: Area18</div>
-      <label class="field"><span>Mission text</span><textarea id="importMissionText" required></textarea></label>
-      <div class="dialog-actions"><button class="secondary-btn" value="cancel" type="submit">Cancel</button><button class="primary-btn" id="parseMissionButton" value="default" type="submit">Parse and review</button></div>
+  <dialog class="dialog" id="importDialog" aria-labelledby="importDialogTitle">
+    <form class="dialog-card import-form" id="importForm">
+      <header class="dialog-header">
+        <div><span class="eyebrow">Readable import</span><h2 id="importDialogTitle">Paste a hauling contract</h2></div>
+        <button class="close-button" type="button" data-close-dialog aria-label="Close mission import">×</button>
+      </header>
+      <div class="dialog-body">
+        <div class="import-layout">
+          <label class="field"><span>Mission text</span><textarea id="importText" rows="18" required spellcheck="false"></textarea></label>
+          <aside class="format-example">
+            <span class="eyebrow">Supported format</span>
+            <pre>Mission: Covalex freight transfer
+Type: Hauling
+Reference: M-03
+Reward: 46250
+
+Cargo:
+Commodity: Agricium
+SCU: 8
+Pickup: ArcCorp Mining Area 056
+Delivery: Area18
+Note: Front cargo grid</pre>
+          </aside>
+        </div>
+      </div>
+      <footer class="dialog-footer">
+        <button class="button button-ghost" type="button" data-close-dialog>Cancel</button>
+        <button class="button button-primary" type="submit">Import and review</button>
+      </footer>
     </form>
   </dialog>
 
+  <dialog class="dialog dialog-small" id="confirmDialog" aria-labelledby="confirmTitle">
+    <form class="dialog-card" method="dialog">
+      <header class="dialog-header">
+        <div><span class="eyebrow">Please confirm</span><h2 id="confirmTitle">Remove mission?</h2></div>
+        <button class="close-button" value="cancel" aria-label="Close confirmation">×</button>
+      </header>
+      <div class="dialog-body"><p class="dialog-message" id="confirmMessage"></p></div>
+      <footer class="dialog-footer">
+        <button class="button button-ghost" value="cancel">Keep it</button>
+        <button class="button button-danger" id="confirmAction" value="default">Remove</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <dialog class="dialog" id="featureDialog" aria-labelledby="featureDialogTitle">
+    <div class="dialog-card">
+      <header class="dialog-header">
+        <div><span class="eyebrow" id="featureDialogEyebrow">Prototype tool</span><h2 id="featureDialogTitle">Feature preview</h2></div>
+        <button class="close-button" type="button" data-close-dialog aria-label="Close feature preview">×</button>
+      </header>
+      <div class="dialog-body" id="featureDialogBody"></div>
+      <footer class="dialog-footer">
+        <button class="button button-primary" type="button" data-close-dialog>Done</button>
+      </footer>
+    </div>
+  </dialog>
+
+  <aside class="drawer" id="routeDrawer" aria-labelledby="drawerTitle" aria-hidden="true">
+    <header class="drawer-header">
+      <div><span class="eyebrow">Route intelligence</span><h2 id="drawerTitle">Trade route details</h2></div>
+      <button class="close-button" type="button" data-close-drawer aria-label="Close route details">×</button>
+    </header>
+    <div class="drawer-body" id="drawerBody"></div>
+  </aside>
+  <div class="drawer-scrim" id="drawerScrim" hidden></div>
+
+  <script src="data.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
