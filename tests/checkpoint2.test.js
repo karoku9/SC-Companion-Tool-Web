@@ -9,6 +9,8 @@ const vm = require('node:vm');
 const root = path.resolve(__dirname, '..');
 const dataSource = fs.readFileSync(path.join(root, 'data.js'), 'utf8');
 const appSource = fs.readFileSync(path.join(root, 'app.js'), 'utf8');
+const htmlSource = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+const styleSource = fs.readFileSync(path.join(root, 'styles.css'), 'utf8');
 const definitions = appSource.slice(0, appSource.indexOf("document.addEventListener('click'"));
 
 function loadCore(savedValue = null) {
@@ -26,7 +28,7 @@ function loadCore(savedValue = null) {
     clearTimeout
   });
   vm.runInContext(dataSource, context, { filename: 'data.js' });
-  vm.runInContext(`${definitions}\nglobalThis.__core = { state, normalizeMission, generateRoute, statusDerived, persistedState };`, context, { filename: 'app.js' });
+  vm.runInContext(`${definitions}\nglobalThis.__core = { state, normalizeMission, generateRoute, statusDerived, persistedState, fleetShipLabel, routeStartContext, plannerChangeNotice };`, context, { filename: 'app.js' });
   return context.__core;
 }
 
@@ -99,4 +101,69 @@ test('Scenario H: malformed persisted data falls back to safe defaults', () => {
   assert.ok(core.state.fleet.length > 0);
   assert.ok(core.state.missions.length > 0);
   assert.ok(core.state.plannedRoute.steps.length > 0);
+});
+
+test('Checkpoint 2.1: active route snapshot survives all Planner source changes', () => {
+  const core = loadCore();
+  const snapshot = JSON.stringify(core.state.activeRoute);
+  const unchanged = action => { action(); assert.equal(JSON.stringify(core.state.activeRoute), snapshot); };
+
+  unchanged(() => { core.state.missions[0] = { ...core.state.missions[0], title: 'Edited source mission' }; core.state.plannedRoute = null; });
+  unchanged(() => { core.state.missions = core.state.missions.slice(1); core.state.plannedRoute = null; });
+  unchanged(() => { const source = core.state.missions[0]; core.state.missions.push({ ...JSON.parse(JSON.stringify(source)), id: 'duplicate-mission' }); core.state.plannedRoute = null; });
+  unchanged(() => { core.state.selectedShipId = core.state.fleet[1].id; core.state.plannedRoute = null; });
+  unchanged(() => { core.state.startingLocationId = 'port-tressler'; core.state.plannedRoute = null; });
+  unchanged(() => { core.state.plannedRoute = core.generateRoute(core.state.missions, core.state.startingLocationId); });
+
+  assert.equal(core.state.activeRoute.shipSnapshot.label, 'Long Haul — Drake Caterpillar');
+  assert.equal(core.state.activeRoute.startingLocationSnapshot.name, 'Everus Harbor');
+  assert.equal(core.plannerChangeNotice(), 'The current active route will remain unchanged. Recalculate to apply Planner changes.');
+});
+
+test('Checkpoint 2.1: legacy active routes gain ship and origin metadata without route mutation', () => {
+  const seed = loadCore();
+  const saved = JSON.parse(JSON.stringify(seed.persistedState(seed.state)));
+  const originalSteps = JSON.stringify(saved.activeRoute.steps);
+  const originalManifest = JSON.stringify(saved.activeRoute.manifest);
+  delete saved.activeRoute.shipSnapshot;
+  delete saved.activeRoute.startingLocationSnapshot;
+  const migrated = loadCore(JSON.stringify(saved));
+  assert.equal(migrated.state.activeRoute.shipSnapshot.label, 'Long Haul — Drake Caterpillar');
+  assert.equal(migrated.state.activeRoute.startingLocationSnapshot.name, 'Everus Harbor');
+  assert.equal(JSON.stringify(migrated.state.activeRoute.steps), originalSteps);
+  assert.equal(JSON.stringify(migrated.state.activeRoute.manifest), originalManifest);
+});
+
+test('Checkpoint 2.1: starting any new route detects and describes active-route replacement', () => {
+  const core = loadCore();
+  assert.equal(core.routeStartContext().replacingActive, true);
+  assert.match(appSource, /This will end and replace the current active route\./);
+  core.state.missions[0].cargo[0].scu = 9999;
+  assert.ok(core.routeStartContext().overBy > 0);
+  assert.match(appSource, /actionLabel: 'Start overloaded route'/);
+});
+
+test('Checkpoint 2.1: ship labels retain nickname and model everywhere', () => {
+  const core = loadCore();
+  const entry = core.state.fleet[0];
+  assert.equal(core.fleetShipLabel(entry), 'Long Haul — Drake Caterpillar');
+  assert.equal(core.fleetShipLabel({ shipId: 'taurus', nickname: '' }), 'RSI Constellation Taurus');
+  assert.doesNotMatch(appSource, /markupSafe\(entry\.nickname \|\| ship\.name\)/);
+});
+
+test('Checkpoint 2.1: dialog and sidebar copy are unambiguous', () => {
+  assert.match(htmlSource, />Cancel<\/button>/);
+  assert.doesNotMatch(htmlSource, />Keep it<\/button>/);
+  assert.match(htmlSource, /<strong>Local application<\/strong><small>No live telemetry<\/small>/);
+});
+
+test('Checkpoint 2.1: map and Entity Tree expose distinct static route states', () => {
+  ['is-completed', 'is-current', 'is-remaining'].forEach(stateClass => assert.match(appSource, new RegExp(stateClass)));
+  assert.match(styleSource, /path\.is-completed[^}]*opacity:\.3/);
+  assert.match(styleSource, /path\.is-current[^}]*stroke-width:1\.35/);
+  assert.match(styleSource, /path\.is-remaining[^}]*accent-secondary/);
+  assert.match(styleSource, /button\.is-completed[^}]*opacity:\.58/);
+  assert.match(styleSource, /button\.is-current[^}]*accent-emissive/);
+  assert.match(styleSource, /button\.is-remaining small[^}]*accent-secondary/);
+  assert.doesNotMatch(styleSource, /(?:route-line-svg|map-node|tree-children)[^}]*animation:/);
 });
