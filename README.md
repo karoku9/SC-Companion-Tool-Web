@@ -92,3 +92,11 @@ See [CHECKPOINT-3.md](CHECKPOINT-3.md) for formulas, schemas, migration and merg
 Live market APIs, OCR recognition, Game.log monitoring, cloud synchronization and display textures remain deferred.
 
 The static application remains dependency-free. Automated core checks use Node's built-in test runner.
+
+## Project documentation baseline
+
+- [CHANGELOG.md](CHANGELOG.md) is the append-only checkpoint and release history.
+- [PROJECT-CHECKLIST.md](PROJECT-CHECKLIST.md) separates completed functionality, next priorities, future work, visual/demo-only surfaces, and deferred integrations.
+- [PROJECT-STATE.md](PROJECT-STATE.md) is the current technical and product handoff.
+
+For every future implementation task, read all three files before planning or editing. Update every affected document in the same commit as the code; append to the changelog without deleting, reordering, or silently rewriting prior entries; keep checklist state and newly discovered work current; explain meaningful additions, changes, removals, and deferrals; document storage migrations and breaking changes; and report tests plus known limitations. Documentation updates are mandatory deliverables.
