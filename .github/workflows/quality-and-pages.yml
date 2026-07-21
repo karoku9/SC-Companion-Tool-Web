@@ -49,6 +49,7 @@ jobs:
           node --check ship-catalog.js
           node --check cargo-planner.js
           node --check session-store.js
+          node --check starmap-data.js
           node --check roadmap.js
           node --check app.js
           node --check sections.js
@@ -56,6 +57,7 @@ jobs:
           node --check route-view.js
           node --check cargo-view.js
           node --check hangar-view.js
+          node --check starmap-view.js
           node --check location-intel-view.js
           node --check roadmap-view.js
 
