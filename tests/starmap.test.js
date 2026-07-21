@@ -6,6 +6,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const starmap = require('../starmap-data.js');
 const roadmap = require('../roadmap.js');
+const pages = require('../product-pages.js');
 
 test('starmap exposes unique playable Stanton, Pyro and Nyx systems', () => {
   assert.deepEqual(starmap.systems.map((system) => system.id), ['stanton', 'pyro', 'nyx']);
@@ -41,9 +42,10 @@ test('supported mission locations resolve to stable system anchors', () => {
   });
 });
 
-test('map page loads the lightweight canvas renderer and separate stylesheet', () => {
+test('map page loads the lightweight canvas renderer and generated navigation entry', () => {
   const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
-  assert.match(html, /data-view-target="map"/);
+  assert.equal(pages.getPage('map').status, 'live');
+  assert.match(html, /data-view="map"/);
   assert.match(html, /id="starmap-canvas"/);
   assert.match(html, /href="starmap\.css"/);
   assert.match(html, /src="starmap-data\.js"/);
