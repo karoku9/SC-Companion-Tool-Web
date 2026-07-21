@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="roadmap.css">
   <link rel="stylesheet" href="sections.css">
   <link rel="stylesheet" href="planner.css">
+  <link rel="stylesheet" href="starmap.css">
 </head>
 <body>
   <main class="app-shell">
@@ -20,6 +21,7 @@
           <button type="button" data-view-target="route" aria-selected="false">ROUTE</button>
           <button type="button" data-view-target="cargo" aria-selected="false">CARGO</button>
           <button type="button" data-view-target="hangar" aria-selected="false">HANGAR</button>
+          <button type="button" data-view-target="map" aria-selected="false">MAP</button>
           <button type="button" data-view-target="locations" aria-selected="false">LOCATIONS</button>
           <button type="button" data-view-target="companion" aria-selected="false">COMPANION</button>
           <button type="button" data-view-target="roadmap" aria-selected="false">ROADMAP</button>
@@ -92,6 +94,47 @@
       </div>
     </section>
 
+    <section class="app-view section-block" data-view="map" id="map" hidden>
+      <header class="section-heading">
+        <div><p class="eyebrow">3D STARMAP</p><h2>Systems, orbits and active-route context</h2></div>
+        <p>A lightweight interactive 3D projection. Visual coordinates are schematic unless an explicit source says otherwise.</p>
+      </header>
+      <div class="starmap-shell">
+        <div class="starmap-stage">
+          <div class="starmap-toolbar" aria-label="Starmap views">
+            <button type="button" data-map-mode="network" aria-pressed="true">OVERVIEW</button>
+            <button type="button" data-map-mode="stanton" aria-pressed="false">STANTON</button>
+            <button type="button" data-map-mode="pyro" aria-pressed="false">PYRO</button>
+            <button type="button" data-map-mode="nyx" aria-pressed="false">NYX</button>
+          </div>
+          <canvas id="starmap-canvas" aria-label="Interactive schematic three-dimensional starmap"></canvas>
+          <span class="starmap-mode" id="starmap-mode">SYSTEM NETWORK · SCHEMATIC 3D</span>
+        </div>
+        <aside class="starmap-sidebar">
+          <article class="starmap-panel">
+            <p class="eyebrow">SELECTED OBJECT</p>
+            <h3 id="starmap-selection-title">Stanton</h3>
+            <span class="starmap-selection-type" id="starmap-selection-type">Corporate system</span>
+            <p id="starmap-selection-detail">UEE and corporate jurisdiction. Playable.</p>
+          </article>
+          <article class="starmap-panel">
+            <p class="eyebrow">ACTIVE ROUTE</p>
+            <p class="starmap-route-status" id="starmap-route-status">Generate a mission route to add an overlay.</p>
+          </article>
+          <article class="starmap-panel">
+            <p class="eyebrow">CONTROLS</p>
+            <ul class="starmap-instructions">
+              <li><strong>DRAG</strong><span>Rotate the scene</span></li>
+              <li><strong>WHEEL</strong><span>Zoom in and out</span></li>
+              <li><strong>CLICK</strong><span>Inspect an object</span></li>
+              <li><strong>DOUBLE</strong><span>Open a system from overview</span></li>
+            </ul>
+          </article>
+          <div class="starmap-disclaimer" id="starmap-data-note">System coordinates are visual layout coordinates, not claimed physical distances.</div>
+        </aside>
+      </div>
+    </section>
+
     <section class="app-view section-block" data-view="locations" id="locations" hidden>
       <header class="section-heading"><div><p class="eyebrow">LOCATION INTEL</p><h2>Services and arrival overhead</h2></div><p>Operational facts stay separate from community data, live telemetry and rough estimates.</p></header>
       <div class="workspace compact-workspace">
@@ -108,11 +151,11 @@
 
     <section class="app-view section-block roadmap-section" data-view="roadmap" id="roadmap" hidden><header class="section-heading roadmap-heading"><div><p class="eyebrow">DEVELOPMENT ROADMAP</p><h2 id="roadmap-title">From foundation to complete sessions</h2></div><div class="roadmap-legend"><span class="legend-done">Completed</span><span class="legend-active">In progress</span><span class="legend-next">Next</span><span class="legend-future">Future</span></div></header><p class="roadmap-help">Macro phases run horizontally. Each phase contains a vertical sequence of smaller objectives.</p><div class="roadmap-board" id="roadmap-board"></div></section>
 
-    <footer class="build-note">Active slice: mission parsing, dependency route, cargo provenance, abstract cargo-grid planning and persistent Hangar.</footer>
+    <footer class="build-note">Active slice: lightweight 3D starmap, system detail views and active-route overlay. OCR and Game.log are deferred.</footer>
   </main>
 
   <script src="locations.js"></script><script src="location-profiles.js"></script><script src="arrival-estimates.js"></script>
   <script src="missions.js"></script><script src="mission-text.js"></script><script src="route-planner.js"></script><script src="ship-catalog.js"></script><script src="cargo-planner.js"></script><script src="session-store.js"></script>
-  <script src="roadmap.js"></script><script src="app.js"></script><script src="sections.js"></script><script src="mission-view.js"></script><script src="route-view.js"></script><script src="cargo-view.js"></script><script src="hangar-view.js"></script><script src="location-intel-view.js"></script><script src="roadmap-view.js"></script>
+  <script src="starmap-data.js"></script><script src="roadmap.js"></script><script src="app.js"></script><script src="sections.js"></script><script src="mission-view.js"></script><script src="route-view.js"></script><script src="cargo-view.js"></script><script src="hangar-view.js"></script><script src="starmap-view.js"></script><script src="location-intel-view.js"></script><script src="roadmap-view.js"></script>
 </body>
 </html>
