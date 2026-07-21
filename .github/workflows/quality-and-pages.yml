@@ -33,11 +33,13 @@ jobs:
         run: node --test tests/starmap.test.js
       - name: Test product shell
         run: node --test tests/product-shell.test.js
+      - name: Test cargo lifecycle
+        run: node --test tests/cargo-state.test.js
       - name: Test any additional suites
         run: |
           for file in tests/*.test.js; do
             case "$file" in
-              tests/checkpoint2.test.js|tests/checkpoint3.test.js|tests/locations.test.js|tests/missions.test.js|tests/roadmap.test.js|tests/starmap.test.js|tests/product-shell.test.js|tests/planner.test.js) ;;
+              tests/checkpoint2.test.js|tests/checkpoint3.test.js|tests/locations.test.js|tests/missions.test.js|tests/roadmap.test.js|tests/starmap.test.js|tests/product-shell.test.js|tests/cargo-state.test.js|tests/planner.test.js) ;;
               *) node --test "$file" ;;
             esac
           done
@@ -67,6 +69,8 @@ jobs:
           node --check route-planner.js
           node --check ship-catalog.js
           node --check cargo-planner.js
+          node --check cargo-state.js
+          node --check cargo-layout.js
           node --check session-store.js
           node --check starmap-data.js
           node --check roadmap.js
@@ -75,6 +79,7 @@ jobs:
           node --check mission-view.js
           node --check route-view.js
           node --check cargo-view.js
+          node --check load-operations-view.js
           node --check hangar-view.js
           node --check starmap-view.js
           node --check location-intel-view.js
