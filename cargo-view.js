@@ -4,7 +4,9 @@
   const store = window.SCCompanionSession;
   const catalog = window.SCCompanionShipCatalog;
   const planner = window.SCCompanionCargoPlanner;
-  if (!store || !catalog || !planner) return;
+  const cargoState = window.SCCompanionCargoState;
+  const cargoLayout = window.SCCompanionCargoLayout;
+  if (!store || !catalog || !planner || !cargoState || !cargoLayout) return;
 
   const grid = document.querySelector('#cargo-grid');
   const shipName = document.querySelector('#cargo-ship-name');
@@ -16,24 +18,6 @@
     if (value.includes('pyro') || value.includes('outpost')) return 3;
     if (value.includes('station')) return 1;
     return 0;
-  }
-
-  function fallbackZones(model) {
-    return [{
-      id: 'main-zone',
-      label: 'Main cargo zone',
-      access: (model.layout.accessPoints ?? ['rear']).join(' / '),
-      capacityScu: model.capacityScu,
-      layers: Math.max(1, Math.ceil(model.capacityScu / 16)),
-      columns: Math.min(8, model.capacityScu),
-      separable: false
-    }];
-  }
-
-  function modelZones(model) {
-    const zones = model.layout.zones ?? [];
-    const zoneCapacity = zones.reduce((total, zone) => total + zone.capacityScu, 0);
-    return zones.length && zoneCapacity === model.capacityScu ? zones : fallbackZones(model);
   }
 
   function buildMissionClasses(assignments) {
@@ -51,16 +35,21 @@
     cell.className = 'cargo-cell';
     if (!assignment) return cell;
 
-    cell.classList.add('is-loaded', missionClasses.get(assignment.missionId));
+    cell.classList.add('is-loaded', 'is-onboard', missionClasses.get(assignment.missionId));
     cell.textContent = assignment.commodity.slice(0, 2).toUpperCase();
-    cell.title = `${assignment.missionTitle}: ${assignment.scuShare} SCU ${assignment.commodity}; ${assignment.originLocationLabel} → ${assignment.deliveryLocationLabel}`;
+    cell.title = `${assignment.missionTitle}: ${assignment.scuShare} SCU ${assignment.commodity}; loaded at ${assignment.originLocationLabel}; deliver to ${assignment.deliveryLocationLabel}`;
     return cell;
   }
 
-  function renderZones(model, assignments, missionClasses) {
+  function renderZones(model, allAssignments, onboardKeys, missionClasses) {
     grid.replaceChildren();
-    const zones = modelZones(model);
-    let assignmentIndex = 0;
+    const zones = cargoLayout.getZones(model);
+    const onboardBySlot = new Map(
+      allAssignments
+        .filter((assignment) => onboardKeys.has(assignment.cargoKey))
+        .map((assignment) => [assignment.planSlotIndex, assignment])
+    );
+    let globalSlot = 0;
 
     zones.forEach((zone) => {
       const article = document.createElement('article');
@@ -96,8 +85,8 @@
 
         for (let column = 0; column < columns; column += 1) {
           if (zoneSlot >= zone.capacityScu) break;
-          cells.append(createCargoCell(assignments[assignmentIndex] ?? null, missionClasses));
-          assignmentIndex += 1;
+          cells.append(createCargoCell(onboardBySlot.get(globalSlot) ?? null, missionClasses));
+          globalSlot += 1;
           zoneSlot += 1;
         }
         row.append(levelLabel, cells);
@@ -107,32 +96,46 @@
       const note = document.createElement('div');
       note.className = 'cargo-zone-note';
       note.textContent = model.layout.geometryStatus === 'concept'
-        ? 'Concept geometry — zones and vertical layers can change without touching mission data.'
-        : 'Verified cargo geometry.';
+        ? 'Concept geometry — only cargo already onboard is shown.'
+        : 'Verified geometry — only cargo already onboard is shown.';
 
       article.append(header, levels, note);
       grid.append(article);
     });
   }
 
-  function renderLegend(plan, missionClasses) {
+  function renderLegend(plan, lifecycle, missionClasses) {
     legend.replaceChildren();
+    const onboardKeys = new Set(lifecycle.onboardLots.map((lot) => lot.key));
     const sectors = new Map();
-    plan.assignments.forEach((assignment) => {
-      if (!sectors.has(assignment.sectorId)) sectors.set(assignment.sectorId, assignment);
-    });
+    plan.assignments
+      .filter((assignment) => onboardKeys.has(assignment.cargoKey))
+      .forEach((assignment) => {
+        if (!sectors.has(assignment.cargoKey)) sectors.set(assignment.cargoKey, assignment);
+      });
+
+    if (!sectors.size) {
+      const empty = document.createElement('p');
+      empty.className = 'field-help';
+      empty.textContent = lifecycle.complete
+        ? 'Cargo hold empty — all planned mission cargo was delivered.'
+        : 'Cargo hold currently empty. Complete a pickup stop to load its cargo.';
+      legend.append(empty);
+      return;
+    }
 
     [...sectors.values()].forEach((sector) => {
       const item = document.createElement('article');
       item.className = `cargo-legend-item ${missionClasses.get(sector.missionId)}`;
       const title = document.createElement('strong');
-      title.textContent = sector.missionTitle;
+      title.textContent = `${sector.missionTitle} · ${sector.commodity}`;
       const route = document.createElement('span');
-      route.textContent = `${sector.commodity}: ${sector.originLocationLabel} → ${sector.deliveryLocationLabel}`;
+      route.textContent = `${sector.originLocationLabel} → ${sector.deliveryLocationLabel}`;
+      const position = cargoLayout.locateSlot(plan.shipModel, sector.planSlotIndex);
       const priority = document.createElement('small');
-      priority.textContent = sector.pickupRisk >= 2
-        ? 'Rapid-access priority at pickup'
-        : `Delivery stop ${sector.deliveryStopIndex + 1}`;
+      priority.textContent = position
+        ? `ONBOARD · ${position.zoneLabel} / Layer ${position.layer + 1}`
+        : 'ONBOARD';
       item.append(title, route, priority);
       legend.append(item);
     });
@@ -145,22 +148,24 @@
     shipName.textContent = activeShip?.nickname || `${model.manufacturer} ${model.model}`;
 
     if (!state.route?.stops?.length) {
-      usage.textContent = `${model.capacityScu} SCU · empty zone blueprint`;
+      usage.textContent = `${model.capacityScu} SCU · cargo hold empty`;
       legend.replaceChildren();
-      renderZones(model, [], new Map());
+      renderZones(model, [], new Set(), new Map());
       return;
     }
 
     try {
       const plan = planner.planCargo(state.route, model, riskResolver);
+      const lifecycle = cargoState.deriveCargoState(state.route, state.currentStopIndex);
       const missionClasses = buildMissionClasses(plan.assignments);
-      usage.textContent = `${plan.usedScu} / ${plan.capacityScu} SCU planned`;
-      renderZones(model, plan.assignments, missionClasses);
-      renderLegend(plan, missionClasses);
+      const onboardKeys = new Set(lifecycle.onboardLots.map((lot) => lot.key));
+      usage.textContent = `${lifecycle.totals.onboardScu} / ${plan.capacityScu} SCU onboard · ${lifecycle.totals.deliveredScu} SCU delivered`;
+      renderZones(model, plan.assignments, onboardKeys, missionClasses);
+      renderLegend(plan, lifecycle, missionClasses);
     } catch (error) {
       usage.textContent = error.message;
       legend.replaceChildren();
-      renderZones(model, [], new Map());
+      renderZones(model, [], new Set(), new Map());
     }
   }
 
