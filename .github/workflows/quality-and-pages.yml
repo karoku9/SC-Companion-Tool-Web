@@ -28,8 +28,12 @@ jobs:
         run: node --test --test-name-pattern="mission text" tests/planner.test.js
       - name: Test route grouping
         run: node --test --test-name-pattern="dependency route" tests/planner.test.js
-      - name: Test delivery provenance
-        run: node --test --test-name-pattern="delivery instruction" tests/planner.test.js
+      - name: Test delivery operation
+        run: node --test --test-name-pattern="delivery operation exists" tests/planner.test.js
+      - name: Test delivery mission identity
+        run: node --test --test-name-pattern="includes mission name" tests/planner.test.js
+      - name: Test delivery pickup origin
+        run: node --test --test-name-pattern="includes pickup origin" tests/planner.test.js
       - name: Test cargo accessibility
         run: node --test --test-name-pattern="cargo plan" tests/planner.test.js
       - name: Test ship profiles
