@@ -4,10 +4,12 @@
   const phases = Object.freeze([
     {
       id: 'foundation', order: '01', title: 'Foundation', status: 'done',
-      summary: 'A small, testable and dependency-free technical base.',
+      summary: 'A small, testable and dependency-free technical base with the complete product architecture reserved.',
       items: [
         { id: 'clean-rebuild', label: 'Complete clean rebuild', status: 'done' },
         { id: 'section-navigation', label: 'Separate low-clutter application sections', status: 'done' },
+        { id: 'product-shell', label: 'Grouped desktop and mobile page navigation', status: 'done' },
+        { id: 'page-blueprints', label: 'Visual blueprints for every planned product page', status: 'done' },
         { id: 'local-state', label: 'Local persistence and session recovery', status: 'done' },
         { id: 'location-model', label: 'Operational locations and mobiGlas targets', status: 'done' },
         { id: 'mission-model', label: 'Separate missions, contracts and cargo lots', status: 'done' }
@@ -53,13 +55,14 @@
     },
     {
       id: 'cargo-planning', order: '05', title: 'Cargo Planning', status: 'active',
-      summary: 'Plan mission sectors on an accessible top-down 1-SCU grid.',
+      summary: 'Plan independent cargo zones, mission sectors and vertical SCU layers.',
       items: [
-        { id: 'abstract-grid', label: 'Top-down 1-SCU planning grid', status: 'done' },
+        { id: 'vertical-zones', label: 'Separable cargo zones with vertical layers', status: 'done' },
         { id: 'mission-sectors', label: 'Separate sectors by mission and delivery', status: 'done' },
         { id: 'delivery-access', label: 'Earlier deliveries placed closer to access', status: 'done' },
         { id: 'risk-handling', label: 'Rapid-access weighting for dangerous pickups', status: 'active' },
-        { id: 'physical-layouts', label: 'Verified physical cargo-grid geometry per ship', status: 'next' },
+        { id: 'zone-editor', label: 'Per-ship zone and separator editor', status: 'next' },
+        { id: 'physical-layouts', label: 'Verified physical cargo geometry per ship', status: 'next' },
         { id: 'repacking', label: 'Dynamic loading and repacking simulation', status: 'future' }
       ]
     },
