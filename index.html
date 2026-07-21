@@ -12,62 +12,98 @@
     <header class="topbar">
       <div>
         <p class="eyebrow">SC COMPANION TOOL</p>
-        <h1>Route Workspace</h1>
+        <h1>Mission & Route Companion</h1>
       </div>
-      <div class="system-status" aria-label="Stato sistema">
-        <span class="status-dot"></span>
-        LOCATION MODEL ONLINE
+      <div class="topbar-actions">
+        <nav class="primary-nav" aria-label="Sezioni principali">
+          <a href="#route-workspace">ROUTE</a>
+          <a href="#roadmap">ROADMAP</a>
+        </nav>
+        <div class="system-status" aria-label="Stato sistema">
+          <span class="status-dot"></span>
+          FOUNDATION ONLINE
+        </div>
       </div>
     </header>
 
-    <section class="workspace" aria-labelledby="destination-title">
-      <form class="search-panel" id="location-search">
-        <label for="location-query">Cerca destinazione</label>
-        <div class="search-row">
-          <input
-            id="location-query"
-            name="location"
-            type="search"
-            value="Lorville"
-            autocomplete="off"
-            spellcheck="false"
-          >
-          <button type="submit">Trova</button>
+    <section class="section-block" id="route-workspace" aria-labelledby="destination-title">
+      <header class="section-heading">
+        <div>
+          <p class="eyebrow">ROUTE WORKSPACE</p>
+          <h2>Destinazioni operative</h2>
         </div>
-        <p class="field-help">Puoi cercare il luogo fisico oppure il nome visibile nel mobiGlas.</p>
-        <div class="search-results" id="search-results" aria-live="polite"></div>
-      </form>
+        <p>Il luogo in cui devi operare e il nome da impostare nel mobiGlas restano distinti.</p>
+      </header>
 
-      <article class="destination-panel">
-        <p class="eyebrow">DESTINAZIONE OPERATIVA</p>
-        <h2 id="destination-title">—</h2>
+      <div class="workspace">
+        <form class="search-panel" id="location-search">
+          <label for="location-query">Cerca destinazione</label>
+          <div class="search-row">
+            <input
+              id="location-query"
+              name="location"
+              type="search"
+              value="Lorville"
+              autocomplete="off"
+              spellcheck="false"
+            >
+            <button type="submit">Trova</button>
+          </div>
+          <p class="field-help">Puoi cercare il luogo fisico oppure il nome visibile nel mobiGlas.</p>
+          <div class="search-results" id="search-results" aria-live="polite"></div>
+        </form>
 
-        <div class="navigation-callout">
-          <span>DESTINAZIONE IN GAME</span>
-          <strong id="navigation-target">—</strong>
-          <small>Imposta questo nome nel mobiGlas.</small>
+        <article class="destination-panel">
+          <p class="eyebrow">DESTINAZIONE OPERATIVA</p>
+          <h2 id="destination-title">—</h2>
+
+          <div class="navigation-callout">
+            <span>DESTINAZIONE IN GAME</span>
+            <strong id="navigation-target">—</strong>
+            <small>Imposta questo nome nel mobiGlas.</small>
+          </div>
+
+          <dl class="destination-details">
+            <div>
+              <dt>TIPO</dt>
+              <dd id="location-type">—</dd>
+            </div>
+            <div>
+              <dt>GERARCHIA</dt>
+              <dd id="location-path">—</dd>
+            </div>
+          </dl>
+        </article>
+      </div>
+    </section>
+
+    <section class="section-block roadmap-section" id="roadmap" aria-labelledby="roadmap-title">
+      <header class="section-heading roadmap-heading">
+        <div>
+          <p class="eyebrow">DEVELOPMENT ROADMAP</p>
+          <h2 id="roadmap-title">Dal nucleo alla sessione completa</h2>
         </div>
+        <div class="roadmap-legend" aria-label="Legenda stati roadmap">
+          <span class="legend-done">Completato</span>
+          <span class="legend-active">In corso</span>
+          <span class="legend-next">Prossimo</span>
+          <span class="legend-future">Futuro</span>
+        </div>
+      </header>
 
-        <dl class="destination-details">
-          <div>
-            <dt>TIPO</dt>
-            <dd id="location-type">—</dd>
-          </div>
-          <div>
-            <dt>GERARCHIA</dt>
-            <dd id="location-path">—</dd>
-          </div>
-        </dl>
-      </article>
+      <p class="roadmap-help">I macro-blocchi scorrono in orizzontale. Dentro ogni blocco, i micro-obiettivi avanzano in verticale.</p>
+      <div class="roadmap-board" id="roadmap-board" aria-label="Roadmap del progetto"></div>
     </section>
 
     <footer class="build-note">
-      Baseline attiva: località precise e modello unificato delle missioni.
+      Baseline attiva: località precise, modello unificato delle missioni e roadmap pubblica.
     </footer>
   </main>
 
   <script src="locations.js"></script>
   <script src="missions.js"></script>
+  <script src="roadmap.js"></script>
   <script src="app.js"></script>
+  <script src="roadmap-view.js"></script>
 </body>
 </html>
