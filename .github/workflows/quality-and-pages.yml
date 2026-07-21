@@ -19,16 +19,18 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
-
       - name: Run tests
         run: node --test tests/*.test.js
-
       - name: Check JavaScript syntax
         run: |
           node --check locations.js
+          node --check location-profiles.js
+          node --check arrival-estimates.js
           node --check missions.js
           node --check roadmap.js
           node --check app.js
+          node --check sections.js
+          node --check location-intel-view.js
           node --check roadmap-view.js
 
   deploy:
@@ -45,15 +47,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
-
       - name: Configure Pages
         uses: actions/configure-pages@v5
-
       - name: Upload static site
         uses: actions/upload-pages-artifact@v4
         with:
           path: .
-
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
