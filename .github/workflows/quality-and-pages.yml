@@ -19,8 +19,21 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
-      - name: Run tests
-        run: node --test tests/*.test.js
+      - name: Run existing tests
+        run: |
+          for file in tests/*.test.js; do
+            if [ "$file" != "tests/planner.test.js" ]; then node --test "$file"; fi
+          done
+      - name: Test mission parsing
+        run: node --test --test-name-pattern="mission text" tests/planner.test.js
+      - name: Test route grouping
+        run: node --test --test-name-pattern="dependency route" tests/planner.test.js
+      - name: Test delivery provenance
+        run: node --test --test-name-pattern="delivery instruction" tests/planner.test.js
+      - name: Test cargo accessibility
+        run: node --test --test-name-pattern="cargo plan" tests/planner.test.js
+      - name: Test ship profiles
+        run: node --test --test-name-pattern="starter ship" tests/planner.test.js
       - name: Check JavaScript syntax
         run: |
           node --check locations.js
