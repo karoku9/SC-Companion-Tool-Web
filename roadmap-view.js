@@ -7,10 +7,10 @@
   if (!roadmap || !board) return;
 
   const statusLabels = {
-    done: 'COMPLETATO',
-    active: 'IN CORSO',
-    next: 'PROSSIMO',
-    future: 'FUTURO'
+    done: 'COMPLETED',
+    active: 'IN PROGRESS',
+    next: 'NEXT',
+    future: 'FUTURE'
   };
 
   function createItem(item) {
