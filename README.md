@@ -1,102 +1,21 @@
-# Waypoint Cargo Companion
+# SC Companion Tool — Clean Rebuild
 
-Greenfield, dependency-free local application for Star Citizen contract hauling and player commodity trading.
+Fresh development foundation for a Star Citizen mission and route companion.
 
-## Run locally
+The previous implementation is preserved unchanged on the branch:
 
-Serve this directory with any static HTTP server, then open `index.html` through that server.
+`backup/pre-zero-rebuild-2026-07-21`
 
-```powershell
-python -m http.server 4173
-```
+## Product direction
 
-## Checkpoint 1
+The application will be rebuilt in small, verifiable increments around:
 
-This checkpoint includes:
+- precise operational destinations, such as `Teasa Spaceport · Lorville`;
+- the in-game search destination required by the mobiGlas, such as `Lorville`;
+- cargo and non-cargo mission intake;
+- multi-stop route planning;
+- guided in-game execution;
+- optional commodity opportunities along an already planned route;
+- manufacturer-themed MFD interfaces.
 
-- all nine product pages;
-- responsive navigation and one coherent visual system;
-- in-memory ship and starting-location selection;
-- in-memory mission create, edit, duplicate, delete, multi-lot editing and readable-text import;
-- Orbital Map and Entity Tree modes;
-- a predefined Active Route with Previous/NEXT and automatic cargo-status progression;
-- functional tabs, dialogs, drawers, menus and clearly labelled mock integrations.
-- a single MFD-style CSS architecture with Neutral, Drake, RSI and MISC manufacturer themes;
-- adaptive ship-brand theming and an in-memory manual theme override;
-- an original CSS-built display grid, scanlines, chassis texture and navigation map treatment;
-- a visible unofficial fan-tool disclaimer and link to the official Star Citizen website.
-
-The approved manufacturer MFD visual language now covers all nine pages. Dashboard, Hauling, Map, Fleet, Intel, Tools and Settings use page-specific operational compositions while sharing the same chassis, display, control and theme-token architecture established by Mission Planner and Active Route.
-
-Checkpoint 1 visual QA covers every page at 1680×900, plus Mission Planner and Active Route at 1920×1080 and 1366×768. The compact navigation and every dialog/drawer are also verified at 1366×768.
-
-## Approved future visual setting: display texture
-
-Display texture will be an independent rendering layer and must not be coupled to the manufacturer theme.
-
-- `data-theme` continues to control panel geometry, materials, colours, controls, typography treatment, markings and chassis identity.
-- `data-display-texture` will control only the simulated display rendering on screens, maps and data panels.
-- Required texture choices: Auto, Off, Clean, MFD Glass, CRT / Phosphor and Industrial LCD.
-- Required intensity control: 0–100 percent, exposed through a CSS custom property.
-- A manual texture selection always overrides Auto.
-
-Auto defaults:
-
-- Drake: restrained rugged CRT/phosphor;
-- RSI: clean glass MFD with controlled emission;
-- MISC: industrial LCD with subtle grain;
-- Neutral or unknown manufacturer: restrained clean MFD.
-
-The Drake CRT/phosphor treatment may use fine scanlines, restrained phosphor bloom, mild edge vignette, a faint curvature impression, extremely light static noise, slight persistence and subtle brightness unevenness. It must preserve sharp, readable text and avoid strong chromatic aberration, aggressive flicker or distracting continuously animated static.
-
-Reduced Motion must disable flicker, animated noise and transient display instability. Texture effects must remain scoped to actual display surfaces rather than the full application chassis.
-
-Target root architecture:
-
-```html
-<html data-theme="drake" data-display-texture="crt">
-```
-
-This requirement is documented but intentionally not implemented during the currently approved visual checkpoint work.
-
-## Checkpoint 2
-
-The local application core is now functional:
-
-- versioned localStorage persistence with malformed-data recovery, automatic saving, manual saving and typed reset confirmation;
-- saved fleet instances, optional nicknames, duplicate protection, removal and manufacturer-adaptive selection;
-- validated mission CRUD, stable mission/cargo-lot identity and readable multi-block text import with preview;
-- deterministic coordinate-based route generation with grouped same-location operations and pickup-before-delivery constraints;
-- local distance, duration, handling, fuel-demand and orbital-marker-assist estimates;
-- resumable Active Route progress, reversible Previous/NEXT cargo status derivation and separate manual corrections;
-- route-aware Orbital Map, synchronized Entity Tree, custom/unmapped location support and fixed destination profiles;
-- working interface defaults, reduced motion, density, number formatting, theme override and illegal-commodity visibility.
-
-See [CHECKPOINT-2.md](CHECKPOINT-2.md) for the persisted schema, route algorithm, scenario results and known limitations.
-
-## Checkpoint 3
-
-Checkpoint 3 adds a complete local commodity-hauling workflow and portable JSON data:
-
-- deterministic opportunity search over an immutable 26-record demo/reference market dataset;
-- ship-, availability-, demand-, budget- and quantity-constrained recommendations;
-- one-way and explained multi-stop plans with immutable ship, plan and price snapshots;
-- Previous / EXECUTE NEXT freight-ledger workflow with partial purchase and sale entry;
-- derived cargo state, separate manual adjustments, planned-versus-actual accounting and local history;
-- mission/hauling primary-workflow conflict protection plus Dashboard, Fleet and Map integration;
-- schema-version-2 persistence with an explicit version-1 migration;
-- full and partial JSON export, validated import preview, replace/merge controls and collision remapping.
-
-See [CHECKPOINT-3.md](CHECKPOINT-3.md) for formulas, schemas, migration and merge rules, QA evidence and known limitations.
-
-Live market APIs, OCR recognition, Game.log monitoring, cloud synchronization and display textures remain deferred.
-
-The static application remains dependency-free. Automated core checks use Node's built-in test runner.
-
-## Project documentation baseline
-
-- [CHANGELOG.md](CHANGELOG.md) is the append-only checkpoint and release history.
-- [PROJECT-CHECKLIST.md](PROJECT-CHECKLIST.md) separates completed functionality, next priorities, future work, visual/demo-only surfaces, and deferred integrations.
-- [PROJECT-STATE.md](PROJECT-STATE.md) is the current technical and product handoff.
-
-For every future implementation task, read all three files before planning or editing. Update every affected document in the same commit as the code; append to the changelog without deleting, reordering, or silently rewriting prior entries; keep checklist state and newly discovered work current; explain meaningful additions, changes, removals, and deferrals; document storage migrations and breaking changes; and report tests plus known limitations. Documentation updates are mandatory deliverables.
+No previous application code is carried into this branch by default.
