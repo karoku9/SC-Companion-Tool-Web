@@ -21,4 +21,4 @@ The tool is intended to become a unified Star Citizen mission and route companio
 6. classic commodity trading and optional opportunities along planned routes;
 7. manufacturer-themed MFD interfaces.
 
-The implementation is intentionally split into small, independently testable modules. The roadmap data used by the website lives in `roadmap.js` and should be updated whenever work changes status.
+The implementation is intentionally split into small, independently testable modules. The roadmap data used by the website lives in `roadmap.js` and is the source of truth for displayed statuses.
