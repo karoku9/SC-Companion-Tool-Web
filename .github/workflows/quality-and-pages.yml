@@ -27,9 +27,18 @@ jobs:
           node --check location-profiles.js
           node --check arrival-estimates.js
           node --check missions.js
+          node --check mission-text.js
+          node --check route-planner.js
+          node --check ship-catalog.js
+          node --check cargo-planner.js
+          node --check session-store.js
           node --check roadmap.js
           node --check app.js
           node --check sections.js
+          node --check mission-view.js
+          node --check route-view.js
+          node --check cargo-view.js
+          node --check hangar-view.js
           node --check location-intel-view.js
           node --check roadmap-view.js
 
