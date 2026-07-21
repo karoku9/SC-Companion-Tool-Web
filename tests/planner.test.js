@@ -24,6 +24,11 @@ function buildExample() {
   return { parsed, route };
 }
 
+function area18Delivery() {
+  const { route } = buildExample();
+  return route.stops[1].operations.find((operation) => operation.type === 'delivery');
+}
+
 test('mission text keeps contracts and cargo origins separate', () => {
   const { parsed } = buildExample();
   assert.equal(parsed.missions.length, 2);
@@ -45,12 +50,16 @@ test('dependency route groups Teasa, Area18 and Baijini', () => {
   assert.deepEqual(route.stops.map((stop) => stop.operations.length), [2, 2, 2]);
 });
 
-test('delivery instruction identifies mission and pickup origin', () => {
-  const { route } = buildExample();
-  const delivery = route.stops[1].operations.find((operation) => operation.type === 'delivery');
-  const instruction = routePlanner.operationInstruction(delivery);
-  assert.ok(instruction.includes('Mission X'));
-  assert.ok(instruction.includes('Teasa Spaceport'));
+test('delivery operation exists at Area18', () => {
+  assert.ok(area18Delivery());
+});
+
+test('delivery instruction includes mission name', () => {
+  assert.ok(routePlanner.operationInstruction(area18Delivery()).includes('Mission X'));
+});
+
+test('delivery instruction includes pickup origin', () => {
+  assert.ok(routePlanner.operationInstruction(area18Delivery()).includes('Teasa Spaceport'));
 });
 
 test('cargo plan keeps earlier deliveries closer to access', () => {
