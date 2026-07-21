@@ -1,121 +1,154 @@
-name: Publish verified Checkpoint 4B package
+name: Diagnose Checkpoint 4B publication
 
 on:
-  workflow_dispatch:
-  issue_comment:
-    types: [created]
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/direct-publish-checkpoint-4c.yml
 
 permissions:
-  contents: write
-  issues: read
-
-concurrency:
-  group: direct-checkpoint-4b-publication
-  cancel-in-progress: false
+  contents: read
+  issues: write
 
 jobs:
-  publish:
-    if: >-
-      github.event_name == 'workflow_dispatch' ||
-      (github.event.issue.number == 3 && github.event.comment.body == '/publish-checkpoint-4b')
+  diagnose:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout main
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: main
+      - uses: actions/checkout@v4
 
-      - name: Reconstruct and verify production package
+      - name: Diagnose package and tests without failing the job
         env:
           GH_TOKEN: ${{ github.token }}
           REPOSITORY: ${{ github.repository }}
         run: |
           python - <<'PY'
-          import base64
-          import hashlib
-          import json
-          import os
-          import re
-          import urllib.request
+          import base64, hashlib, json, os, re, subprocess, tarfile, traceback, urllib.request
+          result = {'stage': 'start', 'ok': False, 'details': []}
+          try:
+              repo = os.environ['REPOSITORY']
+              token = os.environ['GH_TOKEN']
+              headers = {
+                  'Authorization': f'Bearer {token}',
+                  'Accept': 'application/vnd.github+json',
+                  'X-GitHub-Api-Version': '2022-11-28',
+              }
+              result['stage'] = 'fetch-comments'
+              req = urllib.request.Request(
+                  f'https://api.github.com/repos/{repo}/issues/3/comments?per_page=100',
+                  headers=headers,
+              )
+              with urllib.request.urlopen(req) as response:
+                  comments = json.load(response)
+              result['details'].append(f'comments={len(comments)}')
 
+              result['stage'] = 'parse-parts'
+              parts = {}
+              marker = re.compile(r'PKG_PART_(\d+):')
+              for comment in comments:
+                  body = comment.get('body', '')
+                  matches = list(marker.finditer(body))
+                  for idx, match in enumerate(matches):
+                      end = matches[idx + 1].start() if idx + 1 < len(matches) else len(body)
+                      payload = re.sub(r'\s+', '', body[match.end():end])
+                      part_index = int(match.group(1))
+                      if part_index in parts and parts[part_index] != payload:
+                          raise RuntimeError(f'conflicting duplicate part {part_index}')
+                      parts[part_index] = payload
+              indexes = sorted(parts)
+              result['details'].append(f'part_indexes={indexes}')
+              required = list(range(15))
+              if indexes != required:
+                  raise RuntimeError(f'expected {required}, received {indexes}')
+
+              result['stage'] = 'decode-checksum'
+              encoded = ''.join(parts[i] for i in required)
+              package = base64.b64decode(encoded, validate=True)
+              digest = hashlib.sha256(package).hexdigest()
+              result['details'].append(f'bytes={len(package)}')
+              result['details'].append(f'sha256={digest}')
+              expected = '9c6092b66c1ea53bdd7bdf1e6e047b87485fe9018d6433165616eb64d0c44350'
+              if digest != expected:
+                  raise RuntimeError(f'checksum mismatch, expected {expected}')
+              open('/tmp/publish-min.tar.gz', 'wb').write(package)
+
+              result['stage'] = 'extract'
+              os.makedirs('/tmp/publish-package', exist_ok=True)
+              with tarfile.open('/tmp/publish-min.tar.gz', 'r:gz') as archive:
+                  archive.extractall('/tmp/publish-package')
+              top = sorted(os.listdir('/tmp/publish-package'))
+              result['details'].append('top_level=' + ', '.join(top[:80]))
+              required_files = [
+                  'index.html', 'CHECKPOINT-4B.md', 'validate-locations.js',
+                  'tests/checkpoint2.test.js', 'tests/checkpoint3.test.js',
+                  'tests/checkpoint4a.test.js', 'tests/checkpoint4b.test.js',
+                  'tests/checkpoint4c.test.js'
+              ]
+              missing = [p for p in required_files if not os.path.isfile('/tmp/publish-package/' + p)]
+              if missing:
+                  raise RuntimeError('missing required files: ' + ', '.join(missing))
+
+              result['stage'] = 'validation'
+              commands = [
+                  ['node', 'validate-locations.js'],
+                  ['node', '--test', 'tests/checkpoint2.test.js', 'tests/checkpoint3.test.js',
+                   'tests/checkpoint4a.test.js', 'tests/checkpoint4b.test.js',
+                   'tests/checkpoint4c.test.js'],
+              ]
+              for command in commands:
+                  completed = subprocess.run(
+                      command, cwd='/tmp/publish-package', text=True,
+                      stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                  )
+                  result['details'].append('$ ' + ' '.join(command))
+                  result['details'].append(completed.stdout[-12000:])
+                  if completed.returncode != 0:
+                      raise RuntimeError(f'command failed with exit code {completed.returncode}')
+
+              result['stage'] = 'complete'
+              result['ok'] = True
+          except Exception as error:
+              result['error'] = f'{type(error).__name__}: {error}'
+              result['traceback'] = traceback.format_exc()
+          with open('/tmp/publication-diagnostic.json', 'w') as handle:
+              json.dump(result, handle, indent=2)
+          print(json.dumps(result, indent=2))
+          PY
+
+      - name: Write exact diagnostic to issue 3
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          python - <<'PY'
+          import json, os, urllib.request
           repo = os.environ['REPOSITORY']
           token = os.environ['GH_TOKEN']
           headers = {
               'Authorization': f'Bearer {token}',
               'Accept': 'application/vnd.github+json',
+              'Content-Type': 'application/json',
               'X-GitHub-Api-Version': '2022-11-28',
           }
-
-          comments = []
-          page = 1
-          while True:
-              request = urllib.request.Request(
-                  f'https://api.github.com/repos/{repo}/issues/3/comments?per_page=100&page={page}',
-                  headers=headers,
-              )
-              with urllib.request.urlopen(request) as response:
-                  batch = json.load(response)
-              comments.extend(batch)
-              if len(batch) < 100:
-                  break
-              page += 1
-
-          parts = {}
-          marker = re.compile(r'PKG_PART_(\d+):')
-          for comment in comments:
-              body = comment.get('body', '')
-              matches = list(marker.finditer(body))
-              for index, match in enumerate(matches):
-                  end = matches[index + 1].start() if index + 1 < len(matches) else len(body)
-                  payload = re.sub(r'\s+', '', body[match.end():end])
-                  part_index = int(match.group(1))
-                  if part_index in parts and parts[part_index] != payload:
-                      raise SystemExit(f'Conflicting duplicate PKG_PART_{part_index:02d}')
-                  parts[part_index] = payload
-
-          required = list(range(15))
-          indexes = sorted(parts)
-          if indexes != required:
-              raise SystemExit(f'Expected package parts {required}, received {indexes}')
-
-          encoded = ''.join(parts[index] for index in required)
-          package = base64.b64decode(encoded, validate=True)
-          digest = hashlib.sha256(package).hexdigest()
-          expected = '9c6092b66c1ea53bdd7bdf1e6e047b87485fe9018d6433165616eb64d0c44350'
-          if digest != expected:
-              raise SystemExit(f'Package checksum mismatch: {digest}')
-
-          with open('/tmp/publish-min.tar.gz', 'wb') as handle:
-              handle.write(package)
-          print(f'Package verified: {len(package)} bytes; SHA-256 {digest}')
+          with open('/tmp/publication-diagnostic.json') as handle:
+              diagnostic = json.load(handle)
+          get_req = urllib.request.Request(
+              f'https://api.github.com/repos/{repo}/issues/3', headers=headers)
+          with urllib.request.urlopen(get_req) as response:
+              issue = json.load(response)
+          base = issue.get('body', '').split('\n\n## Latest publication diagnostic')[0]
+          details = '\n'.join(str(item) for item in diagnostic.get('details', []))
+          report = (
+              base + '\n\n## Latest publication diagnostic\n\n'
+              + f"- OK: `{diagnostic.get('ok')}`\n"
+              + f"- Stage: `{diagnostic.get('stage')}`\n"
+              + f"- Error: `{diagnostic.get('error', 'none')}`\n\n"
+              + '```text\n' + details[-18000:] + '\n```\n'
+          )
+          data = json.dumps({'body': report}).encode()
+          patch = urllib.request.Request(
+              f'https://api.github.com/repos/{repo}/issues/3',
+              data=data, headers=headers, method='PATCH')
+          with urllib.request.urlopen(patch) as response:
+              print(response.status)
           PY
-
-          mkdir -p /tmp/publish-package
-          tar -xzf /tmp/publish-min.tar.gz -C /tmp/publish-package
-          test -f /tmp/publish-package/index.html
-          test -f /tmp/publish-package/CHECKPOINT-4B.md
-          test -f /tmp/publish-package/tests/checkpoint4c.test.js
-
-      - name: Replace repository contents with verified package
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
-          cp -a /tmp/publish-package/. .
-
-      - name: Validate production package
-        run: |
-          node validate-locations.js
-          node --test \
-            tests/checkpoint2.test.js \
-            tests/checkpoint3.test.js \
-            tests/checkpoint4a.test.js \
-            tests/checkpoint4b.test.js \
-            tests/checkpoint4c.test.js
-
-      - name: Commit and push verified application to main
-        run: |
-          git add -A
-          git commit -m "Publish Checkpoint 4B real-use alpha and Companion ledger fix"
-          git push origin HEAD:main
