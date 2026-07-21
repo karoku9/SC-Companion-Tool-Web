@@ -2,10 +2,7 @@
 
 (function initializeRouteWorkspace() {
   const model = window.SCCompanionLocations;
-
-  if (!model) {
-    throw new Error('Location model failed to load.');
-  }
+  if (!model) throw new Error('Location model failed to load.');
 
   const elements = {
     form: document.querySelector('#location-search'),
@@ -18,13 +15,7 @@
   };
 
   function humanizeType(type) {
-    const labels = {
-      system: 'System',
-      planet: 'Planet',
-      'landing-zone': 'Landing zone',
-      spaceport: 'Spaceport'
-    };
-
+    const labels = { system: 'System', planet: 'Planet', 'landing-zone': 'Landing zone', spaceport: 'Spaceport' };
     return labels[type] ?? type;
   }
 
@@ -33,6 +24,9 @@
     elements.navigationTarget.textContent = location.navigationTarget ?? location.name;
     elements.type.textContent = humanizeType(location.type);
     elements.path.textContent = model.formatLocationPath(location);
+    window.dispatchEvent(new CustomEvent('sc:location-selected', {
+      detail: { locationId: location.id }
+    }));
   }
 
   function selectLocation(location) {
@@ -45,13 +39,10 @@
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'result-button';
-
     const title = document.createElement('strong');
     title.textContent = model.formatOperationalLabel(location);
-
     const detail = document.createElement('span');
     detail.textContent = `IN GAME: ${location.navigationTarget ?? location.name}`;
-
     button.append(title, detail);
     button.addEventListener('click', () => selectLocation(location));
     return button;
@@ -59,12 +50,10 @@
 
   function renderSearchResults(results) {
     elements.results.replaceChildren();
-
     if (!results.length) {
       elements.results.hidden = true;
       return;
     }
-
     const fragment = document.createDocumentFragment();
     results.forEach((location) => fragment.append(createResultButton(location)));
     elements.results.append(fragment);
@@ -73,12 +62,10 @@
 
   function runSearch() {
     const results = model.searchOperationalLocations(elements.query.value);
-
     if (results.length === 1) {
       selectLocation(results[0]);
       return;
     }
-
     renderSearchResults(results);
   }
 
@@ -92,6 +79,5 @@
     renderSearchResults(value ? model.searchOperationalLocations(value) : []);
   });
 
-  const initialLocation = model.getLocation('stanton-hurston-lorville-teasa');
-  renderDestination(initialLocation);
+  renderDestination(model.getLocation('stanton-hurston-lorville-teasa'));
 }());
