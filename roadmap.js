@@ -5,101 +5,101 @@
     {
       id: 'foundation',
       order: '01',
-      title: 'Fondamenta',
-      summary: 'Base tecnica piccola, testabile e senza dipendenze.',
+      title: 'Foundation',
+      summary: 'A small, testable and dependency-free technical base.',
       status: 'active',
       items: [
-        { id: 'clean-rebuild', label: 'Ripartenza completa da zero', status: 'done' },
-        { id: 'location-model', label: 'Località operative e destinazione mobiGlas', status: 'done' },
-        { id: 'mission-model', label: 'Missioni, contratti e cargo lot separati', status: 'done' },
-        { id: 'local-state', label: 'Persistenza locale e recupero sessione', status: 'next' }
+        { id: 'clean-rebuild', label: 'Complete clean rebuild', status: 'done' },
+        { id: 'location-model', label: 'Operational locations and mobiGlas targets', status: 'done' },
+        { id: 'mission-model', label: 'Separate missions, contracts and cargo lots', status: 'done' },
+        { id: 'local-state', label: 'Local persistence and session recovery', status: 'next' }
       ]
     },
     {
       id: 'mission-intake',
       order: '02',
       title: 'Mission Intake',
-      summary: 'Inserire le missioni senza ricopiare tutto a mano.',
+      summary: 'Add missions without copying every detail by hand.',
       status: 'next',
       items: [
-        { id: 'manual-editor', label: 'Editor manuale rapido', status: 'next' },
-        { id: 'text-import', label: 'Importazione testo leggibile', status: 'future' },
-        { id: 'ocr', label: 'OCR locale di screenshot multipli', status: 'future' },
-        { id: 'game-log', label: 'Companion locale per Game.log', status: 'future' },
-        { id: 'confidence', label: 'Correzione e affidabilità dei dati importati', status: 'future' }
+        { id: 'manual-editor', label: 'Fast manual mission editor', status: 'next' },
+        { id: 'text-import', label: 'Readable text import', status: 'future' },
+        { id: 'ocr', label: 'Local multi-screenshot OCR', status: 'future' },
+        { id: 'game-log', label: 'Local Game.log companion', status: 'future' },
+        { id: 'confidence', label: 'Imported-data confidence and correction', status: 'future' }
       ]
     },
     {
       id: 'routing',
       order: '03',
       title: 'Routing',
-      summary: 'Trasformare obiettivi e carichi in una rotta utile in gioco.',
+      summary: 'Turn objectives and cargo into a practical in-game route.',
       status: 'future',
       items: [
-        { id: 'precedence', label: 'Pickup e collect prima del delivery', status: 'next' },
-        { id: 'stop-grouping', label: 'Raggruppamento operativo per fermata', status: 'next' },
-        { id: 'fastest-route', label: 'Profilo meno tempo', status: 'future' },
-        { id: 'fewest-jumps', label: 'Profilo meno salti', status: 'future' },
-        { id: 'risk-route', label: 'Profilo rischio stimato ridotto', status: 'future' },
-        { id: 'route-estimates', label: 'Stime di tempo e carburante', status: 'future' }
+        { id: 'precedence', label: 'Pickup and collect before delivery', status: 'next' },
+        { id: 'stop-grouping', label: 'Operational grouping by stop', status: 'next' },
+        { id: 'fastest-route', label: 'Fastest-route profile', status: 'future' },
+        { id: 'fewest-jumps', label: 'Fewest-jumps profile', status: 'future' },
+        { id: 'risk-route', label: 'Lower estimated-risk profile', status: 'future' },
+        { id: 'route-estimates', label: 'Time and fuel estimates', status: 'future' }
       ]
     },
     {
       id: 'guided-route',
       order: '04',
       title: 'Guided Route',
-      summary: 'Una sola fermata alla volta, chiara sul secondo monitor.',
+      summary: 'One clear stop at a time on a second monitor.',
       status: 'future',
       items: [
-        { id: 'next-stop', label: 'Prossima fermata e destinazione in game', status: 'future' },
-        { id: 'actions', label: 'Pickup, collect e delivery visibili', status: 'future' },
-        { id: 'cargo-state', label: 'Carico a bordo e capacità residua', status: 'future' },
-        { id: 'previous-next', label: 'PREVIOUS e FATTO — PROSSIMO', status: 'future' },
-        { id: 'corrections', label: 'Correzioni manuali e ripristino', status: 'future' },
-        { id: 'session-history', label: 'Storico delle sessioni reali', status: 'future' }
+        { id: 'next-stop', label: 'Next stop and in-game destination', status: 'future' },
+        { id: 'actions', label: 'Visible pickup, collect and delivery actions', status: 'future' },
+        { id: 'cargo-state', label: 'On-board cargo and remaining capacity', status: 'future' },
+        { id: 'previous-next', label: 'PREVIOUS and COMPLETE — NEXT', status: 'future' },
+        { id: 'corrections', label: 'Manual corrections and recovery', status: 'future' },
+        { id: 'session-history', label: 'Real-session history', status: 'future' }
       ]
     },
     {
       id: 'map',
       order: '05',
-      title: 'Mappa',
-      summary: 'Gerarchia reale e visualizzazione della rotta.',
+      title: 'Map',
+      summary: 'Real location hierarchy and route visualization.',
       status: 'future',
       items: [
-        { id: 'location-database', label: 'Database Stanton, Pyro e Nyx', status: 'future' },
-        { id: 'entity-tree', label: 'Sistema, corpo, città, spazioporto e outpost', status: 'future' },
-        { id: 'map-controls', label: 'Pan, zoom e livelli di dettaglio', status: 'future' },
-        { id: 'route-overlay', label: 'Rotta e fermate sulla mappa', status: 'future' },
-        { id: 'services', label: 'Servizi, gateway e profilo di rischio', status: 'future' }
+        { id: 'location-database', label: 'Stanton, Pyro and Nyx database', status: 'future' },
+        { id: 'entity-tree', label: 'System, body, city, spaceport and outpost tree', status: 'future' },
+        { id: 'map-controls', label: 'Pan, zoom and level-of-detail controls', status: 'future' },
+        { id: 'route-overlay', label: 'Route and stops on the map', status: 'future' },
+        { id: 'services', label: 'Services, gateways and risk profiles', status: 'future' }
       ]
     },
     {
       id: 'trading',
       order: '06',
       title: 'Trading',
-      summary: 'Commodity classiche e occasioni lungo una rotta già pianificata.',
+      summary: 'Classic commodity runs and opportunities along an existing route.',
       status: 'future',
       items: [
-        { id: 'market-source', label: 'Fonte prezzi con provenienza e data', status: 'future' },
-        { id: 'classic-trades', label: 'Rotte commodity A → B', status: 'future' },
-        { id: 'en-route-trades', label: 'Occasioni tra fermate già previste', status: 'future' },
-        { id: 'capacity-budget', label: 'Vincoli di spazio e capitale', status: 'future' },
-        { id: 'partial-trades', label: 'Acquisti e vendite parziali', status: 'future' },
-        { id: 'ledger', label: 'Profitto, ROI, fee, perdite e storico', status: 'future' }
+        { id: 'market-source', label: 'Timestamped and sourced market data', status: 'future' },
+        { id: 'classic-trades', label: 'Classic A → B commodity routes', status: 'future' },
+        { id: 'en-route-trades', label: 'Opportunities between planned stops', status: 'future' },
+        { id: 'capacity-budget', label: 'Cargo capacity and budget constraints', status: 'future' },
+        { id: 'partial-trades', label: 'Partial purchases and sales', status: 'future' },
+        { id: 'ledger', label: 'Profit, ROI, fees, losses and history', status: 'future' }
       ]
     },
     {
       id: 'companion',
       order: '07',
       title: 'Companion',
-      summary: 'Esperienza integrata attorno alla nave e alla sessione.',
+      summary: 'An integrated experience built around the ship and the session.',
       status: 'future',
       items: [
-        { id: 'drake-ui', label: 'UI Drake per Cutlass e Corsair', status: 'active' },
-        { id: 'manufacturer-ui', label: 'UI MFD per altri produttori', status: 'future' },
-        { id: 'focus-mode', label: 'Modalità focus e secondo monitor', status: 'future' },
-        { id: 'touch-mode', label: 'Modalità touch e mobile', status: 'future' },
-        { id: 'shared-session', label: 'Sessioni condivise opzionali', status: 'future' }
+        { id: 'drake-ui', label: 'Drake UI for Cutlass and Corsair', status: 'active' },
+        { id: 'manufacturer-ui', label: 'MFD interfaces for other manufacturers', status: 'future' },
+        { id: 'focus-mode', label: 'Focus and second-monitor mode', status: 'future' },
+        { id: 'touch-mode', label: 'Touch and mobile mode', status: 'future' },
+        { id: 'shared-session', label: 'Optional shared sessions', status: 'future' }
       ]
     }
   ]);
