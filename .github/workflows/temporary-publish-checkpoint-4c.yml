@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - .github/workflows/temporary-publish-checkpoint-4c.yml
+  issue_comment:
+    types: [created]
 
 permissions:
   contents: write
@@ -16,12 +18,16 @@ concurrency:
 
 jobs:
   publish:
+    if: >-
+      github.event_name == 'push' ||
+      (github.event_name == 'issue_comment' && github.event.issue.number == 1 && github.event.comment.body == '/publish-checkpoint-4c')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout publication trigger
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: main
 
       - name: Reconstruct verified source archives
         env:
@@ -79,8 +85,7 @@ jobs:
           tar -xJf /tmp/assistant4c.tar.xz -C /tmp/assistant4c
 
       - name: Preserve deployment workflow
-        run: |
-          cp .github/workflows/deploy-pages.yml /tmp/deploy-pages.yml
+        run: cp .github/workflows/deploy-pages.yml /tmp/deploy-pages.yml
 
       - name: Configure Git
         run: |
@@ -89,7 +94,7 @@ jobs:
 
       - name: Create immutable Codex Checkpoint 4B backup branch
         run: |
-          git checkout -B backup/codex-checkpoint-4b "$GITHUB_SHA"
+          git checkout -B backup/codex-checkpoint-4b "origin/main"
           find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
           cp -a /tmp/codex4b/. .
           mkdir -p .github/workflows
@@ -101,7 +106,7 @@ jobs:
 
       - name: Build and verify production tree
         run: |
-          git checkout -B main "$GITHUB_SHA"
+          git checkout -B main "origin/main"
           find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
           cp -a /tmp/codex4b/. .
           cp -a /tmp/assistant4c/. .
@@ -143,8 +148,7 @@ jobs:
           with urllib.request.urlopen(req) as response:
               comments = json.load(response)
           for comment in comments:
-              body = comment.get('body', '')
-              if body.startswith(('CODEX_PART_', 'PATCH_PART_')):
+              if comment.get('body', '').startswith(('CODEX_PART_', 'PATCH_PART_')):
                   delete = urllib.request.Request(comment['url'], headers=headers, method='DELETE')
                   with urllib.request.urlopen(delete):
                       pass
@@ -158,10 +162,9 @@ jobs:
               'state': 'closed',
               'state_reason': 'completed',
           }
-          data = json.dumps(message).encode()
           close = urllib.request.Request(
               f'https://api.github.com/repos/{repo}/issues/1',
-              data=data,
+              data=json.dumps(message).encode(),
               headers={**headers, 'Content-Type': 'application/json'},
               method='PATCH',
           )
