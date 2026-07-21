@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="it" data-theme="drake">
+<html lang="en" data-theme="drake">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -15,11 +15,11 @@
         <h1>Mission & Route Companion</h1>
       </div>
       <div class="topbar-actions">
-        <nav class="primary-nav" aria-label="Sezioni principali">
+        <nav class="primary-nav" aria-label="Primary sections">
           <a href="#route-workspace">ROUTE</a>
           <a href="#roadmap">ROADMAP</a>
         </nav>
-        <div class="system-status" aria-label="Stato sistema">
+        <div class="system-status" aria-label="System status">
           <span class="status-dot"></span>
           FOUNDATION ONLINE
         </div>
@@ -30,14 +30,14 @@
       <header class="section-heading">
         <div>
           <p class="eyebrow">ROUTE WORKSPACE</p>
-          <h2>Destinazioni operative</h2>
+          <h2>Operational destinations</h2>
         </div>
-        <p>Il luogo in cui devi operare e il nome da impostare nel mobiGlas restano distinti.</p>
+        <p>The place where you operate and the destination selected in the mobiGlas remain separate.</p>
       </header>
 
       <div class="workspace">
         <form class="search-panel" id="location-search">
-          <label for="location-query">Cerca destinazione</label>
+          <label for="location-query">Search destination</label>
           <div class="search-row">
             <input
               id="location-query"
@@ -47,29 +47,29 @@
               autocomplete="off"
               spellcheck="false"
             >
-            <button type="submit">Trova</button>
+            <button type="submit">Find</button>
           </div>
-          <p class="field-help">Puoi cercare il luogo fisico oppure il nome visibile nel mobiGlas.</p>
+          <p class="field-help">Search by the physical location or by the name shown in the mobiGlas.</p>
           <div class="search-results" id="search-results" aria-live="polite"></div>
         </form>
 
         <article class="destination-panel">
-          <p class="eyebrow">DESTINAZIONE OPERATIVA</p>
+          <p class="eyebrow">OPERATIONAL DESTINATION</p>
           <h2 id="destination-title">—</h2>
 
           <div class="navigation-callout">
-            <span>DESTINAZIONE IN GAME</span>
+            <span>IN-GAME DESTINATION</span>
             <strong id="navigation-target">—</strong>
-            <small>Imposta questo nome nel mobiGlas.</small>
+            <small>Set this destination in the mobiGlas.</small>
           </div>
 
           <dl class="destination-details">
             <div>
-              <dt>TIPO</dt>
+              <dt>TYPE</dt>
               <dd id="location-type">—</dd>
             </div>
             <div>
-              <dt>GERARCHIA</dt>
+              <dt>HIERARCHY</dt>
               <dd id="location-path">—</dd>
             </div>
           </dl>
@@ -81,22 +81,22 @@
       <header class="section-heading roadmap-heading">
         <div>
           <p class="eyebrow">DEVELOPMENT ROADMAP</p>
-          <h2 id="roadmap-title">Dal nucleo alla sessione completa</h2>
+          <h2 id="roadmap-title">From foundation to complete sessions</h2>
         </div>
-        <div class="roadmap-legend" aria-label="Legenda stati roadmap">
-          <span class="legend-done">Completato</span>
-          <span class="legend-active">In corso</span>
-          <span class="legend-next">Prossimo</span>
-          <span class="legend-future">Futuro</span>
+        <div class="roadmap-legend" aria-label="Roadmap status legend">
+          <span class="legend-done">Completed</span>
+          <span class="legend-active">In progress</span>
+          <span class="legend-next">Next</span>
+          <span class="legend-future">Future</span>
         </div>
       </header>
 
-      <p class="roadmap-help">I macro-blocchi scorrono in orizzontale. Dentro ogni blocco, i micro-obiettivi avanzano in verticale.</p>
-      <div class="roadmap-board" id="roadmap-board" aria-label="Roadmap del progetto"></div>
+      <p class="roadmap-help">Macro phases run horizontally. Each phase contains a vertical sequence of smaller objectives.</p>
+      <div class="roadmap-board" id="roadmap-board" aria-label="Project roadmap"></div>
     </section>
 
     <footer class="build-note">
-      Baseline attiva: località precise, modello unificato delle missioni e roadmap pubblica.
+      Active baseline: precise locations, unified mission model and public development roadmap.
     </footer>
   </main>
 
