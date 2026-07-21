@@ -10,7 +10,7 @@
         Object.freeze({ id: 'missions', label: 'Mission Builder', eyebrow: 'MISSION INTAKE', title: 'Build the session', status: 'live' }),
         Object.freeze({ id: 'route', label: 'Active Route', eyebrow: 'ACTIVE ROUTE', title: 'One stop at a time', status: 'live' }),
         Object.freeze({ id: 'cargo', label: 'Cargo Layout', eyebrow: 'CARGO LAYOUT', title: 'Zones, sectors and vertical layers', status: 'foundation' }),
-        Object.freeze({ id: 'load-operations', label: 'Load Operations', eyebrow: 'LIVE CARGO', title: 'Load and unload instructions', status: 'blueprint' })
+        Object.freeze({ id: 'load-operations', label: 'Load Operations', eyebrow: 'LIVE CARGO', title: 'Load and unload instructions', status: 'foundation' })
       ])
     }),
     Object.freeze({
