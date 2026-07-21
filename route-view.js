@@ -14,6 +14,19 @@
   const phoneDestination = document.querySelector('#phone-destination');
   const phoneAction = document.querySelector('#phone-action');
 
+  let previous = document.querySelector('#previous-stop');
+  if (!previous && complete) {
+    const controls = document.createElement('div');
+    controls.className = 'route-controls';
+    previous = document.createElement('button');
+    previous.type = 'button';
+    previous.id = 'previous-stop';
+    previous.className = 'secondary-button';
+    previous.textContent = 'PREVIOUS';
+    complete.before(controls);
+    controls.append(previous, complete);
+  }
+
   function destinationText(locationId, fallback) {
     const location = locations?.getLocation(locationId);
     return location?.navigationTarget ?? fallback;
@@ -23,7 +36,7 @@
     const item = document.createElement('div');
     item.className = `operation-row is-${operation.type}`;
     const verb = document.createElement('strong');
-    verb.textContent = operation.type.toUpperCase();
+    verb.textContent = operation.type === 'delivery' ? 'UNLOAD' : 'LOAD';
     const detail = document.createElement('span');
     detail.textContent = planner.operationInstruction(operation);
     item.append(verb, detail);
@@ -39,6 +52,7 @@
     if (!route?.stops?.length) {
       stopName.textContent = 'Generate a session first';
       complete.disabled = true;
+      previous.disabled = true;
       phoneStop.textContent = 'No active route';
       phoneDestination.textContent = '—';
       phoneAction.textContent = 'Generate a session';
@@ -52,6 +66,7 @@
       stopList.append(item);
     });
 
+    previous.disabled = currentIndex <= 0;
     if (currentIndex >= route.stops.length) {
       stopName.textContent = 'SESSION COMPLETE';
       complete.disabled = true;
@@ -69,6 +84,12 @@
     phoneDestination.textContent = `IN GAME: ${destinationText(current.locationId, current.locationLabel).toUpperCase()}`;
     phoneAction.textContent = planner.operationInstruction(current.operations[0]);
   }
+
+  previous.addEventListener('click', () => {
+    const state = store.getState();
+    if (!state.route) return;
+    store.patch({ currentStopIndex: Math.max(0, (state.currentStopIndex ?? 0) - 1) });
+  });
 
   complete.addEventListener('click', () => {
     const state = store.getState();
