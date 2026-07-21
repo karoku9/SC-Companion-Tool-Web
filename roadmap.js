@@ -20,9 +20,8 @@
         { id: 'manual-editor', label: 'Fast mission text editor', status: 'done' },
         { id: 'text-import', label: 'Readable collect and delivery parser', status: 'done' },
         { id: 'cargo-provenance', label: 'Mission, origin and destination provenance', status: 'done' },
-        { id: 'confidence', label: 'Imported-data confidence and correction', status: 'next' },
-        { id: 'ocr', label: 'Local multi-screenshot OCR', status: 'future' },
-        { id: 'game-log', label: 'Local Game.log companion', status: 'future' }
+        { id: 'confidence', label: 'Input validation, warnings and correction', status: 'next' },
+        { id: 'objective-types', label: 'Non-cargo mission objective editor', status: 'future' }
       ]
     },
     {
@@ -47,6 +46,7 @@
         { id: 'delivery-origin', label: 'Delivery instructions include pickup origin', status: 'done' },
         { id: 'complete-next', label: 'COMPLETE STOP — NEXT progress', status: 'done' },
         { id: 'previous', label: 'Reversible PREVIOUS control', status: 'next' },
+        { id: 'cargo-state', label: 'Loaded and delivered cargo state per stop', status: 'next' },
         { id: 'corrections', label: 'Manual cargo and route corrections', status: 'future' },
         { id: 'session-history', label: 'Real-session history', status: 'future' }
       ]
@@ -76,19 +76,31 @@
       ]
     },
     {
-      id: 'map', order: '07', title: 'Locations & Map', status: 'active',
-      summary: 'Real hierarchy, operational profiles and route visualization.',
+      id: 'map', order: '07', title: '3D Starmap', status: 'active',
+      summary: 'Explore playable systems, system bodies and mission routes without turning the app into a crowded dashboard.',
       items: [
-        { id: 'location-intel', label: 'Separate location intel section', status: 'done' },
-        { id: 'service-profiles', label: 'Hangars, services, trade and traffic profiles', status: 'active' },
-        { id: 'location-database', label: 'Stanton, Pyro and Nyx database', status: 'future' },
-        { id: 'entity-tree', label: 'System, body, city, spaceport and outpost tree', status: 'future' },
-        { id: 'map-controls', label: 'Pan, zoom and level-of-detail controls', status: 'future' },
-        { id: 'route-overlay', label: 'Route and stops on the map', status: 'future' }
+        { id: 'system-network', label: 'Interactive Stanton, Pyro and Nyx network', status: 'done' },
+        { id: 'system-detail', label: 'Schematic orbit views for each system', status: 'done' },
+        { id: 'map-controls', label: 'Rotate, zoom, inspect and system focus controls', status: 'done' },
+        { id: 'route-overlay', label: 'Active mission stops overlaid on supported locations', status: 'done' },
+        { id: 'location-database', label: 'Complete bodies, stations, outposts and jump points', status: 'active' },
+        { id: 'map-data-sources', label: 'Per-object source and review metadata', status: 'next' },
+        { id: 'verified-geometry', label: 'Use verified geometry where reliable data exists', status: 'future' }
       ]
     },
     {
-      id: 'trading', order: '08', title: 'Trading', status: 'future',
+      id: 'location-intel', order: '08', title: 'Location Intel', status: 'active',
+      summary: 'Services, access, trade, traffic and indicative local overhead.',
+      items: [
+        { id: 'location-intel-section', label: 'Separate low-clutter location section', status: 'done' },
+        { id: 'service-profiles', label: 'Hangars, services, trade and traffic profiles', status: 'active' },
+        { id: 'entity-tree', label: 'System, body, city, spaceport and outpost tree', status: 'future' },
+        { id: 'illegal-trade', label: 'Verified legal and illegal trading capability', status: 'future' },
+        { id: 'traffic-reports', label: 'Optional community traffic and danger reports', status: 'future' }
+      ]
+    },
+    {
+      id: 'trading', order: '09', title: 'Trading', status: 'future',
       summary: 'Classic commodity runs and opportunities along an existing route.',
       items: [
         { id: 'market-source', label: 'Timestamped and sourced market data', status: 'future' },
@@ -100,7 +112,7 @@
       ]
     },
     {
-      id: 'companion', order: '09', title: 'Companion', status: 'active',
+      id: 'companion', order: '10', title: 'Companion', status: 'active',
       summary: 'A compact second-screen controller linked to the desktop session.',
       items: [
         { id: 'drake-ui', label: 'Drake UI for Cutlass and Corsair', status: 'active' },
@@ -110,6 +122,16 @@
         { id: 'secure-transport', label: 'Secure cross-device synchronization transport', status: 'future' },
         { id: 'mobile-progress', label: 'Phone COMPLETE — NEXT controller', status: 'future' },
         { id: 'focus-mode', label: 'Focus and second-monitor mode', status: 'future' }
+      ]
+    },
+    {
+      id: 'automation', order: '11', title: 'Automated Intake', status: 'future',
+      summary: 'Optional automation after the manual mission workflow and route engine are mature.',
+      items: [
+        { id: 'ocr', label: 'Local multi-screenshot OCR', status: 'future' },
+        { id: 'game-log', label: 'Local Game.log companion', status: 'future' },
+        { id: 'import-confidence', label: 'Imported-data confidence and correction', status: 'future' },
+        { id: 'patch-adapters', label: 'Patch-specific parser adapters and regression fixtures', status: 'future' }
       ]
     }
   ]);
