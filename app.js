@@ -81,3 +81,24 @@
 
   renderDestination(model.getLocation('stanton-hurston-lorville-teasa'));
 }());
+
+(function loadCargoOperationsRuntime() {
+  if (!document.querySelector('link[href="cargo-operations.css"]')) {
+    const stylesheet = document.createElement('link');
+    stylesheet.rel = 'stylesheet';
+    stylesheet.href = 'cargo-operations.css';
+    document.head.append(stylesheet);
+  }
+
+  Promise.all([
+    import('./cargo-state.js'),
+    import('./cargo-layout.js')
+  ])
+    .then(() => {
+      window.dispatchEvent(new Event('sc:cargo-runtime-ready'));
+      return import('./load-operations-view.js');
+    })
+    .catch((error) => {
+      console.error('Cargo operations runtime failed to load.', error);
+    });
+}());

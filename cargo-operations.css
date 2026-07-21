@@ -1,0 +1,90 @@
+.route-controls {
+  display: grid;
+  grid-template-columns: minmax(120px, .42fr) minmax(220px, 1fr);
+  gap: 9px;
+}
+
+.route-controls button {
+  min-height: 48px;
+}
+
+.operation-progress {
+  margin-top: 16px;
+  color: var(--text-muted);
+  font-size: .72rem;
+  font-weight: 900;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.move-queue,
+.onboard-list {
+  display: grid;
+}
+
+.move-row.is-load i {
+  color: var(--success);
+}
+
+.move-row.is-unload i {
+  color: var(--accent);
+}
+
+.load-state-split {
+  margin-top: 14px;
+}
+
+.onboard-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-top: 1px solid var(--line);
+}
+
+.onboard-row:first-child {
+  border-top: 0;
+}
+
+.onboard-row div {
+  display: grid;
+  gap: 4px;
+}
+
+.onboard-row span {
+  color: var(--text-muted);
+  font-size: .78rem;
+}
+
+.onboard-row > strong {
+  color: var(--success);
+  font-size: .62rem;
+  letter-spacing: .1em;
+}
+
+.empty-inline-state {
+  padding: 20px 0;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.cargo-state-summary {
+  grid-template-columns: repeat(3, 1fr);
+  margin-top: 0;
+}
+
+.cargo-cell.is-onboard {
+  box-shadow: inset 0 0 0 1px currentColor;
+}
+
+@media (max-width: 720px) {
+  .route-controls,
+  .cargo-state-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .operation-buttons {
+    flex-direction: column;
+  }
+}
