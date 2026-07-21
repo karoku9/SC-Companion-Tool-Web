@@ -19,10 +19,10 @@
 
   function humanizeType(type) {
     const labels = {
-      system: 'Sistema',
-      planet: 'Pianeta',
+      system: 'System',
+      planet: 'Planet',
       'landing-zone': 'Landing zone',
-      spaceport: 'Spazioporto'
+      spaceport: 'Spaceport'
     };
 
     return labels[type] ?? type;
