@@ -81,3 +81,17 @@
 
   renderDestination(model.getLocation('stanton-hurston-lorville-teasa'));
 }());
+
+(function loadCargoOperationsRuntime() {
+  Promise.all([
+    import('./cargo-state.js'),
+    import('./cargo-layout.js')
+  ])
+    .then(() => {
+      window.dispatchEvent(new Event('sc:cargo-runtime-ready'));
+      return import('./load-operations-view.js');
+    })
+    .catch((error) => {
+      console.error('Cargo operations runtime failed to load.', error);
+    });
+}());
