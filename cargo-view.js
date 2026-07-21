@@ -21,8 +21,10 @@
   function render(state) {
     grid.replaceChildren();
     legend.replaceChildren();
-    const model = catalog.getModel(state.selectedShipModelId) ?? catalog.models[0];
-    shipName.textContent = `${model.manufacturer} ${model.model}`;
+    const baseModel = catalog.getModel(state.selectedShipModelId) ?? catalog.models[0];
+    const activeShip = (state.hangarShips ?? []).find((ship) => ship.id === state.selectedShipId);
+    const model = { ...baseModel, capacityScu: activeShip?.cargoCapacityScu ?? baseModel.capacityScu };
+    shipName.textContent = activeShip?.nickname || `${model.manufacturer} ${model.model}`;
     grid.style.setProperty('--cargo-columns', model.layout.columns);
 
     if (!state.route?.stops?.length) {
