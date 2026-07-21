@@ -45,7 +45,8 @@
       if (!line) return;
       const action = line.match(/^(collect|pickup|deliver)\s+(.+)$/i);
       if (!action) {
-        startMission(line.replace(/^mission\s+/i, '').trim());
+        const explicitTitle = line.match(/^mission\s*:\s*(.+)$/i);
+        startMission(explicitTitle ? explicitTitle[1].trim() : line);
         return;
       }
       if (!current) throw new Error(`Line ${index + 1}: add a mission name before objectives`);
