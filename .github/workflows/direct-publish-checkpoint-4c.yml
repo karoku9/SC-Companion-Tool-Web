@@ -1,0 +1,145 @@
+name: Direct verified Checkpoint 4C publication
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/direct-publish-checkpoint-4c.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: direct-checkpoint-4c-publication
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout trusted main
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: main
+
+      - name: Reconstruct checksum-verified archives from transfer issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          python - <<'PY'
+          import base64
+          import hashlib
+          import json
+          import os
+          import re
+          import urllib.request
+
+          repo = os.environ['REPOSITORY']
+          token = os.environ['GH_TOKEN']
+          headers = {
+              'Authorization': f'Bearer {token}',
+              'Accept': 'application/vnd.github+json',
+              'X-GitHub-Api-Version': '2022-11-28',
+          }
+          req = urllib.request.Request(
+              f'https://api.github.com/repos/{repo}/issues/1/comments?per_page=100',
+              headers=headers,
+          )
+          with urllib.request.urlopen(req) as response:
+              comments = json.load(response)
+
+          groups = {'CODEX_PART': {}, 'PATCH_PART': {}}
+          marker = re.compile(r'(CODEX_PART|PATCH_PART)_(\d+):')
+          for comment in comments:
+              body = comment.get('body', '')
+              matches = list(marker.finditer(body))
+              for index, match in enumerate(matches):
+                  end = matches[index + 1].start() if index + 1 < len(matches) else len(body)
+                  payload = re.sub(r'\s+', '', body[match.end():end])
+                  groups[match.group(1)][int(match.group(2))] = payload
+
+          expected = {
+              'CODEX_PART': (
+                  '/tmp/codex4b.tar.xz',
+                  '584332d533146e36725a9f576dacb76a23cb6c02a79613706776e67ac0910d91',
+                  13,
+              ),
+              'PATCH_PART': (
+                  '/tmp/assistant4c.tar.xz',
+                  'ef127c6813e2c2c42a93fa2dafad9eb56c861fe34000a5037cab5f5c55850268',
+                  4,
+              ),
+          }
+
+          for name, (path, expected_hash, expected_count) in expected.items():
+              parts = groups[name]
+              indexes = sorted(parts)
+              required = list(range(expected_count))
+              if indexes != required:
+                  raise SystemExit(f'{name}: expected indexes {required}, received {indexes}')
+              encoded = ''.join(parts[i] for i in required)
+              raw = base64.b64decode(encoded, validate=True)
+              digest = hashlib.sha256(raw).hexdigest()
+              if digest != expected_hash:
+                  raise SystemExit(f'{name}: checksum mismatch {digest}')
+              with open(path, 'wb') as handle:
+                  handle.write(raw)
+              print(f'{name}: {len(raw)} bytes; SHA-256 {digest}')
+          PY
+
+          mkdir -p /tmp/codex4b /tmp/assistant4c
+          tar -xJf /tmp/codex4b.tar.xz -C /tmp/codex4b
+          tar -xJf /tmp/assistant4c.tar.xz -C /tmp/assistant4c
+
+      - name: Preserve deployment workflow and configure Git
+        run: |
+          cp .github/workflows/deploy-pages.yml /tmp/deploy-pages.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Create and verify Codex Checkpoint 4B commit
+        run: |
+          git checkout -B publication-work "$GITHUB_SHA"
+          find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          cp -a /tmp/codex4b/. .
+          mkdir -p .github/workflows
+          cp /tmp/deploy-pages.yml .github/workflows/deploy-pages.yml
+
+          node validate-locations.js
+          node --test \
+            tests/checkpoint2.test.js \
+            tests/checkpoint3.test.js \
+            tests/checkpoint4a.test.js \
+            tests/checkpoint4b.test.js
+
+          git add -A
+          git commit -m "Publish Codex Checkpoint 4B real-use alpha"
+          echo "CODEX_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+
+      - name: Apply and verify Assistant Checkpoint 4C
+        run: |
+          cp -a /tmp/assistant4c/. .
+
+          node validate-locations.js
+          node --test \
+            tests/checkpoint2.test.js \
+            tests/checkpoint3.test.js \
+            tests/checkpoint4a.test.js \
+            tests/checkpoint4b.test.js \
+            tests/checkpoint4c.test.js
+
+          git add -A
+          git commit -m "Harden Companion hauling ledger commands"
+          echo "ASSISTANT_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+
+      - name: Publish backup branch and main atomically after verification
+        run: |
+          git push origin "$CODEX_SHA:refs/heads/backup/codex-checkpoint-4b" --force-with-lease
+          git push origin "$ASSISTANT_SHA:refs/heads/main"
+
+      - name: Publication summary
+        run: |
+          echo "Codex backup: $CODEX_SHA"
+          echo "Published main: $ASSISTANT_SHA"
