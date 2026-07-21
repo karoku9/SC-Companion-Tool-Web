@@ -28,10 +28,10 @@
       commodity: requiredText(lot.commodity, 'Commodity'),
       scu: positiveNumber(lot.scu, 'SCU'),
       pickupLocationId,
-      pickupType: CARGO_PICKUP_TYPES.includes(lot.pickupType)
-        ? lot.pickupType
-        : 'pickup',
-      deliveryLocationId
+      pickupLocationLabel: String(lot.pickupLocationLabel ?? pickupLocationId),
+      pickupType: CARGO_PICKUP_TYPES.includes(lot.pickupType) ? lot.pickupType : 'pickup',
+      deliveryLocationId,
+      deliveryLocationLabel: String(lot.deliveryLocationLabel ?? deliveryLocationId)
     });
   }
 
@@ -41,6 +41,7 @@
       missionId,
       type: requiredText(objective.type, 'Objective type'),
       locationId: requiredText(objective.locationId, 'Objective location'),
+      locationLabel: String(objective.locationLabel ?? objective.locationId),
       label: requiredText(objective.label, 'Objective label'),
       dependsOn: Object.freeze([...(objective.dependsOn ?? [])].map(String))
     });
@@ -50,10 +51,7 @@
     const id = requiredText(input.id, 'Mission id');
     const cargoLots = (input.cargoLots ?? []).map((lot) => normalizeCargoLot(lot, id));
     const objectives = (input.objectives ?? []).map((objective) => normalizeObjective(objective, id));
-
-    if (!cargoLots.length && !objectives.length) {
-      throw new Error(`Mission ${id} has no operations`);
-    }
+    if (!cargoLots.length && !objectives.length) throw new Error(`Mission ${id} has no operations`);
 
     const itemIds = [...cargoLots, ...objectives].map((item) => item.id);
     if (new Set(itemIds).size !== itemIds.length) {
@@ -77,7 +75,11 @@
       missionTitle: mission.title,
       lotId: lot.id,
       commodity: lot.commodity,
-      scu: lot.scu
+      scu: lot.scu,
+      originLocationId: lot.pickupLocationId,
+      originLocationLabel: lot.pickupLocationLabel,
+      destinationLocationId: lot.deliveryLocationId,
+      destinationLocationLabel: lot.deliveryLocationLabel
     };
 
     return [
@@ -86,6 +88,8 @@
         id: pickupId,
         type: lot.pickupType,
         locationId: lot.pickupLocationId,
+        locationLabel: lot.pickupLocationLabel,
+        pickupLocationLabel: lot.pickupLocationLabel,
         dependsOn: Object.freeze([])
       }),
       Object.freeze({
@@ -93,6 +97,8 @@
         id: deliveryId,
         type: 'delivery',
         locationId: lot.deliveryLocationId,
+        locationLabel: lot.deliveryLocationLabel,
+        pickupLocationLabel: lot.pickupLocationLabel,
         dependsOn: Object.freeze([pickupId])
       })
     ];
@@ -106,6 +112,7 @@
       objectiveId: objective.id,
       type: objective.type,
       locationId: objective.locationId,
+      locationLabel: objective.locationLabel,
       label: objective.label,
       dependsOn: objective.dependsOn
     });
@@ -114,10 +121,7 @@
   function buildOperations(missionInputs) {
     const missions = missionInputs.map(normalizeMission);
     const missionIds = missions.map((mission) => mission.id);
-
-    if (new Set(missionIds).size !== missionIds.length) {
-      throw new Error('Mission ids must be unique');
-    }
+    if (new Set(missionIds).size !== missionIds.length) throw new Error('Mission ids must be unique');
 
     return missions.flatMap((mission) => [
       ...mission.cargoLots.flatMap((lot) => cargoLotOperations(mission, lot)),
@@ -127,32 +131,23 @@
 
   function groupOperationsByLocation(operations) {
     const stops = new Map();
-
     operations.forEach((operation) => {
       const existing = stops.get(operation.locationId) ?? {
         locationId: operation.locationId,
+        locationLabel: operation.locationLabel ?? operation.locationId,
         operations: []
       };
-
       existing.operations.push(operation);
       stops.set(operation.locationId, existing);
     });
-
     return [...stops.values()].map((stop) => Object.freeze({
       locationId: stop.locationId,
+      locationLabel: stop.locationLabel,
       operations: Object.freeze([...stop.operations])
     }));
   }
 
-  const api = Object.freeze({
-    normalizeMission,
-    buildOperations,
-    groupOperationsByLocation
-  });
-
+  const api = Object.freeze({ normalizeMission, buildOperations, groupOperationsByLocation });
   root.SCCompanionMissions = api;
-
-  if (typeof module !== 'undefined' && module.exports) {
-    module.exports = api;
-  }
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
 }(typeof globalThis !== 'undefined' ? globalThis : window));

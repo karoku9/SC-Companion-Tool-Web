@@ -1,9 +1,11 @@
 'use strict';
+
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const roadmap = require('../roadmap.js');
+
 const allowedStatuses = new Set(['done', 'active', 'next', 'future']);
 
 test('roadmap phases and objectives have unique ids and valid statuses', () => {
@@ -18,17 +20,22 @@ test('roadmap phases and objectives have unique ids and valid statuses', () => {
   });
 });
 
-test('roadmap tracks the current section, location intel and phone companion slices', () => {
-  const items = roadmap.phases.flatMap((phase) => phase.items);
-  assert.equal(items.find((item) => item.id === 'section-navigation').status, 'done');
-  assert.equal(items.find((item) => item.id === 'service-profiles').status, 'active');
-  assert.equal(items.find((item) => item.id === 'pairing-protocol').status, 'next');
+test('roadmap exposes the usable mission, cargo and Hangar path', () => {
+  const foundation = roadmap.phases[0];
+  assert.equal(foundation.id, 'foundation');
+  assert.ok(foundation.items.every((item) => item.status === 'done'));
+  assert.ok(roadmap.phases.some((phase) => phase.id === 'routing'));
+  assert.ok(roadmap.phases.some((phase) => phase.id === 'cargo-planning'));
+  assert.ok(roadmap.phases.some((phase) => phase.id === 'hangar'));
+  assert.ok(roadmap.phases.some((phase) => phase.id === 'companion'));
 });
 
-test('page loads the English horizontal and vertical roadmap interface', () => {
+test('page loads the English roadmap and focused planner sections', () => {
   const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
   assert.match(html, /<html lang="en"/);
   assert.match(html, /href="roadmap\.css"/);
-  assert.match(html, /data-view-target="roadmap"/);
+  assert.match(html, />MISSIONS</);
+  assert.match(html, />CARGO</);
+  assert.match(html, />HANGAR</);
   assert.match(html, /Macro phases run horizontally/);
 });
