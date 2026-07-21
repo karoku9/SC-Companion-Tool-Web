@@ -7,6 +7,7 @@
   <title>SC Companion Tool</title>
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="roadmap.css">
+  <link rel="stylesheet" href="sections.css">
 </head>
 <body>
   <main class="app-shell">
@@ -16,9 +17,11 @@
         <h1>Mission & Route Companion</h1>
       </div>
       <div class="topbar-actions">
-        <nav class="primary-nav" aria-label="Primary sections">
-          <a href="#route-workspace">ROUTE</a>
-          <a href="#roadmap">ROADMAP</a>
+        <nav class="primary-nav" aria-label="Primary sections" role="tablist">
+          <button type="button" data-view-target="route" aria-selected="true">ROUTE</button>
+          <button type="button" data-view-target="locations" aria-selected="false">LOCATIONS</button>
+          <button type="button" data-view-target="companion" aria-selected="false">COMPANION</button>
+          <button type="button" data-view-target="roadmap" aria-selected="false">ROADMAP</button>
         </nav>
         <div class="system-status" aria-label="System status">
           <span class="status-dot"></span>
@@ -27,58 +30,102 @@
       </div>
     </header>
 
-    <section class="section-block" id="route-workspace" aria-labelledby="destination-title">
+    <section class="app-view section-block" data-view="route" id="route" aria-labelledby="destination-title">
       <header class="section-heading">
         <div>
           <p class="eyebrow">ROUTE WORKSPACE</p>
           <h2>Operational destinations</h2>
         </div>
-        <p>The place where you operate and the destination selected in the mobiGlas remain separate.</p>
+        <p>The physical arrival point and the mobiGlas destination remain separate.</p>
       </header>
-
       <div class="workspace">
         <form class="search-panel" id="location-search">
           <label for="location-query">Search destination</label>
           <div class="search-row">
-            <input
-              id="location-query"
-              name="location"
-              type="search"
-              value="Lorville"
-              autocomplete="off"
-              spellcheck="false"
-            >
+            <input id="location-query" name="location" type="search" value="Lorville" autocomplete="off" spellcheck="false">
             <button type="submit">Find</button>
           </div>
           <p class="field-help">Search by the physical location or by the name shown in the mobiGlas.</p>
           <div class="search-results" id="search-results" aria-live="polite"></div>
         </form>
-
         <article class="destination-panel">
           <p class="eyebrow">OPERATIONAL DESTINATION</p>
           <h2 id="destination-title">—</h2>
-
           <div class="navigation-callout">
             <span>IN-GAME DESTINATION</span>
             <strong id="navigation-target">—</strong>
             <small>Set this destination in the mobiGlas.</small>
           </div>
-
           <dl class="destination-details">
-            <div>
-              <dt>TYPE</dt>
-              <dd id="location-type">—</dd>
-            </div>
-            <div>
-              <dt>HIERARCHY</dt>
-              <dd id="location-path">—</dd>
-            </div>
+            <div><dt>TYPE</dt><dd id="location-type">—</dd></div>
+            <div><dt>HIERARCHY</dt><dd id="location-path">—</dd></div>
           </dl>
         </article>
       </div>
     </section>
 
-    <section class="section-block roadmap-section" id="roadmap" aria-labelledby="roadmap-title">
+    <section class="app-view section-block" data-view="locations" id="locations" hidden>
+      <header class="section-heading">
+        <div>
+          <p class="eyebrow">LOCATION INTEL</p>
+          <h2>Services and arrival overhead</h2>
+        </div>
+        <p>Operational facts stay separate from community data, live telemetry and rough estimates.</p>
+      </header>
+      <div class="intel-layout">
+        <article class="intel-summary">
+          <p class="eyebrow">SELECTED LOCATION</p>
+          <h3 id="intel-location-name">—</h3>
+          <dl class="compact-facts">
+            <div><dt>DATA STATUS</dt><dd id="intel-data-status">—</dd></div>
+            <div><dt>TRAFFIC</dt><dd id="intel-traffic">—</dd></div>
+          </dl>
+          <div class="estimate-block">
+            <span class="eyebrow">INDICATIVE ARRIVAL TIME</span>
+            <strong class="estimate-total" id="estimate-total">—</strong>
+            <ol class="estimate-list" id="estimate-segments"></ol>
+          </div>
+        </article>
+        <section class="intel-panel" aria-labelledby="services-title">
+          <p class="eyebrow">OPERATIONS PROFILE</p>
+          <h3 id="services-title">Services</h3>
+          <div class="service-grid" id="intel-services"></div>
+        </section>
+      </div>
+    </section>
+
+    <section class="app-view section-block" data-view="companion" id="companion" hidden>
+      <header class="section-heading">
+        <div>
+          <p class="eyebrow">PHONE COMPANION</p>
+          <h2>One-tap route progress</h2>
+        </div>
+        <p>The compact controller is designed first; code pairing will be enabled only with a real secure transport.</p>
+      </header>
+      <div class="companion-layout">
+        <article class="companion-card">
+          <span class="companion-state">PAIRING TRANSPORT NOT CONNECTED IN THIS BUILD</span>
+          <h3>Pair by short code</h3>
+          <p>The planned flow links the desktop session to a phone without exposing the full planner.</p>
+          <div class="pairing-flow">
+            <div><strong>1.</strong> Desktop creates a temporary session and six-digit code.</div>
+            <div><strong>2.</strong> Phone enters the code and receives only the active route snapshot.</div>
+            <div><strong>3.</strong> COMPLETE — NEXT synchronizes back to the desktop session.</div>
+          </div>
+        </article>
+        <article class="phone-preview" aria-label="Compact phone controller preview">
+          <div class="phone-screen">
+            <p class="eyebrow">NEXT STOP</p>
+            <strong class="phone-stop">Teasa Spaceport · Lorville</strong>
+            <span>IN GAME: LORVILLE</span>
+            <div class="phone-action"><strong>DELIVER</strong><br>4 SCU OrganicMass</div>
+            <button class="phone-next" type="button" disabled>COMPLETE — NEXT</button>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="app-view section-block roadmap-section" data-view="roadmap" id="roadmap" hidden aria-labelledby="roadmap-title">
       <header class="section-heading roadmap-heading">
         <div>
           <p class="eyebrow">DEVELOPMENT ROADMAP</p>
@@ -91,20 +138,21 @@
           <span class="legend-future">Future</span>
         </div>
       </header>
-
       <p class="roadmap-help">Macro phases run horizontally. Each phase contains a vertical sequence of smaller objectives.</p>
       <div class="roadmap-board" id="roadmap-board" aria-label="Project roadmap"></div>
     </section>
 
-    <footer class="build-note">
-      Active baseline: precise locations, unified mission model and public development roadmap.
-    </footer>
+    <footer class="build-note">Active slice: separate sections, location service profiles, indicative arrival estimates and Companion planning.</footer>
   </main>
 
   <script src="locations.js"></script>
+  <script src="location-profiles.js"></script>
+  <script src="arrival-estimates.js"></script>
   <script src="missions.js"></script>
   <script src="roadmap.js"></script>
   <script src="app.js"></script>
+  <script src="sections.js"></script>
+  <script src="location-intel-view.js"></script>
   <script src="roadmap-view.js"></script>
 </body>
 </html>
