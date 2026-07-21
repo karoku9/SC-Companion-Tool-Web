@@ -47,9 +47,10 @@
         { id: 'actions', label: 'Mission-labelled pickup, collect and delivery actions', status: 'done' },
         { id: 'delivery-origin', label: 'Delivery instructions include pickup origin', status: 'done' },
         { id: 'complete-next', label: 'COMPLETE STOP — NEXT progress', status: 'done' },
-        { id: 'previous', label: 'Reversible PREVIOUS control', status: 'next' },
-        { id: 'cargo-state', label: 'Loaded and delivered cargo state per stop', status: 'next' },
-        { id: 'corrections', label: 'Manual cargo and route corrections', status: 'future' },
+        { id: 'previous', label: 'Reversible PREVIOUS control', status: 'done' },
+        { id: 'cargo-state', label: 'Loaded and delivered cargo state per stop', status: 'done' },
+        { id: 'load-operations', label: 'Live load and unload operation page', status: 'done' },
+        { id: 'corrections', label: 'Manual cargo and route corrections', status: 'next' },
         { id: 'session-history', label: 'Real-session history', status: 'future' }
       ]
     },
@@ -60,6 +61,7 @@
         { id: 'vertical-zones', label: 'Separable cargo zones with vertical layers', status: 'done' },
         { id: 'mission-sectors', label: 'Separate sectors by mission and delivery', status: 'done' },
         { id: 'delivery-access', label: 'Earlier deliveries placed closer to access', status: 'done' },
+        { id: 'stable-slots', label: 'Stable planned slots while cargo loads and unloads', status: 'done' },
         { id: 'risk-handling', label: 'Rapid-access weighting for dangerous pickups', status: 'active' },
         { id: 'zone-editor', label: 'Per-ship zone and separator editor', status: 'next' },
         { id: 'physical-layouts', label: 'Verified physical cargo geometry per ship', status: 'next' },
