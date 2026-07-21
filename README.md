@@ -6,25 +6,14 @@ The previous implementation is preserved unchanged on the branch:
 
 `backup/pre-zero-rebuild-2026-07-21`
 
-## Product direction
+## Current baseline
 
-The application will be rebuilt in small, verifiable increments around:
-
-- precise operational destinations, such as `Teasa Spaceport · Lorville`;
-- the in-game search destination required by the mobiGlas, such as `Lorville`;
-- cargo and non-cargo mission intake;
-- multi-stop route planning;
-- guided in-game execution;
-- optional commodity opportunities along an already planned route;
-- manufacturer-themed MFD interfaces.
-
-No previous application code is carried into this branch by default. New slices should remain small, testable and useful on their own.
-
-## Current functional slices
-
-### Operational locations
-
-The hierarchical location model distinguishes a physical arrival point from the name that must be selected in the game.
+- precise operational locations separated from mobiGlas navigation targets;
+- mission, contract and cargo-lot identity model;
+- cargo and non-cargo operation model;
+- English Drake-inspired interface;
+- horizontal macro-phase and vertical objective roadmap;
+- automated Node tests and GitHub Pages deployment.
 
 Searching for `Lorville` resolves to:
 
@@ -32,33 +21,24 @@ Searching for `Lorville` resolves to:
 - in-game navigation target: `Lorville`;
 - hierarchy: `Stanton / Hurston / Lorville / Teasa Spaceport`.
 
-Only operational nodes are selectable. Systems, planets and landing-zone hierarchy nodes remain available for future maps and routing without being shown as false physical destinations.
+## Run locally
 
-### Unified mission operations
-
-Cargo and non-cargo missions use one operation format. Cargo lots generate a pickup or collect operation plus a delivery that depends on that specific operation.
-
-Operations may be grouped into one physical stop while retaining:
-
-- mission id and title;
-- cargo-lot id;
-- commodity and SCU;
-- pickup, collect or delivery type;
-- dependency on the correct earlier operation.
-
-This allows several Dead Saints contracts to share a stop without merging their contract identity.
-
-## Checks
+Serve the repository root through any static HTTP server, for example:
 
 ```bash
-node --test tests/locations.test.js tests/missions.test.js
-node --check locations.js
-node --check missions.js
-node --check app.js
+python -m http.server 4173
 ```
 
-Current result: 9 tests passing; all JavaScript files pass syntax checks.
+Then open `http://localhost:4173`.
 
-## Next slice
+## Test
 
-Add a deterministic route-plan model that respects operation dependencies. Actual time, fuel and risk optimization will only use explicit, traceable data sources rather than invented values.
+```bash
+node --test tests/*.test.js
+```
+
+## Development direction
+
+The application is being rebuilt through small, independently testable modules. The roadmap displayed inside the site is the active product roadmap and will be updated as objectives move between future, next, in progress and completed states.
+
+The next implementation slice is deterministic route planning that respects operation dependencies. Time, fuel and risk optimization will only use explicit, traceable data sources rather than invented values.
