@@ -1,4 +1,4 @@
-' strict';
+'use strict';
 
 (function exposeSessionStore(root) {
   const KEY = 'sc-companion-session-v1';
@@ -17,6 +17,7 @@ deliver baijini 2scu etam 1scu neon`;
       missions: [],
       route: null,
       currentStopIndex: 0,
+      selectedShipId: 'corsair-main',
       selectedShipModelId: 'drake-corsair',
       hangarShips: [{
         id: 'corsair-main',
