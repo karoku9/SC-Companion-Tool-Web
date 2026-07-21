@@ -37,6 +37,8 @@ Then open `http://localhost:4173`.
 node --test tests/*.test.js
 ```
 
+Current baseline: 12 automated tests plus JavaScript syntax checks in GitHub Actions.
+
 ## Development direction
 
 The application is being rebuilt through small, independently testable modules. The roadmap displayed inside the site is the active product roadmap and will be updated as objectives move between future, next, in progress and completed states.
