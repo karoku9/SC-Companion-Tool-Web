@@ -1,17 +1,73 @@
 <!doctype html>
-<html lang="en">
+<html lang="it" data-theme="drake">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
   <title>SC Companion Tool</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <main class="shell">
-    <p class="eyebrow">SC COMPANION TOOL</p>
-    <h1>Clean rebuild initialized</h1>
-    <p>The previous application is preserved on the backup branch. This branch starts from a minimal, dependency-free foundation.</p>
+  <main class="app-shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">SC COMPANION TOOL</p>
+        <h1>Route Workspace</h1>
+      </div>
+      <div class="system-status" aria-label="Stato sistema">
+        <span class="status-dot"></span>
+        LOCATION MODEL ONLINE
+      </div>
+    </header>
+
+    <section class="workspace" aria-labelledby="destination-title">
+      <form class="search-panel" id="location-search">
+        <label for="location-query">Cerca destinazione</label>
+        <div class="search-row">
+          <input
+            id="location-query"
+            name="location"
+            type="search"
+            value="Lorville"
+            autocomplete="off"
+            spellcheck="false"
+          >
+          <button type="submit">Trova</button>
+        </div>
+        <p class="field-help">Puoi cercare il luogo fisico oppure il nome visibile nel mobiGlas.</p>
+        <div class="search-results" id="search-results" aria-live="polite"></div>
+      </form>
+
+      <article class="destination-panel">
+        <p class="eyebrow">DESTINAZIONE OPERATIVA</p>
+        <h2 id="destination-title">—</h2>
+
+        <div class="navigation-callout">
+          <span>DESTINAZIONE IN GAME</span>
+          <strong id="navigation-target">—</strong>
+          <small>Imposta questo nome nel mobiGlas.</small>
+        </div>
+
+        <dl class="destination-details">
+          <div>
+            <dt>TIPO</dt>
+            <dd id="location-type">—</dd>
+          </div>
+          <div>
+            <dt>GERARCHIA</dt>
+            <dd id="location-path">—</dd>
+          </div>
+        </dl>
+      </article>
+    </section>
+
+    <footer class="build-note">
+      Baseline attiva: località precise e modello unificato delle missioni.
+    </footer>
   </main>
+
+  <script src="locations.js"></script>
+  <script src="missions.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
