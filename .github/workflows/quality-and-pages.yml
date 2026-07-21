@@ -40,6 +40,8 @@ jobs:
         run: node --test --test-name-pattern="starter ship" tests/planner.test.js
       - name: Check JavaScript syntax
         run: |
+          node --check product-pages.js
+          node --check product-shell.js
           node --check locations.js
           node --check location-profiles.js
           node --check arrival-estimates.js
