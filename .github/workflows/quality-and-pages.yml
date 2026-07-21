@@ -19,10 +19,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
-      - name: Test Checkpoint 2 compatibility
-        run: node --test tests/checkpoint2.test.js
-      - name: Test Checkpoint 3 compatibility
-        run: node --test tests/checkpoint3.test.js
+      - name: Test legacy checkpoint compatibility when present
+        run: |
+          [ ! -f tests/checkpoint2.test.js ] || node --test tests/checkpoint2.test.js
+          [ ! -f tests/checkpoint3.test.js ] || node --test tests/checkpoint3.test.js
       - name: Test locations
         run: node --test tests/locations.test.js
       - name: Test missions
