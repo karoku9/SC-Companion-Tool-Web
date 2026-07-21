@@ -83,6 +83,13 @@
 }());
 
 (function loadCargoOperationsRuntime() {
+  if (!document.querySelector('link[href="cargo-operations.css"]')) {
+    const stylesheet = document.createElement('link');
+    stylesheet.rel = 'stylesheet';
+    stylesheet.href = 'cargo-operations.css';
+    document.head.append(stylesheet);
+  }
+
   Promise.all([
     import('./cargo-state.js'),
     import('./cargo-layout.js')
