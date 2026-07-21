@@ -19,10 +19,27 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
-      - name: Run existing tests
+      - name: Test legacy checkpoint compatibility when present
+        run: |
+          [ ! -f tests/checkpoint2.test.js ] || node --test tests/checkpoint2.test.js
+          [ ! -f tests/checkpoint3.test.js ] || node --test tests/checkpoint3.test.js
+      - name: Test locations
+        run: node --test tests/locations.test.js
+      - name: Test missions
+        run: node --test tests/missions.test.js
+      - name: Test roadmap
+        run: node --test tests/roadmap.test.js
+      - name: Test starmap
+        run: node --test tests/starmap.test.js
+      - name: Test product shell
+        run: node --test tests/product-shell.test.js
+      - name: Test any additional suites
         run: |
           for file in tests/*.test.js; do
-            if [ "$file" != "tests/planner.test.js" ]; then node --test "$file"; fi
+            case "$file" in
+              tests/checkpoint2.test.js|tests/checkpoint3.test.js|tests/locations.test.js|tests/missions.test.js|tests/roadmap.test.js|tests/starmap.test.js|tests/product-shell.test.js|tests/planner.test.js) ;;
+              *) node --test "$file" ;;
+            esac
           done
       - name: Test mission parsing
         run: node --test --test-name-pattern="mission text" tests/planner.test.js
@@ -40,6 +57,8 @@ jobs:
         run: node --test --test-name-pattern="starter ship" tests/planner.test.js
       - name: Check JavaScript syntax
         run: |
+          node --check product-pages.js
+          node --check product-shell.js
           node --check locations.js
           node --check location-profiles.js
           node --check arrival-estimates.js

@@ -24,18 +24,21 @@ test('roadmap exposes the usable mission, cargo and Hangar path', () => {
   const foundation = roadmap.phases[0];
   assert.equal(foundation.id, 'foundation');
   assert.ok(foundation.items.every((item) => item.status === 'done'));
+  assert.ok(foundation.items.some((item) => item.id === 'page-blueprints'));
   assert.ok(roadmap.phases.some((phase) => phase.id === 'routing'));
   assert.ok(roadmap.phases.some((phase) => phase.id === 'cargo-planning'));
   assert.ok(roadmap.phases.some((phase) => phase.id === 'hangar'));
   assert.ok(roadmap.phases.some((phase) => phase.id === 'companion'));
 });
 
-test('page loads the English roadmap and focused planner sections', () => {
+test('page loads the English roadmap and generated product shell', () => {
   const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
   assert.match(html, /<html lang="en"/);
   assert.match(html, /href="roadmap\.css"/);
-  assert.match(html, />MISSIONS</);
-  assert.match(html, />CARGO</);
-  assert.match(html, />HANGAR</);
+  assert.match(html, /href="product-shell\.css"/);
+  assert.match(html, /id="product-navigation"/);
+  assert.match(html, /data-view="missions"/);
+  assert.match(html, /data-view="cargo"/);
+  assert.match(html, /data-view="hangar"/);
   assert.match(html, /Macro phases run horizontally/);
 });

@@ -6,9 +6,10 @@
   if (!buttons.length || !views.length) return;
 
   const validIds = new Set(views.map((view) => view.dataset.view));
+  const defaultPageId = window.SCCompanionPages?.defaultPageId ?? 'overview';
 
   function show(viewId, updateHash = true) {
-    const selectedId = validIds.has(viewId) ? viewId : 'missions';
+    const selectedId = validIds.has(viewId) ? viewId : defaultPageId;
     views.forEach((view) => { view.hidden = view.dataset.view !== selectedId; });
     buttons.forEach((button) => {
       const selected = button.dataset.viewTarget === selectedId;
@@ -22,5 +23,5 @@
   });
 
   window.addEventListener('hashchange', () => show(location.hash.slice(1), false));
-  show(location.hash.slice(1) || 'missions', false);
+  show(location.hash.slice(1) || defaultPageId, false);
 }());

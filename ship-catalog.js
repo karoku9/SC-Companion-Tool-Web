@@ -7,7 +7,17 @@
       manufacturer: 'Drake',
       model: 'Corsair',
       capacityScu: 72,
-      layout: Object.freeze({ rows: 8, columns: 9, accessPoints: ['rear'] }),
+      layout: Object.freeze({
+        rows: 8,
+        columns: 9,
+        accessPoints: ['rear'],
+        geometryStatus: 'concept',
+        zones: Object.freeze([
+          Object.freeze({ id: 'rear-access', label: 'Zone A · Rear access', access: 'Rear ramp', capacityScu: 24, layers: 3, columns: 8, separable: true }),
+          Object.freeze({ id: 'mid-bay', label: 'Zone B · Mid bay', access: 'Through Zone A', capacityScu: 24, layers: 3, columns: 8, separable: true }),
+          Object.freeze({ id: 'forward-bay', label: 'Zone C · Forward bay', access: 'Deep cargo', capacityScu: 24, layers: 3, columns: 8, separable: true })
+        ])
+      }),
       sourceStatus: 'reference'
     }),
     Object.freeze({
@@ -19,7 +29,13 @@
         rows: 6,
         columns: 8,
         accessPoints: ['rear', 'left', 'right'],
-        blockedCells: Object.freeze(['0:0', '0:7'])
+        blockedCells: Object.freeze(['0:0', '0:7']),
+        geometryStatus: 'concept',
+        zones: Object.freeze([
+          Object.freeze({ id: 'rear-zone', label: 'Zone A · Rear ramp', access: 'Rear ramp', capacityScu: 16, layers: 2, columns: 8, separable: true }),
+          Object.freeze({ id: 'center-zone', label: 'Zone B · Center bay', access: 'Rear or side doors', capacityScu: 16, layers: 2, columns: 8, separable: true }),
+          Object.freeze({ id: 'side-zone', label: 'Zone C · Side access', access: 'Side doors', capacityScu: 14, layers: 2, columns: 7, separable: true })
+        ])
       }),
       sourceStatus: 'reference'
     })
