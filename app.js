@@ -1,6 +1,6 @@
 'use strict';
 
-(function initializeRouteWorkspace() {
+(function initializeLocationWorkspace() {
   const model = window.SCCompanionLocations;
   if (!model) throw new Error('Location model failed to load.');
 
@@ -15,7 +15,13 @@
   };
 
   function humanizeType(type) {
-    const labels = { system: 'System', planet: 'Planet', 'landing-zone': 'Landing zone', spaceport: 'Spaceport' };
+    const labels = {
+      system: 'System',
+      planet: 'Planet',
+      'landing-zone': 'Landing zone',
+      spaceport: 'Spaceport',
+      'orbital-station': 'Orbital station'
+    };
     return labels[type] ?? type;
   }
 
@@ -24,9 +30,7 @@
     elements.navigationTarget.textContent = location.navigationTarget ?? location.name;
     elements.type.textContent = humanizeType(location.type);
     elements.path.textContent = model.formatLocationPath(location);
-    window.dispatchEvent(new CustomEvent('sc:location-selected', {
-      detail: { locationId: location.id }
-    }));
+    window.dispatchEvent(new CustomEvent('sc:location-selected', { detail: { locationId: location.id } }));
   }
 
   function selectLocation(location) {
@@ -62,10 +66,7 @@
 
   function runSearch() {
     const results = model.searchOperationalLocations(elements.query.value);
-    if (results.length === 1) {
-      selectLocation(results[0]);
-      return;
-    }
+    if (results.length === 1) return selectLocation(results[0]);
     renderSearchResults(results);
   }
 
@@ -73,7 +74,6 @@
     event.preventDefault();
     runSearch();
   });
-
   elements.query.addEventListener('input', () => {
     const value = elements.query.value.trim();
     renderSearchResults(value ? model.searchOperationalLocations(value) : []);
