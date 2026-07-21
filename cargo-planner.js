@@ -34,9 +34,13 @@
     return cells.slice(0, shipModel.capacityScu);
   }
 
-  function findStopIndex(route, lotId, type) {
+  function findStopIndex(route, missionId, lotId, type) {
     return route.stops.findIndex((stop) => (
-      stop.operations.some((operation) => operation.lotId === lotId && operation.type === type)
+      stop.operations.some((operation) => (
+        operation.missionId === missionId
+        && operation.lotId === lotId
+        && operation.type === type
+      ))
     ));
   }
 
@@ -44,8 +48,8 @@
     const cells = createCells(shipModel)
       .sort((left, right) => left.accessDistance - right.accessDistance || left.row - right.row || left.column - right.column);
     const lots = route.missions.flatMap((mission) => mission.cargoLots.map((lot) => {
-      const pickupStopIndex = findStopIndex(route, lot.id, lot.pickupType);
-      const deliveryStopIndex = findStopIndex(route, lot.id, 'delivery');
+      const pickupStopIndex = findStopIndex(route, mission.id, lot.id, lot.pickupType);
+      const deliveryStopIndex = findStopIndex(route, mission.id, lot.id, 'delivery');
       const pickupRisk = Number(riskResolver(lot.pickupLocationId, lot.pickupLocationLabel) ?? 0);
       return {
         ...lot,
@@ -68,13 +72,16 @@
     [...lots]
       .sort((left, right) => left.priority - right.priority || left.missionTitle.localeCompare(right.missionTitle))
       .forEach((lot) => {
+        const sectorStart = cursor;
         const sectorCells = cells.slice(cursor, cursor + Math.ceil(lot.scu));
         cursor += sectorCells.length;
         sectorCells.forEach((cell, slotIndex) => assignments.push(Object.freeze({
           ...cell,
+          planSlotIndex: sectorStart + slotIndex,
           missionId: lot.missionId,
           missionTitle: lot.missionTitle,
           lotId: lot.id,
+          cargoKey: `${lot.missionId}::${lot.id}`,
           sectorId: `${lot.missionId}:${lot.deliveryLocationId}`,
           commodity: lot.commodity,
           scuShare: Math.min(1, lot.scu - slotIndex),
@@ -82,6 +89,7 @@
           originLocationLabel: lot.pickupLocationLabel,
           deliveryLocationId: lot.deliveryLocationId,
           deliveryLocationLabel: lot.deliveryLocationLabel,
+          pickupStopIndex: lot.pickupStopIndex,
           deliveryStopIndex: lot.deliveryStopIndex,
           pickupRisk: lot.pickupRisk
         })));
@@ -96,7 +104,7 @@
     });
   }
 
-  const api = Object.freeze({ createCells, planCargo });
+  const api = Object.freeze({ createCells, findStopIndex, planCargo });
   root.SCCompanionCargoPlanner = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 }(typeof globalThis !== 'undefined' ? globalThis : window));
