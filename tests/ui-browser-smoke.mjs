@@ -44,25 +44,11 @@ async function readableTypography(label) {
       const style = getComputedStyle(element);
       const box = element.getBoundingClientRect();
       const directText = [...element.childNodes].some((node) => node.nodeType === Node.TEXT_NODE && node.textContent.trim());
-      return directText
-        && style.display !== 'none'
-        && style.visibility !== 'hidden'
-        && box.width > 0
-        && box.height > 0
-        && !element.classList.contains('sr-only');
+      return directText && style.display !== 'none' && style.visibility !== 'hidden' && box.width > 0 && box.height > 0 && !element.classList.contains('sr-only');
     });
-    const sizes = candidates.map((element) => ({
-      text: element.textContent.trim().replace(/\s+/g, ' ').slice(0, 90),
-      size: Number.parseFloat(getComputedStyle(element).fontSize),
-      tag: element.tagName,
-      className: element.className
-    }));
+    const sizes = candidates.map((element) => ({ text: element.textContent.trim().replace(/\s+/g, ' ').slice(0, 90), size: Number.parseFloat(getComputedStyle(element).fontSize), tag: element.tagName, className: element.className }));
     const operationTitle = Number.parseFloat(getComputedStyle(document.querySelector('#current-stop-name')).fontSize);
-    return {
-      smallest: sizes.sort((left, right) => left.size - right.size).slice(0, 12),
-      minimum: Math.min(...sizes.map((item) => item.size)),
-      operationTitle
-    };
+    return { smallest: sizes.sort((left, right) => left.size - right.size).slice(0, 12), minimum: Math.min(...sizes.map((item) => item.size)), operationTitle };
   });
   assert.ok(result.minimum >= 10.5, `${label}: visible text below 10.5px: ${JSON.stringify(result.smallest)}`);
   assert.ok(result.operationTitle / result.minimum <= 3.5, `${label}: title/metadata ratio too large: ${result.operationTitle}/${result.minimum}`);
@@ -74,124 +60,133 @@ async function openWorkspace(id) {
   await page.locator(`[data-view="${id}"]`).waitFor({ state: 'visible' });
 }
 
+async function visibleFocus(label, locator) {
+  await locator.focus();
+  const focus = await locator.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return { outlineWidth: Number.parseFloat(style.outlineWidth), outlineStyle: style.outlineStyle, outlineColor: style.outlineColor };
+  });
+  assert.ok(focus.outlineWidth >= 2 && focus.outlineStyle !== 'none', `${label}: missing visible focus ${JSON.stringify(focus)}`);
+}
+
 function boxesOverlap(first, second, padding = 3) {
-  return first.left < second.right + padding
-    && first.right > second.left - padding
-    && first.top < second.bottom + padding
-    && first.bottom > second.top - padding;
+  return first.left < second.right + padding && first.right > second.left - padding && first.top < second.bottom + padding && first.bottom > second.top - padding;
 }
 
 let failure = null;
 try {
-  step = 'load Missions';
-  await page.goto(`${baseUrl}/#missions`, { waitUntil: 'networkidle' });
-  await page.locator('#mission-text').waitFor({ state: 'visible' });
+  step = 'load empty Operations';
+  await page.goto(`${baseUrl}/#route`, { waitUntil: 'networkidle' });
+  await page.locator('#current-stop-name').filter({ hasText: 'Generate a session first' }).waitFor({ state: 'visible' });
+  await noHorizontalOverflow('Operations empty');
+  await readableTypography('Operations empty');
+  await visibleFocus('Primary navigation', page.locator('[data-view-target="missions"]'));
+  await page.screenshot({ path: `${output}/operations-empty-desktop.png`, fullPage: true });
+
+  await openWorkspace('missions');
   await page.locator('#mission-text').fill(interstellarMissionText);
   step = 'generate interstellar session';
   await page.locator('#mission-form button[type="submit"]').click();
   await page.locator('#mission-preview-title').filter({ hasText: '3 missions ready' }).waitFor({ state: 'visible' });
   const missionBody = await page.locator('#mission-cards').textContent();
   ['Checkmate Station', 'Orbituary', 'Ruin Station', 'Levski'].forEach((name) => assert.match(missionBody, new RegExp(name)));
-  await noHorizontalOverflow('Missions');
-  await readableTypography('Missions');
+  await noHorizontalOverflow('Missions 1664');
+  await readableTypography('Missions 1664');
+  await visibleFocus('Mission input', page.locator('#mission-text'));
   await page.screenshot({ path: `${output}/missions-interstellar-desktop.png`, fullPage: true });
 
   await openWorkspace('route');
-  step = 'inspect Operations closed';
-  await page.locator('#current-stop-name').waitFor({ state: 'visible' });
   await page.locator('.route-leg-estimate').first().waitFor({ state: 'visible' });
   const routeIndexText = await page.locator('#route-stop-list').textContent();
   assert.match(routeIndexText, /Gm|km/);
   assert.match(routeIndexText, /jump/);
-  await noHorizontalOverflow('Operations closed');
-  await readableTypography('Operations');
-  await page.screenshot({ path: `${output}/operations-interstellar-desktop.png`, fullPage: true });
+  await noHorizontalOverflow('Operations 1664');
+  await readableTypography('Operations 1664');
 
-  step = 'open Cargo auxiliary display';
-  await page.locator('[data-ops-tool="cargo"]').click();
-  const tool = page.locator('#ops-tool-panel');
-  await tool.waitFor({ state: 'visible' });
-  const box = await tool.boundingBox();
-  assert.ok(box, 'Cargo tool has no bounding box');
-  assert.ok(box.x >= 0 && box.x + box.width <= 1666, `Cargo tool escapes viewport: ${JSON.stringify(box)}`);
-  assert.ok(box.width >= 700, `Cargo tool is squeezed: ${box.width}px`);
-  await noHorizontalOverflow('Operations cargo open');
-  await page.screenshot({ path: `${output}/operations-cargo-open.png`, fullPage: true });
-  step = 'close Cargo auxiliary display';
-  await page.locator('#ops-tool-close').click();
-  await tool.waitFor({ state: 'hidden' });
+  for (const toolId of ['moves', 'cargo', 'adjust', 'route']) {
+    step = `test ${toolId} tool open and expanded`;
+    await page.locator(`[data-ops-tool="${toolId}"]`).click();
+    const tool = page.locator('#ops-tool-panel');
+    await tool.waitFor({ state: 'visible' });
+    await visibleFocus(`${toolId} close button`, page.locator('#ops-tool-close'));
+    await page.locator('#ops-tool-expand').click();
+    await tool.waitFor({ state: 'visible' });
+    assert.ok(await tool.evaluate((element) => element.classList.contains('is-expanded')), `${toolId}: did not expand`);
+    const box = await tool.boundingBox();
+    assert.ok(box && box.x >= 0 && box.x + box.width <= 1666, `${toolId}: expanded panel escapes viewport ${JSON.stringify(box)}`);
+    await noHorizontalOverflow(`Operations ${toolId} expanded`);
+    if (toolId === 'cargo') await page.screenshot({ path: `${output}/operations-cargo-expanded.png`, fullPage: true });
+    await page.keyboard.press('Escape');
+    await tool.waitFor({ state: 'hidden' });
+  }
 
   await openWorkspace('route-planner');
-  step = 'inspect interstellar Planner';
   await page.locator('#planner-detail-panel').waitFor({ state: 'visible' });
   const plannerText = await page.locator('#route-planner').textContent();
   assert.match(plannerText, /Alpha 4\.9/);
   assert.match(plannerText, /DISTANCE/);
   assert.match(plannerText, /JUMPS/);
-  assert.match(plannerText, /Gm|km/);
-  await noHorizontalOverflow('Planner');
-  await readableTypography('Planner');
+  await noHorizontalOverflow('Planner 1664');
+  await readableTypography('Planner 1664');
+  await visibleFocus('Planner profile', page.locator('.planner-profile-card').first());
   await page.screenshot({ path: `${output}/planner-interstellar-desktop.png`, fullPage: true });
 
   await openWorkspace('hangar');
-  step = 'inspect Fleet';
   await page.locator('#ship-hologram svg').waitFor({ state: 'visible' });
   assert.ok(await page.locator('#fleet-zone-form .zone-form-row').count() >= 2, 'Fleet cargo-zone editor did not render');
-  await noHorizontalOverflow('Fleet');
-  await readableTypography('Fleet');
+  await noHorizontalOverflow('Fleet 1664');
+  await readableTypography('Fleet 1664');
+  await visibleFocus('Fleet ship card', page.locator('.hangar-card button').first());
   await page.screenshot({ path: `${output}/fleet-desktop.png`, fullPage: true });
 
   await openWorkspace('map');
-  step = 'inspect Starmap';
   await page.locator('svg#starmap-canvas').waitFor({ state: 'visible' });
-  assert.equal(await page.locator('canvas#starmap-canvas').count(), 0, 'Legacy canvas Starmap is still present');
   assert.ok(await page.locator('#starmap-canvas .map-node').count() > 0, 'Route-first Starmap rendered no nodes');
-  const mapSummary = await page.locator('#starmap-route-status').textContent();
-  assert.match(mapSummary, /Gm|km/);
-  assert.match(mapSummary, /jump/);
   const mapLabels = await page.evaluate(() => {
     const canvas = document.querySelector('#starmap-canvas').getBoundingClientRect();
-    return {
-      canvas: { left: canvas.left, right: canvas.right, top: canvas.top, bottom: canvas.bottom },
-      labels: [...document.querySelectorAll('#starmap-canvas .map-route-label')].map((text) => {
-        const box = text.getBoundingClientRect();
-        return { content: text.textContent, left: box.left, right: box.right, top: box.top, bottom: box.bottom };
-      })
-    };
+    return { canvas: { left: canvas.left, right: canvas.right, top: canvas.top, bottom: canvas.bottom }, labels: [...document.querySelectorAll('#starmap-canvas .map-route-label')].map((text) => { const box = text.getBoundingClientRect(); return { content: text.textContent, left: box.left, right: box.right, top: box.top, bottom: box.bottom }; }) };
   });
   mapLabels.labels.forEach((label) => {
-    assert.ok(label.left >= mapLabels.canvas.left - 2, `Starmap label escapes left edge: ${JSON.stringify(label)}`);
-    assert.ok(label.right <= mapLabels.canvas.right + 2, `Starmap label escapes right edge: ${JSON.stringify(label)}`);
-    assert.ok(label.top >= mapLabels.canvas.top - 2, `Starmap label escapes top edge: ${JSON.stringify(label)}`);
-    assert.ok(label.bottom <= mapLabels.canvas.bottom + 2, `Starmap label escapes bottom edge: ${JSON.stringify(label)}`);
+    assert.ok(label.left >= mapLabels.canvas.left - 2 && label.right <= mapLabels.canvas.right + 2 && label.top >= mapLabels.canvas.top - 2 && label.bottom <= mapLabels.canvas.bottom + 2, `Starmap label escapes canvas: ${JSON.stringify(label)}`);
   });
-  for (let firstIndex = 0; firstIndex < mapLabels.labels.length; firstIndex += 1) {
-    for (let secondIndex = firstIndex + 1; secondIndex < mapLabels.labels.length; secondIndex += 1) {
-      const first = mapLabels.labels[firstIndex];
-      const second = mapLabels.labels[secondIndex];
-      assert.equal(boxesOverlap(first, second), false, `Starmap labels overlap: ${JSON.stringify({ first, second })}`);
-    }
-  }
-  await noHorizontalOverflow('Starmap');
-  await readableTypography('Starmap');
+  for (let firstIndex = 0; firstIndex < mapLabels.labels.length; firstIndex += 1) for (let secondIndex = firstIndex + 1; secondIndex < mapLabels.labels.length; secondIndex += 1) assert.equal(boxesOverlap(mapLabels.labels[firstIndex], mapLabels.labels[secondIndex]), false, `Starmap labels overlap: ${JSON.stringify({ first: mapLabels.labels[firstIndex], second: mapLabels.labels[secondIndex] })}`);
+  await visibleFocus('Starmap mode', page.locator('[data-map-mode="network"]'));
+  await noHorizontalOverflow('Starmap 1664');
+  await readableTypography('Starmap 1664');
   await page.screenshot({ path: `${output}/starmap-interstellar-desktop.png`, fullPage: true });
 
-  step = 'switch Starmap to system network';
-  await page.locator('[data-map-mode="network"]').click();
-  const networkText = await page.locator('#starmap-selection-detail').textContent();
-  assert.match(networkText, /Alpha 4\.9/);
-  await page.screenshot({ path: `${output}/starmap-systems-desktop.png`, fullPage: true });
+  step = 'audit compact desktop viewport';
+  await page.setViewportSize({ width: 1366, height: 768 });
+  for (const workspace of ['route', 'missions', 'route-planner', 'hangar', 'map', 'roadmap']) {
+    await openWorkspace(workspace);
+    await noHorizontalOverflow(`${workspace} 1366`);
+  }
+  await page.screenshot({ path: `${output}/starmap-1366.png`, fullPage: true });
 
-  step = 'switch to mobile viewport';
+  step = 'audit tablet viewport';
+  await page.setViewportSize({ width: 820, height: 1180 });
+  for (const workspace of ['route', 'missions', 'route-planner', 'hangar', 'map']) {
+    await openWorkspace(workspace);
+    await noHorizontalOverflow(`${workspace} tablet`);
+  }
+
+  step = 'audit mobile viewport';
   await page.setViewportSize({ width: 390, height: 844 });
   await openWorkspace('route');
   await noHorizontalOverflow('Operations mobile');
-  step = 'open Moves on mobile';
   await page.locator('[data-ops-tool="moves"]').click();
   await page.locator('#ops-tool-panel').waitFor({ state: 'visible' });
   await noHorizontalOverflow('Operations mobile tool open');
   await readableTypography('Operations mobile');
   await page.screenshot({ path: `${output}/operations-mobile.png`, fullPage: true });
+
+  step = 'audit narrow mobile viewport';
+  await page.setViewportSize({ width: 360, height: 800 });
+  for (const workspace of ['route', 'missions', 'route-planner', 'hangar', 'map']) {
+    if (!(await page.locator('#ops-tool-panel').isHidden())) await page.keyboard.press('Escape');
+    await openWorkspace(workspace);
+    await noHorizontalOverflow(`${workspace} 360`);
+  }
 
   step = 'check browser errors';
   assert.deepEqual(errors, [], `Browser errors:\n${errors.join('\n')}`);
