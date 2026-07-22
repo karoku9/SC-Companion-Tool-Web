@@ -7,14 +7,22 @@
   function views() { return [...document.querySelectorAll('[data-view]')]; }
   function buttons() { return [...document.querySelectorAll('[data-view-target]')]; }
 
+  function resetWorkspaceScroll() {
+    const scrollingElement = document.scrollingElement ?? document.documentElement;
+    scrollingElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }
+
   function show(requestedId, updateHash = true) {
     const selectedId = registry?.resolveView(requestedId) ?? requestedId ?? defaultPageId;
     const currentViews = views();
     const validIds = new Set(currentViews.map((view) => view.dataset.view));
     const resolvedId = validIds.has(selectedId) ? selectedId : defaultPageId;
+    const previousId = currentViews.find((view) => !view.hidden)?.dataset.view;
     currentViews.forEach((view) => { view.hidden = view.dataset.view !== resolvedId; });
     buttons().forEach((button) => button.setAttribute('aria-selected', String(button.dataset.viewTarget === resolvedId)));
     if (updateHash) history.replaceState(null, '', `#${resolvedId}`);
+    if (previousId && previousId !== resolvedId) resetWorkspaceScroll();
   }
 
   document.addEventListener('click', (event) => {
