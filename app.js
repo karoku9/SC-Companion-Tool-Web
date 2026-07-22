@@ -71,7 +71,8 @@
 }());
 
 (function loadApplicationRuntimes() {
-  import('./official-universe-data.js')
+  import('./fleet-loadouts.js')
+    .then(() => import('./official-universe-data.js'))
     .then(() => import('./navigation-estimates.js'))
     .then(() => import('./location-context.js'))
     .then(() => Promise.all([
@@ -82,6 +83,7 @@
       import('./cargo-layout.js'),
       import('./cargo-zone-model.js')
     ]))
+    .then(() => import('./fleet-estimate-adapter.js'))
     .then(() => {
       window.dispatchEvent(new Event('sc:route-runtime-ready'));
       window.dispatchEvent(new Event('sc:cargo-runtime-ready'));
@@ -95,6 +97,7 @@
         import('./ui-v2-accessibility.js')
       ]);
     })
+    .then(() => import('./fleet-loadouts-view.js'))
     .then(() => window.dispatchEvent(new Event('sc:dynamic-pages-ready')))
     .catch((error) => console.error('Application runtime failed to load.', error));
 }());
