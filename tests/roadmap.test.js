@@ -34,22 +34,22 @@ test('current, next and future releases form one linear delivery path', () => {
   assert.ok(roadmap.releases.slice(nextIndex + 1).every((release) => release.status === 'future'));
 });
 
-test('v0.17 hardens the delivered interstellar clean interface', () => {
-  const clean = roadmap.releases.find((item) => item.version === '0.15');
+test('v0.18 validates mission fields after visual hardening', () => {
   const interstellar = roadmap.releases.find((item) => item.version === '0.16');
-  const current = roadmap.releases.find((item) => item.version === '0.17');
-  const next = roadmap.releases.find((item) => item.version === '0.18');
-  assert.equal(clean.status, 'done');
-  assert.match(clean.title, /Clean UI rebuild/i);
+  const hardening = roadmap.releases.find((item) => item.version === '0.17');
+  const current = roadmap.releases.find((item) => item.version === '0.18');
+  const next = roadmap.releases.find((item) => item.version === '0.19');
   assert.equal(interstellar.status, 'done');
   assert.match(interstellar.title, /Interstellar navigation/i);
+  assert.equal(hardening.status, 'done');
+  assert.match(hardening.title, /Visual hardening/i);
   assert.equal(current.status, 'current');
-  assert.match(current.title, /Visual hardening/i);
-  assert.ok(current.changes.some((change) => /Chromium matrix/.test(change)));
-  assert.ok(current.changes.some((change) => /focus containment/.test(change)));
-  assert.ok(current.changes.some((change) => /44 px mobile/.test(change)));
+  assert.match(current.title, /Mission validation/i);
+  assert.ok(current.changes.some((change) => /Per-field confidence/.test(change)));
+  assert.ok(current.changes.some((change) => /custom locations/.test(change)));
+  assert.ok(current.changes.some((change) => /source retained/i.test(change)));
   assert.equal(next.status, 'next');
-  assert.match(next.title, /Mission validation/i);
+  assert.match(next.title, /Location context/i);
 });
 
 test('roadmap page keeps the English shell and release track host', () => {

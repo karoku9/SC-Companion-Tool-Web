@@ -105,16 +105,24 @@ async function minimumTouchTargets(target, label) {
       const box = element.getBoundingClientRect();
       return style.display !== 'none' && style.visibility !== 'hidden' && box.width > 0 && box.height > 0 && !element.disabled;
     })
-    .map((element) => ({ text: element.getAttribute('aria-label') || element.textContent.trim().slice(0, 50), width: element.getBoundingClientRect().width, height: element.getBoundingClientRect().height }))
+    .map((element) => ({
+      text: element.getAttribute('aria-label') || element.textContent.trim().slice(0, 50),
+      width: element.getBoundingClientRect().width,
+      height: element.getBoundingClientRect().height
+    }))
     .filter((box) => box.height < 43));
   assert.deepEqual(undersized, [], `${label}: touch targets below 44px: ${JSON.stringify(undersized)}`);
 }
 
 async function generateLongSession(target) {
   await openWorkspace(target, 'missions');
+  await target.locator('#mission-validation-panel').waitFor({ state: 'visible' });
   await target.locator('#mission-text').fill(longMissionText);
   await target.locator('#mission-form button[type="submit"]').click();
-  await target.locator('#mission-preview-title').filter({ hasText: '1 mission ready' }).waitFor({ state: 'visible' });
+  await target.locator('#mission-validation-title').filter({ hasText: /^Ready$/ }).waitFor({ state: 'visible' });
+  assert.equal(await target.locator('#mission-generate-validated').isEnabled(), true);
+  await target.locator('#mission-generate-validated').click();
+  await target.locator('#mission-preview-title').filter({ hasText: '1 mission generated' }).waitFor({ state: 'visible' });
 }
 
 async function inspectAllWorkspaces(target, label) {
@@ -135,8 +143,7 @@ async function exerciseTool(target, toolId) {
 
   await target.locator('#ops-tool-expand').focus();
   await target.keyboard.press('Enter');
-  await panel.evaluate((element) => element.classList.contains('is-expanded'))
-    .then((expanded) => assert.equal(expanded, true, `${toolId}: panel did not expand`));
+  assert.equal(await panel.evaluate((element) => element.classList.contains('is-expanded')), true, `${toolId}: panel did not expand`);
   assert.equal(await panel.getAttribute('role'), 'dialog');
   assert.equal(await panel.getAttribute('aria-modal'), 'true');
   assert.equal(await target.locator('#ops-tool-expand').getAttribute('aria-label'), 'Restore auxiliary display');
@@ -153,8 +160,7 @@ async function exerciseTool(target, toolId) {
   });
   assert.ok(trapped.first && trapped.last, `${toolId}: expanded panel has no focusable controls`);
   await target.keyboard.press('Tab');
-  const wrapped = await target.evaluate(() => document.activeElement === window.SCCompanionAccessibility.focusableElements()[0]);
-  assert.equal(wrapped, true, `${toolId}: focus did not wrap inside expanded panel`);
+  assert.equal(await target.evaluate(() => document.activeElement === window.SCCompanionAccessibility.focusableElements()[0]), true, `${toolId}: focus did not wrap inside expanded panel`);
 
   await target.keyboard.press('Escape');
   await panel.waitFor({ state: 'hidden' });
@@ -187,6 +193,7 @@ try {
   const missionText = await page.locator('#mission-cards').textContent();
   assert.match(missionText, /Long-range medical consolidation/);
   assert.match(missionText, /extremely_long_medical_supplies/);
+  assert.match(missionText, /Source lines/);
   await noHorizontalOverflow(page, 'Long Missions desktop');
   await page.screenshot({ path: `${output}/hardening-long-missions-1664.png`, fullPage: true });
 

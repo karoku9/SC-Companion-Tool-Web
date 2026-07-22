@@ -2,33 +2,54 @@
 
 ## Current release
 
-**v0.17 — Visual hardening**
+**v0.18 — Mission validation**
 
-The clean interface is now protected by a multi-state Chromium matrix instead of depending on manual visual review. Desktop, compact desktop and two mobile viewports exercise empty, active and completed routes, every Operations panel, long content, multiple ships, keyboard input and reduced-motion behaviour.
+Mission intake is now a review-first workflow. Raw contract text can be inspected without replacing the active route; a session is generated only after required fields are resolved, uncertain values are reviewed and any custom location is explicitly confirmed.
+
+## Active mission-intake architecture
+
+- `mission-validation.js` inspects mission titles, actions, locations, SCU quantities and commodity expressions before route generation.
+- Every parsed field carries a confidence contribution rather than sharing one opaque parser result.
+- Blocking errors are separate from reviewable warnings.
+- Near-action typos such as `delver` are treated as uncertain objectives with a suggested action, not as new mission titles.
+- Unknown locations remain blocked until corrected or explicitly accepted as custom.
+- Ambiguous registry matches expose selectable known-location suggestions.
+- Mission title, action, location and cargo expression can be corrected inline.
+- Editing raw text invalidates the previous review and disables generation until the new source is inspected.
+- Missions require at least one complete pickup-to-delivery cargo flow.
+
+## Source and provenance boundary
+
+- Original pasted text and reviewed text are stored separately.
+- A validation snapshot records status, confidence, warnings, blockers and review time.
+- Cargo lots retain original pickup and delivery line numbers and text.
+- Live route operations retain the cargo-lot provenance and mission-level source metadata.
+- Custom locations are preserved only after an explicit per-field confirmation.
+- Confirmed custom locations have no verified navigation geometry or sourced location context.
 
 ## Active interface architecture
 
 - One shell stylesheet: `ui-v2.css`, plus shared design-system tokens, components and a final legibility/interaction contract.
 - Six primary workspaces: Operations, Missions, Planner, Starmap, Fleet and Development.
+- Missions uses three distinct surfaces: raw input, field review and generated-session output.
+- Desktop mission review uses a stable cockpit-height display with an internally scrollable contract list.
 - Operations tools are native compact views. Cargo, Moves, Adjust and Route do not embed full pages.
 - Expanded Operations tools behave as dialogs, contain keyboard focus and return focus to the originating function key when closed.
-- Development and Starmap modes support Arrow, Home and End navigation.
 - Fleet includes original schematic ship line art and a cargo-zone editor tied to the selected ship.
-- Mobile Fleet edits cargo zones as stacked cards rather than a clipped desktop table.
 - Starmap is route-first and two-dimensional with Route, Local system and Systems modes.
 - Drake is the current manufacturer theme. Its palette and treatment are project-derived approximations, not official CIG design assets.
 
 ## Browser verification contract
 
-- Chromium covers 1664×936, 1366×768, 430×932 and 390×844.
+- Chromium covers valid interstellar intake, blocked input, corrected custom input and ambiguous location selection.
+- Chromium also covers 1664×936, 1366×768, 430×932 and 390×844 across the six workspaces.
+- Invalid review cannot create or replace a route.
+- A generated validation snapshot must keep original and reviewed text distinct.
+- Source edits after review must disable generation.
 - All six workspaces reject document-level horizontal overflow and visible text below the canonical floor.
 - Operations is tested with no route, an active interstellar route and a completed route.
 - Moves, Cargo, Adjust and Route are tested open, expanded, closed by Escape and with focus restoration.
-- Long mission, destination and commodity strings are exercised.
-- Fleet is tested with the default Corsair and a second saved Cutlass Black configuration.
 - Mobile controls have a 44 px minimum interaction target.
-- Reduced-motion removes animations and transitions; forced-colour mode retains visible focus.
-- Clean-shell initialization is awaited before contextual Development content is wired, removing the previous timing race.
 
 ## Universe-data boundary
 
@@ -46,24 +67,15 @@ The clean interface is now protected by a multi-state Chromium matrix instead of
 - Arrival, cargo handling and navigation remain separate estimate categories.
 - Planner, Operations and Starmap expose the same distance/time result instead of calculating independent values.
 
-## UI and trust boundaries
-
-- Visible operational text uses a canonical 12–36 px scale; hierarchy is created through weight, colour and placement rather than microscopic metadata.
-- Route and cargo data remain browser-local.
-- Pickup must remain before delivery.
-- Mission identity and cargo provenance remain attached to every lot.
-- Ship silhouettes and cargo zones are operational schematics, not certified geometry.
-- Starmap drawing positions are schematic and optimized for navigation clarity, not physical scale.
-
 ## Legacy status
 
-Legacy CSS and view files remain in the repository for history and rollback, but `index.html` and `app.js` do not load them. Their removal is intentionally deferred until repository-level reference cleanup can be performed independently from the now-verified live interface.
+Legacy CSS and view files remain in the repository for history and rollback, but `index.html` and `app.js` do not load them. Their removal is intentionally deferred until repository-level reference cleanup can be performed independently from the verified live interface.
 
 ## Next release
 
-**v0.18 — Mission validation**
+**v0.19 — Location context**
 
-- Assign confidence to parsed fields and location matches.
-- Surface actionable warnings before route generation.
-- Allow inline review and correction of uncertain mission data.
-- Preserve original mission text and provenance throughout corrections.
+- Show source confidence for operational location information.
+- Add service and facility context without presenting assumptions as official data.
+- Surface cargo-exposure warnings tied to route and location conditions.
+- Keep sourced facts, derived guidance and unavailable data visibly separate.

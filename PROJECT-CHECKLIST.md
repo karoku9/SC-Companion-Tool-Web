@@ -48,10 +48,27 @@
 
 ## v0.18 mission validation
 
-- [ ] Assign confidence to parsed mission fields and location matches.
-- [ ] Warn before generation when required fields are missing or ambiguous.
-- [ ] Provide inline review and correction of uncertain values.
-- [ ] Preserve original mission text and provenance after corrections.
+- [x] Assign confidence independently to action, location and cargo syntax.
+- [x] Separate blocking errors from reviewable warnings.
+- [x] Detect near-action typos without turning them into mission titles.
+- [x] Block missing titles, objectives, malformed cargo and incomplete pickup-to-delivery flows.
+- [x] Require a specific selection for ambiguous known locations.
+- [x] Require explicit confirmation before retaining a custom location.
+- [x] Provide inline review for mission title, action, location and cargo expression.
+- [x] Mark a review stale whenever raw source text changes.
+- [x] Prevent validation from replacing an existing route until generation is explicitly confirmed.
+- [x] Preserve original and reviewed mission text separately.
+- [x] Carry pickup and delivery source lines/text into cargo lots and route operations.
+- [x] Exercise valid, blocked, corrected-custom and ambiguous workflows in Chromium.
+- [x] Keep the desktop review panel cockpit-height with internal scrolling.
+
+## v0.19 location context
+
+- [ ] Add source confidence to operational location profiles.
+- [ ] Expose verified facilities and service availability where sourced.
+- [ ] Add route-aware cargo-exposure guidance without inventing a universal risk score.
+- [ ] Distinguish official facts, derived operational guidance and unavailable information.
+- [ ] Add stale-source warnings and review dates to location detail views.
 
 ## Repository cleanup
 
@@ -59,6 +76,5 @@
 
 ## Later
 
-- [ ] Location danger context with sourced data.
 - [ ] Additional manufacturer MFD themes using the same semantic components.
 - [ ] Expanded universe data and assisted intake.

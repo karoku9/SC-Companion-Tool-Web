@@ -17,6 +17,16 @@
     return number;
   }
 
+  function optionalSource(value) {
+    if (!value || typeof value !== 'object') return null;
+    return Object.freeze({ ...value });
+  }
+
+  function optionalConfidence(value) {
+    const number = Number(value);
+    return Number.isFinite(number) ? Math.max(0, Math.min(100, number <= 1 ? number * 100 : number)) : null;
+  }
+
   function normalizeCargoLot(lot, missionId) {
     const id = requiredText(lot.id, 'Cargo lot id');
     const pickupLocationId = requiredText(lot.pickupLocationId, 'Pickup location');
@@ -31,7 +41,9 @@
       pickupLocationLabel: String(lot.pickupLocationLabel ?? pickupLocationId),
       pickupType: CARGO_PICKUP_TYPES.includes(lot.pickupType) ? lot.pickupType : 'pickup',
       deliveryLocationId,
-      deliveryLocationLabel: String(lot.deliveryLocationLabel ?? deliveryLocationId)
+      deliveryLocationLabel: String(lot.deliveryLocationLabel ?? deliveryLocationId),
+      confidence: optionalConfidence(lot.confidence),
+      source: optionalSource(lot.source)
     });
   }
 
@@ -43,7 +55,9 @@
       locationId: requiredText(objective.locationId, 'Objective location'),
       locationLabel: String(objective.locationLabel ?? objective.locationId),
       label: requiredText(objective.label, 'Objective label'),
-      dependsOn: Object.freeze([...(objective.dependsOn ?? [])].map(String))
+      dependsOn: Object.freeze([...(objective.dependsOn ?? [])].map(String)),
+      confidence: optionalConfidence(objective.confidence),
+      source: optionalSource(objective.source)
     });
   }
 
@@ -62,6 +76,8 @@
       id,
       title: requiredText(input.title, 'Mission title'),
       category: String(input.category ?? (cargoLots.length ? 'cargo' : 'general')),
+      confidence: optionalConfidence(input.confidence),
+      source: optionalSource(input.source),
       cargoLots: Object.freeze(cargoLots),
       objectives: Object.freeze(objectives)
     });
@@ -73,9 +89,13 @@
     const common = {
       missionId: mission.id,
       missionTitle: mission.title,
+      missionConfidence: mission.confidence,
+      missionSource: mission.source,
       lotId: lot.id,
       commodity: lot.commodity,
       scu: lot.scu,
+      confidence: lot.confidence,
+      source: lot.source,
       originLocationId: lot.pickupLocationId,
       originLocationLabel: lot.pickupLocationLabel,
       destinationLocationId: lot.deliveryLocationId,
@@ -90,6 +110,8 @@
         locationId: lot.pickupLocationId,
         locationLabel: lot.pickupLocationLabel,
         pickupLocationLabel: lot.pickupLocationLabel,
+        sourceLine: lot.source?.pickupLine ?? null,
+        sourceText: lot.source?.pickupText ?? null,
         dependsOn: Object.freeze([])
       }),
       Object.freeze({
@@ -99,6 +121,8 @@
         locationId: lot.deliveryLocationId,
         locationLabel: lot.deliveryLocationLabel,
         pickupLocationLabel: lot.pickupLocationLabel,
+        sourceLine: lot.source?.deliveryLine ?? null,
+        sourceText: lot.source?.deliveryText ?? null,
         dependsOn: Object.freeze([pickupId])
       })
     ];
@@ -109,11 +133,17 @@
       id: `${mission.id}:${objective.id}`,
       missionId: mission.id,
       missionTitle: mission.title,
+      missionConfidence: mission.confidence,
+      missionSource: mission.source,
       objectiveId: objective.id,
       type: objective.type,
       locationId: objective.locationId,
       locationLabel: objective.locationLabel,
       label: objective.label,
+      confidence: objective.confidence,
+      source: objective.source,
+      sourceLine: objective.source?.line ?? null,
+      sourceText: objective.source?.text ?? null,
       dependsOn: objective.dependsOn
     });
   }
