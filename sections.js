@@ -4,7 +4,7 @@
   const registry = window.SCCompanionPages;
   const defaultPageId = registry?.defaultPageId ?? 'route';
 
-  function views() { return [...document.querySelectorAll(':scope body [data-view]')]; }
+  function views() { return [...document.querySelectorAll('[data-view]')]; }
   function buttons() { return [...document.querySelectorAll('[data-view-target]')]; }
 
   function show(requestedId, updateHash = true) {
@@ -13,10 +13,7 @@
     const validIds = new Set(currentViews.map((view) => view.dataset.view));
     const resolvedId = validIds.has(selectedId) ? selectedId : defaultPageId;
     currentViews.forEach((view) => { view.hidden = view.dataset.view !== resolvedId; });
-    buttons().forEach((button) => {
-      const selected = button.dataset.viewTarget === resolvedId;
-      button.setAttribute('aria-selected', String(selected));
-    });
+    buttons().forEach((button) => button.setAttribute('aria-selected', String(button.dataset.viewTarget === resolvedId)));
     if (updateHash) history.replaceState(null, '', `#${resolvedId}`);
   }
 
