@@ -41,20 +41,50 @@
   display: none !important;
 }
 
-/* Use explicit viewport edges so the mobile sheet cannot fall back to its document-flow position. */
+/* The details surface is a normal grid panel on desktop and a native top-layer dialog on mobile. */
+dialog.starmap-context-panel {
+  position: static;
+  width: auto;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  color: var(--ds-content-primary);
+}
+dialog.starmap-context-panel:not([open]) { display: none !important; }
+dialog.starmap-context-panel[open] { display: grid; }
+dialog.starmap-context-panel::backdrop { background: rgb(0 0 0 / .56); }
+
 @media (max-width: 900px) {
-  .starmap-page-v2 .starmap-context-panel {
+  .starmap-page-v2 .starmap-context-backdrop { display: none !important; }
+  dialog.starmap-context-panel.is-mobile-dialog {
     position: fixed !important;
     top: auto !important;
     right: 10px !important;
     bottom: 74px !important;
     left: 10px !important;
     width: auto !important;
+    max-width: none !important;
+    max-height: min(76svh, 690px) !important;
+    margin: 0 !important;
+    transform: none !important;
+  }
+  dialog.starmap-context-panel.is-mobile-dialog .starmap-context-header > div:last-child > span,
+  dialog.starmap-context-panel.is-mobile-dialog .starmap-route-drawer summary,
+  dialog.starmap-context-panel.is-mobile-dialog .starmap-route-drawer summary strong,
+  dialog.starmap-context-panel.is-mobile-dialog .starmap-selection-actions .button,
+  dialog.starmap-context-panel.is-mobile-dialog #starmap-route-list button > span,
+  dialog.starmap-context-panel.is-mobile-dialog #starmap-route-list b,
+  dialog.starmap-context-panel.is-mobile-dialog #starmap-route-list small,
+  dialog.starmap-context-panel.is-mobile-dialog .data-note {
+    font-size: var(--ds-type-xs, .75rem) !important;
+  }
+  dialog.starmap-context-panel.is-mobile-dialog .starmap-selection-card > p {
+    font-size: var(--ds-type-sm, .8125rem) !important;
   }
 }
 
 @media (max-width: 620px) {
-  .starmap-page-v2 .starmap-context-panel {
+  dialog.starmap-context-panel.is-mobile-dialog {
     right: 6px !important;
     left: 6px !important;
   }
