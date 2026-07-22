@@ -10,7 +10,7 @@ function read(file) {
 }
 
 function cleanCss() {
-  return ['design-system-legibility.css', 'ui-v2-shell.css', 'ui-v2-operations.css', 'ui-v2-workspaces.css', 'ui-v2-responsive.css'].map(read).join('\n');
+  return ['design-system-legibility.css', 'visual-hardening.css', 'ui-v2-shell.css', 'ui-v2-operations.css', 'ui-v2-workspaces.css', 'ui-v2-responsive.css'].map(read).join('\n');
 }
 
 test('clean UI scripts remain valid JavaScript', () => {
@@ -25,6 +25,7 @@ test('the application loads one design system and one page-layout entry', () => 
   assert.match(html, /href="design-system\.css"/);
   assert.match(html, /href="ui-v2\.css"/);
   assert.match(entry, /design-system-legibility\.css/);
+  assert.match(entry, /visual-hardening\.css/);
   ['styles.css', 'sections.css', 'planner.css', 'starmap.css', 'product-shell.css', 'workspace-consolidation.css', 'ui-rebuild.css', 'drake-mfd.css', 'mfd-layout-v2.css'].forEach((legacy) => {
     assert.doesNotMatch(html, new RegExp(`href="${legacy.replace('.', '\\.')}"`));
   });
@@ -53,6 +54,14 @@ test('auxiliary tools stay below both primary displays and can expand without pa
   assert.match(css, /min-width: 0/);
 });
 
+test('visual hardening defines focus, reduced motion and long-content contracts', () => {
+  const css = read('visual-hardening.css');
+  assert.match(css, /:focus-visible/);
+  assert.match(css, /prefers-reduced-motion: reduce/);
+  assert.match(css, /overflow-wrap: anywhere/);
+  assert.match(css, /min-block-size: 42px/);
+});
+
 test('Fleet and Starmap use dedicated visual components', () => {
   const html = read('index.html');
   const fleet = read('hangar-view.js');
@@ -68,10 +77,10 @@ test('Fleet and Starmap use dedicated visual components', () => {
   assert.doesNotMatch(map, /getContext\('2d'\)|camera\.yaw|pointer\.down/);
 });
 
-test('clean rebuild stays delivered while interstellar navigation becomes current', () => {
+test('visual hardening becomes current after interstellar navigation', () => {
   const roadmap = require('../roadmap.js');
-  assert.equal(roadmap.currentVersion, '0.16');
-  assert.equal(roadmap.releases.find((release) => release.version === '0.15').status, 'done');
-  assert.equal(roadmap.releases.find((release) => release.version === '0.16').title, 'Interstellar navigation');
-  assert.equal(roadmap.releases.find((release) => release.version === '0.17').title, 'Visual hardening');
+  assert.equal(roadmap.currentVersion, '0.17');
+  assert.equal(roadmap.releases.find((release) => release.version === '0.16').status, 'done');
+  assert.equal(roadmap.releases.find((release) => release.version === '0.17').status, 'current');
+  assert.equal(roadmap.releases.find((release) => release.version === '0.18').title, 'Mission validation');
 });
