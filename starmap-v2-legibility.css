@@ -40,3 +40,22 @@
 .starmap-page-v2:has(.starmap-system-picker:not([hidden])) #starmap-open-system {
   display: none !important;
 }
+
+/* Use explicit viewport edges so the mobile sheet cannot fall back to its document-flow position. */
+@media (max-width: 900px) {
+  .starmap-page-v2 .starmap-context-panel {
+    position: fixed !important;
+    top: auto !important;
+    right: 10px !important;
+    bottom: 74px !important;
+    left: 10px !important;
+    width: auto !important;
+  }
+}
+
+@media (max-width: 620px) {
+  .starmap-page-v2 .starmap-context-panel {
+    right: 6px !important;
+    left: 6px !important;
+  }
+}
