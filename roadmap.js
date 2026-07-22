@@ -12,6 +12,7 @@
         { id: 'page-blueprints', label: 'Visual blueprints for every planned product page', status: 'done' },
         { id: 'release-history', label: 'In-app changelog sourced from CHANGELOG.md', status: 'done' },
         { id: 'ux-refresh', label: 'Session-aware status, focus states and action feedback', status: 'done' },
+        { id: 'information-hierarchy', label: 'Destination and cargo-first information hierarchy', status: 'done' },
         { id: 'local-state', label: 'Local persistence and session recovery', status: 'done' },
         { id: 'location-model', label: 'Operational locations and mobiGlas targets', status: 'done' },
         { id: 'mission-model', label: 'Separate missions, contracts and cargo lots', status: 'done' }
@@ -30,7 +31,7 @@
     },
     {
       id: 'routing', order: '03', title: 'Routing', status: 'active',
-      summary: 'Turn objectives into a dependency-safe sequence of operational stops.',
+      summary: 'Turn objectives into a dependency-safe, capacity-safe sequence of operational stops.',
       items: [
         { id: 'precedence', label: 'Pickup and collect before delivery', status: 'done' },
         { id: 'stop-grouping', label: 'Group compatible operations by stop', status: 'done' },
@@ -38,9 +39,11 @@
         { id: 'stable-progress', label: 'Stable completed-stop identities across route changes', status: 'done' },
         { id: 'arrival-overhead', label: 'Indicative landing-zone, station and outpost overhead', status: 'done' },
         { id: 'fastest-route', label: 'Fastest practical route profile', status: 'done' },
-        { id: 'fewest-jumps', label: 'Fewest quantum-legs route profile', status: 'done' },
-        { id: 'traceable-estimates', label: 'Per-leg travel, arrival and handling breakdown', status: 'done' },
-        { id: 'risk-route', label: 'Lower estimated-risk profile with sourced confidence', status: 'next' },
+        { id: 'cargo-safety-flag', label: 'Cargo-protection flag with configurable delay margin', status: 'done' },
+        { id: 'minimum-onboard', label: 'Minimum peak-cargo route profile', status: 'done' },
+        { id: 'capacity-aware-routing', label: 'Physical and off-grid capacity-aware route filtering', status: 'done' },
+        { id: 'traceable-estimates', label: 'Per-leg travel, arrival, handling and onboard breakdown', status: 'done' },
+        { id: 'location-danger', label: 'Sourced location danger context without a separate route profile', status: 'next' },
         { id: 'fuel-estimates', label: 'Traceable fuel estimates', status: 'future' }
       ]
     },
@@ -49,7 +52,7 @@
       summary: 'One clear stop at a time on a second monitor.',
       items: [
         { id: 'next-stop', label: 'Current stop and ordered stop list', status: 'done' },
-        { id: 'actions', label: 'Mission-labelled pickup, collect and delivery actions', status: 'done' },
+        { id: 'actions', label: 'Cargo-first load, collect and delivery actions', status: 'done' },
         { id: 'delivery-origin', label: 'Delivery instructions include pickup origin', status: 'done' },
         { id: 'complete-next', label: 'COMPLETE STOP — NEXT progress', status: 'done' },
         { id: 'previous', label: 'Reversible PREVIOUS control', status: 'done' },
@@ -62,13 +65,15 @@
     },
     {
       id: 'cargo-planning', order: '05', title: 'Cargo Planning', status: 'active',
-      summary: 'Plan independent cargo zones, mission sectors and vertical SCU layers.',
+      summary: 'Plan simultaneous onboard cargo, independent zones and reusable physical slots.',
       items: [
         { id: 'vertical-zones', label: 'Separable cargo zones with vertical layers', status: 'done' },
         { id: 'mission-sectors', label: 'Separate sectors by mission and delivery', status: 'done' },
         { id: 'delivery-access', label: 'Earlier deliveries placed closer to access', status: 'done' },
         { id: 'stable-slots', label: 'Stable planned slots while cargo loads and unloads', status: 'done' },
-        { id: 'corrected-quantities', label: 'Corrected quantities reflected in cargo cells', status: 'done' },
+        { id: 'temporal-slot-reuse', label: 'Reuse cells for cargo lots that never overlap onboard', status: 'done' },
+        { id: 'off-grid-override', label: 'Explicit manual off-grid SCU allowance', status: 'done' },
+        { id: 'corrected-quantities', label: 'Corrected quantities used in capacity calculations', status: 'done' },
         { id: 'risk-handling', label: 'Rapid-access weighting for dangerous pickups', status: 'active' },
         { id: 'zone-editor', label: 'Per-ship zone and separator editor', status: 'next' },
         { id: 'physical-layouts', label: 'Verified physical cargo geometry per ship', status: 'next' },

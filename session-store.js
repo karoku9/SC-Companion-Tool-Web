@@ -20,6 +20,11 @@ deliver baijini 2scu etam 1scu neon`;
       completedStopIds: null,
       routeCorrections: null,
       cargoCorrections: {},
+      routePlannerSettings: {
+        protectCargo: false,
+        safetyMarginMinutes: 15,
+        offGridAllowanceScu: 0
+      },
       selectedShipId: 'corsair-main',
       selectedShipModelId: 'drake-corsair',
       hangarShips: [{
@@ -34,10 +39,20 @@ deliver baijini 2scu etam 1scu neon`;
     };
   }
 
+  function normalize(nextState) {
+    const defaults = initialState();
+    return {
+      ...defaults,
+      ...nextState,
+      cargoCorrections: { ...defaults.cargoCorrections, ...(nextState?.cargoCorrections ?? {}) },
+      routePlannerSettings: { ...defaults.routePlannerSettings, ...(nextState?.routePlannerSettings ?? {}) }
+    };
+  }
+
   function load() {
     try {
       const stored = JSON.parse(localStorage.getItem(KEY));
-      return stored && typeof stored === 'object' ? { ...initialState(), ...stored } : initialState();
+      return stored && typeof stored === 'object' ? normalize(stored) : initialState();
     } catch {
       return initialState();
     }
@@ -48,7 +63,7 @@ deliver baijini 2scu etam 1scu neon`;
   function getState() { return state; }
 
   function replace(nextState) {
-    state = { ...initialState(), ...nextState };
+    state = normalize(nextState);
     localStorage.setItem(KEY, JSON.stringify(state));
     root.dispatchEvent(new CustomEvent('sc:session-change', { detail: state }));
     return state;
