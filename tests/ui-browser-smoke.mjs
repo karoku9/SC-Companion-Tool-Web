@@ -25,6 +25,13 @@ async function openWorkspace(id) {
   await page.locator(`[data-view="${id}"]`).waitFor({ state: 'visible' });
 }
 
+function boxesOverlap(first, second, padding = 3) {
+  return first.left < second.right + padding
+    && first.right > second.left - padding
+    && first.top < second.bottom + padding
+    && first.bottom > second.top - padding;
+}
+
 let failure = null;
 try {
   step = 'load Missions';
@@ -71,17 +78,32 @@ try {
   const mapLabels = await page.evaluate(() => {
     const canvas = document.querySelector('#starmap-canvas').getBoundingClientRect();
     return {
-      canvas: { left: canvas.left, right: canvas.right },
-      labels: [...document.querySelectorAll('#starmap-canvas .map-route-node text')].map((text) => {
+      canvas: { left: canvas.left, right: canvas.right, top: canvas.top, bottom: canvas.bottom },
+      labels: [...document.querySelectorAll('#starmap-canvas .map-route-label')].map((text) => {
         const box = text.getBoundingClientRect();
-        return { content: text.textContent, left: box.left, right: box.right };
+        return {
+          content: text.textContent,
+          left: box.left,
+          right: box.right,
+          top: box.top,
+          bottom: box.bottom
+        };
       })
     };
   });
   mapLabels.labels.forEach((label) => {
     assert.ok(label.left >= mapLabels.canvas.left - 2, `Starmap label escapes left edge: ${JSON.stringify(label)}`);
     assert.ok(label.right <= mapLabels.canvas.right + 2, `Starmap label escapes right edge: ${JSON.stringify(label)}`);
+    assert.ok(label.top >= mapLabels.canvas.top - 2, `Starmap label escapes top edge: ${JSON.stringify(label)}`);
+    assert.ok(label.bottom <= mapLabels.canvas.bottom + 2, `Starmap label escapes bottom edge: ${JSON.stringify(label)}`);
   });
+  for (let firstIndex = 0; firstIndex < mapLabels.labels.length; firstIndex += 1) {
+    for (let secondIndex = firstIndex + 1; secondIndex < mapLabels.labels.length; secondIndex += 1) {
+      const first = mapLabels.labels[firstIndex];
+      const second = mapLabels.labels[secondIndex];
+      assert.equal(boxesOverlap(first, second), false, `Starmap labels overlap: ${JSON.stringify({ first, second })}`);
+    }
+  }
   await noHorizontalOverflow('Starmap');
   await page.screenshot({ path: `${output}/starmap-desktop.png`, fullPage: true });
 
