@@ -96,17 +96,17 @@
     .then(() => {
       window.dispatchEvent(new Event('sc:route-runtime-ready'));
       window.dispatchEvent(new Event('sc:cargo-runtime-ready'));
-      return Promise.all([
-        import('./load-operations-view.js'),
-        import('./cargo-corrections-view.js'),
-        import('./cargo-zone-editor-view.js'),
-        import('./route-corrections-view.js'),
-        import('./route-planner-view.js'),
-        import('./changelog-view.js'),
-        import('./ux-shell.js'),
-        import('./workspace-shell.js')
-      ]);
+      return import('./load-operations-view.js');
     })
+    .then(() => Promise.all([
+      import('./cargo-corrections-view.js'),
+      import('./cargo-zone-editor-view.js'),
+      import('./route-corrections-view.js'),
+      import('./route-planner-view.js'),
+      import('./changelog-view.js'),
+      import('./ux-shell.js'),
+      import('./workspace-shell.js')
+    ]))
     .then(() => window.dispatchEvent(new Event('sc:dynamic-pages-ready')))
     .catch((error) => console.error('Operational runtime failed to load.', error));
 }());
