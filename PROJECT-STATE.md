@@ -2,80 +2,83 @@
 
 ## Current release
 
-**v0.19 — Location context**
+**v0.20 — Fleet loadouts**
 
-Operational location information now comes from one shared context model used by Operations, Route Planner and Location Intel. The model keeps official/registered facts, reviewed community facility records, derived cargo guidance and unavailable data visibly separate.
+Fleet now separates a saved ship instance from the configuration currently installed on it. Named loadouts contain structured component records, source provenance and explicit performance inputs. Switching a loadout keeps the ship identity, cargo zones, route state and notes intact while updating the estimates that depend on the selected configuration.
 
-## Active Location Context architecture
+## Active Fleet Loadout architecture
 
-- `location-context.js` is the single context source for route, cargo placement, Planner proposals and detailed location views.
-- Official location and system facts retain their source IDs and review dates.
-- Reviewed community facility records remain separately labelled from official facts.
-- Missing facility records produce `unavailable-data`; they are never converted into assumed availability.
-- Freshness is explicit: fresh, aging, stale or unknown.
-- Source ledgers retain authority, link, kind and review date.
-- Cargo exposure is categorical rather than a universal numeric score: clear, controlled, caution, high exposure or unknown.
-- Exposure guidance combines onboard mission cargo with known system context and is labelled as derived guidance.
-- Unknown and custom locations remain unknown rather than inheriting a nearby system assumption.
-- Cargo placement uses a private compatibility priority derived from the same categories, but the UI never presents it as factual risk.
+- `fleet-loadouts.js` is the domain source for structured components, named loadouts, migration and derived ship performance.
+- Component records use explicit slots and retain source kind, authority, reference, review note and optional performance inputs.
+- Loadouts are stored per ship instance in `fleetLoadouts`; the selected configuration is stored separately in `activeLoadoutByShip`.
+- Ship identity is not duplicated when a loadout changes.
+- Existing free-text quantum-drive and factor fields migrate into an `Imported configuration` loadout with `legacy` provenance.
+- Compatibility fields remain on each ship record so older route, Starmap and cargo consumers continue to work during the transition.
+- Missing or unsourced component data remains visibly unknown rather than being replaced with an invented catalogue value.
 
-## Operational integration
+## Loadout-derived estimates
 
-- Operations Moves, Cargo, Adjust and Route surfaces show current-stop source and cargo context.
-- The route index shows system, source confidence and freshness for each stop.
-- Planner proposals show cargo exposure after each proposed stop.
-- Location Intel includes verified/registered facts, arrival estimate, reviewed services, source ledger, known data gaps and the static-snapshot boundary.
-- The previous string heuristic based on words such as `pyro`, `outpost` and `station` has been removed.
+- The active quantum time factor feeds normal-space and interstellar navigation estimates.
+- The active cargo-capacity delta changes the physical capacity used by the Route Planner and Fleet readout.
+- The active handling factor changes pickup and delivery handling ranges and total route estimates.
+- Fuel-efficiency and quantum-spool inputs are stored with their assumptions for later fuel and detailed drive modelling.
+- `fleet-estimate-adapter.js` enriches the existing planner engine without replacing mission, dependency or cargo-capacity rules.
+- Planner results retain the same capacity-safe and dependency-safe guarantees after loadout selection.
 
-## Mission validation and provenance
+## Fleet interface
 
-- Mission intake remains review-first.
-- Every parsed field carries a confidence contribution.
-- Blocking errors remain separate from reviewable warnings.
-- Unknown locations require explicit correction or custom confirmation.
-- Original pasted text and reviewed text are stored separately.
-- Cargo lots and route operations retain original pickup and delivery line provenance.
+- Fleet contains a responsive named-loadout browser and structured editor below the existing ship and cargo-zone surfaces.
+- Loadouts can be created, edited, activated and deleted while every ship keeps at least one configuration.
+- The editor records component slot, name, manufacturer, size/class, source kind, authority, reference and notes.
+- Operational factors are shown as assumptions and never presented as official component specifications unless the saved source explicitly says so.
+- The selected ship readout updates immediately with active quantum drive, travel factor and operational cargo capacity.
 
 ## Browser verification contract
 
-- Chromium generates an Area18 → Checkmate → Levski cargo route.
-- Before pickup, Location Context must report no mission cargo exposure.
-- At Checkmate with cargo onboard, it must report high cargo exposure and retain the onboard SCU reason.
-- Planner must render categorical context for proposed stops without recursive rendering.
-- Checkmate must show official source links and unavailable facility data rather than fabricated services.
-- Teasa must keep official location confidence and reviewed community facility records as separate layers.
-- Desktop and mobile Location Intel reject document-level horizontal overflow.
-- Existing validation, accessibility, Operations dialog and multi-viewport suites remain required.
+- A pre-v0.20 Corsair session must migrate to one `Imported configuration` loadout without changing the ship ID.
+- A second named loadout must activate without losing the first configuration.
+- Active loadout values must update compatibility fields and derived performance.
+- Fleet must remain free of document-level horizontal overflow on desktop and mobile.
+- Mobile loadout controls must keep the established 44 px interaction target.
+- Existing mission validation, Location Context, accessibility, Operations dialog and multi-viewport suites remain required.
 
-## Universe-data boundary
+## Active Location Context architecture
+
+- `location-context.js` remains the shared context source for route, cargo placement, Planner proposals and detailed location views.
+- Official location/system facts, reviewed community facility records, derived cargo guidance and unavailable data remain separate.
+- Freshness and source ledgers retain authority, link, kind and review date.
+- Cargo exposure remains categorical: clear, controlled, caution, high exposure or unknown.
+- No exposure category is live shard or security telemetry.
+
+## Mission validation and provenance
+
+- Mission intake remains review-first with independent field confidence.
+- Blocking errors remain separate from reviewable warnings.
+- Unknown locations require explicit correction or custom confirmation.
+- Original and reviewed text plus pickup/delivery line provenance remain stored.
+
+## Universe and estimate boundary
 
 - Official RSI web sources were verified on 2026-07-22 against Alpha 4.9.x.
-- Registered operational locations include Checkmate Station, Orbituary, Ruin Station and Levski.
-- Current topology includes Stanton–Pyro, Pyro–Nyx and the CIG-documented placeholder Stanton–Nyx connection.
-- The snapshot is static web-source data, not live shard telemetry.
-- No cargo-exposure category is live security telemetry.
-
-## Navigation-estimate boundary
-
+- The universe snapshot and current jump topology are static web-source data, not live shard telemetry.
 - Normal-space quantum distance is a project-derived operational estimate shown in km or Gm.
-- Jump tunnels are counted separately and are never converted into invented kilometres.
-- Navigation times are ranges affected by the selected ship quantum-time factor plus a visible jump allowance.
+- Jump tunnels are counted separately and never converted into invented kilometres.
 - Arrival, cargo handling and navigation remain separate estimate categories.
 
 ## Active interface architecture
 
-- One shell stylesheet: `ui-v2.css`, plus shared design-system tokens and final legibility/interaction rules.
+- One shell stylesheet: `ui-v2.css`, plus shared design-system and feature modules.
 - Six primary workspaces: Operations, Missions, Planner, Starmap, Fleet and Development.
 - Operations tools remain native compact views.
-- Fleet includes schematic ship line art and cargo-zone editing.
+- Fleet includes ship schematics, cargo-zone editing and structured loadouts.
 - Starmap remains route-first and two-dimensional.
-- Drake remains the current project-derived manufacturer theme, not an official CIG visual package.
+- Drake remains a project-derived manufacturer theme, not an official CIG visual package.
 
 ## Next release
 
-**v0.20 — Fleet loadouts**
+**v0.21 — Session history**
 
-- Store structured ship components rather than free-text component names.
-- Save and switch between named ship loadouts.
-- Make quantum, cargo and operational estimates consume the selected loadout.
-- Keep component provenance and estimation assumptions visible.
+- Archive completed sessions without mutating the active route.
+- Record planned and observed timings, incidents and corrections.
+- Allow a completed run to become a reusable session template.
+- Keep historical outcomes separate from static universe facts and future estimates.
