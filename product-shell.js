@@ -24,9 +24,14 @@
     mobileSelect.innerHTML = registry.groups.map((group) => `<optgroup label="${group.label}">${group.pages.map((page) => `<option value="${page.id}">${page.label}</option>`).join('')}</optgroup>`).join('');
   }
 
-  function renderInternalHosts() {
-    if (!futureRoot || document.querySelector('#load-operations')) return;
-    futureRoot.insertAdjacentHTML('beforeend', '<section class="app-view section-block internal-workspace-source" data-view="load-operations" id="load-operations" hidden></section>');
+  function renderDynamicHosts() {
+    if (!futureRoot) return;
+    if (!document.querySelector('#route-planner')) {
+      futureRoot.insertAdjacentHTML('beforeend', '<section class="app-view section-block" data-view="route-planner" id="route-planner" hidden></section>');
+    }
+    if (!document.querySelector('#load-operations')) {
+      futureRoot.insertAdjacentHTML('beforeend', '<section class="app-view section-block internal-workspace-source" data-view="load-operations" id="load-operations" hidden></section>');
+    }
   }
 
   function setContext(requestedId) {
@@ -50,20 +55,17 @@
 
   renderNavigation();
   renderMobileOptions();
-  renderInternalHosts();
+  renderDynamicHosts();
 
   navigation?.addEventListener('click', (event) => {
     const button = event.target.closest('[data-view-target]');
     if (button) setContext(button.dataset.viewTarget);
   });
-
   mobileSelect?.addEventListener('change', () => openTarget(mobileSelect.value));
-
   document.addEventListener('click', (event) => {
     const shortcut = event.target.closest('[data-shell-link]');
     if (shortcut) openTarget(shortcut.dataset.shellLink);
   });
-
   window.addEventListener('hashchange', () => setContext(location.hash.slice(1) || registry.defaultPageId));
   setContext(location.hash.slice(1) || registry.defaultPageId);
 }());
