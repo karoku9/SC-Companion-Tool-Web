@@ -53,7 +53,7 @@ test('map page loads the lightweight canvas renderer and generated navigation en
 });
 
 test('OCR and Game.log remain in the future assisted-intake release', () => {
-  const assisted = roadmap.releases.find((release) => release.version === '0.21');
+  const assisted = roadmap.releases.find((release) => release.version === '0.27');
   assert.ok(assisted);
   assert.equal(assisted.status, 'future');
   assert.ok(assisted.changes.some((change) => /OCR/.test(change)));

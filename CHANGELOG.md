@@ -7,10 +7,35 @@ The project was already under active development before this changelog was intro
 ## [Unreleased]
 
 ### Planned
-- Mission input validation, confidence and inline correction review.
-- Expanded location intelligence and sourced danger context.
-- Additional ship and component integrations.
-- Traceable fuel estimates.
+- Panel-native Operations components for Moves, Cargo, Adjust and Route.
+- Fleet visual rebuild with ship silhouette and cargo-zone schematic.
+- Route-first Starmap with predictable navigation and fit-to-route controls.
+- Missions and Planner migration to the approved component system.
+- Mission input validation after UI hardening.
+
+---
+
+## [0.14.0] - 2026-07-22
+
+### Added
+- Four-layer design-system registry covering primitive tokens, semantic roles, component contracts and manufacturer themes.
+- Project-derived Drake palette documented as an approximation rather than an official CIG palette.
+- Semantic roles for surfaces, content, borders, actions, cargo pickup/drop-off/mixed/off-grid and system states.
+- Canonical button variants: primary, secondary, ghost, danger, function and icon.
+- Canonical panel, field, status, spacing, typography and control-size definitions.
+- Canonical icon metadata using a 24 px grid, 1.7 px stroke and 16/20/24 px rendered sizes.
+- Development → UI Kit showing the palette, typography, buttons, fields, statuses, icons and manufacturer-theme contract.
+- UI research and implementation rules documenting official Drake references, hauling workflow references, W3C design-token guidance, Carbon components and NASA human-factors guidance.
+
+### Changed
+- Page-specific CSS may no longer introduce a raw colour, button variant or icon meaning without first extending the reviewed design system.
+- Existing legacy visual variables now map to semantic design-system roles while pages are migrated in later pull requests.
+- The UI rebuild is split into dedicated releases for Operations, Fleet, Starmap, Missions/Planner and final hardening.
+- Mission Validation moved to v0.20 so it does not interrupt the interface rebuild sequence.
+
+### Improved
+- Future manufacturer MFD themes can replace approved brand tokens and treatment rules without changing component meaning or interaction behaviour.
+- The roadmap now distinguishes foundational design work from page migrations instead of claiming the whole interface is fixed at once.
 
 ---
 

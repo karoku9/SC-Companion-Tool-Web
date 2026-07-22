@@ -77,7 +77,7 @@
   [
     'cargo-operations.css', 'cargo-corrections.css', 'route-corrections.css', 'changelog.css',
     'route-planner-live.css', 'ux-refresh.css', 'ux-hierarchy-v2.css', 'workspace-consolidation.css',
-    'release-roadmap.css', 'ui-rebuild.css', 'drake-mfd.css', 'mfd-layout-v2.css'
+    'release-roadmap.css', 'ui-rebuild.css', 'drake-mfd.css', 'mfd-layout-v2.css', 'design-system.css'
   ].forEach((href) => {
     if (document.querySelector(`link[href="${href}"]`)) return;
     const stylesheet = document.createElement('link');
@@ -99,6 +99,7 @@
       window.dispatchEvent(new Event('sc:cargo-runtime-ready'));
       return import('./load-operations-view.js');
     })
+    .then(() => import('./design-system-view.js'))
     .then(() => Promise.all([
       import('./cargo-corrections-view.js'),
       import('./cargo-zone-editor-view.js'),
