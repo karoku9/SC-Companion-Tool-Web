@@ -48,6 +48,16 @@ test('legibility contract defines one readable type scale for every workspace', 
   assert.match(css, /map-leg-estimate/);
 });
 
+test('interaction contract includes focus, mobile target, reduced-motion and forced-colour states', () => {
+  const css = read('design-system-legibility.css');
+  assert.match(css, /--ds-focus-ring/);
+  assert.match(css, /:focus-visible/);
+  assert.match(css, /min-height: 44px !important/);
+  assert.match(css, /prefers-reduced-motion: reduce/);
+  assert.match(css, /transition-duration: 0s !important/);
+  assert.match(css, /forced-colors: active/);
+});
+
 test('visible UI Kit documents palette, type, buttons, icons and manufacturer contract', () => {
   const view = read('design-system-view.js');
   assert.match(view, /Semantic palette/);
@@ -56,7 +66,7 @@ test('visible UI Kit documents palette, type, buttons, icons and manufacturer co
   assert.match(view, /Manufacturer theme contract/);
 });
 
-test('design foundation remains loaded before the v0.16 navigation and legibility layer', () => {
+test('design foundation remains loaded before the v0.17 hardening layer', () => {
   const html = read('index.html');
   const app = read('app.js');
   const entry = read('ui-v2.css');
@@ -65,9 +75,10 @@ test('design foundation remains loaded before the v0.16 navigation and legibilit
   assert.match(entry, /design-system-legibility\.css/);
   assert.match(app, /official-universe-data\.js/);
   assert.match(app, /navigation-estimates\.js/);
-  assert.match(app, /design-system-view\.js/);
-  assert.equal(roadmap.currentVersion, '0.16');
-  assert.equal(roadmap.releases.find((item) => item.version === '0.17').title, 'Visual hardening');
+  assert.match(app, /ui-v2-accessibility\.js/);
+  assert.match(app, /SCCompanionCleanInterfaceReady/);
+  assert.equal(roadmap.currentVersion, '0.17');
+  assert.equal(roadmap.releases.find((item) => item.version === '0.18').title, 'Mission validation');
 });
 
 test('research rules prohibit page-specific invention', () => {
