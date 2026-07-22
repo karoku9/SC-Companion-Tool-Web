@@ -83,6 +83,11 @@
 .section-heading .eyebrow,
 .planner-method-note strong,
 .planner-method-note span,
+.changelog-release summary small,
+.changelog-release summary em,
+.changelog-hero > div > span,
+.changelog-hero > div > p,
+.changelog-hero-summary span,
 .mobile-page-picker,
 .page-status,
 .app-footer {
