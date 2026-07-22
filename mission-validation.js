@@ -223,7 +223,8 @@
       const firstToken = line.match(/^([a-z]+)\b/i)?.[1] ?? '';
       const exactAction = ACTIONS.includes(normalize(firstToken));
       const actionCandidate = suggestedAction(firstToken);
-      const looksLikeObjective = /\bscu\b/i.test(line) && actionCandidate?.distance <= 2;
+      const hasCargoQuantity = /-?\d+(?:\.\d+)?\s*scu\b/i.test(line);
+      const looksLikeObjective = hasCargoQuantity && actionCandidate?.distance <= 2;
       const explicitTitle = line.match(/^mission\s*:\s*(.*)$/i);
 
       if (!exactAction && !looksLikeObjective) {
@@ -300,6 +301,10 @@
     }
 
     missionDrafts.forEach((mission) => {
+      if (!mission.entries.length) {
+        issues.push(issue({ severity: 'error', code: 'mission-without-objectives', line: mission.titleLine, entryKey: mission.key, field: 'mission', message: `${mission.title || 'Mission'} has no pickup or delivery objectives.` }));
+      }
+
       mission.entries.forEach((entry) => {
         if (!entry.location.id || !entry.cargo.items.length || entry.cargo.remainder || entry.cargo.items.some((item) => item.scu <= 0)) return;
         if (entry.action === 'collect' || entry.action === 'pickup') {
@@ -354,6 +359,10 @@
       mission.pickupPools.filter((pool) => pool.remaining > 0).forEach((pool) => {
         issues.push(issue({ severity: 'warning', code: 'undelivered-pickup', line: pool.sourceEntry.line, entryKey: pool.sourceEntry.key, field: 'cargo', message: `${mission.title}: ${pool.remaining} SCU ${pool.commodity} at ${pool.pickupLocationLabel} has no delivery.` }));
       });
+
+      if (mission.entries.length && !mission.cargoLots.length) {
+        issues.push(issue({ severity: 'error', code: 'no-complete-cargo-flow', line: mission.titleLine, entryKey: mission.key, field: 'cargo', message: `${mission.title} has no complete pickup-to-delivery cargo flow.` }));
+      }
     });
 
     const sortedIssues = [...issues].sort((left, right) => (
