@@ -10,7 +10,7 @@ function read(file) {
 }
 
 function cleanCss() {
-  return ['design-system-legibility.css', 'ui-v2-shell.css', 'ui-v2-operations.css', 'ui-v2-workspaces.css', 'ui-v2-responsive.css'].map(read).join('\n');
+  return ['design-system-legibility.css', 'visual-hardening.css', 'ui-v2-shell.css', 'ui-v2-operations.css', 'ui-v2-workspaces.css', 'ui-v2-responsive.css'].map(read).join('\n');
 }
 
 test('clean interface scripts remain valid JavaScript', () => {
@@ -26,6 +26,7 @@ test('clean UI replaces accumulated layout layers rather than overriding them', 
   assert.match(html, /href="design-system\.css"/);
   assert.match(html, /href="ui-v2\.css"/);
   assert.match(entry, /design-system-legibility\.css/);
+  assert.match(entry, /visual-hardening\.css/);
   assert.doesNotMatch(html, /styles\.css|workspace-consolidation\.css|ui-rebuild\.css|drake-mfd\.css|mfd-layout-v2\.css/);
   assert.doesNotMatch(app, /workspace-shell\.js|ui-rebuild\.js|mfd-layout-v2\.js|ux-shell\.js/);
 });
@@ -67,10 +68,10 @@ test('navigation continues using the canonical SVG icon family', () => {
   assert.match(shell, /SCCompanionMfdIcons/);
 });
 
-test('interstellar navigation follows the delivered clean rebuild', () => {
+test('visual hardening follows delivered interstellar navigation', () => {
   const roadmap = require('../roadmap.js');
-  assert.equal(roadmap.currentVersion, '0.16');
-  assert.equal(roadmap.releases.find((release) => release.version === '0.15').status, 'done');
-  assert.match(roadmap.releases.find((release) => release.version === '0.16').title, /Interstellar navigation/i);
+  assert.equal(roadmap.currentVersion, '0.17');
+  assert.equal(roadmap.releases.find((release) => release.version === '0.16').status, 'done');
   assert.match(roadmap.releases.find((release) => release.version === '0.17').title, /Visual hardening/i);
+  assert.equal(roadmap.releases.find((release) => release.version === '0.18').status, 'next');
 });
