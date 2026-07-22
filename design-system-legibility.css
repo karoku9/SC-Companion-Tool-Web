@@ -5,20 +5,19 @@
  */
 :root,
 [data-theme="drake"] {
-  --ds-type-xs: .75rem;       /* 12 px */
-  --ds-type-sm: .8125rem;     /* 13 px */
-  --ds-type-md: .9375rem;     /* 15 px */
-  --ds-type-lg: 1.0625rem;    /* 17 px */
-  --ds-type-xl: 1.25rem;      /* 20 px */
-  --ds-type-2xl: 1.625rem;    /* 26 px */
-  --ds-type-3xl: 2rem;        /* 32 px */
+  --ds-type-xs: .75rem;
+  --ds-type-sm: .8125rem;
+  --ds-type-md: .9375rem;
+  --ds-type-lg: 1.0625rem;
+  --ds-type-xl: 1.25rem;
+  --ds-type-2xl: 1.625rem;
+  --ds-type-3xl: 2rem;
   --ds-type-operational-max: 2.25rem;
   --ds-type-visible-min: .75rem;
   --ds-focus-width: 3px;
   --ds-focus-offset: 3px;
 }
 
-/* Global operational floor. Decorative marks and screen-reader content are excluded. */
 .app-frame :where(
   small,
   .display-label,
@@ -124,7 +123,6 @@ body { font-size: var(--ds-type-md); }
 .planner-detail-heading h3 { font-size: var(--ds-type-xl); }
 .planner-total strong { font-size: var(--ds-type-xl); }
 
-/* Secondary provenance stays secondary through colour and weight, not microscopic sizing. */
 .operation-mission,
 .move-item small,
 .manifest-item small,
@@ -141,7 +139,6 @@ body { font-size: var(--ds-type-md); }
   font-family: var(--ds-font-technical);
 }
 
-/* Controls inherit one readable floor across all workspaces. */
 button,
 input,
 select,
@@ -151,7 +148,15 @@ textarea,
   font-size: var(--ds-type-sm);
 }
 
-/* One visible focus language for mouse-independent operation. */
+:where(
+  button,
+  [href],
+  input,
+  select,
+  textarea,
+  summary,
+  [tabindex]:not([tabindex="-1"])
+):focus,
 :where(
   button,
   [href],
@@ -191,7 +196,6 @@ textarea,
 #starmap-canvas .map-route-label {
   font-size: var(--ds-type-sm);
 }
-/* Cargo detail remains in the persistent route list; repeating it beside dense map nodes causes collisions. */
 #starmap-canvas .map-route-summary {
   display: none;
 }
