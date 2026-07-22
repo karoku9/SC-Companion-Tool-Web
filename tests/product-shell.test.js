@@ -62,7 +62,7 @@ test('design system, icons and clean shell load before page routing', () => {
   assert.match(shell, /SCCompanionMfdIcons/);
 });
 
-test('v0.20 Fleet Loadouts, Location Context and validation runtimes are registered', () => {
+test('v0.21 keeps delivered runtimes and adds the Starmap UX layer', () => {
   const app = read('app.js');
   const clean = read('ui-v2.js');
   const accessibility = read('ui-v2-accessibility.js');
@@ -73,8 +73,10 @@ test('v0.20 Fleet Loadouts, Location Context and validation runtimes are registe
   const fleet = read('fleet-loadouts.js');
   const adapter = read('fleet-estimate-adapter.js');
   const fleetView = read('fleet-loadouts-view.js');
+  const starmap = read('starmap-view.js');
+  const entry = read('ui-v2.css');
   const designSystem = read('design-system.js');
-  assert.equal(roadmap.currentVersion, '0.20');
+  assert.equal(roadmap.currentVersion, '0.21');
   assert.match(app, /fleet-loadouts\.js/);
   assert.match(app, /fleet-estimate-adapter\.js/);
   assert.match(app, /fleet-loadouts-view\.js/);
@@ -95,12 +97,15 @@ test('v0.20 Fleet Loadouts, Location Context and validation runtimes are registe
   assert.match(fleet, /Imported configuration/);
   assert.match(adapter, /handlingTimeFactor/);
   assert.match(fleetView, /Ship loadouts/);
+  assert.match(starmap, /CURRENT OBJECTIVE/);
+  assert.match(starmap, /data-map-action="current"/);
+  assert.match(entry, /starmap-v2\.css/);
   assert.doesNotMatch(app, /workspace-shell\.js/);
   assert.match(designSystem, /manufacturer: 'Drake Interplanetary'/);
 });
 
 test('assisted OCR and Game.log intake remain after interface hardening', () => {
-  const assisted = roadmap.releases.find((release) => release.version === '0.25');
+  const assisted = roadmap.releases.find((release) => release.version === '0.26');
   assert.equal(assisted.status, 'future');
   assert.ok(assisted.changes.some((change) => /OCR/.test(change)));
   assert.ok(assisted.changes.some((change) => /Game\.log/.test(change)));
