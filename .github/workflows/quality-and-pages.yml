@@ -143,6 +143,7 @@ jobs:
           node --check tests/ui-mission-validation.mjs
           node --check tests/ui-location-context.mjs
           node --check tests/ui-fleet-loadouts.mjs
+          node --check tests/ui-starmap-ux.mjs
       - name: Install browser smoke dependencies
         run: |
           npm install --no-save playwright@1.55.0
@@ -155,6 +156,7 @@ jobs:
           UI_BASE_URL=http://127.0.0.1:4173 node tests/ui-location-context.mjs
           UI_BASE_URL=http://127.0.0.1:4173 node tests/ui-fleet-loadouts.mjs
           UI_BASE_URL=http://127.0.0.1:4173 node tests/ui-browser-hardening.mjs
+          UI_BASE_URL=http://127.0.0.1:4173 node tests/ui-starmap-ux.mjs
       - name: Upload interface screenshots
         if: always()
         uses: actions/upload-artifact@v4
