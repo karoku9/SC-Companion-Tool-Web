@@ -63,6 +63,18 @@ delver area18 2scu etam`, locations);
   assert.equal(report.summary.missionCount, 1);
 });
 
+test('missions require objectives and at least one complete cargo flow', () => {
+  const titleOnly = validation.inspectMissionText('Mission Empty', locations);
+  assert.ok(titleOnly.blockingIssues.some((item) => item.code === 'mission-without-objectives'));
+  assert.equal(titleOnly.ready, false);
+
+  const pickupOnly = validation.inspectMissionText(`Mission Pickup Only
+collect teasa 2scu etam`, locations);
+  assert.ok(pickupOnly.blockingIssues.some((item) => item.code === 'no-complete-cargo-flow'));
+  assert.ok(pickupOnly.warnings.some((item) => item.code === 'undelivered-pickup'));
+  assert.equal(pickupOnly.ready, false);
+});
+
 test('unparsed cargo and unmatched deliveries are blocking', () => {
   const malformed = validation.inspectMissionText(`Mission Cargo
 collect teasa 2scu etam extra words
