@@ -61,19 +61,20 @@ test('dynamic hosts and MFD icon registry load before section routing', () => {
   assert.match(shell, /SCCompanionMfdIcons/);
 });
 
-test('v0.12 Drake MFD and existing workspace runtimes are registered', () => {
+test('v0.13 MFD layout and existing workspace runtimes are registered', () => {
   const changelog = read('CHANGELOG.md');
   const app = read('app.js');
-  assert.match(changelog, /## \[0\.12\.0\]/);
-  assert.equal(roadmap.currentVersion, '0.12');
+  assert.match(changelog, /## \[0\.13\.0\]/);
+  assert.equal(roadmap.currentVersion, '0.13');
   assert.match(app, /cargo-zone-model\.js/);
   assert.match(app, /workspace-shell\.js/);
-  assert.match(app, /ui-rebuild\.css/);
   assert.match(app, /drake-mfd\.css/);
+  assert.match(app, /mfd-layout-v2\.css/);
+  assert.match(app, /mfd-layout-v2\.js/);
 });
 
 test('assisted OCR and Game.log intake remain after the current release', () => {
-  const assisted = roadmap.releases.find((release) => release.version === '0.20');
+  const assisted = roadmap.releases.find((release) => release.version === '0.21');
   assert.equal(assisted.status, 'future');
   assert.ok(assisted.changes.some((change) => /OCR/.test(change)));
   assert.ok(assisted.changes.some((change) => /Game\.log/.test(change)));

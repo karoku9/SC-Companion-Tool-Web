@@ -34,15 +34,16 @@ test('current, next and future releases form one linear delivery path', () => {
   assert.ok(roadmap.releases.slice(nextIndex + 1).every((release) => release.status === 'future'));
 });
 
-test('v0.12 is the Drake MFD pass and mission validation follows it', () => {
-  const previous = roadmap.releases.find((item) => item.version === '0.11');
-  const current = roadmap.releases.find((item) => item.version === '0.12');
-  const next = roadmap.releases.find((item) => item.version === '0.13');
+test('v0.13 rebuilds MFD proportions and mission validation follows it', () => {
+  const previous = roadmap.releases.find((item) => item.version === '0.12');
+  const current = roadmap.releases.find((item) => item.version === '0.13');
+  const next = roadmap.releases.find((item) => item.version === '0.14');
   assert.equal(previous.status, 'done');
-  assert.match(previous.title, /Interface rebuild/i);
+  assert.match(previous.title, /Drake MFD/i);
   assert.equal(current.status, 'current');
-  assert.match(current.title, /Drake MFD/i);
-  assert.ok(current.changes.some((change) => /Docked desktop utility MFD/.test(change)));
+  assert.match(current.title, /MFD layout rebuild/i);
+  assert.ok(current.changes.some((change) => /Reliable close/.test(change)));
+  assert.ok(current.changes.some((change) => /Hardware-style function keys/.test(change)));
   assert.equal(next.status, 'next');
   assert.match(next.title, /Mission validation/i);
 });

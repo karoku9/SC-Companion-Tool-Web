@@ -14,6 +14,36 @@ The project was already under active development before this changelog was intro
 
 ---
 
+## [0.13.0] - 2026-07-22
+
+### Added
+- Compact cockpit-style primary Operations display with a fixed top status rail and bottom function-key rail.
+- Dedicated route-index display that remains visible without competing with the current operation.
+- Defensive close handler that resets the auxiliary panel, backdrop, body lock, expanded state and active tool buttons.
+- A final MFD layout layer loaded after the previous interface styles so screen proportions remain consistent.
+
+### Improved
+- Destination typography is capped at cockpit-display proportions instead of scaling into a page-sized hero.
+- The application top bar, sidebar, page headings, forms and planner cards use substantially less vertical space.
+- Current actions use a compact three-column readout: action and cargo, operational destination, then mission provenance.
+- Moves, onboard cargo and session totals are rendered as dense amber readouts rather than separate dashboard cards.
+- Operational tools now behave like hardware function keys and show only their label and icon.
+- Wide desktop layouts dock the auxiliary display from 1120 px while narrower layouts use a full overlay.
+- Route, mission, fleet, planner and development workspaces inherit the reduced typography and spacing scale.
+
+### Changed
+- The visual target is now the actual Drake cockpit pattern: dark physical bezels around amber monochrome screens, compact system labels and fixed display controls.
+- Mission Validation moved to v0.14 so the MFD structure could be corrected before adding another workflow.
+- The initial angular-card treatment remains part of the history but is superseded by screen-first MFD proportions.
+
+### Fixed
+- Close and Escape reliably dismiss the auxiliary display even when nested SVG elements receive the click.
+- Changing workspace closes an open operational display instead of leaving it layered over another page.
+- Hidden panels cannot be forced visible by later display declarations.
+- The primary operation and utility display no longer waste most of a 1080p viewport on repeated headers and empty card space.
+
+---
+
 ## [0.12.0] - 2026-07-22
 
 ### Added
