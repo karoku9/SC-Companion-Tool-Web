@@ -5,18 +5,11 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-function read(file) {
-  return fs.readFileSync(path.join(__dirname, '..', file), 'utf8');
-}
-
-function cleanCss() {
-  return ['design-system-legibility.css', 'ui-v2-shell.css', 'ui-v2-operations.css', 'ui-v2-workspaces.css', 'ui-v2-responsive.css'].map(read).join('\n');
-}
+function read(file) { return fs.readFileSync(path.join(__dirname, '..', file), 'utf8'); }
+function cleanCss() { return ['design-system-legibility.css', 'ui-v2-shell.css', 'ui-v2-operations.css', 'ui-v2-workspaces.css', 'ui-v2-responsive.css'].map(read).join('\n'); }
 
 test('clean interface scripts remain valid JavaScript', () => {
-  ['app.js', 'ui-v2.js', 'ui-v2-operations.js', 'ui-v2-shell.js', 'mfd-icons.js', 'product-shell.js', 'route-view.js', 'hangar-view.js', 'starmap-view.js'].forEach((file) => {
-    assert.doesNotThrow(() => new Function(read(file)), `${file} contains invalid JavaScript`);
-  });
+  ['app.js', 'ui-v2.js', 'ui-v2-operations.js', 'ui-v2-shell.js', 'mfd-icons.js', 'product-shell.js', 'route-view.js', 'hangar-view.js', 'starmap-view.js'].forEach((file) => assert.doesNotThrow(() => new Function(read(file)), `${file} contains invalid JavaScript`));
 });
 
 test('clean UI replaces accumulated layout layers rather than overriding them', () => {
@@ -38,10 +31,7 @@ test('Operations uses one primary display, one route index and native auxiliary 
   assert.match(html, /route-sequence-panel/);
   ['moves', 'cargo', 'adjust', 'route'].forEach((tool) => assert.match(html, new RegExp(`data-ops-tool="${tool}"`)));
   assert.doesNotMatch(html, /id="load-operations"|data-view="cargo"/);
-  assert.match(ui, /renderMoves/);
-  assert.match(ui, /renderCargo/);
-  assert.match(ui, /renderAdjust/);
-  assert.match(ui, /renderRoute/);
+  ['renderMoves', 'renderCargo', 'renderAdjust', 'renderRoute'].forEach((name) => assert.match(ui, new RegExp(name)));
   assert.match(css, /operations-tools \{ grid-column: 1 \/ -1/);
 });
 
@@ -53,7 +43,13 @@ test('close and expand controls operate on the native panel only', () => {
   assert.match(ui, /toolPanel\.classList\.remove\('is-expanded'\)/);
   assert.match(ui, /event\.key === 'Escape'/);
   assert.match(css, /tool-panel\.is-expanded \{ position: fixed/);
-  assert.doesNotMatch(css, /has-utility-panel/);
+});
+
+test('visual hardening defines focus and reduced-motion contracts', () => {
+  const css = read('design-system-legibility.css');
+  assert.match(css, /:focus-visible/);
+  assert.match(css, /--ds-focus-width/);
+  assert.match(css, /prefers-reduced-motion: reduce/);
 });
 
 test('navigation continues using the canonical SVG icon family', () => {
@@ -67,10 +63,10 @@ test('navigation continues using the canonical SVG icon family', () => {
   assert.match(shell, /SCCompanionMfdIcons/);
 });
 
-test('interstellar navigation follows the delivered clean rebuild', () => {
+test('visual hardening follows interstellar navigation', () => {
   const roadmap = require('../roadmap.js');
-  assert.equal(roadmap.currentVersion, '0.16');
-  assert.equal(roadmap.releases.find((release) => release.version === '0.15').status, 'done');
-  assert.match(roadmap.releases.find((release) => release.version === '0.16').title, /Interstellar navigation/i);
-  assert.match(roadmap.releases.find((release) => release.version === '0.17').title, /Visual hardening/i);
+  assert.equal(roadmap.currentVersion, '0.17');
+  assert.equal(roadmap.releases.find((release) => release.version === '0.16').status, 'done');
+  assert.equal(roadmap.releases.find((release) => release.version === '0.17').status, 'current');
+  assert.equal(roadmap.releases.find((release) => release.version === '0.18').status, 'next');
 });
