@@ -64,11 +64,26 @@
 
 ## v0.19 location context
 
-- [ ] Add source confidence to operational location profiles.
-- [ ] Expose verified facilities and service availability where sourced.
-- [ ] Add route-aware cargo-exposure guidance without inventing a universal risk score.
-- [ ] Distinguish official facts, derived operational guidance and unavailable information.
-- [ ] Add stale-source warnings and review dates to location detail views.
+- [x] Add one shared source-confidence model for Operations, Planner and Location Intel.
+- [x] Keep official facts and reviewed community facility records as separate layers.
+- [x] Expose source authority, links, review dates and freshness states.
+- [x] Display missing facility data as unavailable rather than assuming a service exists.
+- [x] Add route-aware cargo-exposure guidance without a universal risk score.
+- [x] Keep unknown/custom locations visibly unknown.
+- [x] Remove the string-based `pyro` / `outpost` / `station` cargo-risk heuristic.
+- [x] Feed categorical context into cargo-placement compatibility.
+- [x] Show current-stop context in Operations and proposed-stop context in Planner.
+- [x] Add responsive facts, services, sources and known-gap sections to Location Intel.
+- [x] Exercise Area18 → Checkmate → Levski context on desktop and mobile in Chromium.
+
+## v0.20 fleet loadouts
+
+- [ ] Define structured component records and provenance.
+- [ ] Save named loadouts per ship instance.
+- [ ] Switch active loadouts without rewriting ship identity.
+- [ ] Make navigation estimates consume the selected quantum-drive configuration.
+- [ ] Expose estimation assumptions and unknown component data.
+- [ ] Preserve current free-text ship records through migration.
 
 ## Repository cleanup
 

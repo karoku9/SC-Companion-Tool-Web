@@ -62,23 +62,29 @@ test('design system, icons and clean shell load before page routing', () => {
   assert.match(shell, /SCCompanionMfdIcons/);
 });
 
-test('v0.18 validation, visual hardening and interstellar runtimes are registered', () => {
+test('v0.19 Location Context, validation and hardening runtimes are registered', () => {
   const app = read('app.js');
   const clean = read('ui-v2.js');
   const accessibility = read('ui-v2-accessibility.js');
   const validation = read('mission-validation.js');
-  const missionView = read('mission-view.js');
+  const context = read('location-context.js');
+  const contextView = read('location-intel-view.js');
+  const plannerContext = read('location-context-planner.js');
   const designSystem = read('design-system.js');
-  assert.equal(roadmap.currentVersion, '0.18');
+  assert.equal(roadmap.currentVersion, '0.19');
   assert.match(app, /official-universe-data\.js/);
   assert.match(app, /navigation-estimates\.js/);
+  assert.match(app, /location-context\.js/);
+  assert.match(app, /location-context-planner\.js/);
   assert.match(app, /cargo-zone-model\.js/);
   assert.match(app, /ui-v2-accessibility\.js/);
   assert.match(app, /SCCompanionCleanInterfaceReady/);
   assert.match(clean, /SCCompanionCleanInterfaceReady/);
   assert.match(accessibility, /activateDevelopmentTab/);
   assert.match(validation, /inspectMissionText/);
-  assert.match(missionView, /mission-generate-validated/);
+  assert.match(context, /exposureFor/);
+  assert.match(contextView, /SOURCE LEDGER/);
+  assert.match(plannerContext, /planner-location-context/);
   assert.doesNotMatch(app, /workspace-shell\.js/);
   assert.match(designSystem, /manufacturer: 'Drake Interplanetary'/);
 });

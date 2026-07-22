@@ -1,53 +1,212 @@
 'use strict';
 
-(function initializeLocationIntel() {
-  const locations = window.SCCompanionLocations;
-  const profiles = window.SCCompanionLocationProfiles;
-  const estimates = window.SCCompanionArrivalEstimates;
-  if (!locations || !profiles || !estimates) return;
+(function bootstrapLocationIntel() {
+  let initialized = false;
 
-  const elements = {
-    name: document.querySelector('#intel-location-name'),
-    status: document.querySelector('#intel-data-status'),
-    traffic: document.querySelector('#intel-traffic'),
-    services: document.querySelector('#intel-services'),
-    estimateTotal: document.querySelector('#estimate-total'),
-    estimateSegments: document.querySelector('#estimate-segments')
-  };
+  function initialize() {
+    if (initialized) return true;
+    const locations = window.SCCompanionLocations;
+    const contextModel = window.SCCompanionLocationContext;
+    const estimates = window.SCCompanionArrivalEstimates;
+    const store = window.SCCompanionSession;
+    const cargoState = window.SCCompanionCargoState;
+    const routeCorrections = window.SCCompanionRouteCorrections;
+    const routeProgress = window.SCCompanionRouteProgress;
+    const host = document.querySelector('#locations');
+    if (!locations || !contextModel || !estimates || !store || !cargoState || !routeCorrections || !routeProgress || !host) return false;
 
-  const statusLabels = {
-    available: 'AVAILABLE',
-    'city-transfer': 'CITY TRANSFER',
-    unverified: 'UNVERIFIED'
-  };
+    const intel = host.querySelector('article:last-of-type');
+    if (!intel) return false;
+    initialized = true;
+    intel.className = 'location-context-panel';
+    intel.innerHTML = `
+      <header class="location-context-header">
+        <div><small>LOCATION CONTEXT</small><h3 id="intel-location-name">—</h3><p id="intel-location-system">—</p></div>
+        <div class="location-source-state"><strong id="intel-data-status">—</strong><span id="intel-freshness">—</span></div>
+      </header>
+      <section class="location-exposure" id="intel-exposure">
+        <div><small>DERIVED CARGO GUIDANCE</small><strong id="intel-exposure-label">—</strong></div>
+        <ul id="intel-exposure-reasons"></ul>
+      </section>
+      <div class="location-context-grid">
+        <section class="location-context-section">
+          <header><small>VERIFIED / REGISTERED FACTS</small><strong>Location record</strong></header>
+          <dl id="intel-facts"></dl>
+        </section>
+        <section class="location-context-section">
+          <header><small>DERIVED ARRIVAL RANGE</small><strong id="estimate-total">—</strong></header>
+          <ol id="estimate-segments"></ol>
+          <p id="intel-traffic">—</p>
+        </section>
+      </div>
+      <section class="location-context-section">
+        <header><small>FACILITIES AND SERVICES</small><strong>Reviewed availability</strong></header>
+        <div class="location-services" id="intel-services"></div>
+      </section>
+      <div class="location-context-grid">
+        <section class="location-context-section">
+          <header><small>SOURCE LEDGER</small><strong id="intel-source-count">0 sources</strong></header>
+          <div class="location-source-list" id="intel-sources"></div>
+        </section>
+        <section class="location-context-section">
+          <header><small>UNAVAILABLE / UNVERIFIED</small><strong>Known data gaps</strong></header>
+          <ul class="location-unavailable-list" id="intel-unavailable"></ul>
+        </section>
+      </div>
+      <p class="location-boundary-note" id="intel-boundary">—</p>`;
 
-  function render(locationId) {
-    const location = locations.getLocation(locationId);
-    const profile = profiles.getProfile(locationId);
-    if (!location || !profile) return;
+    const elements = {
+      name: intel.querySelector('#intel-location-name'),
+      system: intel.querySelector('#intel-location-system'),
+      status: intel.querySelector('#intel-data-status'),
+      freshness: intel.querySelector('#intel-freshness'),
+      exposure: intel.querySelector('#intel-exposure'),
+      exposureLabel: intel.querySelector('#intel-exposure-label'),
+      exposureReasons: intel.querySelector('#intel-exposure-reasons'),
+      facts: intel.querySelector('#intel-facts'),
+      traffic: intel.querySelector('#intel-traffic'),
+      services: intel.querySelector('#intel-services'),
+      estimateTotal: intel.querySelector('#estimate-total'),
+      estimateSegments: intel.querySelector('#estimate-segments'),
+      sources: intel.querySelector('#intel-sources'),
+      sourceCount: intel.querySelector('#intel-source-count'),
+      unavailable: intel.querySelector('#intel-unavailable'),
+      boundary: intel.querySelector('#intel-boundary')
+    };
 
-    elements.name.textContent = locations.formatOperationalLabel(location);
-    elements.status.textContent = `${profile.dataStatus.replace('-', ' ').toUpperCase()} · REVIEWED ${profile.lastReviewed}`;
-    elements.traffic.textContent = `${profile.traffic.level.toUpperCase()} ESTIMATE · NOT LIVE`;
+    let selectedLocationId = 'stanton-hurston-lorville-teasa';
 
-    const serviceNodes = profile.services.map((service) => {
-      const card = document.createElement('article');
-      card.className = `service-card is-${service.status}`;
-      card.innerHTML = `<span>${service.label}</span><strong>${statusLabels[service.status] ?? service.status}</strong><small>${service.detail}</small>`;
-      return card;
-    });
-    elements.services.replaceChildren(...serviceNodes);
+    function routeContext(state) {
+      if (!state.route?.stops?.length) return { currentLocationId: null, onboardScu: 0 };
+      const route = routeCorrections.deriveRoute(state.route, state.routeCorrections);
+      const progress = routeProgress.derive(route, state.completedStopIds, state.currentStopIndex);
+      const lifecycle = cargoState.deriveCargoState(route, progress.completedStopIds, state.cargoCorrections);
+      return {
+        currentLocationId: progress.currentStop?.locationId ?? null,
+        onboardScu: lifecycle.totals.onboardScu
+      };
+    }
 
-    const estimate = estimates.estimateArrival('landing-zone', profile.traffic.level);
-    elements.estimateTotal.textContent = `${estimate.minMinutes}–${estimate.maxMinutes} MIN`;
-    const segmentNodes = estimate.segments.map((segment) => {
-      const row = document.createElement('li');
-      row.innerHTML = `<span>${segment.label}</span><strong>${segment.minMinutes}–${segment.maxMinutes} min</strong>`;
-      return row;
-    });
-    elements.estimateSegments.replaceChildren(...segmentNodes);
+    function statusLabel(status) {
+      const labels = {
+        available: 'Available',
+        'city-transfer': 'Requires local transfer',
+        unverified: 'Unverified',
+        'unavailable-data': 'No reviewed data'
+      };
+      return labels[status] ?? String(status).replace(/-/g, ' ');
+    }
+
+    function arrivalPreset(location) {
+      if (!location) return null;
+      if (location.type === 'orbital-station') return 'orbital-station';
+      if (location.type === 'spaceport' || location.type === 'landing-zone') return 'landing-zone';
+      return null;
+    }
+
+    function renderFacts(context) {
+      elements.facts.replaceChildren(...context.facts.map((fact) => {
+        const row = document.createElement('div');
+        row.innerHTML = `<dt>${fact.label}</dt><dd>${fact.value}</dd>`;
+        row.dataset.sourceKind = fact.sourceKind;
+        return row;
+      }));
+    }
+
+    function renderArrival(context) {
+      const preset = arrivalPreset(context.location);
+      if (!preset) {
+        elements.estimateTotal.textContent = 'Unavailable';
+        elements.estimateSegments.replaceChildren();
+        elements.traffic.textContent = 'No reviewed arrival model for this location type.';
+        return;
+      }
+      const trafficLevel = context.profile?.traffic?.level ?? 'normal';
+      const estimate = estimates.estimateArrival(preset, trafficLevel);
+      elements.estimateTotal.textContent = `${estimate.minMinutes}–${estimate.maxMinutes} min`;
+      elements.estimateSegments.replaceChildren(...estimate.segments.map((segment) => {
+        const row = document.createElement('li');
+        row.innerHTML = `<span>${segment.label}</span><strong>${segment.minMinutes}–${segment.maxMinutes} min</strong>`;
+        return row;
+      }));
+      elements.traffic.textContent = context.profile?.traffic
+        ? `${context.profile.traffic.level.toUpperCase()} estimate · ${context.profile.traffic.note}`
+        : 'NORMAL fallback · derived estimate, not live traffic telemetry.';
+    }
+
+    function renderServices(context) {
+      elements.services.replaceChildren(...context.services.map((service) => {
+        const card = document.createElement('article');
+        card.className = `location-service is-${service.status}`;
+        card.innerHTML = `<div><strong>${service.label}</strong><span>${statusLabel(service.status)}</span></div><p>${service.detail}</p><small>${service.sourceKind.replace(/-/g, ' ')}</small>`;
+        return card;
+      }));
+    }
+
+    function renderSources(context) {
+      elements.sourceCount.textContent = `${context.sources.length} source${context.sources.length === 1 ? '' : 's'}`;
+      if (!context.sources.length) {
+        elements.sources.innerHTML = '<div class="location-empty">No linked source record.</div>';
+        return;
+      }
+      elements.sources.replaceChildren(...context.sources.map((source) => {
+        const item = document.createElement('article');
+        const title = source.url
+          ? `<a href="${source.url}" target="_blank" rel="noopener noreferrer">${source.label}</a>`
+          : `<strong>${source.label}</strong>`;
+        item.innerHTML = `${title}<span>${source.authority.toUpperCase()} · ${source.kind.replace(/-/g, ' ')}</span><small>Reviewed ${source.reviewedAt ?? 'date unavailable'}</small>`;
+        return item;
+      }));
+    }
+
+    function renderUnavailable(context) {
+      const items = context.unavailable.length ? context.unavailable : ['No explicit data gaps are recorded for the current context.'];
+      elements.unavailable.replaceChildren(...items.map((message) => {
+        const item = document.createElement('li');
+        item.textContent = message;
+        return item;
+      }));
+    }
+
+    function render(locationId = selectedLocationId, state = store.getState()) {
+      selectedLocationId = locationId;
+      const route = routeContext(state);
+      const isCurrentStop = route.currentLocationId === locationId;
+      const context = contextModel.buildContext(locationId, {
+        onboardScu: isCurrentStop ? route.onboardScu : 0,
+        label: locations.getLocation(locationId)?.name
+      });
+
+      elements.name.textContent = context.label;
+      elements.system.textContent = context.system
+        ? `${context.system.name} · ${context.system.security}`
+        : 'System context unavailable';
+      elements.status.textContent = context.confidence.label;
+      elements.status.dataset.level = context.confidence.level;
+      elements.freshness.textContent = context.freshness.label;
+      elements.freshness.dataset.state = context.freshness.state;
+      elements.exposure.dataset.level = context.exposure.level;
+      elements.exposureLabel.textContent = context.exposure.label;
+      elements.exposureReasons.replaceChildren(...context.exposure.reasons.map((reason) => {
+        const item = document.createElement('li');
+        item.textContent = reason;
+        return item;
+      }));
+      renderFacts(context);
+      renderArrival(context);
+      renderServices(context);
+      renderSources(context);
+      renderUnavailable(context);
+      elements.boundary.textContent = `${context.snapshot.gameVersion} static web snapshot, verified ${context.snapshot.verifiedAt}. Facts, reviewed community records and derived guidance are labelled separately. This is not live shard telemetry.`;
+      window.dispatchEvent(new CustomEvent('sc:location-context-rendered', { detail: { locationId, context } }));
+    }
+
+    window.addEventListener('sc:location-selected', (event) => render(event.detail.locationId));
+    window.addEventListener('sc:session-change', (event) => render(selectedLocationId, event.detail));
+    window.addEventListener('sc:current-stop-location', (event) => render(event.detail.locationId));
+    render(selectedLocationId);
+    return true;
   }
 
-  window.addEventListener('sc:location-selected', (event) => render(event.detail.locationId));
-  render('stanton-hurston-lorville-teasa');
+  if (!initialize()) window.addEventListener('sc:location-context-ready', initialize, { once: true });
 }());

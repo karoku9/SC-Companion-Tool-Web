@@ -58,13 +58,16 @@ test('interaction contract includes focus, mobile target, reduced-motion and for
   assert.match(css, /forced-colors: active/);
 });
 
-test('Mission Validation reuses design-system roles instead of adding raw visual language', () => {
-  const css = read('mission-validation.css');
-  assert.match(css, /var\(--ds-status-danger\)/);
-  assert.match(css, /var\(--ds-status-warning\)/);
-  assert.match(css, /var\(--ds-status-success\)/);
-  assert.match(css, /var\(--ds-action-primary\)/);
-  assert.doesNotMatch(css, /#[0-9a-f]{3,8}/i);
+test('feature layers reuse design-system roles instead of adding raw visual language', () => {
+  const validation = read('mission-validation.css');
+  const context = `${read('location-context.css')}\n${read('location-context-adapters.css')}`;
+  [validation, context].forEach((css) => {
+    assert.match(css, /var\(--ds-status-warning\)/);
+    assert.match(css, /var\(--ds-action-primary/);
+    assert.doesNotMatch(css, /#[0-9a-f]{3,8}/i);
+  });
+  assert.match(validation, /var\(--ds-status-danger\)/);
+  assert.match(context, /var\(--ds-status-info\)/);
 });
 
 test('visible UI Kit documents palette, type, buttons, icons and manufacturer contract', () => {
@@ -75,19 +78,22 @@ test('visible UI Kit documents palette, type, buttons, icons and manufacturer co
   assert.match(view, /Manufacturer theme contract/);
 });
 
-test('design foundation remains loaded before the v0.18 validation layer', () => {
+test('design foundation remains loaded before the v0.19 context layer', () => {
   const html = read('index.html');
   const app = read('app.js');
   const entry = read('ui-v2.css');
   assert.ok(html.indexOf('src="design-system.js"') < html.indexOf('src="mfd-icons.js"'));
   assert.ok(html.indexOf('href="design-system.css"') < html.indexOf('href="ui-v2.css"'));
-  assert.ok(entry.indexOf('mission-validation.css') < entry.indexOf('design-system-legibility.css'));
+  assert.ok(entry.indexOf('mission-validation.css') < entry.indexOf('location-context.css'));
+  assert.ok(entry.indexOf('location-context-adapters.css') < entry.indexOf('design-system-legibility.css'));
   assert.match(app, /official-universe-data\.js/);
   assert.match(app, /navigation-estimates\.js/);
+  assert.match(app, /location-context\.js/);
+  assert.match(app, /location-context-planner\.js/);
   assert.match(app, /ui-v2-accessibility\.js/);
   assert.match(app, /SCCompanionCleanInterfaceReady/);
-  assert.equal(roadmap.currentVersion, '0.18');
-  assert.equal(roadmap.releases.find((item) => item.version === '0.19').title, 'Location context');
+  assert.equal(roadmap.currentVersion, '0.19');
+  assert.equal(roadmap.releases.find((item) => item.version === '0.20').title, 'Fleet loadouts');
 });
 
 test('research rules prohibit page-specific invention', () => {

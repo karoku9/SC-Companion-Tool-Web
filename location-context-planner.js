@@ -1,0 +1,75 @@
+'use strict';
+
+(function initializePlannerLocationContext() {
+  const contextModel = window.SCCompanionLocationContext;
+  const locations = window.SCCompanionLocations;
+  const routeList = document.querySelector('#planner-route-list');
+  if (!contextModel || !locations || !routeList) return;
+
+  function normalizeLabel(value) {
+    return String(value ?? '')
+      .trim()
+      .toLowerCase()
+      .replace(/[·/]/g, ' ')
+      .replace(/[^a-z0-9]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function resolveLocation(label) {
+    const normalized = normalizeLabel(label);
+    const shortLabel = String(label ?? '').split('·')[0].trim();
+    const candidates = [
+      ...locations.searchOperationalLocations(label),
+      ...locations.searchOperationalLocations(shortLabel)
+    ];
+    const unique = [...new Map(candidates.map((location) => [location.id, location])).values()];
+    return unique.find((location) => normalizeLabel(locations.formatOperationalLabel(location)) === normalized)
+      ?? unique.find((location) => normalizeLabel(location.navigationTarget ?? location.name) === normalizeLabel(shortLabel))
+      ?? unique[0]
+      ?? null;
+  }
+
+  function onboardScu(item) {
+    const value = item.querySelector('.planner-stop-total strong')?.textContent ?? '';
+    return Math.max(0, Number(value.match(/([\d.]+)\s*SCU/i)?.[1] ?? 0));
+  }
+
+  function enhance() {
+    routeList.querySelectorAll('.planner-route-stop').forEach((item) => {
+      const label = item.querySelector('.planner-stop-main > strong')?.textContent?.trim();
+      if (!label) return;
+      const location = resolveLocation(label);
+      const locationId = location?.id ?? `custom-${normalizeLabel(label).replace(/\s+/g, '-')}`;
+      const context = contextModel.buildContext(locationId, { onboardScu: onboardScu(item), label });
+      let panel = item.querySelector('.planner-location-context');
+      if (!panel) {
+        panel = document.createElement('div');
+        panel.className = 'planner-location-context';
+        item.querySelector('.planner-stop-main')?.append(panel);
+      }
+      const copy = `${context.exposure.label}|${context.system?.name ?? 'System unavailable'}|${context.confidence.label}|${context.exposure.reasons[0] ?? 'No derived guidance available.'}`;
+      const signature = `${locationId}|${context.exposure.level}|${copy}`;
+      if (panel.dataset.signature === signature) return;
+      panel.dataset.signature = signature;
+      panel.className = `planner-location-context is-${context.exposure.level}`;
+      panel.dataset.locationId = locationId;
+      panel.innerHTML = `<strong>${context.exposure.label}</strong><span>${context.system?.name ?? 'System unavailable'} · ${context.confidence.label}</span><small>${context.exposure.reasons[0] ?? 'No derived guidance available.'}</small>`;
+    });
+  }
+
+  let queued = false;
+  function scheduleEnhance() {
+    if (queued) return;
+    queued = true;
+    requestAnimationFrame(() => {
+      queued = false;
+      enhance();
+    });
+  }
+
+  const observer = new MutationObserver(scheduleEnhance);
+  observer.observe(routeList, { childList: true, subtree: true });
+  window.addEventListener('sc:session-change', scheduleEnhance);
+  scheduleEnhance();
+}());
