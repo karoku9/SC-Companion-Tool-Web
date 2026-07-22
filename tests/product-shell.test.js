@@ -62,16 +62,18 @@ test('design system, icons and clean shell load before page routing', () => {
   assert.match(shell, /SCCompanionMfdIcons/);
 });
 
-test('v0.16 interstellar navigation and clean UI runtimes are registered', () => {
+test('v0.17 keeps navigation runtimes and adds the hardening layer', () => {
   const app = read('app.js');
+  const entry = read('ui-v2.css');
   const designSystem = read('design-system.js');
-  assert.equal(roadmap.currentVersion, '0.16');
+  assert.equal(roadmap.currentVersion, '0.17');
   assert.match(app, /official-universe-data\.js/);
   assert.match(app, /navigation-estimates\.js/);
   assert.match(app, /cargo-zone-model\.js/);
   assert.match(app, /ui-v2\.js/);
   assert.match(app, /design-system-view\.js/);
   assert.doesNotMatch(app, /workspace-shell\.js/);
+  assert.match(entry, /visual-hardening\.css/);
   assert.match(designSystem, /manufacturer: 'Drake Interplanetary'/);
 });
 
