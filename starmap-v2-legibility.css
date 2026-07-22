@@ -10,6 +10,7 @@
 .starmap-page-v2 .starmap-route-drawer summary strong,
 .starmap-page-v2 .starmap-segments button,
 .starmap-page-v2 .starmap-camera-controls button,
+.starmap-page-v2 .starmap-selection-actions .button,
 .starmap-page-v2 #starmap-route-list button > span,
 .starmap-page-v2 #starmap-route-list b,
 .starmap-page-v2 #starmap-route-list small,
@@ -27,4 +28,15 @@
 .starmap-page-v2 .starmap-selection-card > p,
 .starmap-page-v2 .starmap-route-empty {
   font-size: var(--ds-type-sm, .8125rem);
+}
+
+/* Local-system stops are identified by their numbered markers; details stay in the route drawer. */
+.starmap-page-v2 .map-system-stops .map-route-label,
+.starmap-page-v2 .map-system-stops .map-node-sub {
+  display: none;
+}
+
+/* Do not offer a drill-down action when the System layer is already open. */
+.starmap-page-v2:has(.starmap-system-picker:not([hidden])) #starmap-open-system {
+  display: none !important;
 }
