@@ -34,19 +34,21 @@ test('current, next and future releases form one linear delivery path', () => {
   assert.ok(roadmap.releases.slice(nextIndex + 1).every((release) => release.status === 'future'));
 });
 
-test('v0.19 adds sourced Location Context after Mission Validation', () => {
+test('v0.20 delivers Fleet Loadouts after sourced Location Context', () => {
   const validation = roadmap.releases.find((item) => item.version === '0.18');
-  const current = roadmap.releases.find((item) => item.version === '0.19');
-  const next = roadmap.releases.find((item) => item.version === '0.20');
+  const context = roadmap.releases.find((item) => item.version === '0.19');
+  const current = roadmap.releases.find((item) => item.version === '0.20');
+  const next = roadmap.releases.find((item) => item.version === '0.21');
   assert.equal(validation.status, 'done');
-  assert.match(validation.title, /Mission validation/i);
+  assert.equal(context.status, 'done');
+  assert.match(context.title, /Location context/i);
   assert.equal(current.status, 'current');
-  assert.match(current.title, /Location context/i);
-  assert.ok(current.changes.some((change) => /source ledger/i.test(change)));
-  assert.ok(current.changes.some((change) => /without a universal risk score/i.test(change)));
-  assert.ok(current.changes.some((change) => /heuristic removed/i.test(change)));
+  assert.match(current.title, /Fleet loadouts/i);
+  assert.ok(current.changes.some((change) => /component slots and provenance/i.test(change)));
+  assert.ok(current.changes.some((change) => /legacy/i.test(change)));
+  assert.ok(current.changes.some((change) => /quantum, cargo and handling/i.test(change)));
   assert.equal(next.status, 'next');
-  assert.match(next.title, /Fleet loadouts/i);
+  assert.match(next.title, /Session history/i);
 });
 
 test('roadmap page keeps the English shell and release track host', () => {
