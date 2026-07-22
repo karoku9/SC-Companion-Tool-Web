@@ -68,6 +68,20 @@ try {
   await page.locator('svg#starmap-canvas').waitFor({ state: 'visible' });
   assert.equal(await page.locator('canvas#starmap-canvas').count(), 0, 'Legacy canvas Starmap is still present');
   assert.ok(await page.locator('#starmap-canvas .map-node').count() > 0, 'Route-first Starmap rendered no nodes');
+  const mapLabels = await page.evaluate(() => {
+    const canvas = document.querySelector('#starmap-canvas').getBoundingClientRect();
+    return {
+      canvas: { left: canvas.left, right: canvas.right },
+      labels: [...document.querySelectorAll('#starmap-canvas .map-route-node text')].map((text) => {
+        const box = text.getBoundingClientRect();
+        return { content: text.textContent, left: box.left, right: box.right };
+      })
+    };
+  });
+  mapLabels.labels.forEach((label) => {
+    assert.ok(label.left >= mapLabels.canvas.left - 2, `Starmap label escapes left edge: ${JSON.stringify(label)}`);
+    assert.ok(label.right <= mapLabels.canvas.right + 2, `Starmap label escapes right edge: ${JSON.stringify(label)}`);
+  });
   await noHorizontalOverflow('Starmap');
   await page.screenshot({ path: `${output}/starmap-desktop.png`, fullPage: true });
 
