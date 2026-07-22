@@ -29,7 +29,8 @@
   .planner-breakdown,
   .planner-profile-metrics,
   .map-route-summary,
-  .data-note
+  .data-note,
+  .app-footer
 ) {
   font-size: max(var(--ds-type-visible-min), 1em);
 }
@@ -70,7 +71,8 @@
 .planner-breakdown small,
 .planner-stop-total span,
 .planner-stop-total small,
-.page-status {
+.page-status,
+.app-footer {
   font-size: var(--ds-type-xs);
 }
 
