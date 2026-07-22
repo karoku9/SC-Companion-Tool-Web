@@ -5,9 +5,16 @@
   const sidebar = document.querySelector('.product-sidebar');
   const navigation = document.querySelector('#product-navigation');
   const registry = window.SCCompanionPages;
+  const icons = window.SCCompanionMfdIcons;
   if (!frame || !sidebar || !navigation || !registry) return;
 
-  const STORAGE_KEY = 'sc-companion-ui-v011';
+  const STORAGE_KEY = 'sc-companion-ui-v012';
+  const icon = (name) => icons?.render(name, 'mfd-icon') ?? '';
+
+  const brandMark = document.querySelector('.brand-mark');
+  if (brandMark) brandMark.innerHTML = icon('operations');
+  const sidebarToggle = document.querySelector('#sidebar-toggle');
+  if (sidebarToggle) sidebarToggle.innerHTML = icon('menu');
 
   function readPreferences() {
     try {
@@ -40,7 +47,7 @@
   bottomNav.setAttribute('aria-label', 'Primary mobile navigation');
   bottomNav.innerHTML = registry.pages.map((page) => `
     <button type="button" data-view-target="${page.id}" aria-selected="false">
-      <strong>${page.icon ?? page.label.slice(0, 2).toUpperCase()}</strong>
+      ${icon(page.icon ?? page.id)}
       <small>${page.label}</small>
     </button>`).join('');
   document.body.append(bottomNav);
