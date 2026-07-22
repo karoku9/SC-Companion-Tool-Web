@@ -119,4 +119,33 @@
     </section>`;
 
   host.append(root);
+
+  function installDevelopmentTab() {
+    const tabs = document.querySelector('.development-tabs');
+    const roadmapPane = document.querySelector('[data-development-pane="roadmap"]');
+    const changelogPane = document.querySelector('[data-development-pane="changelog"]');
+    if (!tabs || !roadmapPane || !changelogPane || tabs.querySelector('[data-development-tab="ui-kit"]')) return;
+
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.dataset.developmentTab = 'ui-kit';
+    button.setAttribute('aria-selected', 'false');
+    button.textContent = 'UI Kit';
+
+    const pane = document.createElement('div');
+    pane.dataset.developmentPane = 'ui-kit';
+    pane.hidden = true;
+    root.hidden = false;
+    pane.append(root);
+    tabs.append(button);
+    changelogPane.after(pane);
+
+    tabs.addEventListener('click', (event) => {
+      const selected = event.target.closest('[data-development-tab]')?.dataset.developmentTab;
+      if (!selected) return;
+      pane.hidden = selected !== 'ui-kit';
+    });
+  }
+
+  window.addEventListener('sc:dynamic-pages-ready', () => requestAnimationFrame(installDevelopmentTab), { once: true });
 }());
