@@ -10,7 +10,7 @@ function read(file) {
 }
 
 function cleanCss() {
-  return ['design-system-legibility.css', 'mission-validation.css', 'location-context.css', 'location-context-adapters.css', 'fleet-loadouts.css', 'ui-v2-shell.css', 'ui-v2-operations.css', 'ui-v2-workspaces.css', 'ui-v2-responsive.css'].map(read).join('\n');
+  return ['design-system-legibility.css', 'mission-validation.css', 'location-context.css', 'location-context-adapters.css', 'fleet-loadouts.css', 'starmap-v2.css', 'ui-v2-shell.css', 'ui-v2-operations.css', 'ui-v2-workspaces.css', 'ui-v2-responsive.css'].map(read).join('\n');
 }
 
 test('clean UI scripts remain valid JavaScript', () => {
@@ -29,6 +29,7 @@ test('the application loads one design system and one page-layout entry', () => 
   assert.match(entry, /location-context-adapters\.css/);
   assert.match(entry, /fleet-loadouts\.css/);
   assert.match(entry, /design-system-legibility\.css/);
+  assert.match(entry, /starmap-v2\.css/);
   ['styles.css', 'sections.css', 'planner.css', 'starmap.css', 'product-shell.css', 'workspace-consolidation.css', 'ui-rebuild.css', 'drake-mfd.css', 'mfd-layout-v2.css'].forEach((legacy) => {
     assert.doesNotMatch(html, new RegExp(`href="${legacy.replace('.', '\\.')}"`));
   });
@@ -104,6 +105,7 @@ test('Fleet and Starmap use dedicated visual components', () => {
   const fleet = read('hangar-view.js');
   const loadoutView = read('fleet-loadouts-view.js');
   const map = read('starmap-view.js');
+  const mapCss = read('starmap-v2.css');
   assert.match(html, /id="ship-hologram"/);
   assert.match(html, /id="fleet-zone-form"/);
   assert.match(fleet, /Drake Corsair schematic/);
@@ -114,14 +116,17 @@ test('Fleet and Starmap use dedicated visual components', () => {
   assert.match(map, /renderRouteMode/);
   assert.match(map, /renderLocalMode/);
   assert.match(map, /renderNetworkMode/);
+  assert.match(map, /CURRENT OBJECTIVE/);
+  assert.match(mapCss, /starmap-context-panel/);
   assert.doesNotMatch(map, /getContext\('2d'\)|camera\.yaw|pointer\.down/);
 });
 
-test('Fleet Loadouts follow delivered Mission Validation and Location Context', () => {
+test('UX Foundation follows delivered Fleet Loadouts and precedes Session History', () => {
   const roadmap = require('../roadmap.js');
-  assert.equal(roadmap.currentVersion, '0.20');
+  assert.equal(roadmap.currentVersion, '0.21');
   assert.equal(roadmap.releases.find((release) => release.version === '0.18').status, 'done');
   assert.equal(roadmap.releases.find((release) => release.version === '0.19').status, 'done');
-  assert.equal(roadmap.releases.find((release) => release.version === '0.20').title, 'Fleet loadouts');
-  assert.equal(roadmap.releases.find((release) => release.version === '0.21').title, 'Session history');
+  assert.equal(roadmap.releases.find((release) => release.version === '0.20').status, 'done');
+  assert.match(roadmap.releases.find((release) => release.version === '0.21').title, /UX foundation/i);
+  assert.equal(roadmap.releases.find((release) => release.version === '0.22').title, 'Session history');
 });
