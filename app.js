@@ -50,7 +50,7 @@
     if (elements.title) elements.title.textContent = model.formatOperationalLabel(location);
     if (elements.navigationTarget) elements.navigationTarget.textContent = location.navigationTarget ?? location.name;
     if (elements.type) elements.type.textContent = humanizeType(location.type);
-    if (elements.path) elements.path.textContent = model.formatLocationPath(location.id);
+    if (elements.path) elements.path.textContent = model.formatLocationPath(location);
     if (elements.query) elements.query.value = location.navigationTarget ?? location.name;
     renderSearchResults([]);
     window.dispatchEvent(new CustomEvent('sc:location-selected', { detail: { locationId: location.id } }));
