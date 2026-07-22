@@ -17,6 +17,7 @@ deliver baijini 2scu etam 1scu neon`;
       missions: [],
       route: null,
       currentStopIndex: 0,
+      cargoCorrections: {},
       selectedShipId: 'corsair-main',
       selectedShipModelId: 'drake-corsair',
       hangarShips: [{

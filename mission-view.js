@@ -41,7 +41,8 @@
         missionText: text.value,
         missions: parsed.missions,
         route,
-        currentStopIndex: 0
+        currentStopIndex: 0,
+        cargoCorrections: {}
       });
       renderMissions(parsed.missions);
       message.className = 'form-message is-success';

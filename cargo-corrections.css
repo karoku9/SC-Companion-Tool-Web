@@ -1,0 +1,105 @@
+.correction-panel {
+  margin: 14px 20px 0;
+}
+
+.correction-help {
+  margin: -4px 0 14px;
+  color: var(--text-muted);
+  font-size: .78rem;
+  line-height: 1.45;
+}
+
+.correction-list {
+  display: grid;
+  gap: 8px;
+}
+
+.correction-row {
+  display: grid;
+  grid-template-columns: minmax(240px, 1fr) 110px 140px minmax(190px, auto);
+  align-items: end;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  background: #090e10;
+}
+
+.correction-row.is-corrected {
+  border-left: 4px solid var(--accent);
+  background: linear-gradient(90deg, rgba(244,163,64,.06), transparent 38%), #090e10;
+}
+
+.correction-identity {
+  display: grid;
+  gap: 4px;
+}
+
+.correction-identity span,
+.correction-identity small {
+  color: var(--text-muted);
+  font-size: .7rem;
+}
+
+.correction-identity small {
+  font-weight: 900;
+  letter-spacing: .07em;
+}
+
+.correction-row label {
+  display: grid;
+  gap: 6px;
+  color: var(--text-muted);
+  font-size: .6rem;
+  font-weight: 900;
+  letter-spacing: .09em;
+}
+
+.correction-row input,
+.correction-row select {
+  min-height: 40px;
+  padding: 0 9px;
+  border: 1px solid var(--line-strong);
+  background: #060a0c;
+  color: #fff;
+}
+
+.correction-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+}
+
+.correction-actions button {
+  min-height: 40px;
+}
+
+.correction-message {
+  grid-column: 1 / -1;
+  min-height: 1em;
+  color: var(--text-muted);
+}
+
+.correction-message.is-error,
+.correction-warning {
+  color: #ff9a8d;
+}
+
+.correction-warning {
+  padding: 10px 12px;
+  border: 1px solid rgba(255,154,141,.35);
+  background: rgba(255,154,141,.05);
+  font-size: .75rem;
+}
+
+@media (max-width: 1050px) {
+  .correction-row {
+    grid-template-columns: 1fr 110px 140px;
+  }
+  .correction-actions { grid-column: 1 / -1; }
+}
+
+@media (max-width: 680px) {
+  .correction-panel { margin-inline: 14px; }
+  .correction-row { grid-template-columns: 1fr; align-items: stretch; }
+  .correction-actions { grid-column: auto; }
+}
