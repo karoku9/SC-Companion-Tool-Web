@@ -16,11 +16,8 @@
 
   function humanizeType(type) {
     const labels = {
-      system: 'System',
-      planet: 'Planet',
-      'landing-zone': 'Landing zone',
-      spaceport: 'Spaceport',
-      'orbital-station': 'Orbital station'
+      system: 'System', planet: 'Planet', 'landing-zone': 'Landing zone',
+      spaceport: 'Spaceport', 'orbital-station': 'Orbital station'
     };
     return labels[type] ?? type;
   }
@@ -83,12 +80,13 @@
 }());
 
 (function loadCargoOperationsRuntime() {
-  if (!document.querySelector('link[href="cargo-operations.css"]')) {
+  ['cargo-operations.css', 'cargo-corrections.css'].forEach((href) => {
+    if (document.querySelector(`link[href="${href}"]`)) return;
     const stylesheet = document.createElement('link');
     stylesheet.rel = 'stylesheet';
-    stylesheet.href = 'cargo-operations.css';
+    stylesheet.href = href;
     document.head.append(stylesheet);
-  }
+  });
 
   Promise.all([
     import('./cargo-state.js'),
@@ -98,6 +96,7 @@
       window.dispatchEvent(new Event('sc:cargo-runtime-ready'));
       return import('./load-operations-view.js');
     })
+    .then(() => import('./cargo-corrections-view.js'))
     .catch((error) => {
       console.error('Cargo operations runtime failed to load.', error);
     });
