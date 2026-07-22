@@ -62,7 +62,7 @@ test('design system, icons and clean shell load before page routing', () => {
   assert.match(shell, /SCCompanionMfdIcons/);
 });
 
-test('v0.19 Location Context, validation and hardening runtimes are registered', () => {
+test('v0.20 Fleet Loadouts, Location Context and validation runtimes are registered', () => {
   const app = read('app.js');
   const clean = read('ui-v2.js');
   const accessibility = read('ui-v2-accessibility.js');
@@ -70,8 +70,14 @@ test('v0.19 Location Context, validation and hardening runtimes are registered',
   const context = read('location-context.js');
   const contextView = read('location-intel-view.js');
   const plannerContext = read('location-context-planner.js');
+  const fleet = read('fleet-loadouts.js');
+  const adapter = read('fleet-estimate-adapter.js');
+  const fleetView = read('fleet-loadouts-view.js');
   const designSystem = read('design-system.js');
-  assert.equal(roadmap.currentVersion, '0.19');
+  assert.equal(roadmap.currentVersion, '0.20');
+  assert.match(app, /fleet-loadouts\.js/);
+  assert.match(app, /fleet-estimate-adapter\.js/);
+  assert.match(app, /fleet-loadouts-view\.js/);
   assert.match(app, /official-universe-data\.js/);
   assert.match(app, /navigation-estimates\.js/);
   assert.match(app, /location-context\.js/);
@@ -85,6 +91,10 @@ test('v0.19 Location Context, validation and hardening runtimes are registered',
   assert.match(context, /exposureFor/);
   assert.match(contextView, /SOURCE LEDGER/);
   assert.match(plannerContext, /planner-location-context/);
+  assert.match(fleet, /activeLoadoutByShip/);
+  assert.match(fleet, /Imported configuration/);
+  assert.match(adapter, /handlingTimeFactor/);
+  assert.match(fleetView, /Ship loadouts/);
   assert.doesNotMatch(app, /workspace-shell\.js/);
   assert.match(designSystem, /manufacturer: 'Drake Interplanetary'/);
 });
