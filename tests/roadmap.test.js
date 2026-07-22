@@ -34,22 +34,19 @@ test('current, next and future releases form one linear delivery path', () => {
   assert.ok(roadmap.releases.slice(nextIndex + 1).every((release) => release.status === 'future'));
 });
 
-test('v0.18 validates mission fields after visual hardening', () => {
-  const interstellar = roadmap.releases.find((item) => item.version === '0.16');
-  const hardening = roadmap.releases.find((item) => item.version === '0.17');
-  const current = roadmap.releases.find((item) => item.version === '0.18');
-  const next = roadmap.releases.find((item) => item.version === '0.19');
-  assert.equal(interstellar.status, 'done');
-  assert.match(interstellar.title, /Interstellar navigation/i);
-  assert.equal(hardening.status, 'done');
-  assert.match(hardening.title, /Visual hardening/i);
+test('v0.19 adds sourced Location Context after Mission Validation', () => {
+  const validation = roadmap.releases.find((item) => item.version === '0.18');
+  const current = roadmap.releases.find((item) => item.version === '0.19');
+  const next = roadmap.releases.find((item) => item.version === '0.20');
+  assert.equal(validation.status, 'done');
+  assert.match(validation.title, /Mission validation/i);
   assert.equal(current.status, 'current');
-  assert.match(current.title, /Mission validation/i);
-  assert.ok(current.changes.some((change) => /Per-field confidence/.test(change)));
-  assert.ok(current.changes.some((change) => /custom locations/.test(change)));
-  assert.ok(current.changes.some((change) => /source retained/i.test(change)));
+  assert.match(current.title, /Location context/i);
+  assert.ok(current.changes.some((change) => /source ledger/i.test(change)));
+  assert.ok(current.changes.some((change) => /without a universal risk score/i.test(change)));
+  assert.ok(current.changes.some((change) => /heuristic removed/i.test(change)));
   assert.equal(next.status, 'next');
-  assert.match(next.title, /Location context/i);
+  assert.match(next.title, /Fleet loadouts/i);
 });
 
 test('roadmap page keeps the English shell and release track host', () => {
