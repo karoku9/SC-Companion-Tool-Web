@@ -8,6 +8,9 @@
 .starmap-page-v2 .starmap-context-header > div:last-child > span,
 .starmap-page-v2 .starmap-route-drawer summary,
 .starmap-page-v2 .starmap-route-drawer summary strong,
+.starmap-page-v2 .starmap-segments button,
+.starmap-page-v2 .starmap-camera-controls button,
+.starmap-page-v2 #starmap-route-list button > span,
 .starmap-page-v2 #starmap-route-list b,
 .starmap-page-v2 #starmap-route-list small,
 .starmap-page-v2 .data-note {
