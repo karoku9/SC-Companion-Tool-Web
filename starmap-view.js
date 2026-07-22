@@ -78,8 +78,11 @@
     add(group, 'circle', { cx: x, cy: y, r: state === 'current' ? 24 : 20 });
     add(group, 'text', { x, y: y + 4, 'text-anchor': 'middle', class: 'map-node-index' }, String(index + 1).padStart(2, '0'));
     const label = stop.locationLabel.length > 34 ? `${stop.locationLabel.slice(0, 32)}…` : stop.locationLabel;
-    add(group, 'text', { x: x + 32, y: y - 4 }, label);
-    add(group, 'text', { x: x + 32, y: y + 14, class: 'map-node-sub' }, operationSummary(stop));
+    const labelOnLeft = x > 740;
+    const labelX = labelOnLeft ? x - 32 : x + 32;
+    const textAnchor = labelOnLeft ? 'end' : 'start';
+    add(group, 'text', { x: labelX, y: y - 4, 'text-anchor': textAnchor }, label);
+    add(group, 'text', { x: labelX, y: y + 14, 'text-anchor': textAnchor, class: 'map-node-sub' }, operationSummary(stop));
     group.addEventListener('click', () => setSelection(stop.locationLabel, `Route stop ${index + 1}`, `${operationSummary(stop)}${stop.mandatory ? ' · Mandatory' : ''}${stop.skipped ? ' · Skipped' : ''}`, String(stop.id)));
     group.addEventListener('keydown', (event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); group.click(); } });
     return { x, y };
