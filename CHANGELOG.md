@@ -8,9 +8,39 @@ The project was already under active development before this changelog was intro
 
 ### Planned
 - Cargo Zone Editor for per-ship separators and layers.
-- Risk-aware route profile with visible source confidence.
-- Expanded location intelligence.
+- Expanded location intelligence and sourced danger context.
 - Additional ship and component integrations.
+- Traceable fuel estimates.
+
+---
+
+## [0.9.0] - 2026-07-22
+
+### Added
+- MINIMIZE CARGO ONBOARD route profile.
+- Protect cargo flag with a configurable safety-delay margin.
+- Per-route physical-capacity validation.
+- Manual off-grid SCU allowance.
+- Peak onboard and cargo-exposure metrics.
+- Explicit onboard SCU after every proposed stop.
+- Temporal cargo-slot reuse across non-overlapping lots.
+
+### Improved
+- FASTEST PRACTICAL can finish loaded missions sooner when Protect cargo is enabled.
+- Cargo planning now checks simultaneous onboard cargo instead of total session cargo.
+- Sessions larger than the ship grid can be valid when earlier deliveries free capacity.
+- Cargo Layout and Load Operations clearly label off-grid staging.
+- Destination, action, quantity and commodity now dominate mission metadata in the visual hierarchy.
+- Panels, labels and operation rows use less visual weight and less repeated uppercase text.
+
+### Changed
+- FEWEST QUANTUM LEGS was removed because it usually duplicated FASTEST PRACTICAL with the current data model.
+- Mission names are treated as secondary provenance, not primary operational instructions.
+
+### Fixed
+- Cargo Planner no longer rejects every session whose total delivered SCU exceeds ship capacity.
+- Capacity-impossible proposals are filtered before they can be applied.
+- Manual actual-SCU corrections are included in route capacity calculations.
 
 ---
 
