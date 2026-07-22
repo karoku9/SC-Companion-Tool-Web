@@ -3,8 +3,10 @@
 (function initializeCargoCorrectionsView() {
   const store = window.SCCompanionSession;
   const cargoState = window.SCCompanionCargoState;
+  const routeCorrections = window.SCCompanionRouteCorrections;
+  const routeProgress = window.SCCompanionRouteProgress;
   const root = document.querySelector('#load-operations');
-  if (!store || !cargoState || !root) return;
+  if (!store || !cargoState || !routeCorrections || !routeProgress || !root) return;
 
   const section = document.createElement('section');
   section.className = 'blueprint-panel correction-panel';
@@ -17,16 +19,23 @@
   const list = section.querySelector('#correction-list');
   const status = section.querySelector('#correction-status');
 
+  function context(state) {
+    const route = routeCorrections.deriveRoute(state.route, state.routeCorrections);
+    const progress = routeProgress.derive(route, state.completedStopIds, state.currentStopIndex);
+    return { route, progress };
+  }
+
   function saveCorrection(key, actualScu, requestedStatus) {
     const state = store.getState();
-    cargoState.validateCorrection(state.route, state.currentStopIndex, key, { actualScu, status: requestedStatus });
+    const { route, progress } = context(state);
+    cargoState.validateCorrection(route, progress.completedStopIds, key, { actualScu, status: requestedStatus });
     const next = { ...(state.cargoCorrections ?? {}) };
-    const lifecycle = cargoState.deriveCargoState(state.route, state.currentStopIndex, state.cargoCorrections);
+    const lifecycle = cargoState.deriveCargoState(route, progress.completedStopIds, state.cargoCorrections);
     const lot = lifecycle.lots.find((item) => item.key === key);
     const isDefault = Number(actualScu) === lot.plannedScu && requestedStatus === 'auto';
     if (isDefault) delete next[key];
     else next[key] = { actualScu: Number(actualScu), status: requestedStatus };
-    store.patch({ cargoCorrections: next });
+    store.patch({ cargoCorrections: next, completedStopIds: progress.completedStopIds, currentStopIndex: progress.completedStopIds.length });
   }
 
   function resetCorrection(key) {
@@ -40,7 +49,7 @@
     const row = document.createElement('article');
     row.className = `correction-row${lot.corrected ? ' is-corrected' : ''}`;
     const correction = state.cargoCorrections?.[lot.key] ?? {};
-    const allowed = cargoState.allowedStatuses(lot, state.currentStopIndex);
+    const allowed = cargoState.allowedStatuses(lot);
 
     const identity = document.createElement('div');
     identity.className = 'correction-identity';
@@ -103,7 +112,8 @@
       list.innerHTML = '<div class="empty-inline-state">Generate a route to enable corrections.</div>';
       return;
     }
-    const lifecycle = cargoState.deriveCargoState(state.route, state.currentStopIndex, state.cargoCorrections);
+    const { route, progress } = context(state);
+    const lifecycle = cargoState.deriveCargoState(route, progress.completedStopIds, state.cargoCorrections);
     status.textContent = `${lifecycle.correctionCount} OVERRIDE${lifecycle.correctionCount === 1 ? '' : 'S'}`;
     lifecycle.lots.forEach((lot) => list.append(renderRow(lot, state)));
     if (lifecycle.correctionIssues.length) {
