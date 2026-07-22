@@ -80,7 +80,10 @@
 }());
 
 (function loadOperationalRuntimes() {
-  ['cargo-operations.css', 'cargo-corrections.css', 'route-corrections.css', 'changelog.css'].forEach((href) => {
+  [
+    'cargo-operations.css', 'cargo-corrections.css', 'route-corrections.css', 'changelog.css',
+    'route-planner-live.css', 'ux-refresh.css'
+  ].forEach((href) => {
     if (document.querySelector(`link[href="${href}"]`)) return;
     const stylesheet = document.createElement('link');
     stylesheet.rel = 'stylesheet';
@@ -91,6 +94,7 @@
   Promise.all([
     import('./route-corrections.js'),
     import('./route-progress.js'),
+    import('./route-planner-engine.js'),
     import('./cargo-state.js'),
     import('./cargo-layout.js')
   ])
@@ -101,7 +105,9 @@
         import('./load-operations-view.js'),
         import('./cargo-corrections-view.js'),
         import('./route-corrections-view.js'),
-        import('./changelog-view.js')
+        import('./route-planner-view.js'),
+        import('./changelog-view.js'),
+        import('./ux-shell.js')
       ]);
     })
     .then(() => window.dispatchEvent(new Event('sc:dynamic-pages-ready')))
