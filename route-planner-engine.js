@@ -68,7 +68,7 @@
     const kind = locationKind(location);
     const profile = context.locationProfiles?.getProfile(stop.locationId);
     const traffic = profile?.traffic?.level ?? 'normal';
-    const preset = context.arrivalEstimates?.presets?.[kind] ? kind : context.arrivalEstimates?.presets?.['orbital-station'] ? 'orbital-station' : null;
+    const preset = context.arrivalEstimates?.presets?.[kind] ? kind : null;
     if (!preset) return { minMinutes: 3, maxMinutes: 7, source: 'generic arrival heuristic' };
     const estimate = context.arrivalEstimates.estimateArrival(preset, traffic);
     return { minMinutes: estimate.minMinutes, maxMinutes: estimate.maxMinutes, source: `${preset} arrival preset` };
