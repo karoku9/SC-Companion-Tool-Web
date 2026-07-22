@@ -14,6 +14,36 @@ The project was already under active development before this changelog was intro
 
 ---
 
+## [0.11.0] - 2026-07-22
+
+### Added
+- Unified interface design system with shared spacing, typography, surfaces, controls and focus states.
+- Collapsible desktop navigation with persistent local preference.
+- Mobile bottom navigation for all six primary workspaces.
+- Responsive full-screen and floating operational drawer modes.
+- Reduced-motion support for interface transitions.
+
+### Improved
+- Every primary page now has one dominant task surface and clearly secondary supporting content.
+- Operations gives the current destination and required actions substantially more visual weight than route history and metadata.
+- Planner profiles, route details and the apply action use a clearer decision hierarchy.
+- Missions, Fleet, Cargo, Starmap and Development now share the same component language.
+- Panels use fewer borders, badges and nested containers.
+- Buttons, labels and navigation use sentence case where operationally appropriate.
+- Desktop and mobile layouts use independent navigation patterns instead of shrinking the same sidebar.
+
+### Changed
+- Mission Validation moved to v0.12 so the core interface could be rebuilt first.
+- Navigation items now include a compact identifier and a short functional description.
+- The application shell now fills the viewport instead of appearing as a bordered page inside the browser.
+
+### Fixed
+- Primary and secondary actions no longer receive nearly identical visual weight.
+- Narrow layouts no longer rely on the desktop page selector as their main navigation.
+- Drawer controls and page controls now share consistent hover, focus and disabled behavior.
+
+---
+
 ## [0.10.0] - 2026-07-22
 
 ### Added
