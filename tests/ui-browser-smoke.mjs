@@ -86,15 +86,22 @@ try {
   step = 'load Missions';
   await page.goto(`${baseUrl}/#missions`, { waitUntil: 'networkidle' });
   await page.locator('#mission-text').waitFor({ state: 'visible' });
+  await page.locator('#mission-validation-panel').waitFor({ state: 'visible' });
   await page.locator('#mission-text').fill(interstellarMissionText);
-  step = 'generate interstellar session';
+  step = 'review interstellar session';
   await page.locator('#mission-form button[type="submit"]').click();
-  await page.locator('#mission-preview-title').filter({ hasText: '3 missions ready' }).waitFor({ state: 'visible' });
+  await page.locator('#mission-validation-title').filter({ hasText: /^Ready$/ }).waitFor({ state: 'visible' });
+  assert.equal(await page.locator('.validation-issue.is-error').count(), 0);
+  assert.equal(await page.locator('#mission-generate-validated').isEnabled(), true);
+  step = 'generate validated interstellar session';
+  await page.locator('#mission-generate-validated').click();
+  await page.locator('#mission-preview-title').filter({ hasText: '3 missions generated' }).waitFor({ state: 'visible' });
   const missionBody = await page.locator('#mission-cards').textContent();
   ['Checkmate Station', 'Orbituary', 'Ruin Station', 'Levski'].forEach((name) => assert.match(missionBody, new RegExp(name)));
+  assert.match(missionBody, /Source lines/);
   await noHorizontalOverflow('Missions');
   await readableTypography('Missions');
-  await page.screenshot({ path: `${output}/missions-interstellar-desktop.png`, fullPage: true });
+  await page.screenshot({ path: `${output}/missions-validation-interstellar-desktop.png`, fullPage: true });
 
   await openWorkspace('route');
   step = 'inspect Operations closed';
