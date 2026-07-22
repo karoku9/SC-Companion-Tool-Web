@@ -12,12 +12,12 @@ const requiredPages = [
   'overview', 'missions', 'route', 'cargo', 'load-operations',
   'route-planner', 'map', 'locations', 'hangar', 'ship-catalog',
   'loadouts', 'trading', 'market-intel', 'history', 'companion',
-  'settings', 'roadmap', 'automation'
+  'settings', 'roadmap', 'changelog', 'automation'
 ];
 
 test('product shell reserves every planned page with unique ids', () => {
   const ids = pages.pages.map((page) => page.id);
-  assert.equal(ids.length, 18);
+  assert.equal(ids.length, 19);
   assert.equal(new Set(ids).size, ids.length);
   requiredPages.forEach((id) => assert.ok(ids.includes(id), `missing page ${id}`));
   assert.equal(pages.defaultPageId, 'overview');
@@ -25,6 +25,7 @@ test('product shell reserves every planned page with unique ids', () => {
 
 test('page statuses distinguish live, blueprint and deferred work', () => {
   assert.equal(pages.getPage('missions').status, 'live');
+  assert.equal(pages.getPage('changelog').status, 'live');
   assert.equal(pages.getPage('route-planner').status, 'blueprint');
   assert.equal(pages.getPage('automation').status, 'later');
 });
@@ -50,6 +51,13 @@ test('index loads the generated navigation shell before section routing', () => 
   assert.match(html, /src="product-pages\.js"/);
   assert.match(html, /src="product-shell\.js"/);
   assert.ok(html.indexOf('src="product-shell.js"') < html.indexOf('src="sections.js"'));
+});
+
+test('changelog markdown contains the current release and is loaded by the runtime', () => {
+  const changelog = fs.readFileSync(path.join(__dirname, '..', 'CHANGELOG.md'), 'utf8');
+  const app = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
+  assert.match(changelog, /## \[0\.7\.0\]/);
+  assert.match(app, /changelog-view\.js/);
 });
 
 test('OCR and Game.log remain in the deferred automation phase', () => {
