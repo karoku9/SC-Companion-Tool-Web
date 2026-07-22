@@ -10,11 +10,11 @@ function read(file) {
 }
 
 function cleanCss() {
-  return ['design-system-legibility.css', 'mission-validation.css', 'ui-v2-shell.css', 'ui-v2-operations.css', 'ui-v2-workspaces.css', 'ui-v2-responsive.css'].map(read).join('\n');
+  return ['design-system-legibility.css', 'mission-validation.css', 'location-context.css', 'location-context-adapters.css', 'ui-v2-shell.css', 'ui-v2-operations.css', 'ui-v2-workspaces.css', 'ui-v2-responsive.css'].map(read).join('\n');
 }
 
 test('clean UI scripts remain valid JavaScript', () => {
-  ['app.js', 'ui-v2.js', 'ui-v2-operations.js', 'ui-v2-shell.js', 'ui-v2-accessibility.js', 'product-shell.js', 'mission-validation.js', 'mission-view.js', 'route-view.js', 'hangar-view.js', 'starmap-view.js'].forEach((file) => {
+  ['app.js', 'ui-v2.js', 'ui-v2-operations.js', 'ui-v2-shell.js', 'ui-v2-accessibility.js', 'product-shell.js', 'mission-validation.js', 'mission-view.js', 'location-context.js', 'location-context-planner.js', 'location-intel-view.js', 'route-view.js', 'hangar-view.js', 'starmap-view.js'].forEach((file) => {
     assert.doesNotThrow(() => new Function(read(file)), `${file} contains invalid JavaScript`);
   });
 });
@@ -25,6 +25,8 @@ test('the application loads one design system and one page-layout entry', () => 
   assert.match(html, /href="design-system\.css"/);
   assert.match(html, /href="ui-v2\.css"/);
   assert.match(entry, /mission-validation\.css/);
+  assert.match(entry, /location-context\.css/);
+  assert.match(entry, /location-context-adapters\.css/);
   assert.match(entry, /design-system-legibility\.css/);
   ['styles.css', 'sections.css', 'planner.css', 'starmap.css', 'product-shell.css', 'workspace-consolidation.css', 'ui-rebuild.css', 'drake-mfd.css', 'mfd-layout-v2.css'].forEach((legacy) => {
     assert.doesNotMatch(html, new RegExp(`href="${legacy.replace('.', '\\.')}"`));
@@ -81,6 +83,21 @@ test('Mission Validation adds a review gate without replacing the clean shell', 
   assert.match(css, /mission-review-row/);
 });
 
+test('Location Context replaces string risk guesses with shared sourced guidance', () => {
+  const model = read('location-context.js');
+  const operations = read('ui-v2-operations.js');
+  const planner = read('location-context-planner.js');
+  const view = read('location-intel-view.js');
+  assert.match(model, /sourceLedger/);
+  assert.match(model, /exposureFor/);
+  assert.match(model, /unavailable-data/);
+  assert.match(operations, /placementPriority/);
+  assert.doesNotMatch(operations, /value\.includes\('pyro'\)|value\.includes\('station'\)/);
+  assert.match(planner, /planner-location-context/);
+  assert.match(view, /SOURCE LEDGER/);
+  assert.match(view, /UNAVAILABLE \/ UNVERIFIED/);
+});
+
 test('Fleet and Starmap use dedicated visual components', () => {
   const html = read('index.html');
   const fleet = read('hangar-view.js');
@@ -96,10 +113,10 @@ test('Fleet and Starmap use dedicated visual components', () => {
   assert.doesNotMatch(map, /getContext\('2d'\)|camera\.yaw|pointer\.down/);
 });
 
-test('Mission Validation follows the delivered visual-hardening release', () => {
+test('Location Context follows delivered Mission Validation', () => {
   const roadmap = require('../roadmap.js');
-  assert.equal(roadmap.currentVersion, '0.18');
-  assert.equal(roadmap.releases.find((release) => release.version === '0.17').status, 'done');
-  assert.equal(roadmap.releases.find((release) => release.version === '0.18').title, 'Mission validation');
+  assert.equal(roadmap.currentVersion, '0.19');
+  assert.equal(roadmap.releases.find((release) => release.version === '0.18').status, 'done');
   assert.equal(roadmap.releases.find((release) => release.version === '0.19').title, 'Location context');
+  assert.equal(roadmap.releases.find((release) => release.version === '0.20').title, 'Fleet loadouts');
 });
