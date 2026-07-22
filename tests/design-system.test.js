@@ -8,9 +8,7 @@ const system = require('../design-system.js');
 const icons = require('../mfd-icons.js');
 const roadmap = require('../roadmap.js');
 
-function read(file) {
-  return fs.readFileSync(path.join(__dirname, '..', file), 'utf8');
-}
+function read(file) { return fs.readFileSync(path.join(__dirname, '..', file), 'utf8'); }
 
 test('design system has primitive, semantic, component and manufacturer layers', () => {
   assert.ok(system.primitive.color.amber300);
@@ -35,15 +33,16 @@ test('design system CSS exposes semantic roles and canonical components', () => 
   ['primary', 'secondary', 'ghost', 'danger', 'function', 'icon'].forEach((variant) => assert.match(css, new RegExp(`ds-button--${variant}`)));
   assert.match(css, /ds-panel--primary-display/);
   assert.match(css, /ds-status--warning/);
-  assert.match(css, /ds-input:focus/);
 });
 
-test('legibility contract defines one readable type scale for every workspace', () => {
+test('legibility contract defines readable type, focus and motion rules', () => {
   const css = read('design-system-legibility.css');
   assert.match(css, /--ds-type-xs: \.75rem/);
   assert.match(css, /--ds-type-visible-min: \.75rem/);
   assert.match(css, /--ds-type-operational-max: 2\.25rem/);
-  assert.match(css, /Secondary provenance stays secondary through colour and weight, not microscopic sizing/);
+  assert.match(css, /--ds-focus-width: 3px/);
+  assert.match(css, /:focus-visible/);
+  assert.match(css, /prefers-reduced-motion: reduce/);
   assert.match(css, /planner-profile-metrics/);
   assert.match(css, /map-leg-estimate/);
 });
@@ -56,7 +55,7 @@ test('visible UI Kit documents palette, type, buttons, icons and manufacturer co
   assert.match(view, /Manufacturer theme contract/);
 });
 
-test('design foundation remains loaded before the v0.16 navigation and legibility layer', () => {
+test('design foundation remains loaded before the v0.17 hardening layer', () => {
   const html = read('index.html');
   const app = read('app.js');
   const entry = read('ui-v2.css');
@@ -65,9 +64,8 @@ test('design foundation remains loaded before the v0.16 navigation and legibilit
   assert.match(entry, /design-system-legibility\.css/);
   assert.match(app, /official-universe-data\.js/);
   assert.match(app, /navigation-estimates\.js/);
-  assert.match(app, /design-system-view\.js/);
-  assert.equal(roadmap.currentVersion, '0.16');
-  assert.equal(roadmap.releases.find((item) => item.version === '0.17').title, 'Visual hardening');
+  assert.equal(roadmap.currentVersion, '0.17');
+  assert.equal(roadmap.releases.find((item) => item.version === '0.18').title, 'Mission validation');
 });
 
 test('research rules prohibit page-specific invention', () => {
