@@ -46,7 +46,26 @@
     return releases;
   }
 
+  function normalizedVersion(value) {
+    return String(value ?? '').replace(/^v/i, '').replace(/\.0$/, '');
+  }
+
+  function includeCurrentRoadmapRelease(releases) {
+    const roadmap = window.SCCompanionRoadmap;
+    const current = roadmap?.releases?.find((release) => release.version === roadmap.currentVersion);
+    if (!current) return releases;
+    const exists = releases.some((release) => normalizedVersion(release.version) === normalizedVersion(current.version));
+    if (exists) return releases;
+    return [{
+      version: `${current.version}.0`,
+      date: '2026-07-22',
+      title: current.title,
+      categories: [{ title: 'Delivered', items: [...current.changes] }]
+    }, ...releases];
+  }
+
   function releaseTitle(release) {
+    if (release.title) return release.title;
     const named = release.categories.flatMap((category) => category.items)[0];
     return named ?? 'Product update';
   }
@@ -86,11 +105,12 @@
   }
 
   function render(releases) {
-    const published = releases.filter((release) => release.version.toLowerCase() !== 'unreleased');
+    const completeReleases = includeCurrentRoadmapRelease(releases);
+    const published = completeReleases.filter((release) => release.version.toLowerCase() !== 'unreleased');
     if (!published.length) throw new Error('No published releases found in CHANGELOG.md');
     renderHero(published[0]);
     timeline.replaceChildren();
-    releases.forEach((release, index) => timeline.append(renderRelease(release, index)));
+    completeReleases.forEach((release, index) => timeline.append(renderRelease(release, index)));
   }
 
   fetch('./CHANGELOG.md', { cache: 'no-store' })
