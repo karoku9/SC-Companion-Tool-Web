@@ -9,7 +9,8 @@
   const cargoLayout = window.SCCompanionCargoLayout;
   const routeCorrections = window.SCCompanionRouteCorrections;
   const routeProgress = window.SCCompanionRouteProgress;
-  if (!store || !catalog || !zoneModel || !planner || !cargoState || !cargoLayout || !routeCorrections || !routeProgress) return;
+  const locationContext = window.SCCompanionLocationContext;
+  if (!store || !catalog || !zoneModel || !planner || !cargoState || !cargoLayout || !routeCorrections || !routeProgress || !locationContext) return;
 
   const toolPanel = document.querySelector('#ops-tool-panel');
   const toolBody = document.querySelector('#ops-tool-body');
@@ -26,11 +27,8 @@
 
   const toolLabels = Object.freeze({ moves: 'Current moves', cargo: 'Cargo manifest', adjust: 'Cargo corrections', route: 'Route controls' });
 
-  function riskResolver(locationId, label) {
-    const value = `${locationId ?? ''} ${label ?? ''}`.toLowerCase();
-    if (value.includes('pyro') || value.includes('outpost')) return 3;
-    if (value.includes('station')) return 1;
-    return 0;
+  function placementPriority(locationId) {
+    return locationContext.placementPriority(locationId);
   }
 
   function activeShip(state) {
@@ -47,7 +45,7 @@
   function derive(state) {
     if (!state.route?.stops?.length) {
       const { ship, model } = activeModel(state);
-      return { state, ship, model, route: null, progress: null, lifecycle: cargoState.deriveCargoState(null), plan: null, assignments: new Map(), planError: '' };
+      return { state, ship, model, route: null, progress: null, lifecycle: cargoState.deriveCargoState(null), plan: null, assignments: new Map(), planError: '', locationIntel: null };
     }
     const route = routeCorrections.deriveRoute(state.route, state.routeCorrections);
     const progress = routeProgress.derive(route, state.completedStopIds, state.currentStopIndex);
@@ -55,10 +53,15 @@
     const { ship, model } = activeModel(state);
     let plan = null;
     let planError = '';
-    try { plan = planner.planCargo(route, model, riskResolver); } catch (error) { planError = error.message; }
+    try { plan = planner.planCargo(route, model, placementPriority); } catch (error) { planError = error.message; }
     const assignments = new Map();
     plan?.assignments.forEach((assignment) => { if (!assignments.has(assignment.cargoKey)) assignments.set(assignment.cargoKey, assignment); });
-    return { state, ship, model, route, progress, lifecycle, plan, assignments, planError };
+    const current = progress.currentStop;
+    const locationIntel = current ? locationContext.buildContext(current.locationId, {
+      onboardScu: lifecycle.totals.onboardScu,
+      label: current.locationLabel
+    }) : null;
+    return { state, ship, model, route, progress, lifecycle, plan, assignments, planError, locationIntel };
   }
 
   function positionText(context, lot) {
@@ -76,6 +79,17 @@
       <article><small>Delivered</small><strong>${lifecycle.totals.deliveredScu}</strong><span>SCU</span></article>
       <article><small>Lost</small><strong>${lifecycle.totals.lostScu}</strong><span>SCU</span></article>
     </div>`;
+  }
+
+  function contextBanner(context) {
+    const intel = context.locationIntel;
+    if (!intel) return '';
+    const reason = intel.exposure.reasons[0] ?? 'No derived cargo guidance is available.';
+    return `<section class="location-context-inline is-${intel.exposure.level}" data-location-context="${intel.locationId}">
+      <strong>${intel.exposure.label}</strong>
+      <span>${intel.label} · ${intel.confidence.label} · ${intel.freshness.label}</span>
+      <small>${reason}</small>
+    </section>`;
   }
 
   function renderMoves(context) {
@@ -103,7 +117,7 @@
         <em>${lot.corrected ? 'Corrected' : 'Onboard'}</em>
       </article>`).join('') : '<div class="tool-empty">The mission hold is currently clear.</div>';
 
-    return `${summaryStrip(context.lifecycle)}
+    return `${summaryStrip(context.lifecycle)}${contextBanner(context)}
       <div class="tool-section-title"><strong>Current stop queue</strong><small>${moves.length} move${moves.length === 1 ? '' : 's'}</small></div>
       <div class="move-table">${moveRows}</div>
       <div class="tool-section-title"><strong>Onboard now</strong><small>${context.lifecycle.totals.onboardScu} SCU</small></div>
@@ -139,7 +153,7 @@
       const percent = Math.min(100, zone.capacityScu ? used / zone.capacityScu * 100 : 0);
       return `<div class="zone-bar"><label title="${zone.access}">${zone.label}</label><i style="--zone-fill:${percent}%"></i><strong>${used}/${zone.capacityScu}</strong></div>`;
     }).join('');
-    return `${summaryStrip(context.lifecycle)}
+    return `${summaryStrip(context.lifecycle)}${contextBanner(context)}
       ${context.planError ? `<p class="route-tool-message">${context.planError}</p>` : ''}
       <div class="tool-section-title"><strong>Onboard manifest</strong><small>${context.lifecycle.onboardLots.length} cargo lot${context.lifecycle.onboardLots.length === 1 ? '' : 's'}</small></div>
       <div class="manifest-table">${manifest}</div>
@@ -159,7 +173,7 @@
         <button type="button" data-correction-apply>Apply</button>
       </article>`;
     }).join('');
-    return `${summaryStrip(context.lifecycle)}
+    return `${summaryStrip(context.lifecycle)}${contextBanner(context)}
       <div class="tool-section-title"><strong>Actual cargo state</strong><button type="button" class="button button--secondary" data-reset-corrections>Reset all</button></div>
       <div class="correction-list">${rows || '<div class="tool-empty">No cargo lots in this session.</div>'}</div>
       <p class="route-tool-message" data-tool-message>${lastMessage}</p>`;
@@ -176,16 +190,17 @@
     const completed = context.progress.completedSet;
     const rows = (context.route.allStops ?? context.route.stops).map((stop, index) => {
       const isComplete = completed.has(String(stop.id));
+      const source = locationContext.buildContext(stop.locationId, { onboardScu: 0, label: stop.locationLabel });
       return `<article class="route-tool-row${isComplete ? ' is-complete' : ''}" data-stop-id="${stop.id}">
         <span>${String(index + 1).padStart(2, '0')}</span>
-        <div><strong>${stop.locationLabel}</strong><small>${routeOperationSummary(stop)}${stop.skipped ? ' · Skipped' : ''}${stop.mandatory ? ' · Mandatory' : ''}</small></div>
+        <div><strong>${stop.locationLabel}</strong><small>${routeOperationSummary(stop)}${stop.skipped ? ' · Skipped' : ''}${stop.mandatory ? ' · Mandatory' : ''}</small><small>${source.confidence.label} · ${source.freshness.label}</small></div>
         <button type="button" data-route-action="up" title="Move up"${isComplete ? ' disabled' : ''}>↑</button>
         <button type="button" data-route-action="down" title="Move down"${isComplete ? ' disabled' : ''}>↓</button>
         <button type="button" data-route-action="skip" title="${stop.skipped ? 'Reopen stop' : 'Skip stop'}"${isComplete ? ' disabled' : ''}>${stop.skipped ? 'Open' : 'Skip'}</button>
         <button type="button" data-route-action="mandatory" title="Toggle mandatory">${stop.mandatory ? 'Unlock' : 'Lock'}</button>
       </article>`;
     }).join('');
-    return `<div class="tool-section-title"><strong>Future stop controls</strong><button type="button" class="button button--secondary" data-reset-route>Reset route</button></div>
+    return `${contextBanner(context)}<div class="tool-section-title"><strong>Future stop controls</strong><button type="button" class="button button--secondary" data-reset-route>Reset route</button></div>
       <div class="route-tool-list">${rows}</div>
       <p class="route-tool-message" data-tool-message>${lastMessage}</p>`;
   }
@@ -285,7 +300,8 @@
     }
     const current = context.progress.currentStop;
     const title = context.progress.complete ? 'Session complete' : `${context.progress.completedStopIds.length}/${context.route.stops.length} stops`;
-    const detail = context.progress.complete ? 'All active stops completed' : current?.locationLabel ?? 'Route ready';
+    const exposure = context.locationIntel?.exposure;
+    const detail = context.progress.complete ? 'All active stops completed' : [current?.locationLabel ?? 'Route ready', exposure?.label].filter(Boolean).join(' · ');
     if (globalStatus) { globalStatus.querySelector('strong').textContent = title; globalStatus.querySelector('small').textContent = detail; }
     const load = context.lifecycle.currentMoves.filter((move) => move.action === 'load').reduce((sum, move) => sum + Number(move.lot?.scu ?? move.operation.scu ?? 0), 0);
     const unload = context.lifecycle.currentMoves.filter((move) => move.action === 'unload').reduce((sum, move) => sum + Number(move.lot?.scu ?? move.operation.scu ?? 0), 0);
