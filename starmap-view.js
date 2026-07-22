@@ -81,8 +81,9 @@
     const labelOnLeft = x > 740;
     const labelX = labelOnLeft ? x - 32 : x + 32;
     const textAnchor = labelOnLeft ? 'end' : 'start';
-    add(group, 'text', { x: labelX, y: y - 4, 'text-anchor': textAnchor }, label);
-    add(group, 'text', { x: labelX, y: y + 14, 'text-anchor': textAnchor, class: 'map-node-sub' }, operationSummary(stop));
+    const labelY = index % 2 === 0 ? y - 24 : y + 34;
+    add(group, 'text', { x: labelX, y: labelY, 'text-anchor': textAnchor, class: 'map-route-label' }, label);
+    add(group, 'text', { x: labelX, y: labelY + 18, 'text-anchor': textAnchor, class: 'map-node-sub map-route-summary' }, operationSummary(stop));
     group.addEventListener('click', () => setSelection(stop.locationLabel, `Route stop ${index + 1}`, `${operationSummary(stop)}${stop.mandatory ? ' · Mandatory' : ''}${stop.skipped ? ' · Skipped' : ''}`, String(stop.id)));
     group.addEventListener('keydown', (event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); group.click(); } });
     return { x, y };
