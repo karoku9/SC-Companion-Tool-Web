@@ -32,7 +32,6 @@ test('supported mission locations resolve to stable system anchors', () => {
   const teasa = starmap.getLocationAnchor('stanton-hurston-lorville-teasa');
   const riker = starmap.getLocationAnchor('stanton-arccorp-area18-riker');
   const baijini = starmap.getLocationAnchor('stanton-arccorp-baijini');
-
   assert.equal(teasa.systemId, 'stanton');
   assert.equal(riker.bodyId, 'arccorp');
   assert.equal(baijini.label, 'Baijini Point · ArcCorp');
@@ -42,18 +41,20 @@ test('supported mission locations resolve to stable system anchors', () => {
   });
 });
 
-test('map page loads the lightweight canvas renderer and generated navigation entry', () => {
+test('map page uses a route-first SVG renderer and generated navigation entry', () => {
   const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+  const view = fs.readFileSync(path.join(__dirname, '..', 'starmap-view.js'), 'utf8');
   assert.equal(pages.getPage('map').status, 'live');
   assert.match(html, /data-view="map"/);
-  assert.match(html, /id="starmap-canvas"/);
-  assert.match(html, /href="starmap\.css"/);
-  assert.match(html, /src="starmap-data\.js"/);
-  assert.match(html, /src="starmap-view\.js"/);
+  assert.match(html, /<svg id="starmap-canvas"/);
+  assert.match(view, /renderRouteMode/);
+  assert.match(view, /renderStantonMode/);
+  assert.match(view, /renderNetworkMode/);
+  assert.doesNotMatch(view, /getContext\('2d'\)|camera\.yaw|pointer\.down/);
 });
 
 test('OCR and Game.log remain in the future assisted-intake release', () => {
-  const assisted = roadmap.releases.find((release) => release.version === '0.27');
+  const assisted = roadmap.releases.find((release) => release.version === '0.24');
   assert.ok(assisted);
   assert.equal(assisted.status, 'future');
   assert.ok(assisted.changes.some((change) => /OCR/.test(change)));

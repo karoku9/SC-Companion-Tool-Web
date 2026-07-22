@@ -31,13 +31,8 @@
   }
 
   function renderDynamicHosts() {
-    if (!futureRoot) return;
-    if (!document.querySelector('#route-planner')) {
-      futureRoot.insertAdjacentHTML('beforeend', '<section class="app-view section-block" data-view="route-planner" id="route-planner" hidden></section>');
-    }
-    if (!document.querySelector('#load-operations')) {
-      futureRoot.insertAdjacentHTML('beforeend', '<section class="app-view section-block internal-workspace-source" data-view="load-operations" id="load-operations" hidden></section>');
-    }
+    if (!futureRoot || document.querySelector('#route-planner')) return;
+    futureRoot.insertAdjacentHTML('beforeend', '<section class="app-view page-view route-planner-page" data-view="route-planner" id="route-planner" hidden></section>');
   }
 
   function setContext(requestedId) {
@@ -48,7 +43,7 @@
     if (pageTitle) pageTitle.textContent = page.title;
     if (mobileSelect) mobileSelect.value = page.id;
     document.documentElement.dataset.activeView = page.id;
-    document.title = `${page.label} · SC Companion Tool`;
+    document.title = `${page.label} · SC Companion MFD`;
   }
 
   function openTarget(targetId) {

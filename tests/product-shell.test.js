@@ -26,7 +26,7 @@ test('primary navigation contains only six focused workspaces', () => {
   });
 });
 
-test('secondary tools resolve into their parent workspace', () => {
+test('secondary links resolve into their parent workspace', () => {
   assert.equal(pages.resolveView('cargo'), 'route');
   assert.equal(pages.resolveView('load-operations'), 'route');
   assert.equal(pages.resolveView('locations'), 'route-planner');
@@ -34,7 +34,7 @@ test('secondary tools resolve into their parent workspace', () => {
   assert.equal(pages.resolveView('route-planner'), 'route-planner');
 });
 
-test('ship cargo zones are separable, layered and capacity-safe', () => {
+test('ship cargo zones remain separable, layered and capacity-safe', () => {
   catalog.models.forEach((model) => {
     const zones = model.layout.zones;
     assert.ok(Array.isArray(zones) && zones.length > 1);
@@ -48,7 +48,7 @@ test('ship cargo zones are separable, layered and capacity-safe', () => {
   });
 });
 
-test('design system and icon registry load before section routing', () => {
+test('design system, icons and clean shell load before page routing', () => {
   const html = read('index.html');
   const shell = read('product-shell.js');
   assert.match(html, /id="product-navigation"/);
@@ -57,24 +57,24 @@ test('design system and icon registry load before section routing', () => {
   assert.ok(html.indexOf('src="mfd-icons.js"') < html.indexOf('src="product-pages.js"'));
   assert.ok(html.indexOf('src="product-shell.js"') < html.indexOf('src="sections.js"'));
   assert.match(shell, /id="route-planner"/);
-  assert.match(shell, /id="load-operations"/);
+  assert.doesNotMatch(shell, /id="load-operations"/);
   assert.match(shell, /nav-glyph/);
   assert.match(shell, /SCCompanionMfdIcons/);
 });
 
-test('v0.14 design foundation and existing workspace runtimes are registered', () => {
+test('v0.15 clean rebuild and core runtimes are registered', () => {
   const app = read('app.js');
   const designSystem = read('design-system.js');
-  assert.equal(roadmap.currentVersion, '0.14');
+  assert.equal(roadmap.currentVersion, '0.15');
   assert.match(app, /cargo-zone-model\.js/);
-  assert.match(app, /workspace-shell\.js/);
-  assert.match(app, /design-system\.css/);
+  assert.match(app, /ui-v2\.js/);
   assert.match(app, /design-system-view\.js/);
+  assert.doesNotMatch(app, /workspace-shell\.js/);
   assert.match(designSystem, /manufacturer: 'Drake Interplanetary'/);
 });
 
-test('assisted OCR and Game.log intake remain after the current release', () => {
-  const assisted = roadmap.releases.find((release) => release.version === '0.27');
+test('assisted OCR and Game.log intake remain after interface hardening', () => {
+  const assisted = roadmap.releases.find((release) => release.version === '0.24');
   assert.equal(assisted.status, 'future');
   assert.ok(assisted.changes.some((change) => /OCR/.test(change)));
   assert.ok(assisted.changes.some((change) => /Game\.log/.test(change)));

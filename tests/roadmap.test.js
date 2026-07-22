@@ -34,18 +34,18 @@ test('current, next and future releases form one linear delivery path', () => {
   assert.ok(roadmap.releases.slice(nextIndex + 1).every((release) => release.status === 'future'));
 });
 
-test('v0.14 establishes the design system before page migrations', () => {
-  const previous = roadmap.releases.find((item) => item.version === '0.13');
-  const current = roadmap.releases.find((item) => item.version === '0.14');
-  const next = roadmap.releases.find((item) => item.version === '0.15');
+test('v0.15 is the clean rebuild and visual hardening follows it', () => {
+  const previous = roadmap.releases.find((item) => item.version === '0.14');
+  const current = roadmap.releases.find((item) => item.version === '0.15');
+  const next = roadmap.releases.find((item) => item.version === '0.16');
   assert.equal(previous.status, 'done');
-  assert.match(previous.title, /MFD layout rebuild/i);
+  assert.match(previous.title, /Design system foundation/i);
   assert.equal(current.status, 'current');
-  assert.match(current.title, /Design system foundation/i);
-  assert.ok(current.changes.some((change) => /semantic design tokens/i.test(change)));
-  assert.ok(current.changes.some((change) => /Development UI Kit/i.test(change)));
+  assert.match(current.title, /Clean UI rebuild/i);
+  assert.ok(current.changes.some((change) => /Native Operations tools/.test(change)));
+  assert.ok(current.changes.some((change) => /Route-first 2D Starmap/.test(change)));
   assert.equal(next.status, 'next');
-  assert.match(next.title, /Operations components/i);
+  assert.match(next.title, /Visual hardening/i);
 });
 
 test('roadmap page keeps the English shell and release track host', () => {
