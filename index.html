@@ -16,24 +16,25 @@
   <div class="product-frame">
     <aside class="product-sidebar">
       <div class="sidebar-brand">
-        <strong>SC Companion Tool</strong>
-        <span>MISSION · ROUTE · CARGO</span>
+        <span class="brand-mark" aria-hidden="true">SC</span>
+        <div class="brand-copy"><strong>Companion Tool</strong><span>Mission operations</span></div>
+        <button type="button" class="sidebar-toggle" id="sidebar-toggle" aria-label="Collapse navigation" aria-pressed="false">‹</button>
       </div>
       <nav class="product-navigation" id="product-navigation" aria-label="Product pages"></nav>
-      <div class="sidebar-footer">Browser-local foundation. Live, blueprint and later-stage pages are always labelled.</div>
+      <div class="sidebar-footer">v0.11 · Interface rebuild<br>Local session data stays in this browser.</div>
     </aside>
 
     <main class="app-shell">
       <header class="topbar">
         <div class="shell-page-context">
-          <p class="eyebrow" id="shell-page-eyebrow">COMMAND CENTER</p>
-          <h1 id="shell-page-title">Session overview</h1>
+          <p class="eyebrow" id="shell-page-eyebrow">Live session</p>
+          <h1 id="shell-page-title">Current operation</h1>
         </div>
         <div class="topbar-actions">
-          <label class="mobile-page-picker">PAGE
+          <label class="mobile-page-picker">Page
             <select id="mobile-page-select" aria-label="Select application page"></select>
           </label>
-          <div class="system-status"><span class="status-dot"></span>LOCAL SESSION ONLINE</div>
+          <div class="system-status"><span class="status-dot"></span>Local session ready</div>
         </div>
       </header>
 
@@ -41,19 +42,19 @@
 
       <section class="app-view section-block" data-view="missions" id="missions" hidden>
         <header class="section-heading">
-          <div><p class="eyebrow">MISSION INTAKE</p><h2>Paste missions, generate one session</h2></div>
-          <span class="page-status is-live">LIVE</span>
+          <div><p class="eyebrow">Mission intake</p><h2>Build a session</h2></div>
+          <span class="page-status is-live">Live</span>
         </header>
         <div class="mission-layout">
           <form class="mission-editor" id="mission-form">
-            <label for="mission-text">MISSION TEXT</label>
+            <label for="mission-text">Mission text</label>
             <textarea id="mission-text" spellcheck="false"></textarea>
-            <div class="form-actions"><button type="submit">GENERATE SESSION</button><button type="button" class="secondary-button" id="reset-session">RESET</button></div>
+            <div class="form-actions"><button type="submit">Generate session</button><button type="button" class="secondary-button" id="reset-session">Reset</button></div>
             <p class="field-help">Commands: collect, pickup, deliver. Example: <code>collect teasa 2scu etam</code></p>
             <div class="form-message" id="mission-message" aria-live="polite"></div>
           </form>
           <section class="mission-preview" aria-labelledby="mission-preview-title">
-            <p class="eyebrow">PARSED CONTRACTS</p><h3 id="mission-preview-title">No generated session</h3>
+            <p class="eyebrow">Parsed contracts</p><h3 id="mission-preview-title">No generated session</h3>
             <div id="mission-cards" class="mission-cards"></div>
           </section>
         </div>
@@ -61,14 +62,14 @@
 
       <section class="app-view section-block" data-view="route" id="route" hidden>
         <header class="section-heading">
-          <div><p class="eyebrow">ACTIVE ROUTE</p><h2>One stop at a time</h2></div>
-          <span class="page-status is-live">LIVE</span>
+          <div><p class="eyebrow">Live session</p><h2>Current operation</h2></div>
+          <span class="page-status is-live">Live</span>
         </header>
         <div class="route-layout">
           <article class="current-stop-card">
-            <p class="eyebrow">CURRENT STOP</p><h3 id="current-stop-name">Generate a session first</h3>
+            <p class="eyebrow">Current destination</p><h3 id="current-stop-name">Generate a session first</h3>
             <div id="current-stop-operations" class="operation-list"></div>
-            <button type="button" id="complete-stop" disabled>COMPLETE STOP — NEXT</button>
+            <button type="button" id="complete-stop" disabled>Complete stop and continue</button>
           </article>
           <ol class="route-stop-list" id="route-stop-list"></ol>
         </div>
@@ -76,17 +77,17 @@
 
       <section class="app-view section-block" data-view="cargo" id="cargo" hidden>
         <header class="section-heading">
-          <div><p class="eyebrow">CARGO LAYOUT</p><h2>Separate zones and vertical layers</h2></div>
-          <span class="page-status is-foundation">FOUNDATION</span>
+          <div><p class="eyebrow">Cargo hold</p><h2>Zones and placement</h2></div>
+          <span class="page-status is-foundation">Foundation</span>
         </header>
         <div class="cargo-layout">
           <article class="cargo-summary">
-            <p class="eyebrow">SELECTED SHIP</p><h3 id="cargo-ship-name">—</h3><strong id="cargo-usage">—</strong>
-            <p class="field-help">Each zone is independent. Cargo can be divided by mission, delivery and physical access, then stacked in vertical layers.</p>
+            <p class="eyebrow">Selected ship</p><h3 id="cargo-ship-name">—</h3><strong id="cargo-usage">—</strong>
+            <p class="field-help">Logical zones organize mission cargo by delivery order and physical access.</p>
             <div id="cargo-legend" class="cargo-legend"></div>
           </article>
           <div class="cargo-grid-wrap">
-            <span class="access-label">ZONE PLAN · ACCESS FIRST</span>
+            <span class="access-label">Physical cargo grid</span>
             <div class="cargo-zone-stack" id="cargo-grid"></div>
           </div>
         </div>
@@ -94,17 +95,17 @@
 
       <section class="app-view section-block" data-view="hangar" id="hangar" hidden>
         <header class="section-heading">
-          <div><p class="eyebrow">MY HANGAR</p><h2>Ship instances and modifications</h2></div>
-          <span class="page-status is-foundation">FOUNDATION</span>
+          <div><p class="eyebrow">Fleet</p><h2>Ships and configuration</h2></div>
+          <span class="page-status is-foundation">Foundation</span>
         </header>
         <div class="hangar-layout">
           <form class="hangar-form" id="hangar-form">
-            <label>SHIP MODEL<select id="hangar-model"></select></label>
-            <label>NICKNAME<input id="hangar-nickname" type="text" placeholder="Optional"></label>
-            <label>QUANTUM DRIVE<input id="hangar-quantum" type="text" value="Stock"></label>
-            <label>QUANTUM TIME FACTOR<input id="hangar-factor" type="number" min="0.1" step="0.01" value="1"><small>0.85 means about 15% less quantum travel time.</small></label>
-            <label>NOTES<textarea id="hangar-notes" rows="3"></textarea></label>
-            <button type="submit">SAVE SHIP</button>
+            <label>Ship model<select id="hangar-model"></select></label>
+            <label>Nickname<input id="hangar-nickname" type="text" placeholder="Optional"></label>
+            <label>Quantum drive<input id="hangar-quantum" type="text" value="Stock"></label>
+            <label>Quantum time factor<input id="hangar-factor" type="number" min="0.1" step="0.01" value="1"><small>0.85 means about 15% less quantum travel time.</small></label>
+            <label>Notes<textarea id="hangar-notes" rows="3"></textarea></label>
+            <button type="submit">Save ship</button>
           </form>
           <div class="hangar-list" id="hangar-list"></div>
         </div>
@@ -112,46 +113,46 @@
 
       <section class="app-view section-block" data-view="map" id="map" hidden>
         <header class="section-heading">
-          <div><p class="eyebrow">3D STARMAP</p><h2>Systems, orbits and active-route context</h2></div>
-          <span class="page-status is-live">LIVE</span>
+          <div><p class="eyebrow">Starmap</p><h2>Route context</h2></div>
+          <span class="page-status is-live">Live</span>
         </header>
         <div class="starmap-shell">
           <div class="starmap-stage">
             <div class="starmap-toolbar" aria-label="Starmap views">
-              <button type="button" data-map-mode="network" aria-pressed="true">OVERVIEW</button>
-              <button type="button" data-map-mode="stanton" aria-pressed="false">STANTON</button>
-              <button type="button" data-map-mode="pyro" aria-pressed="false">PYRO</button>
-              <button type="button" data-map-mode="nyx" aria-pressed="false">NYX</button>
+              <button type="button" data-map-mode="network" aria-pressed="true">Overview</button>
+              <button type="button" data-map-mode="stanton" aria-pressed="false">Stanton</button>
+              <button type="button" data-map-mode="pyro" aria-pressed="false">Pyro</button>
+              <button type="button" data-map-mode="nyx" aria-pressed="false">Nyx</button>
             </div>
             <canvas id="starmap-canvas" aria-label="Interactive schematic three-dimensional starmap"></canvas>
-            <span class="starmap-mode" id="starmap-mode">SYSTEM NETWORK · SCHEMATIC 3D</span>
+            <span class="starmap-mode" id="starmap-mode">System network · schematic 3D</span>
           </div>
           <aside class="starmap-sidebar">
-            <article class="starmap-panel"><p class="eyebrow">SELECTED OBJECT</p><h3 id="starmap-selection-title">Stanton</h3><span class="starmap-selection-type" id="starmap-selection-type">Corporate system</span><p id="starmap-selection-detail">UEE and corporate jurisdiction. Playable.</p></article>
-            <article class="starmap-panel"><p class="eyebrow">ACTIVE ROUTE</p><p class="starmap-route-status" id="starmap-route-status">Generate a mission route to add an overlay.</p></article>
-            <article class="starmap-panel"><p class="eyebrow">CONTROLS</p><ul class="starmap-instructions"><li><strong>DRAG</strong><span>Rotate the scene</span></li><li><strong>WHEEL</strong><span>Zoom in and out</span></li><li><strong>CLICK</strong><span>Inspect an object</span></li><li><strong>DOUBLE</strong><span>Open a system</span></li></ul></article>
+            <article class="starmap-panel"><p class="eyebrow">Selected object</p><h3 id="starmap-selection-title">Stanton</h3><span class="starmap-selection-type" id="starmap-selection-type">Corporate system</span><p id="starmap-selection-detail">UEE and corporate jurisdiction. Playable.</p></article>
+            <article class="starmap-panel"><p class="eyebrow">Active route</p><p class="starmap-route-status" id="starmap-route-status">Generate a mission route to add an overlay.</p></article>
+            <article class="starmap-panel"><p class="eyebrow">Controls</p><ul class="starmap-instructions"><li><strong>Drag</strong><span>Rotate the scene</span></li><li><strong>Wheel</strong><span>Zoom in and out</span></li><li><strong>Click</strong><span>Inspect an object</span></li><li><strong>Double</strong><span>Open a system</span></li></ul></article>
             <div class="starmap-disclaimer" id="starmap-data-note">System coordinates are visual layout coordinates, not claimed physical distances.</div>
           </aside>
         </div>
       </section>
 
       <section class="app-view section-block" data-view="locations" id="locations" hidden>
-        <header class="section-heading"><div><p class="eyebrow">LOCATION INTEL</p><h2>Services and arrival overhead</h2></div><span class="page-status is-foundation">FOUNDATION</span></header>
+        <header class="section-heading"><div><p class="eyebrow">Location intel</p><h2>Services and arrival context</h2></div><span class="page-status is-foundation">Foundation</span></header>
         <div class="workspace compact-workspace">
           <form class="search-panel" id="location-search"><label for="location-query">Search destination</label><div class="search-row"><input id="location-query" type="search" value="Lorville"><button type="submit">Find</button></div><div class="search-results" id="search-results"></div></form>
-          <article class="destination-panel"><p class="eyebrow">OPERATIONAL DESTINATION</p><h2 id="destination-title">—</h2><div class="navigation-callout"><span>IN-GAME DESTINATION</span><strong id="navigation-target">—</strong></div><dl class="destination-details"><div><dt>TYPE</dt><dd id="location-type">—</dd></div><div><dt>HIERARCHY</dt><dd id="location-path">—</dd></div></dl></article>
+          <article class="destination-panel"><p class="eyebrow">Operational destination</p><h2 id="destination-title">—</h2><div class="navigation-callout"><span>In-game destination</span><strong id="navigation-target">—</strong></div><dl class="destination-details"><div><dt>Type</dt><dd id="location-type">—</dd></div><div><dt>Hierarchy</dt><dd id="location-path">—</dd></div></dl></article>
         </div>
-        <div class="intel-layout"><article class="intel-summary"><p class="eyebrow">SELECTED LOCATION</p><h3 id="intel-location-name">—</h3><dl class="compact-facts"><div><dt>DATA STATUS</dt><dd id="intel-data-status">—</dd></div><div><dt>TRAFFIC</dt><dd id="intel-traffic">—</dd></div></dl><div class="estimate-block"><span class="eyebrow">INDICATIVE ARRIVAL TIME</span><strong class="estimate-total" id="estimate-total">—</strong><ol class="estimate-list" id="estimate-segments"></ol></div></article><section class="intel-panel"><p class="eyebrow">OPERATIONS PROFILE</p><h3>Services</h3><div class="service-grid" id="intel-services"></div></section></div>
+        <div class="intel-layout"><article class="intel-summary"><p class="eyebrow">Selected location</p><h3 id="intel-location-name">—</h3><dl class="compact-facts"><div><dt>Data status</dt><dd id="intel-data-status">—</dd></div><div><dt>Traffic</dt><dd id="intel-traffic">—</dd></div></dl><div class="estimate-block"><span class="eyebrow">Indicative arrival time</span><strong class="estimate-total" id="estimate-total">—</strong><ol class="estimate-list" id="estimate-segments"></ol></div></article><section class="intel-panel"><p class="eyebrow">Operations profile</p><h3>Services</h3><div class="service-grid" id="intel-services"></div></section></div>
       </section>
 
       <section class="app-view section-block" data-view="companion" id="companion" hidden>
-        <header class="section-heading"><div><p class="eyebrow">PHONE COMPANION</p><h2>One-tap route progress</h2></div><span class="page-status is-foundation">FOUNDATION</span></header>
-        <div class="companion-layout"><article class="companion-card"><span class="companion-state">PAIRING TRANSPORT NOT CONNECTED</span><h3>Short-code pairing planned</h3><p>The phone will receive only the active route snapshot and send back COMPLETE — NEXT.</p></article><article class="phone-preview"><div class="phone-screen"><p class="eyebrow">NEXT STOP</p><strong class="phone-stop" id="phone-stop">No active route</strong><span id="phone-destination">—</span><div class="phone-action" id="phone-action">Generate a session</div><button class="phone-next" type="button" disabled>COMPLETE — NEXT</button></div></article></div>
+        <header class="section-heading"><div><p class="eyebrow">Phone companion</p><h2>One-tap route progress</h2></div><span class="page-status is-foundation">Foundation</span></header>
+        <div class="companion-layout"><article class="companion-card"><span class="companion-state">Pairing transport not connected</span><h3>Short-code pairing planned</h3><p>The phone will receive only the active route snapshot and send back Complete and continue.</p></article><article class="phone-preview"><div class="phone-screen"><p class="eyebrow">Next stop</p><strong class="phone-stop" id="phone-stop">No active route</strong><span id="phone-destination">—</span><div class="phone-action" id="phone-action">Generate a session</div><button class="phone-next" type="button" disabled>Complete and continue</button></div></article></div>
       </section>
 
-      <section class="app-view section-block roadmap-section" data-view="roadmap" id="roadmap" hidden><header class="section-heading roadmap-heading"><div><p class="eyebrow">DEVELOPMENT ROADMAP</p><h2 id="roadmap-title">From foundation to complete sessions</h2></div><div class="roadmap-legend"><span class="legend-done">Completed</span><span class="legend-active">In progress</span><span class="legend-next">Next</span><span class="legend-future">Future</span></div></header><p class="roadmap-help">Macro phases run horizontally. Each phase contains a vertical sequence of smaller objectives.</p><div class="roadmap-board" id="roadmap-board"></div></section>
+      <section class="app-view section-block roadmap-section" data-view="roadmap" id="roadmap" hidden><header class="section-heading roadmap-heading"><div><p class="eyebrow">Development</p><h2 id="roadmap-title">Release path to v1.0</h2></div><div class="roadmap-legend"><span class="legend-done">Released</span><span class="legend-active">Current</span><span class="legend-next">Next</span><span class="legend-future">Planned</span></div></header><p class="roadmap-help">Versions progress from left to right. Each card lists only the work delivered in that release.</p><div class="roadmap-board" id="roadmap-board"></div></section>
 
-      <footer class="build-note">Product shell blueprint: all planned pages are reserved now. Existing live modules remain connected; OCR and Game.log stay deferred.</footer>
+      <footer class="build-note">SC Companion Tool · browser-local mission operations.</footer>
     </main>
   </div>
 

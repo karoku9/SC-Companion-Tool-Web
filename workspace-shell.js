@@ -13,13 +13,11 @@
     if (routeHeading) {
       const eyebrow = routeHeading.querySelector('.eyebrow');
       const heading = routeHeading.querySelector('h2');
-      if (eyebrow) eyebrow.textContent = 'LIVE OPERATIONS';
-      if (heading) heading.textContent = 'Navigate, move cargo, continue';
+      if (eyebrow) eyebrow.textContent = 'Live session';
+      if (heading) heading.textContent = 'Current operation';
     }
-    const sidebarFooter = document.querySelector('.sidebar-footer');
-    if (sidebarFooter) sidebarFooter.textContent = 'Six focused workspaces. Secondary tools open only where they are needed.';
     const fleetHeading = document.querySelector('#hangar .section-heading h2');
-    if (fleetHeading) fleetHeading.textContent = 'Ships and cargo configuration';
+    if (fleetHeading) fleetHeading.textContent = 'Ships and configuration';
 
     function internalize(section) {
       section.removeAttribute('data-view');
@@ -32,22 +30,22 @@
     shell.className = 'operations-workspace-tools';
     shell.innerHTML = `
       <div class="operations-command-strip">
-        <button type="button" data-open-workspace-panel="moves"><span>NEXT MOVES</span><strong id="workspace-move-preview">No active cargo moves</strong><small>Load and unload queue</small></button>
-        <button type="button" data-open-workspace-panel="cargo"><span>CARGO NOW</span><strong id="workspace-cargo-preview">0 SCU onboard</strong><small>Hold, zones and editor</small></button>
-        <button type="button" data-open-workspace-panel="corrections"><span>ADJUST</span><strong>Corrections</strong><small>Actual SCU and cargo state</small></button>
-        <button type="button" data-open-workspace-panel="route-tools"><span>ROUTE</span><strong>Route tools</strong><small>Skip, lock and reorder</small></button>
+        <button type="button" data-open-workspace-panel="moves"><span>Next moves</span><strong id="workspace-move-preview">No active cargo moves</strong><small>Load and unload queue</small></button>
+        <button type="button" data-open-workspace-panel="cargo"><span>Cargo now</span><strong id="workspace-cargo-preview">0 SCU onboard</strong><small>Hold, zones and editor</small></button>
+        <button type="button" data-open-workspace-panel="corrections"><span>Adjust</span><strong>Corrections</strong><small>Actual SCU and cargo state</small></button>
+        <button type="button" data-open-workspace-panel="route-tools"><span>Route</span><strong>Route tools</strong><small>Skip, lock and reorder</small></button>
       </div>
       <div class="workspace-drawer-backdrop" hidden></div>
       <aside class="workspace-drawer" aria-label="Operational tools" hidden>
         <header class="workspace-drawer-header">
-          <div><span>OPERATIONAL TOOL</span><h2 id="workspace-drawer-title">Moves</h2></div>
-          <div><button type="button" id="workspace-drawer-expand" aria-pressed="false">EXPAND</button><button type="button" id="workspace-drawer-close">CLOSE</button></div>
+          <div><span>Operational tool</span><h2 id="workspace-drawer-title">Moves</h2></div>
+          <div><button type="button" id="workspace-drawer-expand" aria-pressed="false">Full screen</button><button type="button" id="workspace-drawer-close">Close</button></div>
         </header>
         <nav class="workspace-drawer-tabs" aria-label="Operational tool panels">
-          <button type="button" data-workspace-tab="moves">MOVES</button>
-          <button type="button" data-workspace-tab="cargo">CARGO</button>
-          <button type="button" data-workspace-tab="corrections">CORRECTIONS</button>
-          <button type="button" data-workspace-tab="route-tools">ROUTE</button>
+          <button type="button" data-workspace-tab="moves">Moves</button>
+          <button type="button" data-workspace-tab="cargo">Cargo</button>
+          <button type="button" data-workspace-tab="corrections">Corrections</button>
+          <button type="button" data-workspace-tab="route-tools">Route</button>
         </nav>
         <div class="workspace-drawer-body">
           <div data-workspace-pane="moves"></div>
@@ -101,7 +99,7 @@
       backdrop.hidden = true;
       drawer.classList.remove('is-expanded');
       expand.setAttribute('aria-pressed', 'false');
-      expand.textContent = 'EXPAND';
+      expand.textContent = 'Full screen';
       document.body.classList.remove('workspace-drawer-open');
     }
 
@@ -116,7 +114,7 @@
     expand.addEventListener('click', () => {
       const expanded = drawer.classList.toggle('is-expanded');
       expand.setAttribute('aria-pressed', String(expanded));
-      expand.textContent = expanded ? 'RESTORE' : 'EXPAND';
+      expand.textContent = expanded ? 'Restore' : 'Full screen';
     });
     window.addEventListener('keydown', (event) => { if (event.key === 'Escape' && !drawer.hidden) closePanel(); });
     window.addEventListener('sc:open-internal-panel', (event) => {
@@ -149,7 +147,7 @@
       internalize(locations);
       locationDetails = document.createElement('details');
       locationDetails.className = 'contextual-tool locations-context-tool';
-      locationDetails.innerHTML = '<summary><span>LOCATION INTEL</span><strong>Search services and arrival context</strong><em>EXPAND</em></summary><div class="contextual-tool-body"></div>';
+      locationDetails.innerHTML = '<summary><span>Location intel</span><strong>Search services and arrival context</strong><em>Expand</em></summary><div class="contextual-tool-body"></div>';
       locationDetails.querySelector('.contextual-tool-body').append(locations);
       planner.append(locationDetails);
       window.addEventListener('sc:open-internal-panel', (event) => { if (event.detail?.panel === 'locations') locationDetails.open = true; });
@@ -161,13 +159,13 @@
     if (roadmap && changelog) {
       const roadmapTitle = roadmap.querySelector('#roadmap-title');
       const help = roadmap.querySelector('.roadmap-help');
-      if (roadmapTitle) roadmapTitle.textContent = 'Release path from v0.1 to v1.0';
+      if (roadmapTitle) roadmapTitle.textContent = 'Release path to v1.0';
       if (help) help.textContent = 'Versions progress from left to right. Each card contains only the changes delivered by that release.';
       internalize(changelog);
       changelog.querySelector('.section-heading')?.remove();
       const tabs = document.createElement('nav');
       tabs.className = 'development-tabs';
-      tabs.innerHTML = '<button type="button" data-development-tab="roadmap" aria-selected="true">ROADMAP</button><button type="button" data-development-tab="changelog" aria-selected="false">CHANGELOG</button>';
+      tabs.innerHTML = '<button type="button" data-development-tab="roadmap" aria-selected="true">Roadmap</button><button type="button" data-development-tab="changelog" aria-selected="false">Changelog</button>';
       changelogTab = tabs.querySelector('[data-development-tab="changelog"]');
       const roadmapPane = document.createElement('div');
       roadmapPane.dataset.developmentPane = 'roadmap';

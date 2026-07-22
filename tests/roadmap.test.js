@@ -34,11 +34,14 @@ test('current, next and future releases form one linear delivery path', () => {
   assert.ok(roadmap.releases.slice(nextIndex + 1).every((release) => release.status === 'future'));
 });
 
-test('v0.10 includes consolidation and cargo zone editing', () => {
-  const release = roadmap.releases.find((item) => item.version === '0.10');
-  assert.equal(release.status, 'current');
-  assert.ok(release.changes.some((change) => /Six primary workspaces/.test(change)));
-  assert.ok(release.changes.some((change) => /Cargo Zone Editor/.test(change)));
+test('v0.11 is the interface rebuild and mission validation follows it', () => {
+  const current = roadmap.releases.find((item) => item.version === '0.11');
+  const next = roadmap.releases.find((item) => item.version === '0.12');
+  assert.equal(current.status, 'current');
+  assert.match(current.title, /Interface rebuild/i);
+  assert.ok(current.changes.some((change) => /Mobile bottom navigation/.test(change)));
+  assert.equal(next.status, 'next');
+  assert.match(next.title, /Mission validation/i);
 });
 
 test('roadmap page keeps the English shell and release track host', () => {

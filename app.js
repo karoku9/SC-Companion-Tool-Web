@@ -40,7 +40,7 @@
     const title = document.createElement('strong');
     title.textContent = model.formatOperationalLabel(location);
     const detail = document.createElement('span');
-    detail.textContent = `IN GAME: ${location.navigationTarget ?? location.name}`;
+    detail.textContent = `In game: ${location.navigationTarget ?? location.name}`;
     button.append(title, detail);
     button.addEventListener('click', () => selectLocation(location));
     return button;
@@ -76,7 +76,8 @@
 (function loadOperationalRuntimes() {
   [
     'cargo-operations.css', 'cargo-corrections.css', 'route-corrections.css', 'changelog.css',
-    'route-planner-live.css', 'ux-refresh.css', 'ux-hierarchy-v2.css', 'workspace-consolidation.css', 'release-roadmap.css'
+    'route-planner-live.css', 'ux-refresh.css', 'ux-hierarchy-v2.css', 'workspace-consolidation.css',
+    'release-roadmap.css', 'ui-rebuild.css'
   ].forEach((href) => {
     if (document.querySelector(`link[href="${href}"]`)) return;
     const stylesheet = document.createElement('link');
@@ -105,7 +106,8 @@
       import('./route-planner-view.js'),
       import('./changelog-view.js'),
       import('./ux-shell.js'),
-      import('./workspace-shell.js')
+      import('./workspace-shell.js'),
+      import('./ui-rebuild.js')
     ]))
     .then(() => window.dispatchEvent(new Event('sc:dynamic-pages-ready')))
     .catch((error) => console.error('Operational runtime failed to load.', error));

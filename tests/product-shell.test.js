@@ -20,6 +20,10 @@ test('primary navigation contains only six focused workspaces', () => {
   assert.equal(new Set(ids).size, ids.length);
   assert.equal(pages.defaultPageId, 'route');
   assert.equal(pages.groups.length, 3);
+  pages.pages.forEach((page) => {
+    assert.ok(page.icon);
+    assert.ok(page.hint);
+  });
 });
 
 test('secondary tools resolve into their parent workspace', () => {
@@ -52,21 +56,23 @@ test('dynamic hosts are created before section routing', () => {
   assert.ok(html.indexOf('src="product-shell.js"') < html.indexOf('src="sections.js"'));
   assert.match(shell, /id="route-planner"/);
   assert.match(shell, /id="load-operations"/);
+  assert.match(shell, /nav-glyph/);
+  assert.match(shell, /nav-copy/);
 });
 
-test('v0.10 workspace, roadmap and cargo-zone runtimes are registered', () => {
+test('v0.11 interface rebuild and existing workspace runtimes are registered', () => {
   const changelog = read('CHANGELOG.md');
   const app = read('app.js');
-  assert.match(changelog, /## \[0\.10\.0\]/);
-  assert.equal(roadmap.currentVersion, '0.10');
+  assert.match(changelog, /## \[0\.11\.0\]/);
+  assert.equal(roadmap.currentVersion, '0.11');
   assert.match(app, /cargo-zone-model\.js/);
-  assert.match(app, /cargo-zone-editor-view\.js/);
   assert.match(app, /workspace-shell\.js/);
-  assert.match(app, /release-roadmap\.css/);
+  assert.match(app, /ui-rebuild\.css/);
+  assert.match(app, /ui-rebuild\.js/);
 });
 
 test('assisted OCR and Game.log intake remain after the current release', () => {
-  const assisted = roadmap.releases.find((release) => release.version === '0.18');
+  const assisted = roadmap.releases.find((release) => release.version === '0.19');
   assert.equal(assisted.status, 'future');
   assert.ok(assisted.changes.some((change) => /OCR/.test(change)));
   assert.ok(assisted.changes.some((change) => /Game\.log/.test(change)));
