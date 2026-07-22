@@ -1,7 +1,11 @@
 'use strict';
 
 (function exposeRoutePlannerEngine(root) {
-  const PROFILE_IDS = Object.freeze(['fastest', 'fewest-quantum']);
+  const PROFILE_IDS = Object.freeze(['fastest', 'min-onboard']);
+
+  function cargoKey(operation) {
+    return `${operation.missionId}::${operation.lotId}`;
+  }
 
   function distance(left, right) {
     if (!left || !right) return null;
@@ -17,7 +21,9 @@
     (route.allStops ?? route.stops ?? []).forEach((item) => {
       item.operations.forEach((operation) => operationStop.set(operation.id, String(item.id)));
     });
-    return [...new Set(stop.operations.flatMap((operation) => operation.dependsOn.map((id) => operationStop.get(id))).filter(Boolean))];
+    return [...new Set(stop.operations
+      .flatMap((operation) => operation.dependsOn.map((id) => operationStop.get(id)))
+      .filter(Boolean))];
   }
 
   function dependencyMap(route, futureStops) {
@@ -39,7 +45,8 @@
         results.push(order.map((id) => byId.get(id)));
         return;
       }
-      const available = [...remaining].filter((id) => [...(dependencies.get(id) ?? [])].every((dependency) => completed.has(dependency)));
+      const available = [...remaining].filter((id) => [...(dependencies.get(id) ?? [])]
+        .every((dependency) => completed.has(dependency)));
       available.sort((left, right) => {
         const leftStop = byId.get(left);
         const rightStop = byId.get(right);
@@ -86,7 +93,9 @@
 
   function travelEstimate(fromStop, toStop, context) {
     if (!fromStop) return { minMinutes: 0, maxMinutes: 0, quantumLeg: 0, transitionKind: 'start', source: 'session start' };
-    if (fromStop.locationId === toStop.locationId) return { minMinutes: 0, maxMinutes: 1, quantumLeg: 0, transitionKind: 'same-location', source: 'same operational location' };
+    if (fromStop.locationId === toStop.locationId) {
+      return { minMinutes: 0, maxMinutes: 1, quantumLeg: 0, transitionKind: 'same-location', source: 'same operational location' };
+    }
 
     const fromAnchor = context.starmap?.getLocationAnchor(fromStop.locationId);
     const toAnchor = context.starmap?.getLocationAnchor(toStop.locationId);
@@ -116,11 +125,50 @@
     };
   }
 
-  function evaluateOrder(stops, context) {
+  function quantityFor(operation, context) {
+    const source = context.cargoLotsByKey;
+    const lot = source instanceof Map ? source.get(cargoKey(operation)) : source?.[cargoKey(operation)];
+    return Number(lot?.scu ?? operation.scu ?? 0);
+  }
+
+  function initialOnboard(context) {
+    return new Map((context.initialOnboardLots ?? []).map((lot) => [
+      String(lot.key ?? `${lot.missionId}::${lot.lotId}`),
+      { missionId: lot.missionId, scu: Number(lot.scu ?? 0) }
+    ]));
+  }
+
+  function sumOnboard(onboard) {
+    return [...onboard.values()].reduce((total, lot) => total + lot.scu, 0);
+  }
+
+  function missionDeliveryState(stops, context) {
+    const state = new Map();
+    stops.forEach((stop) => stop.operations
+      .filter((operation) => operation.type === 'delivery' && operation.lotId)
+      .forEach((operation) => {
+        const current = state.get(operation.missionId) ?? { remaining: 0, weightScu: 0 };
+        current.remaining += 1;
+        current.weightScu += quantityFor(operation, context);
+        state.set(operation.missionId, current);
+      }));
+    return state;
+  }
+
+  function evaluateOrder(stops, context = {}) {
     const legs = [];
+    const onboard = initialOnboard(context);
+    const missionState = missionDeliveryState(stops, context);
+    const physicalCapacityScu = Math.max(0, Number(context.physicalCapacityScu ?? context.capacityScu ?? Infinity));
+    const offGridAllowanceScu = Math.max(0, Number(context.offGridAllowanceScu ?? 0));
+    const effectiveCapacityScu = physicalCapacityScu + offGridAllowanceScu;
     let totalMin = 0;
     let totalMax = 0;
+    let elapsedMidpoint = 0;
     let quantumLegs = 0;
+    let peakOnboardScu = sumOnboard(onboard);
+    let exposureScuMinutes = 0;
+    let missionCompletionScore = 0;
 
     stops.forEach((stop, index) => {
       const travel = travelEstimate(index ? stops[index - 1] : context.startStop ?? null, stop, context);
@@ -128,10 +176,44 @@
       const handling = handlingEstimate(stop);
       const minMinutes = travel.minMinutes + arrival.minMinutes + handling.minMinutes;
       const maxMinutes = travel.maxMinutes + arrival.maxMinutes + handling.maxMinutes;
+      const preHandlingMidpoint = (travel.minMinutes + travel.maxMinutes + arrival.minMinutes + arrival.maxMinutes) / 2;
+      const handlingMidpoint = (handling.minMinutes + handling.maxMinutes) / 2;
+      const onboardBeforeScu = sumOnboard(onboard);
+
+      exposureScuMinutes += onboardBeforeScu * preHandlingMidpoint;
+      elapsedMidpoint += preHandlingMidpoint;
+
+      const deliveredMissions = new Set();
+      stop.operations.filter((operation) => operation.type === 'delivery' && operation.lotId).forEach((operation) => {
+        onboard.delete(cargoKey(operation));
+        const mission = missionState.get(operation.missionId);
+        if (mission) {
+          mission.remaining -= 1;
+          deliveredMissions.add(operation.missionId);
+        }
+      });
+
+      stop.operations.filter((operation) => operation.type !== 'delivery' && operation.lotId).forEach((operation) => {
+        onboard.set(cargoKey(operation), { missionId: operation.missionId, scu: quantityFor(operation, context) });
+      });
+
+      const onboardAfterScu = sumOnboard(onboard);
+      exposureScuMinutes += ((onboardBeforeScu + onboardAfterScu) / 2) * handlingMidpoint;
+      elapsedMidpoint += handlingMidpoint;
+      deliveredMissions.forEach((missionId) => {
+        const mission = missionState.get(missionId);
+        if (mission?.remaining === 0) missionCompletionScore += elapsedMidpoint * Math.max(1, mission.weightScu);
+      });
+
+      peakOnboardScu = Math.max(peakOnboardScu, onboardAfterScu);
       totalMin += minMinutes;
       totalMax += maxMinutes;
       quantumLegs += travel.quantumLeg;
-      legs.push(Object.freeze({ stop, travel, arrival, handling, minMinutes, maxMinutes }));
+      legs.push(Object.freeze({
+        stop, travel, arrival, handling, minMinutes, maxMinutes,
+        onboardBeforeScu, onboardAfterScu,
+        capacityExceededByScu: Math.max(0, onboardAfterScu - effectiveCapacityScu)
+      }));
     });
 
     return Object.freeze({
@@ -141,7 +223,14 @@
       totalMax,
       midpoint: (totalMin + totalMax) / 2,
       quantumLegs,
-      stopCount: stops.length
+      stopCount: stops.length,
+      peakOnboardScu,
+      exposureScuMinutes: Math.round(exposureScuMinutes),
+      missionCompletionScore: Math.round(missionCompletionScore),
+      physicalCapacityScu,
+      offGridAllowanceScu,
+      effectiveCapacityScu,
+      capacityFeasible: peakOnboardScu <= effectiveCapacityScu
     });
   }
 
@@ -149,35 +238,80 @@
     return result.stops.map((stop) => String(stop.id)).join('|');
   }
 
-  function chooseProfile(profileId, evaluated) {
-    const sorted = [...evaluated].sort((left, right) => {
-      if (profileId === 'fewest-quantum') {
-        return left.quantumLegs - right.quantumLegs || left.midpoint - right.midpoint || signature(left).localeCompare(signature(right));
-      }
-      return left.midpoint - right.midpoint || left.quantumLegs - right.quantumLegs || signature(left).localeCompare(signature(right));
-    });
-    return sorted[0] ?? null;
+  function fastestSort(left, right) {
+    return left.midpoint - right.midpoint
+      || left.missionCompletionScore - right.missionCompletionScore
+      || left.exposureScuMinutes - right.exposureScuMinutes
+      || signature(left).localeCompare(signature(right));
+  }
+
+  function chooseFastest(evaluated, context) {
+    const pureFastest = [...evaluated].sort(fastestSort)[0] ?? null;
+    if (!pureFastest || !context.cargoSafetyEnabled) return { result: pureFastest, safetyAdjusted: false };
+    const margin = Math.max(0, Number(context.safetyMarginMinutes ?? 15));
+    const eligible = evaluated.filter((candidate) => candidate.midpoint <= pureFastest.midpoint + margin);
+    const result = [...eligible].sort((left, right) => (
+      left.missionCompletionScore - right.missionCompletionScore
+      || left.exposureScuMinutes - right.exposureScuMinutes
+      || left.midpoint - right.midpoint
+      || signature(left).localeCompare(signature(right))
+    ))[0] ?? pureFastest;
+    return { result, safetyAdjusted: signature(result) !== signature(pureFastest) };
+  }
+
+  function chooseMinOnboard(evaluated) {
+    return [...evaluated].sort((left, right) => (
+      left.peakOnboardScu - right.peakOnboardScu
+      || left.exposureScuMinutes - right.exposureScuMinutes
+      || left.missionCompletionScore - right.missionCompletionScore
+      || left.midpoint - right.midpoint
+      || signature(left).localeCompare(signature(right))
+    ))[0] ?? null;
   }
 
   function compare(route, progress, context = {}) {
-    if (!route?.stops?.length) return Object.freeze({ profiles: Object.freeze([]), candidateCount: 0, lockedStops: Object.freeze([]) });
+    if (!route?.stops?.length) {
+      return Object.freeze({
+        profiles: Object.freeze([]), candidateCount: 0, feasibleCandidateCount: 0,
+        capacityRejectedCount: 0, minimumRequiredCapacityScu: 0, lockedStops: Object.freeze([])
+      });
+    }
     const completed = progress?.completedSet ?? new Set();
     const lockedStops = (route.allStops ?? route.stops).filter((stop) => completed.has(String(stop.id)));
     const futureStops = route.stops.filter((stop) => !completed.has(String(stop.id)));
     const orders = enumerateOrders(route, futureStops);
     const evaluated = orders.map((order) => evaluateOrder(order, context));
+    const feasible = evaluated.filter((candidate) => candidate.capacityFeasible);
+    const fastest = chooseFastest(feasible, context);
+    const minOnboard = chooseMinOnboard(feasible);
+    const selected = [
+      fastest.result ? { id: 'fastest', result: fastest.result, safetyAdjusted: fastest.safetyAdjusted } : null,
+      minOnboard ? { id: 'min-onboard', result: minOnboard, safetyAdjusted: false } : null
+    ].filter(Boolean);
     const seen = new Set();
-    const profiles = PROFILE_IDS.map((profileId) => {
-      const result = chooseProfile(profileId, evaluated);
-      if (!result) return null;
-      const duplicate = seen.has(signature(result));
-      seen.add(signature(result));
-      return Object.freeze({ id: profileId, result, duplicate });
-    }).filter(Boolean);
-    return Object.freeze({ profiles: Object.freeze(profiles), candidateCount: orders.length, lockedStops: Object.freeze(lockedStops) });
+    const profiles = selected.map((profile) => {
+      const duplicate = seen.has(signature(profile.result));
+      seen.add(signature(profile.result));
+      return Object.freeze({ ...profile, duplicate });
+    });
+    const minimumRequiredCapacityScu = evaluated.length
+      ? Math.min(...evaluated.map((candidate) => candidate.peakOnboardScu))
+      : 0;
+
+    return Object.freeze({
+      profiles: Object.freeze(profiles),
+      candidateCount: orders.length,
+      feasibleCandidateCount: feasible.length,
+      capacityRejectedCount: evaluated.length - feasible.length,
+      minimumRequiredCapacityScu,
+      lockedStops: Object.freeze(lockedStops)
+    });
   }
 
-  const api = Object.freeze({ PROFILE_IDS, enumerateOrders, travelEstimate, arrivalEstimate, handlingEstimate, evaluateOrder, compare });
+  const api = Object.freeze({
+    PROFILE_IDS, enumerateOrders, travelEstimate, arrivalEstimate, handlingEstimate,
+    evaluateOrder, compare, cargoKey
+  });
   root.SCCompanionRoutePlannerEngine = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 }(typeof globalThis !== 'undefined' ? globalThis : window));
