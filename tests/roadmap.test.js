@@ -7,11 +7,7 @@ const path = require('node:path');
 const roadmap = require('../roadmap.js');
 
 const allowedStatuses = new Set(['done', 'current', 'next', 'future']);
-
-function numericVersion(version) {
-  const [major, minor = '0'] = version.split('.').map(Number);
-  return major * 1000 + minor;
-}
+function numericVersion(version) { const [major, minor = '0'] = version.split('.').map(Number); return major * 1000 + minor; }
 
 test('roadmap is a unique left-to-right release sequence', () => {
   const versions = roadmap.releases.map((release) => release.version);
@@ -34,21 +30,18 @@ test('current, next and future releases form one linear delivery path', () => {
   assert.ok(roadmap.releases.slice(nextIndex + 1).every((release) => release.status === 'future'));
 });
 
-test('v0.16 delivers interstellar navigation after the clean rebuild', () => {
-  const design = roadmap.releases.find((item) => item.version === '0.14');
-  const clean = roadmap.releases.find((item) => item.version === '0.15');
-  const current = roadmap.releases.find((item) => item.version === '0.16');
-  const next = roadmap.releases.find((item) => item.version === '0.17');
-  assert.equal(design.status, 'done');
-  assert.match(design.title, /Design system foundation/i);
-  assert.equal(clean.status, 'done');
-  assert.match(clean.title, /Clean UI rebuild/i);
+test('v0.17 hardens the delivered interstellar interface', () => {
+  const navigation = roadmap.releases.find((item) => item.version === '0.16');
+  const current = roadmap.releases.find((item) => item.version === '0.17');
+  const next = roadmap.releases.find((item) => item.version === '0.18');
+  assert.equal(navigation.status, 'done');
+  assert.match(navigation.title, /Interstellar navigation/i);
   assert.equal(current.status, 'current');
-  assert.match(current.title, /Interstellar navigation/i);
-  assert.ok(current.changes.some((change) => /Alpha 4\.9/.test(change)));
-  assert.ok(current.changes.some((change) => /Navigation time ranges/.test(change)));
+  assert.match(current.title, /Visual hardening/i);
+  assert.ok(current.changes.some((change) => /viewport/i.test(change)));
+  assert.ok(current.changes.some((change) => /focus/i.test(change)));
   assert.equal(next.status, 'next');
-  assert.match(next.title, /Visual hardening/i);
+  assert.match(next.title, /Mission validation/i);
 });
 
 test('roadmap page keeps the English shell and release track host', () => {
