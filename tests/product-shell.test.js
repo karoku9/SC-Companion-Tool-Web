@@ -48,11 +48,12 @@ test('ship cargo zones are separable, layered and capacity-safe', () => {
   });
 });
 
-test('dynamic hosts and MFD icon registry load before section routing', () => {
+test('design system and icon registry load before section routing', () => {
   const html = read('index.html');
   const shell = read('product-shell.js');
   assert.match(html, /id="product-navigation"/);
   assert.match(html, /id="future-pages-root"/);
+  assert.ok(html.indexOf('src="design-system.js"') < html.indexOf('src="mfd-icons.js"'));
   assert.ok(html.indexOf('src="mfd-icons.js"') < html.indexOf('src="product-pages.js"'));
   assert.ok(html.indexOf('src="product-shell.js"') < html.indexOf('src="sections.js"'));
   assert.match(shell, /id="route-planner"/);
@@ -61,20 +62,19 @@ test('dynamic hosts and MFD icon registry load before section routing', () => {
   assert.match(shell, /SCCompanionMfdIcons/);
 });
 
-test('v0.13 MFD layout and existing workspace runtimes are registered', () => {
-  const changelog = read('CHANGELOG.md');
+test('v0.14 design foundation and existing workspace runtimes are registered', () => {
   const app = read('app.js');
-  assert.match(changelog, /## \[0\.13\.0\]/);
-  assert.equal(roadmap.currentVersion, '0.13');
+  const designSystem = read('design-system.js');
+  assert.equal(roadmap.currentVersion, '0.14');
   assert.match(app, /cargo-zone-model\.js/);
   assert.match(app, /workspace-shell\.js/);
-  assert.match(app, /drake-mfd\.css/);
-  assert.match(app, /mfd-layout-v2\.css/);
-  assert.match(app, /mfd-layout-v2\.js/);
+  assert.match(app, /design-system\.css/);
+  assert.match(app, /design-system-view\.js/);
+  assert.match(designSystem, /manufacturer: 'Drake Interplanetary'/);
 });
 
 test('assisted OCR and Game.log intake remain after the current release', () => {
-  const assisted = roadmap.releases.find((release) => release.version === '0.21');
+  const assisted = roadmap.releases.find((release) => release.version === '0.27');
   assert.equal(assisted.status, 'future');
   assert.ok(assisted.changes.some((change) => /OCR/.test(change)));
   assert.ok(assisted.changes.some((change) => /Game\.log/.test(change)));
