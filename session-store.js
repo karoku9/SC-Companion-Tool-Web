@@ -20,6 +20,7 @@ deliver baijini 2scu etam 1scu neon`;
       completedStopIds: null,
       routeCorrections: null,
       cargoCorrections: {},
+      cargoZoneOverrides: {},
       routePlannerSettings: {
         protectCargo: false,
         safetyMarginMinutes: 15,
@@ -45,6 +46,7 @@ deliver baijini 2scu etam 1scu neon`;
       ...defaults,
       ...nextState,
       cargoCorrections: { ...defaults.cargoCorrections, ...(nextState?.cargoCorrections ?? {}) },
+      cargoZoneOverrides: { ...defaults.cargoZoneOverrides, ...(nextState?.cargoZoneOverrides ?? {}) },
       routePlannerSettings: { ...defaults.routePlannerSettings, ...(nextState?.routePlannerSettings ?? {}) }
     };
   }
