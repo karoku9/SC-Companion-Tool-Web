@@ -7,9 +7,35 @@ The project was already under active development before this changelog was intro
 ## [Unreleased]
 
 ### Planned
-- Route Planner v1 with selectable optimization profiles.
+- Cargo Zone Editor for per-ship separators and layers.
+- Risk-aware route profile with visible source confidence.
 - Expanded location intelligence.
 - Additional ship and component integrations.
+
+---
+
+## [0.8.0] - 2026-07-22
+
+### Added
+- Live Planning → Route Planner page.
+- FASTEST PRACTICAL route profile.
+- FEWEST QUANTUM LEGS route profile.
+- Dependency-safe future-stop permutation engine.
+- Per-stop travel, arrival and cargo-handling estimate breakdown.
+- One-click application of a proposed route while preserving completed, skipped and mandatory stops.
+- Orbital-station and outpost arrival estimate presets.
+- Session-aware status control in the top bar.
+- Toast feedback for route updates and rejected changes.
+
+### Improved
+- Global focus visibility, button feedback and active navigation styling.
+- Route comparison hierarchy and mobile layout.
+- Route correction feedback now explains the exact operation performed.
+- Estimates use the selected Hangar ship quantum-time factor.
+
+### Fixed
+- Route proposals cannot alter already completed stops.
+- Unmapped locations use an explicitly labelled fallback instead of borrowing an unrelated arrival preset.
 
 ---
 
