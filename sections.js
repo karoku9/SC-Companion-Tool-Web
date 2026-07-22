@@ -1,21 +1,23 @@
 'use strict';
 
 (function initializeSections() {
-  const defaultPageId = window.SCCompanionPages?.defaultPageId ?? 'overview';
+  const registry = window.SCCompanionPages;
+  const defaultPageId = registry?.defaultPageId ?? 'route';
 
-  function views() { return [...document.querySelectorAll('[data-view]')]; }
+  function views() { return [...document.querySelectorAll(':scope body [data-view]')]; }
   function buttons() { return [...document.querySelectorAll('[data-view-target]')]; }
 
-  function show(viewId, updateHash = true) {
+  function show(requestedId, updateHash = true) {
+    const selectedId = registry?.resolveView(requestedId) ?? requestedId ?? defaultPageId;
     const currentViews = views();
     const validIds = new Set(currentViews.map((view) => view.dataset.view));
-    const selectedId = validIds.has(viewId) ? viewId : defaultPageId;
-    currentViews.forEach((view) => { view.hidden = view.dataset.view !== selectedId; });
+    const resolvedId = validIds.has(selectedId) ? selectedId : defaultPageId;
+    currentViews.forEach((view) => { view.hidden = view.dataset.view !== resolvedId; });
     buttons().forEach((button) => {
-      const selected = button.dataset.viewTarget === selectedId;
+      const selected = button.dataset.viewTarget === resolvedId;
       button.setAttribute('aria-selected', String(selected));
     });
-    if (updateHash) history.replaceState(null, '', `#${selectedId}`);
+    if (updateHash) history.replaceState(null, '', `#${resolvedId}`);
   }
 
   document.addEventListener('click', (event) => {
