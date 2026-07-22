@@ -82,7 +82,7 @@
 (function loadOperationalRuntimes() {
   [
     'cargo-operations.css', 'cargo-corrections.css', 'route-corrections.css', 'changelog.css',
-    'route-planner-live.css', 'ux-refresh.css'
+    'route-planner-live.css', 'ux-refresh.css', 'ux-hierarchy-v2.css'
   ].forEach((href) => {
     if (document.querySelector(`link[href="${href}"]`)) return;
     const stylesheet = document.createElement('link');
