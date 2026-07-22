@@ -25,6 +25,8 @@ jobs:
           node --test tests/ui-rebuild.test.js
       - name: Test design system
         run: node --test tests/design-system.test.js
+      - name: Test mission validation and provenance
+        run: node --test tests/mission-validation.test.js
       - name: Test interstellar universe and navigation estimates
         run: node --test tests/interstellar-navigation.test.js
       - name: Test cargo capacity and visual hierarchy
@@ -61,7 +63,7 @@ jobs:
         run: |
           for file in tests/*.test.js; do
             case "$file" in
-              tests/checkpoint2.test.js|tests/checkpoint3.test.js|tests/locations.test.js|tests/missions.test.js|tests/roadmap.test.js|tests/starmap.test.js|tests/product-shell.test.js|tests/cargo-state.test.js|tests/cargo-corrections.test.js|tests/route-corrections.test.js|tests/route-planner.test.js|tests/cargo-zone-model.test.js|tests/workspace-consolidation.test.js|tests/ui-clean-rebuild.test.js|tests/ui-rebuild.test.js|tests/design-system.test.js|tests/interstellar-navigation.test.js|tests/cargo-capacity.test.js|tests/ux-hierarchy.test.js|tests/planner.test.js) ;;
+              tests/checkpoint2.test.js|tests/checkpoint3.test.js|tests/locations.test.js|tests/missions.test.js|tests/roadmap.test.js|tests/starmap.test.js|tests/product-shell.test.js|tests/cargo-state.test.js|tests/cargo-corrections.test.js|tests/route-corrections.test.js|tests/route-planner.test.js|tests/cargo-zone-model.test.js|tests/workspace-consolidation.test.js|tests/ui-clean-rebuild.test.js|tests/ui-rebuild.test.js|tests/design-system.test.js|tests/mission-validation.test.js|tests/interstellar-navigation.test.js|tests/cargo-capacity.test.js|tests/ux-hierarchy.test.js|tests/planner.test.js) ;;
               *) node --test "$file" ;;
             esac
           done
@@ -90,6 +92,7 @@ jobs:
           node --check arrival-estimates.js
           node --check missions.js
           node --check mission-text.js
+          node --check mission-validation.js
           node --check route-planner.js
           node --check route-planner-engine.js
           node --check route-corrections.js
@@ -125,6 +128,7 @@ jobs:
           node --check ui-v2-accessibility.js
           node --check tests/ui-browser-smoke.mjs
           node --check tests/ui-browser-hardening.mjs
+          node --check tests/ui-mission-validation.mjs
       - name: Install browser smoke dependencies
         run: |
           npm install --no-save playwright@1.55.0
@@ -133,6 +137,7 @@ jobs:
         run: |
           python3 -m http.server 4173 >/tmp/sc-companion-http.log 2>&1 &
           UI_BASE_URL=http://127.0.0.1:4173 node tests/ui-browser-smoke.mjs
+          UI_BASE_URL=http://127.0.0.1:4173 node tests/ui-mission-validation.mjs
           UI_BASE_URL=http://127.0.0.1:4173 node tests/ui-browser-hardening.mjs
       - name: Upload interface screenshots
         if: always()
