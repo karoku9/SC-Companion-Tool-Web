@@ -193,8 +193,7 @@
 
   function legText(estimate) {
     if (!estimate) return 'Navigation estimate unavailable';
-    const jumps = estimate.jumpCount ? ` · ${estimate.jumpCount} jump${estimate.jumpCount === 1 ? '' : 's'}` : '';
-    return `${estimate.distanceLabel} · ${estimate.minMinutes}–${estimate.maxMinutes} min${jumps}`;
+    return `${estimate.distanceLabel} · ${estimate.minMinutes}–${estimate.maxMinutes} min`;
   }
 
   function stopState(stop, context) {
@@ -301,10 +300,12 @@
     if (!system) return;
     selectedSystemId = system.id;
     elements.systemSelect.value = system.id;
+    const detail = mode === 'local'
+      ? `${system.security}. ${system.availability}. Bodies and route stops are shown on this layer.`
+      : `${system.security}. ${system.availability}. Select Open system to inspect bodies and route stops.`;
     setSelection({
       kind: 'system', key: system.id, object: system, systemId: system.id,
-      title: system.name, type: system.classification,
-      detail: `${system.security}. ${system.availability}. Select Open system to inspect bodies and route stops.`
+      title: system.name, type: system.classification, detail
     }, options);
   }
 
@@ -383,7 +384,7 @@
     const summary = routeSummary(context);
     const completed = context.progress?.completedStopIds.length ?? 0;
     elements.route.textContent = summary
-      ? `${completed}/${context.stops.length} complete · ${summary.jumpCount ?? 0} jump${summary.jumpCount === 1 ? '' : 's'} · ${summary.minMinutes}–${summary.maxMinutes} min · ${summary.distanceLabel}`
+      ? `${completed}/${context.stops.length} complete · ${summary.minMinutes}–${summary.maxMinutes} min · ${summary.distanceLabel}`
       : `${completed}/${context.stops.length} stops complete`;
 
     if (selected.kind === 'route') {
@@ -510,7 +511,7 @@
     });
 
     const summary = routeSummary(context);
-    elements.route.textContent = activeSystems.size ? `${activeSystems.size} systems on route · ${summary?.jumpCount ?? 0} jumps · ${summary?.distanceLabel ?? 'distance unavailable'}` : 'No systems on an active route';
+    elements.route.textContent = activeSystems.size ? `${activeSystems.size} systems on route · ${summary?.distanceLabel ?? 'distance unavailable'}` : 'No systems on an active route';
     if (selected.kind === 'route') {
       const snapshot = official()?.snapshot;
       setSelection({
@@ -523,18 +524,29 @@
 
   function updateHud(context) {
     const active = activeStops(context);
-    const current = context.progress?.currentStop ?? active.find((stop) => !context.progress?.completedSet.has(String(stop.id))) ?? active[0] ?? null;
-    const index = current ? active.indexOf(current) : -1;
-    const next = index >= 0 ? active.slice(index + 1).find((stop) => !context.progress?.completedSet.has(String(stop.id))) ?? null : null;
+    const completedSet = context.progress?.completedSet ?? new Set();
+    const incomplete = active.filter((stop) => !completedSet.has(String(stop.id)));
+    const complete = active.length > 0 && incomplete.length === 0;
+    const current = complete ? null : context.progress?.currentStop ?? incomplete[0] ?? null;
+    const currentIndex = current ? active.indexOf(current) : -1;
+    const next = currentIndex >= 0 ? active.slice(currentIndex + 1).find((stop) => !completedSet.has(String(stop.id))) ?? null : null;
     const final = active.at(-1) ?? null;
     hudStops = { current, next, final };
-    const setHud = (stop, title, meta, fallback) => {
+
+    const setHud = (stop, title, meta, fallback, fallbackMeta = '—') => {
       title.textContent = stop?.locationLabel ?? fallback;
-      meta.textContent = stop ? operationSummary(stop) : '—';
+      meta.textContent = stop ? operationSummary(stop) : fallbackMeta;
       title.closest('button').disabled = !stop;
     };
-    setHud(current, elements.hudCurrent, elements.hudCurrentMeta, 'No active route');
-    setHud(next, elements.hudNext, elements.hudNextMeta, 'Route ends here');
+
+    setHud(
+      current,
+      elements.hudCurrent,
+      elements.hudCurrentMeta,
+      complete ? 'Session complete' : 'No active route',
+      complete ? 'All active stops completed' : 'Generate a session first'
+    );
+    setHud(next, elements.hudNext, elements.hudNextMeta, complete ? 'No further stops' : 'Route ends here');
     setHud(final, elements.hudFinal, elements.hudFinalMeta, '—');
   }
 
@@ -624,7 +636,7 @@
     const system = data.getSystem(elements.systemSelect.value);
     if (!system) return;
     selectedSystemId = system.id;
-    selected = { kind: 'system', key: system.id, object: system, systemId: system.id, title: system.name, type: system.classification, detail: `${system.security}. ${system.availability}.` };
+    selected = { kind: 'system', key: system.id, object: system, systemId: system.id, title: system.name, type: system.classification, detail: `${system.security}. ${system.availability}. Bodies and route stops are shown on this layer.` };
     resetCamera();
     render();
   });
@@ -636,7 +648,8 @@
     if (action === 'fit') resetCamera();
     if (action === 'current') {
       const context = routeContext();
-      const current = context.progress?.currentStop ?? activeStops(context)[0] ?? null;
+      const completedSet = context.progress?.completedSet ?? new Set();
+      const current = context.progress?.currentStop ?? activeStops(context).find((stop) => !completedSet.has(String(stop.id))) ?? null;
       if (!current) return;
       if (!points.has(String(current.id)) && mode !== 'route') switchMode('route');
       selectStop(current, context.stops.indexOf(current), context, { announce: false });
