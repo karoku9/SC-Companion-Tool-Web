@@ -144,18 +144,20 @@
 
     const planner = document.querySelector('#route-planner');
     const locations = document.querySelector('#locations');
+    let locationDetails = null;
     if (planner && locations) {
       internalize(locations);
-      const details = document.createElement('details');
-      details.className = 'contextual-tool locations-context-tool';
-      details.innerHTML = '<summary><span>LOCATION INTEL</span><strong>Search services and arrival context</strong><em>EXPAND</em></summary><div class="contextual-tool-body"></div>';
-      details.querySelector('.contextual-tool-body').append(locations);
-      planner.append(details);
-      window.addEventListener('sc:open-internal-panel', (event) => { if (event.detail?.panel === 'locations') details.open = true; });
+      locationDetails = document.createElement('details');
+      locationDetails.className = 'contextual-tool locations-context-tool';
+      locationDetails.innerHTML = '<summary><span>LOCATION INTEL</span><strong>Search services and arrival context</strong><em>EXPAND</em></summary><div class="contextual-tool-body"></div>';
+      locationDetails.querySelector('.contextual-tool-body').append(locations);
+      planner.append(locationDetails);
+      window.addEventListener('sc:open-internal-panel', (event) => { if (event.detail?.panel === 'locations') locationDetails.open = true; });
     }
 
     const roadmap = document.querySelector('#roadmap');
     const changelog = document.querySelector('#changelog');
+    let changelogTab = null;
     if (roadmap && changelog) {
       const roadmapTitle = roadmap.querySelector('#roadmap-title');
       const help = roadmap.querySelector('.roadmap-help');
@@ -166,6 +168,7 @@
       const tabs = document.createElement('nav');
       tabs.className = 'development-tabs';
       tabs.innerHTML = '<button type="button" data-development-tab="roadmap" aria-selected="true">ROADMAP</button><button type="button" data-development-tab="changelog" aria-selected="false">CHANGELOG</button>';
+      changelogTab = tabs.querySelector('[data-development-tab="changelog"]');
       const roadmapPane = document.createElement('div');
       roadmapPane.dataset.developmentPane = 'roadmap';
       const changelogPane = document.createElement('div');
@@ -183,15 +186,24 @@
         roadmapPane.hidden = selected !== 'roadmap';
         changelogPane.hidden = selected !== 'changelog';
       });
-      window.addEventListener('sc:open-internal-panel', (event) => {
-        if (event.detail?.panel === 'changelog') tabs.querySelector('[data-development-tab="changelog"]')?.click();
-      });
+      window.addEventListener('sc:open-internal-panel', (event) => { if (event.detail?.panel === 'changelog') changelogTab?.click(); });
     }
 
     const companion = document.querySelector('#companion');
     if (companion) {
       companion.removeAttribute('data-view');
       companion.hidden = true;
+    }
+
+    const initialPage = window.SCCompanionPages?.getPage(location.hash.slice(1));
+    if (initialPage?.parentView) {
+      requestAnimationFrame(() => {
+        window.dispatchEvent(new CustomEvent('sc:open-internal-panel', { detail: {
+          pageId: initialPage.id,
+          panel: initialPage.panel,
+          parentView: initialPage.parentView
+        } }));
+      });
     }
   }
 
