@@ -1,0 +1,138 @@
+@media (max-width: 1180px) {
+  .app-frame { grid-template-columns: 86px minmax(0,1fr); }
+  .brand-panel { grid-template-columns: 46px; justify-content: center; }
+  .brand-text, .nav-toggle, .nav-copy, .nav-group h2, .nav-footer small { display: none; }
+  .product-navigation button { grid-template-columns: 1fr; justify-items: center; padding-inline: 6px; }
+  .nav-footer { text-align: center; }
+  .fleet-grid { grid-template-columns: 220px minmax(0,1fr); }
+  .hangar-form { grid-column: 1 / -1; min-height: 0; grid-template-columns: repeat(2,minmax(0,1fr)); padding-top: 12px; }
+  .hangar-form .mfd-header, .hangar-form > .button { grid-column: 1 / -1; }
+  .starmap-grid { grid-template-columns: minmax(0,1fr) 280px; }
+}
+
+@media (max-width: 900px) {
+  body { padding-bottom: 64px; }
+  .app-frame { display: block; }
+  .app-nav {
+    position: fixed;
+    inset: auto 0 0;
+    width: auto;
+    height: 64px;
+    display: block;
+    border: 1px solid var(--ds-border-subtle);
+    background: var(--ds-surface-panel);
+  }
+  .brand-panel, .nav-footer, .nav-group h2 { display: none; }
+  .product-navigation { height: 100%; padding: 4px; display: flex; align-items: stretch; overflow-x: auto; }
+  .nav-group { display: contents; }
+  .product-navigation button { flex: 1 0 74px; min-height: 54px; grid-template-columns: 1fr; justify-items: center; padding: 4px; }
+  .nav-glyph { width: 28px; height: 28px; }
+  .nav-copy { display: block; text-align: center; }
+  .nav-copy strong { display: block; font-size: 9px; }
+  .nav-copy small { display: none; }
+  .app-topbar { height: 58px; padding: 7px 10px; }
+  .page-context { display: none; }
+  .topbar-status { width: 100%; justify-content: space-between; }
+  .mobile-page-picker { display: grid; gap: 2px; color: var(--ds-content-muted); font-size: 8px; }
+  .mobile-page-picker select { min-height: 34px; border: 1px solid var(--ds-border-subtle); background: var(--ds-surface-panel); color: var(--ds-content-primary); }
+  .session-chip { width: min(62vw, 310px); }
+  .page-view, #route-planner { padding: 10px; }
+  .operations-page { height: auto; min-height: 0; overflow: visible; }
+  .operations-grid { height: auto; grid-template-columns: 1fr; grid-template-rows: auto; }
+  .route-sequence-panel { min-height: 280px; }
+  .operations-tools { grid-column: auto; }
+  .tool-keys { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .tool-panel { max-height: none; }
+  .operation-row { grid-template-columns: 1fr; gap: 4px; }
+  .operation-controls { grid-template-columns: 1fr 1.4fr; }
+  .move-item, .manifest-item { grid-template-columns: 72px minmax(0,1fr); }
+  .move-item > :nth-child(n+3), .manifest-item > :nth-child(n+3) { grid-column: 2; }
+  .correction-row { grid-template-columns: minmax(0,1fr) 90px; }
+  .correction-row > :nth-child(3), .correction-row > :nth-child(4) { grid-column: auto; }
+  .route-tool-row { grid-template-columns: 30px minmax(0,1fr) repeat(2,52px); }
+  .route-tool-row button:nth-last-child(-n+2) { grid-row: 2; }
+  .missions-grid, .planner-live-shell, .starmap-grid { grid-template-columns: 1fr; }
+  .mission-editor, .mission-preview { min-height: 480px; }
+  .fleet-grid { grid-template-columns: 1fr; }
+  .fleet-list-panel, .ship-display-panel, .hangar-form { min-height: auto; }
+  .hangar-list { max-height: 260px; }
+  .hangar-form { grid-column: auto; grid-template-columns: 1fr; }
+  .hangar-form .mfd-header, .hangar-form > .button { grid-column: auto; }
+  .zone-editor-body { grid-template-columns: 1fr; }
+  .zone-schematic { border-right: 0; border-bottom: 1px solid var(--ds-border-subtle); }
+  .starmap-canvas { min-height: 430px; }
+  .map-info-panel { min-height: 360px; }
+  .planner-route-stop { grid-template-columns: 30px minmax(0,1fr); }
+  .planner-stop-total { grid-column: 2; text-align: left; }
+  .planner-action-bar { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 560px) {
+  .session-chip { width: 58vw; }
+  .session-chip small { display: none; }
+  .page-header { align-items: start; }
+  .page-header .status-tag { display: none; }
+  #current-stop-name { font-size: 28px; }
+  .operation-controls { grid-template-columns: 1fr; }
+  .tool-summary-strip { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .zone-bar { grid-template-columns: 1fr 70px; }
+  .zone-bar i { grid-column: 1 / -1; }
+  .ship-stats { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .ship-stats div:nth-child(2) { border-right: 0; }
+  .planner-context-bar { grid-template-columns: 1fr; }
+  .planner-context-bar div { border-right: 0; border-bottom: 1px solid var(--ds-border-subtle); }
+  .planner-profile-metrics { grid-template-columns: 1fr; }
+  .changelog-hero { grid-template-columns: 1fr; }
+  .changelog-hero-summary { flex-wrap: wrap; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; animation: none !important; }
+}
+
+@media (min-width: 1181px) {
+  html.nav-collapsed .app-frame { grid-template-columns: 86px minmax(0,1fr); }
+  html.nav-collapsed .brand-panel { grid-template-columns: 46px; justify-content: center; }
+  html.nav-collapsed .brand-text,
+  html.nav-collapsed .nav-copy,
+  html.nav-collapsed .nav-group h2,
+  html.nav-collapsed .nav-footer small { display: none; }
+  html.nav-collapsed .nav-toggle { position: absolute; top: 87px; left: 25px; }
+  html.nav-collapsed .product-navigation { padding-top: 48px; }
+  html.nav-collapsed .product-navigation button { grid-template-columns: 1fr; justify-items: center; padding-inline: 6px; }
+  html.nav-collapsed .nav-footer { text-align: center; }
+}
+.sr-only { position: absolute !important; width: 1px !important; height: 1px !important; padding: 0 !important; margin: -1px !important; overflow: hidden !important; clip: rect(0,0,0,0) !important; white-space: nowrap !important; border: 0 !important; }
+
+.release-roadmap-progress {
+  flex: 0 0 100%;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--ds-border-subtle);
+  background: var(--ds-surface-panel);
+  font-family: var(--ds-font-technical, ui-monospace, monospace);
+}
+.release-roadmap-progress > span { color: var(--ds-action-primary); font-size: 9px; }
+.release-roadmap-progress > strong { font-size: 10px; }
+.release-roadmap-progress > div { grid-column: 1 / -1; height: 6px; border: 1px solid var(--ds-border-subtle); background: var(--ds-surface-screen); }
+.release-roadmap-progress i { display: block; height: 100%; background: var(--ds-action-primary); }
+.release-roadmap-progress small { color: var(--ds-content-muted); font-size: 9px; }
+.release-roadmap-track { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; }
+.release-roadmap-card {
+  flex: 0 0 258px;
+  min-height: 250px;
+  padding: 12px;
+  border: 1px solid var(--ds-border-subtle);
+  background: var(--ds-surface-panel);
+}
+.release-roadmap-card.is-current { border-color: var(--ds-border-strong); box-shadow: inset 0 3px 0 var(--ds-action-primary); }
+.release-roadmap-card header { display: flex; justify-content: space-between; gap: 8px; color: var(--ds-content-muted); font: 700 9px/1 var(--ds-font-technical, ui-monospace, monospace); }
+.release-roadmap-card header span { color: var(--ds-action-primary); }
+.release-roadmap-card h3 { margin: 12px 0 5px; font-size: 15px; }
+.release-roadmap-card p { margin: 0 0 10px; color: var(--ds-content-secondary); font-size: 11px; }
+.release-roadmap-card ul { margin: 0; padding-left: 17px; color: var(--ds-content-secondary); font-size: 10px; }
+.release-roadmap-card li + li { margin-top: 5px; }
