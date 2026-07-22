@@ -14,6 +14,8 @@
   --ds-type-3xl: 2rem;        /* 32 px */
   --ds-type-operational-max: 2.25rem;
   --ds-type-visible-min: .75rem;
+  --ds-focus-width: 3px;
+  --ds-focus-offset: 3px;
 }
 
 /* Global operational floor. Decorative marks and screen-reader content are excluded. */
@@ -149,6 +151,28 @@ textarea,
   font-size: var(--ds-type-sm);
 }
 
+/* One visible focus language for mouse-independent operation. */
+:where(
+  button,
+  [href],
+  input,
+  select,
+  textarea,
+  summary,
+  [tabindex]:not([tabindex="-1"])
+):focus-visible {
+  outline: var(--ds-focus-width) solid var(--ds-action-primary-hover);
+  outline-offset: var(--ds-focus-offset);
+  box-shadow: 0 0 0 1px var(--ds-surface-canvas), 0 0 0 6px color-mix(in srgb, var(--ds-action-primary) 28%, transparent);
+  position: relative;
+  z-index: 5;
+}
+
+:where(button, input, select, textarea):disabled {
+  cursor: not-allowed;
+  opacity: .55;
+}
+
 .planner-context-bar { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .planner-profile-metrics { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .planner-profile-metrics span { font-size: var(--ds-type-xs); }
@@ -170,6 +194,17 @@ textarea,
 /* Cargo detail remains in the persistent route list; repeating it beside dense map nodes causes collisions. */
 #starmap-canvas .map-route-summary {
   display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
 }
 
 @media (max-width: 900px) {
