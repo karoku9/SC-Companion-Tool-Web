@@ -77,7 +77,7 @@
   [
     'cargo-operations.css', 'cargo-corrections.css', 'route-corrections.css', 'changelog.css',
     'route-planner-live.css', 'ux-refresh.css', 'ux-hierarchy-v2.css', 'workspace-consolidation.css',
-    'release-roadmap.css', 'ui-rebuild.css', 'drake-mfd.css'
+    'release-roadmap.css', 'ui-rebuild.css', 'drake-mfd.css', 'mfd-layout-v2.css'
   ].forEach((href) => {
     if (document.querySelector(`link[href="${href}"]`)) return;
     const stylesheet = document.createElement('link');
@@ -107,8 +107,9 @@
       import('./changelog-view.js'),
       import('./ux-shell.js'),
       import('./workspace-shell.js'),
-      import('./ui-rebuild.js')
+      import('./ui-rebuild.js'),
+      import('./mfd-layout-v2.js')
     ]))
-    .then(() => window.dispatchEvent(new Event('sc:dynamic-pages-ready')))
+    .then(() => window.dispatchEvent(new Event('sc:dynamic-pages-ready'))
     .catch((error) => console.error('Operational runtime failed to load.', error));
 }());
