@@ -50,7 +50,8 @@
         { id: 'previous', label: 'Reversible PREVIOUS control', status: 'done' },
         { id: 'cargo-state', label: 'Loaded and delivered cargo state per stop', status: 'done' },
         { id: 'load-operations', label: 'Live load and unload operation page', status: 'done' },
-        { id: 'corrections', label: 'Manual cargo and route corrections', status: 'next' },
+        { id: 'corrections', label: 'Manual SCU, cargo status and lost-cargo corrections', status: 'done' },
+        { id: 'route-corrections', label: 'Skip, reopen and reorder route stops safely', status: 'next' },
         { id: 'session-history', label: 'Real-session history', status: 'future' }
       ]
     },
@@ -62,6 +63,7 @@
         { id: 'mission-sectors', label: 'Separate sectors by mission and delivery', status: 'done' },
         { id: 'delivery-access', label: 'Earlier deliveries placed closer to access', status: 'done' },
         { id: 'stable-slots', label: 'Stable planned slots while cargo loads and unloads', status: 'done' },
+        { id: 'corrected-quantities', label: 'Corrected quantities reflected in cargo cells', status: 'done' },
         { id: 'risk-handling', label: 'Rapid-access weighting for dangerous pickups', status: 'active' },
         { id: 'zone-editor', label: 'Per-ship zone and separator editor', status: 'next' },
         { id: 'physical-layouts', label: 'Verified physical cargo geometry per ship', status: 'next' },
