@@ -42,6 +42,8 @@
         missions: parsed.missions,
         route,
         currentStopIndex: 0,
+        completedStopIds: [],
+        routeCorrections: null,
         cargoCorrections: {}
       });
       renderMissions(parsed.missions);
