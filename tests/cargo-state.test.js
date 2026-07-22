@@ -25,18 +25,22 @@ function buildExample() {
   return routePlanner.buildRoute(parsed.missions, missions);
 }
 
+function totals(pendingScu, onboardScu, deliveredScu, lostScu = 0) {
+  return { pendingScu, onboardScu, deliveredScu, lostScu };
+}
+
 test('cargo state follows completed stops without storing duplicate cargo truth', () => {
   const route = buildExample();
   const beforeTeasa = cargoState.deriveCargoState(route, 0);
-  assert.deepEqual(beforeTeasa.totals, { pendingScu: 5, onboardScu: 0, deliveredScu: 0 });
+  assert.deepEqual(beforeTeasa.totals, totals(5, 0, 0));
   assert.deepEqual(beforeTeasa.currentMoves.map((move) => move.action), ['load', 'load']);
 
   const afterTeasa = cargoState.deriveCargoState(route, 1);
-  assert.deepEqual(afterTeasa.totals, { pendingScu: 1, onboardScu: 4, deliveredScu: 0 });
+  assert.deepEqual(afterTeasa.totals, totals(1, 4, 0));
   assert.deepEqual(afterTeasa.currentMoves.map((move) => move.action).sort(), ['load', 'unload']);
 
   const afterArea18 = cargoState.deriveCargoState(route, 2);
-  assert.deepEqual(afterArea18.totals, { pendingScu: 0, onboardScu: 3, deliveredScu: 2 });
+  assert.deepEqual(afterArea18.totals, totals(0, 3, 2));
   assert.deepEqual(afterArea18.onboardLots.map((lot) => `${lot.missionTitle}:${lot.commodity}`).sort(), [
     'Mission Y:etam',
     'Mission Y:neon'
@@ -44,7 +48,7 @@ test('cargo state follows completed stops without storing duplicate cargo truth'
 
   const complete = cargoState.deriveCargoState(route, 3);
   assert.equal(complete.complete, true);
-  assert.deepEqual(complete.totals, { pendingScu: 0, onboardScu: 0, deliveredScu: 5 });
+  assert.deepEqual(complete.totals, totals(0, 0, 5));
 
   assert.deepEqual(cargoState.deriveCargoState(route, 1).totals, afterTeasa.totals);
 });
