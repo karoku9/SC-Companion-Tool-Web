@@ -91,7 +91,7 @@
     const details = document.createElement('details');
     details.open = index < 2;
     const summary = document.createElement('summary');
-    summary.innerHTML = `<span>v${release.version}</span><div><strong>${releaseTitle(release)}</strong><small>${release.date || 'Unreleased'}</small></div><em>${release.categories.reduce((total, category) => total + category.items.length, 0)} CHANGES</em>`;
+    summary.innerHTML = `<span>v${release.version}</span><div><strong>${releaseTitle(release)}</strong><small>${release.date || 'Release date unavailable'}</small></div><em>${release.categories.reduce((total, category) => total + category.items.length, 0)} CHANGES</em>`;
     const body = document.createElement('div');
     body.className = 'changelog-release-body';
     release.categories.forEach((category) => {
@@ -110,7 +110,7 @@
     if (!published.length) throw new Error('No published releases found in CHANGELOG.md');
     renderHero(published[0]);
     timeline.replaceChildren();
-    completeReleases.forEach((release, index) => timeline.append(renderRelease(release, index)));
+    published.forEach((release, index) => timeline.append(renderRelease(release, index)));
   }
 
   fetch('./CHANGELOG.md', { cache: 'no-store' })
