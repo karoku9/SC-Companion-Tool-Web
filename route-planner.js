@@ -38,8 +38,11 @@
           });
       } while (added);
 
+      const index = stops.length;
       stops.push(Object.freeze({
-        index: stops.length,
+        id: `stop-${index}-${currentLocationId}`,
+        index,
+        baseIndex: index,
         locationId: currentLocationId,
         locationLabel: stopOperations[0]?.locationLabel ?? currentLocationId,
         operations: Object.freeze(stopOperations)
