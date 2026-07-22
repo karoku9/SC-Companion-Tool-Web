@@ -24,11 +24,20 @@
     menu: '<path d="M4 7h16M4 12h16M4 17h16"/>'
   });
 
+  const meta = Object.freeze({
+    family: 'SC Companion canonical UI icons',
+    grid: 24,
+    strokeWidth: 1.7,
+    sizes: Object.freeze([16, 20, 24]),
+    names: Object.freeze(Object.keys(paths))
+  });
+
   function render(name, className = 'mfd-icon') {
     const path = paths[name] ?? paths.warning;
-    return `<svg class="${className}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">${path}</svg>`;
+    return `<svg class="${className}" viewBox="0 0 ${meta.grid} ${meta.grid}" fill="none" stroke="currentColor" stroke-width="${meta.strokeWidth}" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">${path}</svg>`;
   }
 
-  root.SCCompanionMfdIcons = Object.freeze({ paths, render });
-  if (typeof module !== 'undefined' && module.exports) module.exports = { paths, render };
+  const api = Object.freeze({ paths, meta, render });
+  root.SCCompanionMfdIcons = api;
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
 }(typeof globalThis !== 'undefined' ? globalThis : window));
