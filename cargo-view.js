@@ -7,12 +7,13 @@
     if (initialized) return true;
     const store = window.SCCompanionSession;
     const catalog = window.SCCompanionShipCatalog;
+    const zoneModel = window.SCCompanionCargoZones;
     const planner = window.SCCompanionCargoPlanner;
     const cargoState = window.SCCompanionCargoState;
     const cargoLayout = window.SCCompanionCargoLayout;
     const routeCorrections = window.SCCompanionRouteCorrections;
     const routeProgress = window.SCCompanionRouteProgress;
-    if (!store || !catalog || !planner || !cargoState || !cargoLayout || !routeCorrections || !routeProgress) return false;
+    if (!store || !catalog || !zoneModel || !planner || !cargoState || !cargoLayout || !routeCorrections || !routeProgress) return false;
 
     const grid = document.querySelector('#cargo-grid');
     const shipName = document.querySelector('#cargo-ship-name');
@@ -29,12 +30,12 @@
     }
 
     function activeModel(state) {
-      const base = catalog.getModel(state.selectedShipModelId) ?? catalog.models[0];
-      const activeShip = (state.hangarShips ?? []).find((ship) => ship.id === state.selectedShipId);
+      const activeShip = (state.hangarShips ?? []).find((ship) => ship.id === state.selectedShipId) ?? null;
+      const base = catalog.getModel(activeShip?.modelId ?? state.selectedShipModelId) ?? catalog.models[0];
+      const resolved = zoneModel.resolveModel(base, activeShip, state.cargoZoneOverrides);
       return {
         model: {
-          ...base,
-          capacityScu: activeShip?.cargoCapacityScu ?? base.capacityScu,
+          ...resolved,
           offGridAllowanceScu: Math.max(0, Number(state.routePlannerSettings?.offGridAllowanceScu ?? 0))
         },
         activeShip
@@ -50,8 +51,10 @@
     }
 
     function visibleAssignmentKeys(lifecycle) {
-      const limits = new Map(lifecycle.onboardLots.map((lot) => [lot.key, Math.ceil(lot.scu)]));
-      return { limits, seen: new Map() };
+      return {
+        limits: new Map(lifecycle.onboardLots.map((lot) => [lot.key, Math.ceil(lot.scu)])),
+        seen: new Map()
+      };
     }
 
     function assignmentIsVisible(assignment, visibility) {
@@ -93,13 +96,13 @@
         access.textContent = `${zone.access} · ${zone.capacityScu} SCU`;
         title.append(strong, access);
         const status = document.createElement('em');
-        status.textContent = zone.separable ? 'SEPARATE ZONE' : 'SHARED ZONE';
+        status.textContent = zone.separable ? 'SEPARATE' : 'SHARED';
         header.append(title, status);
 
         const levels = document.createElement('div');
         levels.className = 'cargo-levels';
         let zoneSlot = 0;
-        for (let layer = 0; layer < Math.max(1, zone.layers); layer += 1) {
+        for (let layer = 0; layer < Math.max(1, zone.layers) && zoneSlot < zone.capacityScu; layer += 1) {
           const row = document.createElement('div');
           row.className = 'cargo-level';
           const levelLabel = document.createElement('span');
@@ -108,8 +111,7 @@
           const cells = document.createElement('div');
           cells.className = 'cargo-level-cells';
           cells.style.setProperty('--zone-columns', String(Math.max(1, zone.columns)));
-          for (let column = 0; column < Math.max(1, zone.columns); column += 1) {
-            if (zoneSlot >= zone.capacityScu) break;
+          for (let column = 0; column < Math.max(1, zone.columns) && zoneSlot < zone.capacityScu; column += 1) {
             cells.append(createCargoCell(onboardBySlot.get(globalSlot) ?? null, missionClasses));
             globalSlot += 1;
             zoneSlot += 1;
@@ -119,9 +121,7 @@
         }
         const note = document.createElement('div');
         note.className = 'cargo-zone-note';
-        note.textContent = model.layout.geometryStatus === 'concept'
-          ? 'Concept geometry · physical grid only.'
-          : 'Verified geometry · physical grid only.';
+        note.textContent = `${model.layout.geometryStatus === 'concept' ? 'Concept geometry' : 'Verified geometry'} · logical separator`;
         article.append(header, levels, note);
         grid.append(article);
       });
@@ -168,10 +168,8 @@
         const plan = planner.planCargo(route, model, riskResolver);
         const lifecycle = cargoState.deriveCargoState(route, progress.completedStopIds, state.cargoCorrections);
         const missionClasses = buildMissionClasses(plan.assignments);
-        const capacityText = plan.offGridAllowanceScu
-          ? `${plan.capacityScu} grid + ${plan.offGridAllowanceScu} off-grid`
-          : `${plan.capacityScu} grid`;
-        usage.textContent = `${lifecycle.totals.onboardScu} SCU onboard · peak plan ${plan.peakPlannedScu} · ${capacityText}`;
+        const capacityText = plan.offGridAllowanceScu ? `${plan.capacityScu} grid + ${plan.offGridAllowanceScu} off-grid` : `${plan.capacityScu} grid`;
+        usage.textContent = `${lifecycle.totals.onboardScu} SCU onboard · peak ${plan.peakPlannedScu} · ${capacityText}`;
         renderZones(model, plan.assignments, lifecycle, missionClasses);
         renderLegend(plan, lifecycle, missionClasses);
       } catch (error) {
