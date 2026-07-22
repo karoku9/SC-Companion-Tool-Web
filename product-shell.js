@@ -15,7 +15,11 @@
     navigation.innerHTML = registry.groups.map((group) => `
       <section class="nav-group" data-nav-group="${group.id}">
         <h2>${group.label}</h2>
-        ${group.pages.map((page) => `<button type="button" data-view-target="${page.id}" aria-selected="false"><span>${page.label}</span></button>`).join('')}
+        ${group.pages.map((page) => `
+          <button type="button" data-view-target="${page.id}" aria-selected="false" title="${page.label}: ${page.hint ?? page.title}">
+            <span class="nav-glyph" aria-hidden="true">${page.icon ?? page.label.slice(0, 2).toUpperCase()}</span>
+            <span class="nav-copy"><strong>${page.label}</strong><small>${page.hint ?? page.title}</small></span>
+          </button>`).join('')}
       </section>`).join('');
   }
 
@@ -41,6 +45,7 @@
     if (pageEyebrow) pageEyebrow.textContent = page.eyebrow;
     if (pageTitle) pageTitle.textContent = page.title;
     if (mobileSelect) mobileSelect.value = page.id;
+    document.documentElement.dataset.activeView = page.id;
     document.title = `${page.label} · SC Companion Tool`;
   }
 
