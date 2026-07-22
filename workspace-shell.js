@@ -41,10 +41,10 @@
     tools.className = 'operations-workspace-tools';
     tools.innerHTML = `
       <div class="operations-command-strip" aria-label="Operational tools">
-        <button type="button" data-open-workspace-panel="moves">${icon('moves')}<span><small>Moves</small><strong id="workspace-move-preview">No active cargo moves</strong></span></button>
-        <button type="button" data-open-workspace-panel="cargo">${icon('cargo')}<span><small>Cargo</small><strong id="workspace-cargo-preview">0 SCU onboard</strong></span></button>
-        <button type="button" data-open-workspace-panel="corrections">${icon('corrections')}<span><small>Adjust</small><strong>Actual cargo state</strong></span></button>
-        <button type="button" data-open-workspace-panel="route-tools">${icon('route')}<span><small>Route</small><strong>Skip, lock, reorder</strong></span></button>
+        <button type="button" data-open-workspace-panel="moves" aria-pressed="false">${icon('moves')}<span><small>Moves</small><strong id="workspace-move-preview">No active cargo moves</strong></span></button>
+        <button type="button" data-open-workspace-panel="cargo" aria-pressed="false">${icon('cargo')}<span><small>Cargo</small><strong id="workspace-cargo-preview">0 SCU onboard</strong></span></button>
+        <button type="button" data-open-workspace-panel="corrections" aria-pressed="false">${icon('corrections')}<span><small>Adjust</small><strong>Actual cargo state</strong></span></button>
+        <button type="button" data-open-workspace-panel="route-tools" aria-pressed="false">${icon('route')}<span><small>Route</small><strong>Skip, lock, reorder</strong></span></button>
       </div>
       <div class="workspace-drawer-backdrop" hidden></div>
       <aside class="workspace-drawer" aria-label="Operational tools" hidden>
@@ -121,7 +121,7 @@
       drawerIcon.innerHTML = icon(descriptor.icon);
       tools.querySelectorAll('[data-workspace-pane]').forEach((element) => { element.hidden = element.dataset.workspacePane !== resolved; });
       tools.querySelectorAll('[data-workspace-tab]').forEach((button) => button.setAttribute('aria-selected', String(button.dataset.workspaceTab === resolved)));
-      tools.querySelectorAll('[data-open-workspace-panel]').forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.openWorkspacePanel === resolved)));
+      commandStrip.querySelectorAll('[data-open-workspace-panel]').forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.openWorkspacePanel === resolved)));
       updateBodyLock();
     }
 
@@ -133,7 +133,7 @@
       drawer.classList.remove('is-expanded');
       expand.setAttribute('aria-pressed', 'false');
       expand.querySelector('span').textContent = 'Full screen';
-      tools.querySelectorAll('[data-open-workspace-panel]').forEach((button) => button.setAttribute('aria-pressed', 'false'));
+      commandStrip.querySelectorAll('[data-open-workspace-panel]').forEach((button) => button.setAttribute('aria-pressed', 'false'));
       updateBodyLock();
     }
 
@@ -156,7 +156,8 @@
       updateBodyLock();
     });
     window.addEventListener('keydown', (event) => { if (event.key === 'Escape' && !drawer.hidden) closePanel(); });
-    dockedMedia.addEventListener('change', updateBodyLock);
+    if (typeof dockedMedia.addEventListener === 'function') dockedMedia.addEventListener('change', updateBodyLock);
+    else dockedMedia.addListener(updateBodyLock);
     window.addEventListener('sc:open-internal-panel', (event) => {
       if (event.detail?.parentView === 'route') openPanel(event.detail.panel === 'companion' ? 'moves' : event.detail.panel);
     });
