@@ -55,6 +55,12 @@ dialog.starmap-context-panel[open] { display: grid; }
 dialog.starmap-context-panel::backdrop { background: rgb(0 0 0 / .56); }
 
 @media (max-width: 900px) {
+  .starmap-page-v2 .starmap-context-toggle {
+    position: fixed;
+    z-index: 65;
+    right: 12px;
+    bottom: 76px;
+  }
   .starmap-page-v2 .starmap-context-backdrop { display: none !important; }
   dialog.starmap-context-panel.is-mobile-dialog {
     position: fixed !important;
@@ -84,6 +90,7 @@ dialog.starmap-context-panel::backdrop { background: rgb(0 0 0 / .56); }
 }
 
 @media (max-width: 620px) {
+  .starmap-page-v2 .starmap-context-toggle { right: 8px; }
   dialog.starmap-context-panel.is-mobile-dialog {
     right: 6px !important;
     left: 6px !important;
