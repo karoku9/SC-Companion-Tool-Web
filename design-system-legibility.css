@@ -71,6 +71,9 @@
 .planner-breakdown small,
 .planner-stop-total span,
 .planner-stop-total small,
+.planner-total span,
+.planner-total small,
+.eyebrow,
 .page-status,
 .app-footer {
   font-size: var(--ds-type-xs);
@@ -85,6 +88,7 @@ body { font-size: var(--ds-type-md); }
 .manifest-item span,
 .planner-profile-card p,
 .planner-stop-main > span,
+.planner-stop-total strong,
 .map-info-panel > p,
 #starmap-route-list strong,
 #starmap-route-list small {
