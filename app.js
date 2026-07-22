@@ -97,7 +97,10 @@
         import('./ui-v2-accessibility.js')
       ]);
     })
-    .then(() => import('./fleet-loadouts-view.js'))
+    .then(() => Promise.all([
+      import('./fleet-loadouts-view.js'),
+      import('./starmap-layer-context.js')
+    ]))
     .then(() => window.dispatchEvent(new Event('sc:dynamic-pages-ready')))
     .catch((error) => console.error('Application runtime failed to load.', error));
 }());
