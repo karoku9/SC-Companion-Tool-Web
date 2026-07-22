@@ -6,8 +6,10 @@
   const planner = window.SCCompanionCargoPlanner;
   const cargoState = window.SCCompanionCargoState;
   const cargoLayout = window.SCCompanionCargoLayout;
+  const routeCorrections = window.SCCompanionRouteCorrections;
+  const routeProgress = window.SCCompanionRouteProgress;
   const root = document.querySelector('#load-operations');
-  if (!store || !catalog || !planner || !cargoState || !cargoLayout || !root) return;
+  if (!store || !catalog || !planner || !cargoState || !cargoLayout || !routeCorrections || !routeProgress || !root) return;
 
   root.innerHTML = `
     <header class="section-heading blueprint-heading">
@@ -42,16 +44,11 @@
     </div>`;
 
   const elements = {
-    kicker: root.querySelector('#load-stop-kicker'),
-    title: root.querySelector('#load-stop-title'),
-    summary: root.querySelector('#load-stop-summary'),
-    progress: root.querySelector('#load-operation-progress'),
-    previous: root.querySelector('#load-previous'),
-    next: root.querySelector('#load-next'),
-    queueStatus: root.querySelector('#load-queue-status'),
-    queue: root.querySelector('#load-move-queue'),
-    onboard: root.querySelector('#load-onboard-list'),
-    totals: root.querySelector('#load-cargo-totals')
+    kicker: root.querySelector('#load-stop-kicker'), title: root.querySelector('#load-stop-title'),
+    summary: root.querySelector('#load-stop-summary'), progress: root.querySelector('#load-operation-progress'),
+    previous: root.querySelector('#load-previous'), next: root.querySelector('#load-next'),
+    queueStatus: root.querySelector('#load-queue-status'), queue: root.querySelector('#load-move-queue'),
+    onboard: root.querySelector('#load-onboard-list'), totals: root.querySelector('#load-cargo-totals')
   };
 
   function riskResolver(locationId, label) {
@@ -69,9 +66,7 @@
 
   function assignmentMap(plan) {
     const map = new Map();
-    plan.assignments.forEach((assignment) => {
-      if (!map.has(assignment.cargoKey)) map.set(assignment.cargoKey, assignment);
-    });
+    plan.assignments.forEach((assignment) => { if (!map.has(assignment.cargoKey)) map.set(assignment.cargoKey, assignment); });
     return map;
   }
 
@@ -89,16 +84,12 @@
     const content = document.createElement('div');
     const title = document.createElement('b');
     const lot = move.lot;
-    title.textContent = lot
-      ? `${lot.missionTitle} · ${lot.scu} SCU ${lot.commodity}`
-      : `${move.operation.missionTitle} · ${move.operation.scu} SCU ${move.operation.commodity}`;
+    title.textContent = lot ? `${lot.missionTitle} · ${lot.scu} SCU ${lot.commodity}` : `${move.operation.missionTitle} · ${move.operation.scu} SCU ${move.operation.commodity}`;
     const detail = document.createElement('span');
     const assignment = assignments.get(lot?.key);
-    if (move.action === 'unload') {
-      detail.textContent = `${positionText(model, assignment)} · loaded at ${lot?.originLocationLabel ?? move.operation.originLocationLabel}`;
-    } else {
-      detail.textContent = `${lot?.originLocationLabel ?? move.operation.locationLabel} → ${lot?.deliveryLocationLabel ?? move.operation.destinationLocationLabel} · ${positionText(model, assignment)}`;
-    }
+    detail.textContent = move.action === 'unload'
+      ? `${positionText(model, assignment)} · loaded at ${lot?.originLocationLabel ?? move.operation.originLocationLabel}`
+      : `${lot?.originLocationLabel ?? move.operation.locationLabel} → ${lot?.deliveryLocationLabel ?? move.operation.destinationLocationLabel} · ${positionText(model, assignment)}`;
     content.append(title, detail);
     row.append(verb, content);
     return row;
@@ -109,22 +100,17 @@
     if (!lifecycle.onboardLots.length) {
       const empty = document.createElement('div');
       empty.className = 'empty-inline-state';
-      empty.textContent = lifecycle.complete ? 'Cargo hold empty. Session deliveries complete.' : 'No mission cargo is currently onboard.';
+      empty.textContent = lifecycle.complete ? 'No cargo remains onboard for the active route.' : 'No mission cargo is currently onboard.';
       elements.onboard.append(empty);
       return;
     }
-
     lifecycle.onboardLots.forEach((lot) => {
       const row = document.createElement('div');
       row.className = 'onboard-row';
       const content = document.createElement('div');
-      const title = document.createElement('b');
-      title.textContent = `${lot.missionTitle} · ${lot.scu} SCU ${lot.commodity}`;
-      const detail = document.createElement('span');
-      detail.textContent = `${positionText(model, assignments.get(lot.key))} · deliver to ${lot.deliveryLocationLabel}`;
-      content.append(title, detail);
+      content.innerHTML = `<b>${lot.missionTitle} · ${lot.scu} SCU ${lot.commodity}</b><span>${positionText(model, assignments.get(lot.key))} · deliver to ${lot.deliveryLocationLabel}</span>`;
       const status = document.createElement('strong');
-      status.textContent = 'ONBOARD';
+      status.textContent = lot.corrected ? 'CORRECTED' : 'ONBOARD';
       row.append(content, status);
       elements.onboard.append(row);
     });
@@ -134,13 +120,19 @@
     elements.totals.innerHTML = `
       <span>Pending<strong>${lifecycle.totals.pendingScu} SCU</strong></span>
       <span>Onboard<strong>${lifecycle.totals.onboardScu} SCU</strong></span>
-      <span>Delivered<strong>${lifecycle.totals.deliveredScu} SCU</strong></span>`;
+      <span>Delivered<strong>${lifecycle.totals.deliveredScu} SCU</strong></span>
+      <span>Lost<strong>${lifecycle.totals.lostScu} SCU</strong></span>`;
+  }
+
+  function context(state) {
+    const route = routeCorrections.deriveRoute(state.route, state.routeCorrections);
+    const progress = routeProgress.derive(route, state.completedStopIds, state.currentStopIndex);
+    return { route, progress };
   }
 
   function render(state) {
     elements.queue.replaceChildren();
-    const route = state.route;
-    if (!route?.stops?.length) {
+    if (!state.route?.stops?.length) {
       elements.kicker.textContent = 'NO ACTIVE SESSION';
       elements.title.textContent = 'Generate a mission route';
       elements.summary.textContent = 'The move queue will show exactly which mission cargo enters or leaves the ship.';
@@ -149,30 +141,31 @@
       elements.previous.disabled = true;
       elements.next.disabled = true;
       elements.onboard.innerHTML = '<div class="empty-inline-state">No mission cargo is currently onboard.</div>';
-      elements.totals.innerHTML = '<span>Pending<strong>0 SCU</strong></span><span>Onboard<strong>0 SCU</strong></span><span>Delivered<strong>0 SCU</strong></span>';
+      elements.totals.innerHTML = '<span>Pending<strong>0 SCU</strong></span><span>Onboard<strong>0 SCU</strong></span><span>Delivered<strong>0 SCU</strong></span><span>Lost<strong>0 SCU</strong></span>';
       return;
     }
 
-    const lifecycle = cargoState.deriveCargoState(route, state.currentStopIndex);
+    const { route, progress } = context(state);
+    const lifecycle = cargoState.deriveCargoState(route, progress.completedStopIds, state.cargoCorrections);
     const model = activeModel(state);
     const plan = planner.planCargo(route, model, riskResolver);
     const assignments = assignmentMap(plan);
-    elements.previous.disabled = lifecycle.currentStopIndex <= 0;
-    elements.next.disabled = lifecycle.complete;
-    elements.progress.textContent = `${Math.min(lifecycle.currentStopIndex + 1, route.stops.length)} / ${route.stops.length} stops`;
+    elements.previous.disabled = !progress.completedStopIds.length;
+    elements.next.disabled = progress.complete;
+    elements.progress.textContent = `${progress.completedCount} completed · ${progress.totalStops} active stops`;
 
-    if (lifecycle.complete) {
-      elements.kicker.textContent = 'SESSION COMPLETE';
-      elements.title.textContent = 'All planned stops completed';
-      elements.summary.textContent = 'Use PREVIOUS to review or reverse the last completed stop.';
+    if (progress.complete) {
+      elements.kicker.textContent = 'ACTIVE ROUTE COMPLETE';
+      elements.title.textContent = route.allStops.some((stop) => stop.skipped) ? 'Skipped stops remain available' : 'All planned stops completed';
+      elements.summary.textContent = 'Use PREVIOUS to reopen the last completed stop or Route Corrections to restore a skipped stop.';
       elements.queueStatus.textContent = 'NO MOVES REMAINING';
-      elements.queue.innerHTML = '<div class="empty-inline-state">No load or unload operations remain.</div>';
+      elements.queue.innerHTML = '<div class="empty-inline-state">No load or unload operations remain on the active route.</div>';
     } else {
       elements.kicker.textContent = `CURRENT STOP · ${lifecycle.currentStop.locationLabel.toUpperCase()}`;
       const loadCount = lifecycle.currentMoves.filter((move) => move.action === 'load').length;
       const unloadCount = lifecycle.currentMoves.filter((move) => move.action === 'unload').length;
       elements.title.textContent = `${loadCount ? `Load ${loadCount}` : ''}${loadCount && unloadCount ? ' · ' : ''}${unloadCount ? `Unload ${unloadCount}` : ''}${!loadCount && !unloadCount ? 'Complete stop objectives' : ''}`;
-      elements.summary.textContent = 'Completing this stop applies every listed move at once. Mission identity and pickup origin remain attached to every lot.';
+      elements.summary.textContent = 'Completing this stop applies every listed move at once. Route corrections never detach cargo provenance.';
       elements.queueStatus.textContent = `${lifecycle.currentMoves.length} MOVE${lifecycle.currentMoves.length === 1 ? '' : 'S'}`;
       lifecycle.currentMoves.forEach((move) => elements.queue.append(renderMove(move, model, assignments)));
       if (!lifecycle.currentMoves.length) elements.queue.innerHTML = '<div class="empty-inline-state">No cargo movement at this stop.</div>';
@@ -185,13 +178,17 @@
   elements.previous.addEventListener('click', () => {
     const state = store.getState();
     if (!state.route) return;
-    store.patch({ currentStopIndex: Math.max(0, (state.currentStopIndex ?? 0) - 1) });
+    const { route } = context(state);
+    const completedStopIds = routeProgress.previous(route, state.completedStopIds, state.currentStopIndex);
+    store.patch({ completedStopIds, currentStopIndex: completedStopIds.length });
   });
 
   elements.next.addEventListener('click', () => {
     const state = store.getState();
     if (!state.route) return;
-    store.patch({ currentStopIndex: Math.min((state.currentStopIndex ?? 0) + 1, state.route.stops.length) });
+    const { route } = context(state);
+    const completedStopIds = routeProgress.completeCurrent(route, state.completedStopIds, state.currentStopIndex);
+    store.patch({ completedStopIds, currentStopIndex: completedStopIds.length });
   });
 
   window.addEventListener('sc:session-change', (event) => render(event.detail));

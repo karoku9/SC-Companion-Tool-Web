@@ -79,8 +79,8 @@
   renderDestination(model.getLocation('stanton-hurston-lorville-teasa'));
 }());
 
-(function loadCargoOperationsRuntime() {
-  ['cargo-operations.css', 'cargo-corrections.css'].forEach((href) => {
+(function loadOperationalRuntimes() {
+  ['cargo-operations.css', 'cargo-corrections.css', 'route-corrections.css', 'changelog.css'].forEach((href) => {
     if (document.querySelector(`link[href="${href}"]`)) return;
     const stylesheet = document.createElement('link');
     stylesheet.rel = 'stylesheet';
@@ -89,15 +89,21 @@
   });
 
   Promise.all([
+    import('./route-corrections.js'),
+    import('./route-progress.js'),
     import('./cargo-state.js'),
     import('./cargo-layout.js')
   ])
     .then(() => {
+      window.dispatchEvent(new Event('sc:route-runtime-ready'));
       window.dispatchEvent(new Event('sc:cargo-runtime-ready'));
-      return import('./load-operations-view.js');
+      return Promise.all([
+        import('./load-operations-view.js'),
+        import('./cargo-corrections-view.js'),
+        import('./route-corrections-view.js'),
+        import('./changelog-view.js')
+      ]);
     })
-    .then(() => import('./cargo-corrections-view.js'))
-    .catch((error) => {
-      console.error('Cargo operations runtime failed to load.', error);
-    });
+    .then(() => window.dispatchEvent(new Event('sc:dynamic-pages-ready')))
+    .catch((error) => console.error('Operational runtime failed to load.', error));
 }());

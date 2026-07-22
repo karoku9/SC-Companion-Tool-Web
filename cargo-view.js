@@ -10,7 +10,9 @@
     const planner = window.SCCompanionCargoPlanner;
     const cargoState = window.SCCompanionCargoState;
     const cargoLayout = window.SCCompanionCargoLayout;
-    if (!store || !catalog || !planner || !cargoState || !cargoLayout) return false;
+    const routeCorrections = window.SCCompanionRouteCorrections;
+    const routeProgress = window.SCCompanionRouteProgress;
+    if (!store || !catalog || !planner || !cargoState || !cargoLayout || !routeCorrections || !routeProgress) return false;
 
     const grid = document.querySelector('#cargo-grid');
     const shipName = document.querySelector('#cargo-ship-name');
@@ -36,8 +38,7 @@
 
     function visibleAssignmentKeys(lifecycle) {
       const limits = new Map(lifecycle.onboardLots.map((lot) => [lot.key, Math.ceil(lot.scu)]));
-      const seen = new Map();
-      return { limits, seen };
+      return { limits, seen: new Map() };
     }
 
     function assignmentIsVisible(assignment, visibility) {
@@ -118,7 +119,7 @@
       if (!lifecycle.onboardLots.length) {
         const empty = document.createElement('p');
         empty.className = 'field-help';
-        empty.textContent = lifecycle.complete ? 'Cargo hold empty — all active mission cargo was resolved.' : 'Cargo hold currently empty.';
+        empty.textContent = lifecycle.complete ? 'Cargo hold has no cargo assigned to the active route.' : 'Cargo hold currently empty.';
         legend.append(empty);
         return;
       }
@@ -150,8 +151,10 @@
         return;
       }
       try {
-        const plan = planner.planCargo(state.route, model, riskResolver);
-        const lifecycle = cargoState.deriveCargoState(state.route, state.currentStopIndex, state.cargoCorrections);
+        const route = routeCorrections.deriveRoute(state.route, state.routeCorrections);
+        const progress = routeProgress.derive(route, state.completedStopIds, state.currentStopIndex);
+        const plan = planner.planCargo(route, model, riskResolver);
+        const lifecycle = cargoState.deriveCargoState(route, progress.completedStopIds, state.cargoCorrections);
         const missionClasses = buildMissionClasses(plan.assignments);
         usage.textContent = `${lifecycle.totals.onboardScu} / ${plan.capacityScu} SCU onboard · ${lifecycle.totals.deliveredScu} delivered · ${lifecycle.totals.lostScu} lost`;
         renderZones(model, plan.assignments, lifecycle, missionClasses);

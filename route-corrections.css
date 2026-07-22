@@ -1,0 +1,73 @@
+.route-correction-panel {
+  margin: 16px 20px 0;
+  padding: 18px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.route-correction-heading,
+.route-correction-meta,
+.route-correction-row,
+.route-correction-actions {
+  display: flex;
+  align-items: center;
+}
+
+.route-correction-heading {
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.route-correction-heading h3 { margin: 4px 0 0; }
+.route-correction-meta { gap: 10px; }
+.route-correction-meta span {
+  color: var(--accent);
+  font-size: .62rem;
+  font-weight: 900;
+  letter-spacing: .11em;
+}
+
+.route-correction-message {
+  min-height: 20px;
+  margin: 10px 0;
+  font-size: .74rem;
+}
+.route-correction-message.is-error { color: #ef8f7f; }
+.route-correction-message.is-success { color: var(--success); }
+
+.route-correction-list { display: grid; gap: 8px; }
+.route-correction-row {
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  background: #0a0f11;
+}
+.route-correction-row.is-skipped { opacity: .6; border-style: dashed; }
+.route-correction-row.is-complete { border-left: 3px solid var(--success); }
+.route-correction-identity { display: grid; gap: 4px; min-width: 0; }
+.route-correction-identity strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.route-correction-identity span,
+.route-correction-identity small { color: var(--text-muted); font-size: .68rem; }
+.route-correction-identity small { font-weight: 900; letter-spacing: .08em; }
+.route-correction-actions { flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+.route-correction-actions button,
+.route-correction-meta button {
+  min-height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  background: #0b1013;
+  color: #d5dde0;
+  font-size: .65rem;
+  font-weight: 900;
+}
+.route-correction-actions button:hover:not(:disabled) { border-color: var(--accent); color: #ffd8a5; }
+.route-correction-actions .is-reopen { border-color: rgba(155,193,141,.5); color: var(--success); }
+.route-stop-list li.is-skipped { opacity: .45; text-decoration: line-through; }
+
+@media (max-width: 760px) {
+  .route-correction-heading,
+  .route-correction-row { align-items: stretch; flex-direction: column; }
+  .route-correction-meta,
+  .route-correction-actions { justify-content: flex-start; }
+}

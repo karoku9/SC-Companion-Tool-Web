@@ -10,6 +10,7 @@
         { id: 'section-navigation', label: 'Separate low-clutter application sections', status: 'done' },
         { id: 'product-shell', label: 'Grouped desktop and mobile page navigation', status: 'done' },
         { id: 'page-blueprints', label: 'Visual blueprints for every planned product page', status: 'done' },
+        { id: 'release-history', label: 'In-app changelog sourced from CHANGELOG.md', status: 'done' },
         { id: 'local-state', label: 'Local persistence and session recovery', status: 'done' },
         { id: 'location-model', label: 'Operational locations and mobiGlas targets', status: 'done' },
         { id: 'mission-model', label: 'Separate missions, contracts and cargo lots', status: 'done' }
@@ -32,6 +33,8 @@
       items: [
         { id: 'precedence', label: 'Pickup and collect before delivery', status: 'done' },
         { id: 'stop-grouping', label: 'Group compatible operations by stop', status: 'done' },
+        { id: 'route-corrections', label: 'Dependency-safe skip, reopen and reorder controls', status: 'done' },
+        { id: 'stable-progress', label: 'Stable completed-stop identities across route changes', status: 'done' },
         { id: 'arrival-overhead', label: 'Indicative descent, ATC and animation overhead', status: 'active' },
         { id: 'fastest-route', label: 'Fastest-route optimizer', status: 'next' },
         { id: 'fewest-jumps', label: 'Fewest-jumps profile', status: 'future' },
@@ -51,7 +54,7 @@
         { id: 'cargo-state', label: 'Loaded and delivered cargo state per stop', status: 'done' },
         { id: 'load-operations', label: 'Live load and unload operation page', status: 'done' },
         { id: 'corrections', label: 'Manual SCU, cargo status and lost-cargo corrections', status: 'done' },
-        { id: 'route-corrections', label: 'Skip, reopen and reorder route stops safely', status: 'next' },
+        { id: 'route-recovery', label: 'Skipped-stop recovery without losing cargo state', status: 'done' },
         { id: 'session-history', label: 'Real-session history', status: 'future' }
       ]
     },

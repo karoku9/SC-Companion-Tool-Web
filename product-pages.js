@@ -53,6 +53,7 @@
       pages: Object.freeze([
         Object.freeze({ id: 'settings', label: 'Settings', eyebrow: 'SETTINGS', title: 'Display, estimates and data', status: 'blueprint' }),
         Object.freeze({ id: 'roadmap', label: 'Roadmap', eyebrow: 'DEVELOPMENT ROADMAP', title: 'Product delivery sequence', status: 'live' }),
+        Object.freeze({ id: 'changelog', label: 'Changelog', eyebrow: 'RELEASE HISTORY', title: 'Versions and product changes', status: 'live' }),
         Object.freeze({ id: 'automation', label: 'Automation', eyebrow: 'AUTOMATED INTAKE', title: 'OCR and Game.log integrations', status: 'later' })
       ])
     })

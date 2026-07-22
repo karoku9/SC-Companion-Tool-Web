@@ -7,9 +7,32 @@ The project was already under active development before this changelog was intro
 ## [Unreleased]
 
 ### Planned
-- Route corrections and advanced route recovery.
+- Route Planner v1 with selectable optimization profiles.
 - Expanded location intelligence.
 - Additional ship and component integrations.
+
+---
+
+## [0.7.0] - 2026-07-22
+
+### Added
+- System → Changelog page rendered directly from this file.
+- Current build card in Overview.
+- Dependency-safe Route Corrections panel.
+- Future-stop reordering controls.
+- Temporary SKIP and REOPEN controls.
+- Per-stop MANDATORY protection.
+- Reset to generated route.
+
+### Improved
+- Route progress now uses stable completed-stop identities instead of relying only on a numeric index.
+- Cargo lifecycle follows corrected route progress.
+- Skipped deliveries leave their cargo onboard instead of marking it delivered.
+- Existing locally saved sessions migrate through the legacy progress index.
+
+### Fixed
+- Reordering future stops can no longer shift completion onto the wrong stop.
+- Invalid pickup → delivery orders and dependency-breaking skips are rejected.
 
 ---
 
