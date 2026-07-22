@@ -257,11 +257,11 @@
 .mission-card li small { color: var(--ds-content-muted); }
 .form-message.is-warning { color: var(--ds-status-warning); }
 
-@media (max-width: 1180px) {
+@media (max-width: 1540px) {
   .mission-review-row {
     grid-template-columns: 42px 105px minmax(170px, 1.2fr) minmax(145px, .9fr);
   }
-  .mission-field-status { grid-column: 2 / -1; justify-self: start; }
+  .mission-field-status { grid-column: 2 / -1; justify-self: start; min-width: 128px; }
 }
 
 @media (max-width: 920px) {
