@@ -100,11 +100,14 @@ try {
   await openWorkspace('map');
   await page.locator('#starmap-context-toggle').click();
   const panel = page.locator('#starmap-context-panel');
-  const box = await panel.boundingBox();
-  assert.ok(box, 'Mobile details panel has no bounding box');
+  const box = await panel.evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    return { x: rect.x, y: rect.y, width: rect.width, height: rect.height, viewportWidth: innerWidth, viewportHeight: innerHeight };
+  });
+  assert.ok(box.width > 0 && box.height > 0, 'Mobile details panel has no visible rectangle');
   assert.ok(box.x >= 0 && box.y >= 0, `Mobile details start outside viewport: ${JSON.stringify(box)}`);
-  assert.ok(box.x + box.width <= 392, `Mobile details escape horizontally: ${JSON.stringify(box)}`);
-  assert.ok(box.y + box.height <= 846, `Mobile details escape vertically: ${JSON.stringify(box)}`);
+  assert.ok(box.x + box.width <= box.viewportWidth + 2, `Mobile details escape horizontally: ${JSON.stringify(box)}`);
+  assert.ok(box.y + box.height <= box.viewportHeight + 2, `Mobile details escape vertically: ${JSON.stringify(box)}`);
   assert.equal(await page.locator('#starmap-context-toggle').getAttribute('aria-expanded'), 'true');
   await noHorizontalOverflow('mobile details');
   await page.screenshot({ path: `${output}/starmap-ux-mobile-details.png` });
