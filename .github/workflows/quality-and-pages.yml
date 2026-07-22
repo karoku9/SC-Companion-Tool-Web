@@ -39,11 +39,13 @@ jobs:
         run: node --test tests/cargo-corrections.test.js
       - name: Test route corrections
         run: node --test tests/route-corrections.test.js
+      - name: Test route planner
+        run: node --test tests/route-planner.test.js
       - name: Test any additional suites
         run: |
           for file in tests/*.test.js; do
             case "$file" in
-              tests/checkpoint2.test.js|tests/checkpoint3.test.js|tests/locations.test.js|tests/missions.test.js|tests/roadmap.test.js|tests/starmap.test.js|tests/product-shell.test.js|tests/cargo-state.test.js|tests/cargo-corrections.test.js|tests/route-corrections.test.js|tests/planner.test.js) ;;
+              tests/checkpoint2.test.js|tests/checkpoint3.test.js|tests/locations.test.js|tests/missions.test.js|tests/roadmap.test.js|tests/starmap.test.js|tests/product-shell.test.js|tests/cargo-state.test.js|tests/cargo-corrections.test.js|tests/route-corrections.test.js|tests/route-planner.test.js|tests/planner.test.js) ;;
               *) node --test "$file" ;;
             esac
           done
@@ -71,6 +73,7 @@ jobs:
           node --check missions.js
           node --check mission-text.js
           node --check route-planner.js
+          node --check route-planner-engine.js
           node --check route-corrections.js
           node --check route-progress.js
           node --check ship-catalog.js
@@ -85,10 +88,12 @@ jobs:
           node --check mission-view.js
           node --check route-view.js
           node --check route-corrections-view.js
+          node --check route-planner-view.js
           node --check cargo-view.js
           node --check load-operations-view.js
           node --check cargo-corrections-view.js
           node --check changelog-view.js
+          node --check ux-shell.js
           node --check hangar-view.js
           node --check starmap-view.js
           node --check location-intel-view.js
