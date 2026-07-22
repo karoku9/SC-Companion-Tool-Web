@@ -9,6 +9,18 @@
     const routeCorrections = route?.querySelector('.route-correction-panel');
     if (!route || !loadOperations || !cargo) return;
 
+    const routeHeading = route.querySelector('.section-heading');
+    if (routeHeading) {
+      const eyebrow = routeHeading.querySelector('.eyebrow');
+      const heading = routeHeading.querySelector('h2');
+      if (eyebrow) eyebrow.textContent = 'LIVE OPERATIONS';
+      if (heading) heading.textContent = 'Navigate, move cargo, continue';
+    }
+    const sidebarFooter = document.querySelector('.sidebar-footer');
+    if (sidebarFooter) sidebarFooter.textContent = 'Six focused workspaces. Secondary tools open only where they are needed.';
+    const fleetHeading = document.querySelector('#hangar .section-heading h2');
+    if (fleetHeading) fleetHeading.textContent = 'Ships and cargo configuration';
+
     function internalize(section) {
       section.removeAttribute('data-view');
       section.hidden = false;
@@ -20,8 +32,8 @@
     shell.className = 'operations-workspace-tools';
     shell.innerHTML = `
       <div class="operations-command-strip">
-        <button type="button" data-open-workspace-panel="moves"><span>NEXT MOVES</span><strong id="workspace-move-preview">No active cargo moves</strong><small>Open load and unload queue</small></button>
-        <button type="button" data-open-workspace-panel="cargo"><span>CARGO NOW</span><strong id="workspace-cargo-preview">0 SCU onboard</strong><small>Open hold, zones and editor</small></button>
+        <button type="button" data-open-workspace-panel="moves"><span>NEXT MOVES</span><strong id="workspace-move-preview">No active cargo moves</strong><small>Load and unload queue</small></button>
+        <button type="button" data-open-workspace-panel="cargo"><span>CARGO NOW</span><strong id="workspace-cargo-preview">0 SCU onboard</strong><small>Hold, zones and editor</small></button>
         <button type="button" data-open-workspace-panel="corrections"><span>ADJUST</span><strong>Corrections</strong><small>Actual SCU and cargo state</small></button>
         <button type="button" data-open-workspace-panel="route-tools"><span>ROUTE</span><strong>Route tools</strong><small>Skip, lock and reorder</small></button>
       </div>
@@ -124,7 +136,7 @@
       const lifecycle = window.SCCompanionCargoState.deriveCargoState(effective, progress.completedStopIds, state.cargoCorrections);
       const load = lifecycle.currentMoves.filter((move) => move.action === 'load').reduce((sum, move) => sum + Number(move.lot?.scu ?? move.operation.scu ?? 0), 0);
       const unload = lifecycle.currentMoves.filter((move) => move.action === 'unload').reduce((sum, move) => sum + Number(move.lot?.scu ?? move.operation.scu ?? 0), 0);
-      movePreview.textContent = progress.complete ? 'Route complete' : [unload ? `Unload ${unload}` : '', load ? `Load ${load}` : ''].filter(Boolean).join(' · ') || 'No cargo moves';
+      movePreview.textContent = progress.complete ? 'Route complete' : [unload ? `Unload ${unload} SCU` : '', load ? `Load ${load} SCU` : ''].filter(Boolean).join(' · ') || 'No cargo moves';
       cargoPreview.textContent = `${lifecycle.totals.onboardScu} SCU onboard`;
     }
     window.addEventListener('sc:session-change', (event) => updatePreview(event.detail));
@@ -139,17 +151,18 @@
       details.innerHTML = '<summary><span>LOCATION INTEL</span><strong>Search services and arrival context</strong><em>EXPAND</em></summary><div class="contextual-tool-body"></div>';
       details.querySelector('.contextual-tool-body').append(locations);
       planner.append(details);
-      window.addEventListener('sc:open-internal-panel', (event) => {
-        if (event.detail?.panel === 'locations') details.open = true;
-      });
+      window.addEventListener('sc:open-internal-panel', (event) => { if (event.detail?.panel === 'locations') details.open = true; });
     }
 
     const roadmap = document.querySelector('#roadmap');
     const changelog = document.querySelector('#changelog');
     if (roadmap && changelog) {
+      const roadmapTitle = roadmap.querySelector('#roadmap-title');
+      const help = roadmap.querySelector('.roadmap-help');
+      if (roadmapTitle) roadmapTitle.textContent = 'Release path from v0.1 to v1.0';
+      if (help) help.textContent = 'Versions progress from left to right. Each card contains only the changes delivered by that release.';
       internalize(changelog);
-      const header = changelog.querySelector('.section-heading');
-      header?.remove();
+      changelog.querySelector('.section-heading')?.remove();
       const tabs = document.createElement('nav');
       tabs.className = 'development-tabs';
       tabs.innerHTML = '<button type="button" data-development-tab="roadmap" aria-selected="true">ROADMAP</button><button type="button" data-development-tab="changelog" aria-selected="false">CHANGELOG</button>';
