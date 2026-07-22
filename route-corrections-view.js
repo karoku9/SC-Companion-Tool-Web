@@ -30,18 +30,24 @@
     return { route, progress };
   }
 
-  function apply(transform) {
+  function toast(tone, title, text) {
+    window.dispatchEvent(new CustomEvent('sc:toast', { detail: { tone, title, message: text } }));
+  }
+
+  function apply(transform, successMessage = 'Future route updated.') {
     const state = store.getState();
     if (!state.route) return;
     try {
       const { route, progress } = currentContext(state);
       const next = transform(state, route, progress);
-      message.textContent = 'Route updated.';
+      message.textContent = successMessage;
       message.className = 'route-correction-message is-success';
       store.patch({ routeCorrections: next, completedStopIds: progress.completedStopIds, currentStopIndex: progress.completedStopIds.length });
+      toast('success', 'Route updated', successMessage);
     } catch (error) {
       message.textContent = error.message;
       message.className = 'route-correction-message is-error';
+      toast('error', 'Route unchanged', error.message);
     }
   }
 
@@ -72,10 +78,10 @@
     const nextStop = route.allStops[index + 1];
     const moveLocked = completed;
     controls.append(
-      actionButton('↑', 'Move earlier', moveLocked || !previousStop || progress.completedSet.has(String(previousStop.id)), () => apply((currentState, effective, currentProgress) => model.changeOrder(currentState.route, currentState.routeCorrections, stop.id, -1, currentProgress.completedStopIds))),
-      actionButton('↓', 'Move later', moveLocked || !nextStop || progress.completedSet.has(String(nextStop.id)), () => apply((currentState, effective, currentProgress) => model.changeOrder(currentState.route, currentState.routeCorrections, stop.id, 1, currentProgress.completedStopIds))),
-      actionButton(stop.skipped ? 'REOPEN' : 'SKIP', stop.skipped ? 'Return stop to the active route' : 'Temporarily remove stop from active route', completed || (!stop.skipped && stop.mandatory), () => apply((currentState, effective, currentProgress) => model.setSkipped(currentState.route, currentState.routeCorrections, stop.id, !stop.skipped, currentProgress.completedStopIds)), stop.skipped ? 'is-reopen' : ''),
-      actionButton(stop.mandatory ? 'UNLOCK' : 'MANDATORY', stop.mandatory ? 'Allow this stop to be skipped' : 'Prevent accidental skipping', completed, () => apply((currentState) => model.setMandatory(currentState.route, currentState.routeCorrections, stop.id, !stop.mandatory)))
+      actionButton('↑', 'Move earlier', moveLocked || !previousStop || progress.completedSet.has(String(previousStop.id)), () => apply((currentState, effective, currentProgress) => model.changeOrder(currentState.route, currentState.routeCorrections, stop.id, -1, currentProgress.completedStopIds), `${stop.locationLabel} moved earlier.`)),
+      actionButton('↓', 'Move later', moveLocked || !nextStop || progress.completedSet.has(String(nextStop.id)), () => apply((currentState, effective, currentProgress) => model.changeOrder(currentState.route, currentState.routeCorrections, stop.id, 1, currentProgress.completedStopIds), `${stop.locationLabel} moved later.`)),
+      actionButton(stop.skipped ? 'REOPEN' : 'SKIP', stop.skipped ? 'Return stop to the active route' : 'Temporarily remove stop from active route', completed || (!stop.skipped && stop.mandatory), () => apply((currentState, effective, currentProgress) => model.setSkipped(currentState.route, currentState.routeCorrections, stop.id, !stop.skipped, currentProgress.completedStopIds), `${stop.locationLabel} ${stop.skipped ? 'reopened' : 'skipped'}.`), stop.skipped ? 'is-reopen' : ''),
+      actionButton(stop.mandatory ? 'UNLOCK' : 'MANDATORY', stop.mandatory ? 'Allow this stop to be skipped' : 'Prevent accidental skipping', completed, () => apply((currentState) => model.setMandatory(currentState.route, currentState.routeCorrections, stop.id, !stop.mandatory), `${stop.locationLabel} ${stop.mandatory ? 'unlocked' : 'marked mandatory'}.`))
     );
     row.append(identity, controls);
     return row;
@@ -95,7 +101,7 @@
     route.allStops.forEach((stop, index) => list.append(renderRow(stop, state, route, progress, index)));
   }
 
-  reset.addEventListener('click', () => apply((state) => model.reset(state.route)));
+  reset.addEventListener('click', () => apply((state) => model.reset(state.route), 'Generated route restored.'));
   window.addEventListener('sc:session-change', (event) => render(event.detail));
   render(store.getState());
 }());
