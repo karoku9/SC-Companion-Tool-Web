@@ -10,7 +10,7 @@ function read(file) {
 }
 
 function cleanCss() {
-  return ['design-system-legibility.css', 'mission-validation.css', 'location-context.css', 'location-context-adapters.css', 'fleet-loadouts.css', 'ui-v2-shell.css', 'ui-v2-operations.css', 'ui-v2-workspaces.css', 'ui-v2-responsive.css'].map(read).join('\n');
+  return ['design-system-legibility.css', 'mission-validation.css', 'location-context.css', 'location-context-adapters.css', 'fleet-loadouts.css', 'starmap-v2.css', 'ui-v2-shell.css', 'ui-v2-operations.css', 'ui-v2-workspaces.css', 'ui-v2-responsive.css'].map(read).join('\n');
 }
 
 test('clean interface scripts remain valid JavaScript', () => {
@@ -30,6 +30,7 @@ test('clean UI replaces accumulated layout layers rather than overriding them', 
   assert.match(entry, /location-context-adapters\.css/);
   assert.match(entry, /fleet-loadouts\.css/);
   assert.match(entry, /design-system-legibility\.css/);
+  assert.match(entry, /starmap-v2\.css/);
   assert.doesNotMatch(html, /styles\.css|workspace-consolidation\.css|ui-rebuild\.css|drake-mfd\.css|mfd-layout-v2\.css/);
   assert.doesNotMatch(app, /workspace-shell\.js|ui-rebuild\.js|mfd-layout-v2\.js|ux-shell\.js/);
 });
@@ -75,14 +76,18 @@ test('navigation continues using the canonical SVG icon family', () => {
   assert.match(shell, /SCCompanionMfdIcons/);
 });
 
-test('Fleet Loadouts follow Mission Validation and Location Context', () => {
+test('UX Foundation and Starmap 2.0 follow delivered Fleet Loadouts', () => {
   const roadmap = require('../roadmap.js');
   const app = read('app.js');
-  assert.equal(roadmap.currentVersion, '0.20');
+  const map = read('starmap-view.js');
+  assert.equal(roadmap.currentVersion, '0.21');
   assert.equal(roadmap.releases.find((release) => release.version === '0.18').status, 'done');
   assert.equal(roadmap.releases.find((release) => release.version === '0.19').status, 'done');
-  assert.match(roadmap.releases.find((release) => release.version === '0.20').title, /Fleet loadouts/i);
-  assert.match(roadmap.releases.find((release) => release.version === '0.21').title, /Session history/i);
+  assert.equal(roadmap.releases.find((release) => release.version === '0.20').status, 'done');
+  assert.match(roadmap.releases.find((release) => release.version === '0.21').title, /UX foundation/i);
+  assert.match(roadmap.releases.find((release) => release.version === '0.22').title, /Session history/i);
   assert.match(app, /fleet-estimate-adapter\.js/);
   assert.match(app, /fleet-loadouts-view\.js/);
+  assert.match(map, /data-map-mode="route"/);
+  assert.match(map, /data-map-action="current"/);
 });
