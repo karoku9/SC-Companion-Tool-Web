@@ -6,11 +6,10 @@
   function initialize() {
     if (initialized) return true;
     const store = window.SCCompanionSession;
-    const planner = window.SCCompanionRoutePlanner;
     const locations = window.SCCompanionLocations;
     const routeCorrections = window.SCCompanionRouteCorrections;
     const routeProgress = window.SCCompanionRouteProgress;
-    if (!store || !planner || !routeCorrections || !routeProgress) return false;
+    if (!store || !routeCorrections || !routeProgress) return false;
 
     const stopName = document.querySelector('#current-stop-name');
     const operations = document.querySelector('#current-stop-operations');
@@ -41,13 +40,21 @@
     }
 
     function renderOperation(operation) {
-      const item = document.createElement('div');
+      const item = document.createElement('article');
       item.className = `operation-row is-${operation.type}`;
-      const verb = document.createElement('strong');
-      verb.textContent = operation.type === 'delivery' ? 'UNLOAD' : 'LOAD';
-      const detail = document.createElement('span');
-      detail.textContent = planner.operationInstruction(operation);
-      item.append(verb, detail);
+      const action = operation.type === 'delivery' ? 'UNLOAD' : operation.type === 'collect' ? 'COLLECT' : 'LOAD';
+      if (!operation.lotId) {
+        item.innerHTML = `<div class="operation-primary"><span>${action}</span><strong>${operation.label ?? 'Complete objective'}</strong></div><small>${operation.missionTitle}</small>`;
+        return item;
+      }
+      const origin = operation.pickupLocationLabel ?? operation.originLocationLabel ?? operation.originLocationId;
+      const context = operation.type === 'delivery'
+        ? `Loaded at ${origin}`
+        : `Deliver to ${operation.destinationLocationLabel}`;
+      item.innerHTML = `
+        <div class="operation-primary"><span>${action}</span><strong>${operation.scu} SCU ${operation.commodity}</strong></div>
+        <div class="operation-context">${context}</div>
+        <small class="operation-mission">${operation.missionTitle}</small>`;
       return item;
     }
 
@@ -77,7 +84,7 @@
         const isComplete = progress.completedSet.has(String(stop.id));
         item.className = [isComplete ? 'is-complete' : '', progress.currentStop?.id === stop.id ? 'is-current' : '', stop.skipped ? 'is-skipped' : ''].filter(Boolean).join(' ');
         const flags = [stop.skipped ? 'SKIPPED' : '', stop.mandatory ? 'MANDATORY' : ''].filter(Boolean).join(' · ');
-        item.innerHTML = `<span>${String(index + 1).padStart(2, '0')}</span><div><strong>${stop.locationLabel}</strong><small>${stop.operations.length} operations${flags ? ` · ${flags}` : ''}</small></div>`;
+        item.innerHTML = `<span>${String(index + 1).padStart(2, '0')}</span><div><strong>${stop.locationLabel}</strong><small>${stop.operations.length} action${stop.operations.length === 1 ? '' : 's'}${flags ? ` · ${flags}` : ''}</small></div>`;
         stopList.append(item);
       });
 
@@ -97,7 +104,12 @@
       complete.disabled = false;
       if (phoneStop) phoneStop.textContent = current.locationLabel;
       if (phoneDestination) phoneDestination.textContent = `IN GAME: ${destinationText(current.locationId, current.locationLabel).toUpperCase()}`;
-      if (phoneAction) phoneAction.textContent = current.operations[0] ? planner.operationInstruction(current.operations[0]) : 'Complete stop';
+      if (phoneAction) {
+        const first = current.operations[0];
+        phoneAction.textContent = first?.lotId
+          ? `${first.type === 'delivery' ? 'Unload' : 'Load'} ${first.scu} SCU ${first.commodity}`
+          : first?.label ?? 'Complete stop';
+      }
     }
 
     previous.addEventListener('click', () => {
