@@ -7,14 +7,16 @@
   const engine = window.SCCompanionRoutePlannerEngine;
   const catalog = window.SCCompanionShipCatalog;
   const cargoState = window.SCCompanionCargoState;
+  const navigation = window.SCCompanionNavigationEstimates;
+  const official = window.SCCompanionOfficialUniverseData;
   const root = document.querySelector('#route-planner');
-  if (!store || !corrections || !progressModel || !engine || !cargoState || !root) return;
+  if (!store || !corrections || !progressModel || !engine || !cargoState || !navigation || !official || !root) return;
 
   root.classList.remove('blueprint-page');
   root.innerHTML = `
     <header class="section-heading planner-live-heading">
       <div><p class="eyebrow">ROUTE PLANNER</p><h2>Choose how the remaining cargo moves</h2><p class="section-subtitle">Capacity-safe routes only. Completed stops stay locked and every pickup remains before its delivery.</p></div>
-      <span class="page-status is-live">LIVE</span>
+      <span class="page-status is-live">${official.snapshot.gameVersion}</span>
     </header>
     <div class="planner-live-shell">
       <section class="planner-profile-panel">
@@ -22,6 +24,7 @@
           <div><span>ACTIVE SESSION</span><strong id="planner-session-label">No route generated</strong></div>
           <div><span>VALID ROUTES</span><strong id="planner-candidate-count">0</strong></div>
           <div><span>EFFECTIVE CAPACITY</span><strong id="planner-capacity-label">—</strong></div>
+          <div><span>DATA SNAPSHOT</span><strong id="planner-data-label">${official.snapshot.gameVersion} · ${official.snapshot.verifiedAt}</strong></div>
         </div>
         <div class="planner-options">
           <label class="planner-toggle">
@@ -41,8 +44,8 @@
         </div>
         <ol class="planner-route-list" id="planner-route-list"></ol>
         <div class="planner-method-note">
-          <strong>CALCULATION BOUNDARY</strong>
-          <span>Travel uses schematic Starmap positions and the selected ship quantum factor. Cargo capacity is checked after unloading and loading at every stop. Off-grid allowance is always shown separately.</span>
+          <strong>DATA AND CALCULATION BOUNDARY</strong>
+          <span>Systems, locations and jump links use official RSI sources verified ${official.snapshot.verifiedAt} for ${official.snapshot.gameVersion}. Normal-space distance and navigation time are project estimates; jump tunnels are counted separately and are never converted into fake kilometres. Arrival, cargo handling and ship quantum factor remain indicative.</span>
         </div>
         <div class="planner-action-bar">
           <div><span id="planner-apply-note">Review the proposed order before applying it.</span><small>Active Route keeps RESET ROUTE available.</small></div>
@@ -76,12 +79,12 @@
     fastest: {
       title: 'Fastest practical',
       short: 'FASTEST',
-      description: 'Minimizes estimated time. Protect cargo can spend the configured margin to finish loaded missions sooner.'
+      description: 'Minimizes estimated total time. Protect cargo may spend the configured margin to finish loaded missions sooner.'
     },
     'min-onboard': {
       title: 'Minimize cargo onboard',
       short: 'LOW LOAD',
-      description: 'Minimizes the peak SCU carried at once, then reduces cargo exposure and total time.'
+      description: 'Minimizes peak SCU carried at once, then cargo exposure and total time.'
     }
   };
 
@@ -147,6 +150,10 @@
     return `${minimum}–${maximum} MIN`;
   }
 
+  function totalDistance(result) {
+    return navigation.formatDistance(result.totalDistanceGm, result.totalJumpCount);
+  }
+
   function deltaText(result, baseline) {
     if (!baseline) return 'No baseline available';
     const difference = Math.round(result.midpoint - baseline.midpoint);
@@ -174,10 +181,11 @@
       <p>${meta.description}</p>
       <div class="planner-profile-metrics">
         <span>TIME<b>${formatRange(result.totalMin, result.totalMax)}</b></span>
+        <span>DISTANCE<b>${totalDistance(result)}</b></span>
+        <span>JUMPS<b>${result.totalJumpCount}</b></span>
         <span>PEAK LOAD<b>${result.peakOnboardScu} SCU</b></span>
-        <span>CARGO EXPOSURE<b>${result.exposureScuMinutes} SCU·MIN</b></span>
       </div>
-      <small>${current ? 'CURRENT ORDER' : deltaText(result, baseline)}${profile.duplicate ? ' · SAME ORDER AS OTHER PROFILE' : ''}</small>`;
+      <small>${current ? 'CURRENT ORDER' : deltaText(result, baseline)} · Exposure ${result.exposureScuMinutes} SCU·MIN${profile.duplicate ? ' · SAME ORDER AS OTHER PROFILE' : ''}</small>`;
     card.addEventListener('click', () => {
       selectedProfileId = profile.id;
       render(latestState);
@@ -189,8 +197,8 @@
     const load = stop.operations.filter((operation) => operation.type !== 'delivery' && operation.lotId);
     const unload = stop.operations.filter((operation) => operation.type === 'delivery' && operation.lotId);
     const parts = [];
-    if (unload.length) parts.push(`Unload ${unload.reduce((sum, operation) => sum + Number(operation.scu ?? 0), 0)} SCU`);
-    if (load.length) parts.push(`Load ${load.reduce((sum, operation) => sum + Number(operation.scu ?? 0), 0)} SCU`);
+    if (unload.length) parts.push(`Drop off ${unload.reduce((sum, operation) => sum + Number(operation.scu ?? 0), 0)} SCU`);
+    if (load.length) parts.push(`Pick up ${load.reduce((sum, operation) => sum + Number(operation.scu ?? 0), 0)} SCU`);
     return parts.join(' · ') || `${stop.operations.length} objective${stop.operations.length === 1 ? '' : 's'}`;
   }
 
@@ -201,7 +209,7 @@
     const current = sameOrder(proposedIds, currentIds);
     elements.detailKicker.textContent = profile.safetyAdjusted ? `${meta.short} · CARGO PROTECTED` : meta.short;
     elements.detailTitle.textContent = meta.title;
-    elements.detailDescription.textContent = meta.description;
+    elements.detailDescription.textContent = `${meta.description} ${totalDistance(result)} across ${result.totalJumpCount} jump${result.totalJumpCount === 1 ? '' : 's'}.`;
     elements.detailTotal.textContent = formatRange(result.totalMin, result.totalMax);
     elements.detailDelta.textContent = deltaText(result, baseline);
     elements.routeList.replaceChildren();
@@ -209,13 +217,15 @@
     result.legs.forEach((leg, index) => {
       const item = document.createElement('li');
       item.className = 'planner-route-stop';
+      const jumpText = leg.travel.jumpCount ? `${leg.travel.jumpCount} jump${leg.travel.jumpCount === 1 ? '' : 's'}` : leg.travel.transitionKind;
       item.innerHTML = `
         <div class="planner-stop-index"><span>${String(index + 1).padStart(2, '0')}</span><i></i></div>
         <div class="planner-stop-main">
           <strong>${leg.stop.locationLabel}</strong>
           <span>${operationSummary(leg.stop)}</span>
           <div class="planner-breakdown">
-            <small>TRAVEL <b>${leg.travel.minMinutes}–${leg.travel.maxMinutes}m</b></small>
+            <small>DISTANCE <b>${leg.travel.distanceLabel}</b></small>
+            <small>NAVIGATION <b>${leg.travel.minMinutes}–${leg.travel.maxMinutes}m</b></small>
             <small>ARRIVAL <b>${leg.arrival.minMinutes}–${leg.arrival.maxMinutes}m</b></small>
             <small>HANDLING <b>${leg.handling.minMinutes}–${leg.handling.maxMinutes}m</b></small>
           </div>
@@ -223,9 +233,9 @@
         <div class="planner-stop-total">
           <span>AFTER STOP</span>
           <strong>${leg.onboardAfterScu} SCU onboard</strong>
-          <small>${leg.minMinutes}–${leg.maxMinutes}m · ${leg.travel.transitionKind.toUpperCase()}</small>
+          <small>${leg.minMinutes}–${leg.maxMinutes}m total · ${jumpText.toUpperCase()}</small>
         </div>`;
-      item.title = `Travel: ${leg.travel.source}. Arrival: ${leg.arrival.source}. Handling: ${leg.handling.source}.`;
+      item.title = `Navigation: ${leg.travel.source}. Arrival: ${leg.arrival.source}. Handling: ${leg.handling.source}.`;
       elements.routeList.append(item);
     });
 
@@ -233,7 +243,7 @@
     elements.apply.textContent = current ? 'ROUTE ALREADY ACTIVE' : `APPLY ${meta.short}`;
     elements.applyNote.textContent = current
       ? 'This profile matches the active future route.'
-      : `Peak load ${result.peakOnboardScu}/${result.effectiveCapacityScu} SCU. Only ${result.stopCount} remaining stops change.`;
+      : `Peak load ${result.peakOnboardScu}/${result.effectiveCapacityScu} SCU · ${totalDistance(result)} · ${result.stopCount} future stops.`;
   }
 
   function buildContext(state, route, progress) {
@@ -246,6 +256,7 @@
       locationProfiles: window.SCCompanionLocationProfiles,
       arrivalEstimates: window.SCCompanionArrivalEstimates,
       starmap: window.SCCompanionStarmapData,
+      navigationEstimates: navigation,
       quantumTimeFactor: activeShip(state)?.quantumTimeFactor ?? 1,
       startStop: completedStops[completedStops.length - 1] ?? null,
       initialOnboardLots: lifecycle.onboardLots,
@@ -283,12 +294,12 @@
     const currentSettings = settings(state);
     const { physicalCapacityScu } = activeModel(state);
     elements.sessionLabel.textContent = `${progress.completedCount}/${route.stops.length} complete · ${shipLabel(state)}`;
-    elements.capacityLabel.textContent = `${physicalCapacityScu} + ${currentSettings.offGridAllowanceScu} OFF-GRID = ${physicalCapacityScu + currentSettings.offGridAllowanceScu} SCU`;
+    elements.capacityLabel.textContent = `${physicalCapacityScu} + ${currentSettings.offGridAllowanceScu} off-grid = ${physicalCapacityScu + currentSettings.offGridAllowanceScu} SCU`;
 
     if (progress.complete) {
       latestModel = null;
       elements.candidateCount.textContent = '0';
-      showEmpty('Session route complete', 'Use PREVIOUS in Active Route to reopen the last completed stop before replanning.', 'route', 'OPEN ACTIVE ROUTE');
+      showEmpty('Session route complete', 'Use Previous stop in Active Route to reopen the last completed stop before replanning.', 'route', 'OPEN ACTIVE ROUTE');
       return;
     }
 
