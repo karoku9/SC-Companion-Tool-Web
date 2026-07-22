@@ -32,14 +32,28 @@
         panel.className = 'planner-location-context';
         item.querySelector('.planner-stop-main')?.append(panel);
       }
+      const copy = `${context.exposure.label}|${context.system?.name ?? 'System unavailable'}|${context.confidence.label}|${context.exposure.reasons[0] ?? 'No derived guidance available.'}`;
+      const signature = `${locationId}|${context.exposure.level}|${copy}`;
+      if (panel.dataset.signature === signature) return;
+      panel.dataset.signature = signature;
       panel.className = `planner-location-context is-${context.exposure.level}`;
       panel.dataset.locationId = locationId;
       panel.innerHTML = `<strong>${context.exposure.label}</strong><span>${context.system?.name ?? 'System unavailable'} · ${context.confidence.label}</span><small>${context.exposure.reasons[0] ?? 'No derived guidance available.'}</small>`;
     });
   }
 
-  const observer = new MutationObserver(enhance);
+  let queued = false;
+  function scheduleEnhance() {
+    if (queued) return;
+    queued = true;
+    requestAnimationFrame(() => {
+      queued = false;
+      enhance();
+    });
+  }
+
+  const observer = new MutationObserver(scheduleEnhance);
   observer.observe(routeList, { childList: true, subtree: true });
-  window.addEventListener('sc:session-change', () => requestAnimationFrame(enhance));
-  requestAnimationFrame(enhance);
+  window.addEventListener('sc:session-change', scheduleEnhance);
+  scheduleEnhance();
 }());
