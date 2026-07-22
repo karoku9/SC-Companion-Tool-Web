@@ -92,15 +92,29 @@
   }
 
   function travelEstimate(fromStop, toStop, context) {
-    if (!fromStop) return { minMinutes: 0, maxMinutes: 0, quantumLeg: 0, transitionKind: 'start', source: 'session start' };
-    if (fromStop.locationId === toStop.locationId) {
-      return { minMinutes: 0, maxMinutes: 1, quantumLeg: 0, transitionKind: 'same-location', source: 'same operational location' };
+    if (!fromStop) {
+      return {
+        minMinutes: 0, maxMinutes: 0, quantumLeg: 0, jumpCount: 0,
+        transitionKind: 'start', distanceGm: 0, distanceLabel: 'Session start', source: 'session start'
+      };
     }
+    if (fromStop.locationId === toStop.locationId) {
+      return {
+        minMinutes: 0, maxMinutes: 1, quantumLeg: 0, jumpCount: 0,
+        transitionKind: 'same-location', distanceGm: 0, distanceLabel: 'Same location', source: 'same operational location'
+      };
+    }
+
+    const factor = Number(context.quantumTimeFactor ?? 1);
+    const navigation = context.navigationEstimates?.estimateLeg(
+      fromStop.locationId,
+      toStop.locationId,
+      { quantumTimeFactor: factor }
+    );
+    if (navigation) return navigation;
 
     const fromAnchor = context.starmap?.getLocationAnchor(fromStop.locationId);
     const toAnchor = context.starmap?.getLocationAnchor(toStop.locationId);
-    const factor = Number(context.quantumTimeFactor ?? 1);
-
     if (fromAnchor && toAnchor) {
       const sameBody = fromAnchor.systemId === toAnchor.systemId && fromAnchor.bodyId === toAnchor.bodyId;
       const sameSystem = fromAnchor.systemId === toAnchor.systemId;
@@ -111,7 +125,10 @@
         minMinutes: Math.max(1, Math.round(adjusted * 0.82)),
         maxMinutes: Math.max(2, Math.round(adjusted * 1.24)),
         quantumLeg: sameBody ? 0 : 1,
+        jumpCount: sameSystem ? 0 : 1,
         transitionKind: sameBody ? 'local' : sameSystem ? 'quantum' : 'jump',
+        distanceGm: units,
+        distanceLabel: `~${units.toFixed(1)} schematic units`,
         source: `${units.toFixed(1)} schematic route units · quantum factor ${factor.toFixed(2)}`
       };
     }
@@ -120,7 +137,10 @@
       minMinutes: Math.max(4, Math.round(8 * factor)),
       maxMinutes: Math.max(8, Math.round(15 * factor)),
       quantumLeg: 1,
+      jumpCount: 0,
       transitionKind: 'unmapped',
+      distanceGm: null,
+      distanceLabel: 'Distance unavailable',
       source: 'unmapped-location fallback estimate'
     };
   }
@@ -164,6 +184,8 @@
     const effectiveCapacityScu = physicalCapacityScu + offGridAllowanceScu;
     let totalMin = 0;
     let totalMax = 0;
+    let totalDistanceGm = 0;
+    let totalJumpCount = 0;
     let elapsedMidpoint = 0;
     let quantumLegs = 0;
     let peakOnboardScu = sumOnboard(onboard);
@@ -208,6 +230,8 @@
       peakOnboardScu = Math.max(peakOnboardScu, onboardAfterScu);
       totalMin += minMinutes;
       totalMax += maxMinutes;
+      totalDistanceGm += Number(travel.distanceGm ?? 0);
+      totalJumpCount += Number(travel.jumpCount ?? 0);
       quantumLegs += travel.quantumLeg;
       legs.push(Object.freeze({
         stop, travel, arrival, handling, minMinutes, maxMinutes,
@@ -221,6 +245,8 @@
       legs: Object.freeze(legs),
       totalMin,
       totalMax,
+      totalDistanceGm: Math.round(totalDistanceGm * 10) / 10,
+      totalJumpCount,
       midpoint: (totalMin + totalMax) / 2,
       quantumLegs,
       stopCount: stops.length,
