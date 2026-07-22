@@ -62,7 +62,8 @@ test('feature layers reuse design-system roles instead of adding raw visual lang
   const validation = read('mission-validation.css');
   const context = `${read('location-context.css')}\n${read('location-context-adapters.css')}`;
   const fleet = read('fleet-loadouts.css');
-  [validation, context, fleet].forEach((css) => {
+  const starmap = read('starmap-v2.css');
+  [validation, context, fleet, starmap].forEach((css) => {
     assert.match(css, /var\(--ds-/);
     assert.doesNotMatch(css, /#[0-9a-f]{3,8}/i);
   });
@@ -70,6 +71,7 @@ test('feature layers reuse design-system roles instead of adding raw visual lang
   assert.match(context, /var\(--ds-status-info\)/);
   assert.match(fleet, /var\(--ds-status-warning\)/);
   assert.match(fleet, /var\(--ds-action-primary/);
+  assert.match(starmap, /var\(--ds-action-primary/);
 });
 
 test('visible UI Kit documents palette, type, buttons, icons and manufacturer contract', () => {
@@ -80,7 +82,7 @@ test('visible UI Kit documents palette, type, buttons, icons and manufacturer co
   assert.match(view, /Manufacturer theme contract/);
 });
 
-test('design foundation remains loaded before the v0.20 Fleet loadout layer', () => {
+test('design foundation remains loaded before feature and Starmap UX layers', () => {
   const html = read('index.html');
   const app = read('app.js');
   const entry = read('ui-v2.css');
@@ -89,6 +91,7 @@ test('design foundation remains loaded before the v0.20 Fleet loadout layer', ()
   assert.ok(entry.indexOf('mission-validation.css') < entry.indexOf('location-context.css'));
   assert.ok(entry.indexOf('location-context-adapters.css') < entry.indexOf('fleet-loadouts.css'));
   assert.ok(entry.indexOf('fleet-loadouts.css') < entry.indexOf('design-system-legibility.css'));
+  assert.ok(entry.indexOf('design-system-legibility.css') < entry.indexOf('starmap-v2.css'));
   assert.match(app, /official-universe-data\.js/);
   assert.match(app, /navigation-estimates\.js/);
   assert.match(app, /location-context\.js/);
@@ -98,8 +101,9 @@ test('design foundation remains loaded before the v0.20 Fleet loadout layer', ()
   assert.match(app, /fleet-loadouts-view\.js/);
   assert.match(app, /ui-v2-accessibility\.js/);
   assert.match(app, /SCCompanionCleanInterfaceReady/);
-  assert.equal(roadmap.currentVersion, '0.20');
-  assert.equal(roadmap.releases.find((item) => item.version === '0.21').title, 'Session history');
+  assert.equal(roadmap.currentVersion, '0.21');
+  assert.match(roadmap.releases.find((item) => item.version === '0.21').title, /UX foundation/i);
+  assert.equal(roadmap.releases.find((item) => item.version === '0.22').title, 'Session history');
 });
 
 test('research rules prohibit page-specific invention', () => {
