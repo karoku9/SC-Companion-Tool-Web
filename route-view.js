@@ -6,11 +6,11 @@
   function initialize() {
     if (initialized) return true;
     const store = window.SCCompanionSession;
-    const locations = window.SCCompanionLocations;
     const routeCorrections = window.SCCompanionRouteCorrections;
     const routeProgress = window.SCCompanionRouteProgress;
     const navigation = window.SCCompanionNavigationEstimates;
-    if (!store || !routeCorrections || !routeProgress || !navigation) return false;
+    const locationContext = window.SCCompanionLocationContext;
+    if (!store || !routeCorrections || !routeProgress || !navigation || !locationContext) return false;
 
     const stopName = document.querySelector('#current-stop-name');
     const operations = document.querySelector('#current-stop-operations');
@@ -87,6 +87,12 @@
       return `${estimate.distanceLabel} · ${estimate.minMinutes}–${estimate.maxMinutes} min${jumps}`;
     }
 
+    function sourceSummary(stop) {
+      const context = locationContext.buildContext(stop.locationId, { onboardScu: 0, label: stop.locationLabel });
+      const system = context.system?.name ?? 'System unavailable';
+      return `${system} · ${context.confidence.label} · ${context.freshness.label}`;
+    }
+
     function render(state) {
       stopList.replaceChildren();
       operations.replaceChildren();
@@ -123,6 +129,7 @@
             <strong>${stop.locationLabel}</strong>
             <small>${operationSummary(stop)}${flags ? ` · ${flags}` : ''}</small>
             ${leg ? `<small class="route-leg-estimate">${leg}</small>` : ''}
+            <small class="route-source-context">${sourceSummary(stop)}</small>
           </div>`;
         stopList.append(item);
       });
@@ -142,6 +149,7 @@
       current.operations.forEach((operation) => operations.append(renderOperation(operation)));
       if (!current.operations.length) operations.innerHTML = '<div class="tool-empty">No cargo movement at this stop.</div>';
       complete.disabled = false;
+      window.dispatchEvent(new CustomEvent('sc:current-stop-location', { detail: { locationId: current.locationId } }));
     }
 
     previous.addEventListener('click', () => {
@@ -162,6 +170,7 @@
 
     window.addEventListener('sc:session-change', (event) => render(event.detail));
     window.addEventListener('sc:navigation-runtime-ready', () => render(store.getState()));
+    window.addEventListener('sc:location-context-ready', () => render(store.getState()));
     render(store.getState());
     return true;
   }
