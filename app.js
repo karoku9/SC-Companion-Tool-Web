@@ -73,6 +73,7 @@
 (function loadApplicationRuntimes() {
   import('./official-universe-data.js')
     .then(() => import('./navigation-estimates.js'))
+    .then(() => import('./location-context.js'))
     .then(() => Promise.all([
       import('./route-corrections.js'),
       import('./route-progress.js'),
@@ -85,6 +86,7 @@
       window.dispatchEvent(new Event('sc:route-runtime-ready'));
       window.dispatchEvent(new Event('sc:cargo-runtime-ready'));
       window.dispatchEvent(new Event('sc:navigation-runtime-ready'));
+      window.dispatchEvent(new Event('sc:location-context-ready'));
       return Promise.all([
         import('./route-planner-view.js'),
         import('./changelog-view.js'),
