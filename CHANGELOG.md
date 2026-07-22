@@ -14,6 +14,34 @@ The project was already under active development before this changelog was intro
 
 ---
 
+## [0.12.0] - 2026-07-22
+
+### Added
+- Original SC Companion MFD mark and a purpose-built SVG icon family for workspaces and operational actions.
+- Drake-inspired industrial panel chrome, amber hierarchy, technical labels and angular display surfaces.
+- Docked auxiliary operations MFD on wide desktop layouts.
+- Dedicated move, cargo, correction and route icons in both desktop and mobile navigation.
+
+### Improved
+- Operations now keeps the current destination and required action as the only primary hero.
+- The auxiliary MFD shows move queue, onboard manifest and cargo totals without repeating the destination hero or progression buttons.
+- Opening an operational tool reduces the main workspace width instead of covering it on screens wide enough to dock both surfaces.
+- Narrow desktop and mobile layouts retain a full-height overlay where docking would make both surfaces unusably narrow.
+- Missions, Planner, Starmap, Fleet and Development inherit the same industrial MFD tokens and component language.
+- Cargo quantities, action state and navigation data use a stronger technical hierarchy than mission metadata.
+
+### Changed
+- The product identity is now Companion MFD rather than a generic dashboard mark.
+- Mission Validation moved to v0.13 after the Drake MFD pass.
+- Rounded SaaS-style cards and text abbreviations were replaced by angular panels and descriptive SVG symbols.
+
+### Fixed
+- The operational tool panel no longer overlaps the primary Operations workspace on wide desktop screens.
+- Moves no longer duplicates the current destination, Previous or Complete controls.
+- Opening the same docked tool a second time closes it instead of stacking another visual layer.
+
+---
+
 ## [0.11.0] - 2026-07-22
 
 ### Added

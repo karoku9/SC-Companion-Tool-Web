@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#05080a">
   <title>SC Companion Tool</title>
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="roadmap.css">
@@ -16,18 +17,18 @@
   <div class="product-frame">
     <aside class="product-sidebar">
       <div class="sidebar-brand">
-        <span class="brand-mark" aria-hidden="true">SC</span>
-        <div class="brand-copy"><strong>Companion Tool</strong><span>Mission operations</span></div>
-        <button type="button" class="sidebar-toggle" id="sidebar-toggle" aria-label="Collapse navigation" aria-pressed="false">‹</button>
+        <span class="brand-mark" aria-label="SC Companion MFD mark">SC</span>
+        <div class="brand-copy"><strong>Companion MFD</strong><span>Hauling operations suite</span></div>
+        <button type="button" class="sidebar-toggle" id="sidebar-toggle" aria-label="Collapse navigation" aria-pressed="false">Menu</button>
       </div>
       <nav class="product-navigation" id="product-navigation" aria-label="Product pages"></nav>
-      <div class="sidebar-footer">v0.11 · Interface rebuild<br>Local session data stays in this browser.</div>
+      <div class="sidebar-footer">v0.12 · Drake MFD pass<br>Local session data stays in this browser.</div>
     </aside>
 
     <main class="app-shell">
       <header class="topbar">
         <div class="shell-page-context">
-          <p class="eyebrow" id="shell-page-eyebrow">Live session</p>
+          <p class="eyebrow" id="shell-page-eyebrow">Flight deck</p>
           <h1 id="shell-page-title">Current operation</h1>
         </div>
         <div class="topbar-actions">
@@ -62,7 +63,7 @@
 
       <section class="app-view section-block" data-view="route" id="route" hidden>
         <header class="section-heading">
-          <div><p class="eyebrow">Live session</p><h2>Current operation</h2></div>
+          <div><p class="eyebrow">Flight deck / live session</p><h2>Current operation</h2></div>
           <span class="page-status is-live">Live</span>
         </header>
         <div class="route-layout">
@@ -95,7 +96,7 @@
 
       <section class="app-view section-block" data-view="hangar" id="hangar" hidden>
         <header class="section-heading">
-          <div><p class="eyebrow">Fleet</p><h2>Ships and configuration</h2></div>
+          <div><p class="eyebrow">Fleet systems</p><h2>Ships and configuration</h2></div>
           <span class="page-status is-foundation">Foundation</span>
         </header>
         <div class="hangar-layout">
@@ -113,7 +114,7 @@
 
       <section class="app-view section-block" data-view="map" id="map" hidden>
         <header class="section-heading">
-          <div><p class="eyebrow">Starmap</p><h2>Route context</h2></div>
+          <div><p class="eyebrow">Navigation display</p><h2>Route context</h2></div>
           <span class="page-status is-live">Live</span>
         </header>
         <div class="starmap-shell">
@@ -150,13 +151,13 @@
         <div class="companion-layout"><article class="companion-card"><span class="companion-state">Pairing transport not connected</span><h3>Short-code pairing planned</h3><p>The phone will receive only the active route snapshot and send back Complete and continue.</p></article><article class="phone-preview"><div class="phone-screen"><p class="eyebrow">Next stop</p><strong class="phone-stop" id="phone-stop">No active route</strong><span id="phone-destination">—</span><div class="phone-action" id="phone-action">Generate a session</div><button class="phone-next" type="button" disabled>Complete and continue</button></div></article></div>
       </section>
 
-      <section class="app-view section-block roadmap-section" data-view="roadmap" id="roadmap" hidden><header class="section-heading roadmap-heading"><div><p class="eyebrow">Development</p><h2 id="roadmap-title">Release path to v1.0</h2></div><div class="roadmap-legend"><span class="legend-done">Released</span><span class="legend-active">Current</span><span class="legend-next">Next</span><span class="legend-future">Planned</span></div></header><p class="roadmap-help">Versions progress from left to right. Each card lists only the work delivered in that release.</p><div class="roadmap-board" id="roadmap-board"></div></section>
+      <section class="app-view section-block roadmap-section" data-view="roadmap" id="roadmap" hidden><header class="section-heading roadmap-heading"><div><p class="eyebrow">Development log</p><h2 id="roadmap-title">Release path to v1.0</h2></div><div class="roadmap-legend"><span class="legend-done">Released</span><span class="legend-active">Current</span><span class="legend-next">Next</span><span class="legend-future">Planned</span></div></header><p class="roadmap-help">Versions progress from left to right. Each card lists only the work delivered in that release.</p><div class="roadmap-board" id="roadmap-board"></div></section>
 
-      <footer class="build-note">SC Companion Tool · browser-local mission operations.</footer>
+      <footer class="build-note">SC Companion MFD · browser-local hauling operations.</footer>
     </main>
   </div>
 
-  <script src="product-pages.js"></script><script src="product-shell.js"></script>
+  <script src="mfd-icons.js"></script><script src="product-pages.js"></script><script src="product-shell.js"></script>
   <script src="locations.js"></script><script src="location-profiles.js"></script><script src="arrival-estimates.js"></script>
   <script src="missions.js"></script><script src="mission-text.js"></script><script src="route-planner.js"></script><script src="ship-catalog.js"></script><script src="cargo-planner.js"></script><script src="session-store.js"></script>
   <script src="starmap-data.js"></script><script src="roadmap.js"></script><script src="app.js"></script><script src="sections.js"></script><script src="mission-view.js"></script><script src="route-view.js"></script><script src="cargo-view.js"></script><script src="hangar-view.js"></script><script src="starmap-view.js"></script><script src="location-intel-view.js"></script><script src="roadmap-view.js"></script>

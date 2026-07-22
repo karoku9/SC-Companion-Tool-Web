@@ -6,24 +6,24 @@
       id: 'operate',
       label: 'Operate',
       pages: Object.freeze([
-        Object.freeze({ id: 'route', label: 'Operations', icon: 'OP', hint: 'Current stop and cargo', eyebrow: 'Live session', title: 'Current operation' }),
-        Object.freeze({ id: 'missions', label: 'Missions', icon: 'MS', hint: 'Contracts and intake', eyebrow: 'Mission intake', title: 'Build a session' })
+        Object.freeze({ id: 'route', label: 'Operations', icon: 'operations', hint: 'Current stop and cargo', eyebrow: 'Flight deck', title: 'Current operation' }),
+        Object.freeze({ id: 'missions', label: 'Missions', icon: 'missions', hint: 'Contracts and intake', eyebrow: 'Mission intake', title: 'Build a session' })
       ])
     }),
     Object.freeze({
       id: 'plan',
       label: 'Plan',
       pages: Object.freeze([
-        Object.freeze({ id: 'route-planner', label: 'Planner', icon: 'PL', hint: 'Compare valid routes', eyebrow: 'Route planning', title: 'Choose a route' }),
-        Object.freeze({ id: 'map', label: 'Starmap', icon: 'MP', hint: 'System and route context', eyebrow: 'Starmap', title: 'Route context' })
+        Object.freeze({ id: 'route-planner', label: 'Planner', icon: 'planner', hint: 'Compare valid routes', eyebrow: 'Route planning', title: 'Choose a route' }),
+        Object.freeze({ id: 'map', label: 'Starmap', icon: 'starmap', hint: 'System and route context', eyebrow: 'Navigation display', title: 'Route context' })
       ])
     }),
     Object.freeze({
       id: 'manage',
       label: 'Manage',
       pages: Object.freeze([
-        Object.freeze({ id: 'hangar', label: 'Fleet', icon: 'FL', hint: 'Ships and cargo zones', eyebrow: 'Fleet', title: 'Ships and configuration' }),
-        Object.freeze({ id: 'roadmap', label: 'Development', icon: 'DV', hint: 'Roadmap and releases', eyebrow: 'Development', title: 'Product progress' })
+        Object.freeze({ id: 'hangar', label: 'Fleet', icon: 'fleet', hint: 'Ships and cargo zones', eyebrow: 'Fleet systems', title: 'Ships and configuration' }),
+        Object.freeze({ id: 'roadmap', label: 'Development', icon: 'development', hint: 'Roadmap and releases', eyebrow: 'Development log', title: 'Product progress' })
       ])
     })
   ]);

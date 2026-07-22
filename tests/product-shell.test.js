@@ -48,31 +48,32 @@ test('ship cargo zones are separable, layered and capacity-safe', () => {
   });
 });
 
-test('dynamic hosts are created before section routing', () => {
+test('dynamic hosts and MFD icon registry load before section routing', () => {
   const html = read('index.html');
   const shell = read('product-shell.js');
   assert.match(html, /id="product-navigation"/);
   assert.match(html, /id="future-pages-root"/);
+  assert.ok(html.indexOf('src="mfd-icons.js"') < html.indexOf('src="product-pages.js"'));
   assert.ok(html.indexOf('src="product-shell.js"') < html.indexOf('src="sections.js"'));
   assert.match(shell, /id="route-planner"/);
   assert.match(shell, /id="load-operations"/);
   assert.match(shell, /nav-glyph/);
-  assert.match(shell, /nav-copy/);
+  assert.match(shell, /SCCompanionMfdIcons/);
 });
 
-test('v0.11 interface rebuild and existing workspace runtimes are registered', () => {
+test('v0.12 Drake MFD and existing workspace runtimes are registered', () => {
   const changelog = read('CHANGELOG.md');
   const app = read('app.js');
-  assert.match(changelog, /## \[0\.11\.0\]/);
-  assert.equal(roadmap.currentVersion, '0.11');
+  assert.match(changelog, /## \[0\.12\.0\]/);
+  assert.equal(roadmap.currentVersion, '0.12');
   assert.match(app, /cargo-zone-model\.js/);
   assert.match(app, /workspace-shell\.js/);
   assert.match(app, /ui-rebuild\.css/);
-  assert.match(app, /ui-rebuild\.js/);
+  assert.match(app, /drake-mfd\.css/);
 });
 
 test('assisted OCR and Game.log intake remain after the current release', () => {
-  const assisted = roadmap.releases.find((release) => release.version === '0.19');
+  const assisted = roadmap.releases.find((release) => release.version === '0.20');
   assert.equal(assisted.status, 'future');
   assert.ok(assisted.changes.some((change) => /OCR/.test(change)));
   assert.ok(assisted.changes.some((change) => /Game\.log/.test(change)));

@@ -9,54 +9,63 @@ function read(file) {
   return fs.readFileSync(path.join(__dirname, '..', file), 'utf8');
 }
 
-test('interface rebuild scripts remain valid JavaScript', () => {
-  assert.doesNotThrow(() => new Function(read('ui-rebuild.js')));
-  assert.doesNotThrow(() => new Function(read('product-shell.js')));
-  assert.doesNotThrow(() => new Function(read('workspace-shell.js')));
+test('interface and MFD scripts remain valid JavaScript', () => {
+  ['ui-rebuild.js', 'mfd-icons.js', 'product-shell.js', 'workspace-shell.js', 'load-operations-view.js'].forEach((file) => {
+    assert.doesNotThrow(() => new Function(read(file)), `${file} contains invalid JavaScript`);
+  });
 });
 
-test('global design system defines hierarchy instead of boxed parity', () => {
-  const css = read('ui-rebuild.css');
-  assert.match(css, /--surface-hover:/);
-  assert.match(css, /--radius-lg:/);
-  assert.match(css, /\.current-stop-card[\s\S]*box-shadow: inset 4px 0 0 var\(--accent\)/);
-  assert.match(css, /\.route-stop-list li[\s\S]*border: 0/);
-  assert.match(css, /\.page-status \{ display: none; \}/);
-  assert.match(css, /\.operations-command-strip[\s\S]*border-radius: 12px/);
+test('Drake MFD layer replaces stock card language with angular technical hierarchy', () => {
+  const css = read('drake-mfd.css');
+  assert.match(css, /--mfd-mono:/);
+  assert.match(css, /--accent: #e4922f/);
+  assert.match(css, /clip-path: polygon/);
+  assert.match(css, /\.current-stop-card[\s\S]*box-shadow: inset 3px 0 0 var\(--accent\)/);
+  assert.match(css, /\.operations-command-strip[\s\S]*grid-template-columns: repeat\(4/);
+  assert.match(css, /\.mfd-tool-heading/);
 });
 
-test('desktop and mobile use purpose-built navigation', () => {
-  const html = read('index.html');
-  const css = read('ui-rebuild.css');
-  const js = read('ui-rebuild.js');
-  const shell = read('product-shell.js');
-  assert.match(html, /id="sidebar-toggle"/);
-  assert.match(html, /class="brand-mark"/);
-  assert.match(shell, /class="nav-glyph"/);
-  assert.match(shell, /class="nav-copy"/);
-  assert.match(css, /\.product-frame\.is-sidebar-collapsed/);
-  assert.match(css, /\.mobile-bottom-nav/);
-  assert.match(js, /sidebarCollapsed/);
-  assert.match(js, /Primary mobile navigation/);
-});
-
-test('operational copy and controls use calmer sentence case', () => {
-  const html = read('index.html');
+test('wide desktop tools dock beside Operations instead of covering it', () => {
+  const css = read('drake-mfd.css');
   const workspace = read('workspace-shell.js');
-  assert.match(html, />Complete stop and continue</);
-  assert.match(html, />Generate session</);
-  assert.match(workspace, />Next moves</);
-  assert.match(workspace, />Full screen</);
-  assert.match(workspace, />Roadmap</);
-  assert.doesNotMatch(workspace, />NEXT MOVES</);
-  assert.doesNotMatch(workspace, />EXPAND</);
+  assert.match(css, /@media \(min-width: 1260px\)/);
+  assert.match(css, /\.operations-mfd-frame\.has-utility-panel[\s\S]*grid-template-columns:/);
+  assert.match(css, /\.workspace-drawer[\s\S]*position: sticky/);
+  assert.match(workspace, /operations-mfd-frame/);
+  assert.match(workspace, /has-utility-panel/);
+  assert.match(workspace, /dockedMedia/);
 });
 
-test('the rebuilt interface is registered as v0.11', () => {
+test('Moves contains support information but never duplicates the primary operation hero', () => {
+  const view = read('load-operations-view.js');
+  assert.match(view, /Move queue/);
+  assert.match(view, /Onboard now/);
+  assert.match(view, /Cargo totals/);
+  assert.doesNotMatch(view, /load-stop-title/);
+  assert.doesNotMatch(view, /load-previous/);
+  assert.doesNotMatch(view, /load-next/);
+  assert.doesNotMatch(view, /CURRENT DESTINATION/);
+});
+
+test('navigation uses original SVG symbols instead of letter abbreviations', () => {
+  const html = read('index.html');
+  const icons = read('mfd-icons.js');
+  const pages = read('product-pages.js');
+  const shell = read('product-shell.js');
+  assert.match(html, /src="mfd-icons\.js"/);
+  assert.ok(html.indexOf('src="mfd-icons.js"') < html.indexOf('src="product-pages.js"'));
+  assert.match(icons, /<svg class=/);
+  ['operations', 'missions', 'planner', 'starmap', 'fleet', 'development'].forEach((name) => {
+    assert.match(pages, new RegExp(`icon: '${name}'`));
+  });
+  assert.match(shell, /SCCompanionMfdIcons/);
+  assert.doesNotMatch(pages, /icon: 'OP'/);
+});
+
+test('Drake MFD is registered as v0.12 and Mission Validation follows it', () => {
   const app = read('app.js');
   const changelog = read('CHANGELOG.md');
-  assert.match(app, /ui-rebuild\.css/);
-  assert.match(app, /ui-rebuild\.js/);
-  assert.match(changelog, /## \[0\.11\.0\]/);
-  assert.match(changelog, /Mission Validation moved to v0\.12/);
+  assert.match(app, /ui-rebuild\.css', 'drake-mfd\.css/);
+  assert.match(changelog, /## \[0\.12\.0\]/);
+  assert.match(changelog, /Mission Validation moved to v0\.13/);
 });
