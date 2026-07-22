@@ -17,6 +17,8 @@ deliver baijini 2scu etam 1scu neon`;
       missions: [],
       route: null,
       currentStopIndex: 0,
+      completedStopIds: null,
+      routeCorrections: null,
       cargoCorrections: {},
       selectedShipId: 'corsair-main',
       selectedShipModelId: 'drake-corsair',
@@ -43,9 +45,7 @@ deliver baijini 2scu etam 1scu neon`;
 
   let state = load();
 
-  function getState() {
-    return state;
-  }
+  function getState() { return state; }
 
   function replace(nextState) {
     state = { ...initialState(), ...nextState };
@@ -54,9 +54,7 @@ deliver baijini 2scu etam 1scu neon`;
     return state;
   }
 
-  function patch(changes) {
-    return replace({ ...state, ...changes });
-  }
+  function patch(changes) { return replace({ ...state, ...changes }); }
 
   function reset() {
     localStorage.removeItem(KEY);
