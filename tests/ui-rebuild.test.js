@@ -10,11 +10,11 @@ function read(file) {
 }
 
 function cleanCss() {
-  return ['design-system-legibility.css', 'ui-v2-shell.css', 'ui-v2-operations.css', 'ui-v2-workspaces.css', 'ui-v2-responsive.css'].map(read).join('\n');
+  return ['design-system-legibility.css', 'mission-validation.css', 'ui-v2-shell.css', 'ui-v2-operations.css', 'ui-v2-workspaces.css', 'ui-v2-responsive.css'].map(read).join('\n');
 }
 
 test('clean interface scripts remain valid JavaScript', () => {
-  ['app.js', 'ui-v2.js', 'ui-v2-operations.js', 'ui-v2-shell.js', 'ui-v2-accessibility.js', 'mfd-icons.js', 'product-shell.js', 'route-view.js', 'hangar-view.js', 'starmap-view.js'].forEach((file) => {
+  ['app.js', 'ui-v2.js', 'ui-v2-operations.js', 'ui-v2-shell.js', 'ui-v2-accessibility.js', 'mfd-icons.js', 'product-shell.js', 'mission-validation.js', 'mission-view.js', 'route-view.js', 'hangar-view.js', 'starmap-view.js'].forEach((file) => {
     assert.doesNotThrow(() => new Function(read(file)), `${file} contains invalid JavaScript`);
   });
 });
@@ -25,6 +25,7 @@ test('clean UI replaces accumulated layout layers rather than overriding them', 
   const entry = read('ui-v2.css');
   assert.match(html, /href="design-system\.css"/);
   assert.match(html, /href="ui-v2\.css"/);
+  assert.match(entry, /mission-validation\.css/);
   assert.match(entry, /design-system-legibility\.css/);
   assert.doesNotMatch(html, /styles\.css|workspace-consolidation\.css|ui-rebuild\.css|drake-mfd\.css|mfd-layout-v2\.css/);
   assert.doesNotMatch(app, /workspace-shell\.js|ui-rebuild\.js|mfd-layout-v2\.js|ux-shell\.js/);
@@ -70,10 +71,10 @@ test('navigation continues using the canonical SVG icon family', () => {
   assert.match(shell, /SCCompanionMfdIcons/);
 });
 
-test('visual hardening follows interstellar navigation', () => {
+test('Mission Validation follows visual hardening', () => {
   const roadmap = require('../roadmap.js');
-  assert.equal(roadmap.currentVersion, '0.17');
-  assert.equal(roadmap.releases.find((release) => release.version === '0.16').status, 'done');
-  assert.match(roadmap.releases.find((release) => release.version === '0.17').title, /Visual hardening/i);
+  assert.equal(roadmap.currentVersion, '0.18');
+  assert.equal(roadmap.releases.find((release) => release.version === '0.17').status, 'done');
   assert.match(roadmap.releases.find((release) => release.version === '0.18').title, /Mission validation/i);
+  assert.match(roadmap.releases.find((release) => release.version === '0.19').title, /Location context/i);
 });
