@@ -11,6 +11,7 @@
         { id: 'product-shell', label: 'Grouped desktop and mobile page navigation', status: 'done' },
         { id: 'page-blueprints', label: 'Visual blueprints for every planned product page', status: 'done' },
         { id: 'release-history', label: 'In-app changelog sourced from CHANGELOG.md', status: 'done' },
+        { id: 'ux-refresh', label: 'Session-aware status, focus states and action feedback', status: 'done' },
         { id: 'local-state', label: 'Local persistence and session recovery', status: 'done' },
         { id: 'location-model', label: 'Operational locations and mobiGlas targets', status: 'done' },
         { id: 'mission-model', label: 'Separate missions, contracts and cargo lots', status: 'done' }
@@ -35,10 +36,11 @@
         { id: 'stop-grouping', label: 'Group compatible operations by stop', status: 'done' },
         { id: 'route-corrections', label: 'Dependency-safe skip, reopen and reorder controls', status: 'done' },
         { id: 'stable-progress', label: 'Stable completed-stop identities across route changes', status: 'done' },
-        { id: 'arrival-overhead', label: 'Indicative descent, ATC and animation overhead', status: 'active' },
-        { id: 'fastest-route', label: 'Fastest-route optimizer', status: 'next' },
-        { id: 'fewest-jumps', label: 'Fewest-jumps profile', status: 'future' },
-        { id: 'risk-route', label: 'Lower estimated-risk profile', status: 'future' },
+        { id: 'arrival-overhead', label: 'Indicative landing-zone, station and outpost overhead', status: 'done' },
+        { id: 'fastest-route', label: 'Fastest practical route profile', status: 'done' },
+        { id: 'fewest-jumps', label: 'Fewest quantum-legs route profile', status: 'done' },
+        { id: 'traceable-estimates', label: 'Per-leg travel, arrival and handling breakdown', status: 'done' },
+        { id: 'risk-route', label: 'Lower estimated-risk profile with sourced confidence', status: 'next' },
         { id: 'fuel-estimates', label: 'Traceable fuel estimates', status: 'future' }
       ]
     },
@@ -80,9 +82,10 @@
         { id: 'starter-catalog', label: 'Corsair and Cutlass Black starter profiles', status: 'done' },
         { id: 'ship-instances', label: 'Persistent ship instances and nicknames', status: 'done' },
         { id: 'quantum-modifier', label: 'Quantum-drive time factor', status: 'done' },
+        { id: 'route-performance', label: 'Use quantum-time factor in route comparison', status: 'done' },
         { id: 'component-loadout', label: 'Structured component and weapon loadout', status: 'next' },
         { id: 'full-catalog', label: 'Maintainable full ship catalog', status: 'future' },
-        { id: 'performance-integration', label: 'Use modifications in route time and fuel estimates', status: 'future' }
+        { id: 'performance-integration', label: 'Use more modifications in route time and fuel estimates', status: 'future' }
       ]
     },
     {
@@ -93,6 +96,7 @@
         { id: 'system-detail', label: 'Schematic orbit views for each system', status: 'done' },
         { id: 'map-controls', label: 'Rotate, zoom, inspect and system focus controls', status: 'done' },
         { id: 'route-overlay', label: 'Active mission stops overlaid on supported locations', status: 'done' },
+        { id: 'planner-positions', label: 'Schematic positions reused by route estimates', status: 'done' },
         { id: 'location-database', label: 'Complete bodies, stations, outposts and jump points', status: 'active' },
         { id: 'map-data-sources', label: 'Per-object source and review metadata', status: 'next' },
         { id: 'verified-geometry', label: 'Use verified geometry where reliable data exists', status: 'future' }

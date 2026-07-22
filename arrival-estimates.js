@@ -7,6 +7,15 @@
       Object.freeze({ id: 'atc', label: 'ATC, hangar assignment and final approach', minMinutes: 2, maxMinutes: 5 }),
       Object.freeze({ id: 'ship-exit', label: 'Landing, doors and leaving the ship', minMinutes: 1, maxMinutes: 3 }),
       Object.freeze({ id: 'local-transit', label: 'Elevators, walking and transit animations', minMinutes: 3, maxMinutes: 8 })
+    ]),
+    'orbital-station': Object.freeze([
+      Object.freeze({ id: 'approach', label: 'Orbital approach and alignment', minMinutes: 2, maxMinutes: 4 }),
+      Object.freeze({ id: 'atc', label: 'ATC and hangar assignment', minMinutes: 1, maxMinutes: 3 }),
+      Object.freeze({ id: 'ship-exit', label: 'Landing, doors and elevator access', minMinutes: 1, maxMinutes: 3 })
+    ]),
+    outpost: Object.freeze([
+      Object.freeze({ id: 'approach', label: 'Surface approach and landing', minMinutes: 2, maxMinutes: 5 }),
+      Object.freeze({ id: 'ship-exit', label: 'Ship exit and terminal access', minMinutes: 1, maxMinutes: 3 })
     ])
   });
 
