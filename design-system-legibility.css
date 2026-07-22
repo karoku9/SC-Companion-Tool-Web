@@ -156,9 +156,15 @@ textarea,
 #starmap-route-list button { grid-template-columns: 32px minmax(0, 1fr); }
 #starmap-route-list strong { display: grid; gap: var(--ds-space-2); }
 #starmap-route-list small { display: block; font-weight: 400; }
-.map-route-label { font-size: var(--ds-type-sm); }
-.map-route-summary,
-.map-node-sub { font-size: var(--ds-type-xs); }
+#starmap-canvas text,
+#starmap-canvas .map-node-index,
+#starmap-canvas .map-node-sub,
+#starmap-canvas .map-route-summary {
+  font-size: var(--ds-type-xs);
+}
+#starmap-canvas .map-route-label {
+  font-size: var(--ds-type-sm);
+}
 
 @media (max-width: 900px) {
   .planner-context-bar,
