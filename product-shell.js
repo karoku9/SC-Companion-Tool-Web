@@ -2,6 +2,7 @@
 
 (function initializeProductShell() {
   const registry = window.SCCompanionPages;
+  const icons = window.SCCompanionMfdIcons;
   if (!registry) return;
 
   const navigation = document.querySelector('#product-navigation');
@@ -9,6 +10,7 @@
   const futureRoot = document.querySelector('#future-pages-root');
   const pageEyebrow = document.querySelector('#shell-page-eyebrow');
   const pageTitle = document.querySelector('#shell-page-title');
+  const icon = (name) => icons?.render(name, 'mfd-icon') ?? name.slice(0, 2).toUpperCase();
 
   function renderNavigation() {
     if (!navigation) return;
@@ -17,7 +19,7 @@
         <h2>${group.label}</h2>
         ${group.pages.map((page) => `
           <button type="button" data-view-target="${page.id}" aria-selected="false" title="${page.label}: ${page.hint ?? page.title}">
-            <span class="nav-glyph" aria-hidden="true">${page.icon ?? page.label.slice(0, 2).toUpperCase()}</span>
+            <span class="nav-glyph" aria-hidden="true">${icon(page.icon ?? page.id)}</span>
             <span class="nav-copy"><strong>${page.label}</strong><small>${page.hint ?? page.title}</small></span>
           </button>`).join('')}
       </section>`).join('');
