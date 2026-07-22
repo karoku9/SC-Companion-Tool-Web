@@ -17,7 +17,7 @@
       id: 'planning',
       label: 'Planning',
       pages: Object.freeze([
-        Object.freeze({ id: 'route-planner', label: 'Route Planner', eyebrow: 'ROUTE PLANNER', title: 'Compare route profiles', status: 'blueprint' }),
+        Object.freeze({ id: 'route-planner', label: 'Route Planner', eyebrow: 'ROUTE PLANNER', title: 'Compare route profiles', status: 'live' }),
         Object.freeze({ id: 'map', label: '3D Starmap', eyebrow: '3D STARMAP', title: 'Systems and route context', status: 'live' }),
         Object.freeze({ id: 'locations', label: 'Location Intel', eyebrow: 'LOCATION INTEL', title: 'Services, risk and overhead', status: 'foundation' })
       ])
