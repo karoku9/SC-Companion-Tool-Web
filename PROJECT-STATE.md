@@ -2,18 +2,33 @@
 
 ## Current release
 
-**v0.16 — Interstellar navigation**
+**v0.17 — Visual hardening**
 
-The application now treats Stanton, Pyro and Nyx as operationally connected systems instead of accepting their locations as unstructured custom text. Mission parsing, route planning, Operations and Starmap use the same verified universe registry and transparent navigation-estimate boundary.
+The clean interface is now protected by a multi-state Chromium matrix instead of depending on manual visual review. Desktop, compact desktop and two mobile viewports exercise empty, active and completed routes, every Operations panel, long content, multiple ships, keyboard input and reduced-motion behaviour.
 
 ## Active interface architecture
 
-- One shell stylesheet: `ui-v2.css`, plus shared design-system tokens, components and a final legibility contract.
+- One shell stylesheet: `ui-v2.css`, plus shared design-system tokens, components and a final legibility/interaction contract.
 - Six primary workspaces: Operations, Missions, Planner, Starmap, Fleet and Development.
 - Operations tools are native compact views. Cargo, Moves, Adjust and Route do not embed full pages.
+- Expanded Operations tools behave as dialogs, contain keyboard focus and return focus to the originating function key when closed.
+- Development and Starmap modes support Arrow, Home and End navigation.
 - Fleet includes original schematic ship line art and a cargo-zone editor tied to the selected ship.
+- Mobile Fleet edits cargo zones as stacked cards rather than a clipped desktop table.
 - Starmap is route-first and two-dimensional with Route, Local system and Systems modes.
 - Drake is the current manufacturer theme. Its palette and treatment are project-derived approximations, not official CIG design assets.
+
+## Browser verification contract
+
+- Chromium covers 1664×936, 1366×768, 430×932 and 390×844.
+- All six workspaces reject document-level horizontal overflow and visible text below the canonical floor.
+- Operations is tested with no route, an active interstellar route and a completed route.
+- Moves, Cargo, Adjust and Route are tested open, expanded, closed by Escape and with focus restoration.
+- Long mission, destination and commodity strings are exercised.
+- Fleet is tested with the default Corsair and a second saved Cutlass Black configuration.
+- Mobile controls have a 44 px minimum interaction target.
+- Reduced-motion removes animations and transitions; forced-colour mode retains visible focus.
+- Clean-shell initialization is awaited before contextual Development content is wired, removing the previous timing race.
 
 ## Universe-data boundary
 
@@ -42,13 +57,13 @@ The application now treats Stanton, Pyro and Nyx as operationally connected syst
 
 ## Legacy status
 
-Legacy CSS and view files remain in the repository temporarily for history and rollback, but `index.html` and `app.js` no longer load them. They can be deleted after the v0.17 visual-hardening pass confirms no missing functionality.
+Legacy CSS and view files remain in the repository for history and rollback, but `index.html` and `app.js` do not load them. Their removal is intentionally deferred until repository-level reference cleanup can be performed independently from the now-verified live interface.
 
 ## Next release
 
-**v0.17 — Visual hardening**
+**v0.18 — Mission validation**
 
-- Broaden browser screenshots to more viewport sizes and completed-session states.
-- Complete keyboard, focus, contrast and responsive audits.
-- Remove dead legacy UI files after verification.
-- Resolve any remaining page-specific layout defects before Mission Validation.
+- Assign confidence to parsed fields and location matches.
+- Surface actionable warnings before route generation.
+- Allow inline review and correction of uncertain mission data.
+- Preserve original mission text and provenance throughout corrections.
