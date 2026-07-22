@@ -13,7 +13,9 @@ deliver baijini 2scu etam 1scu neon`;
 
   function initialState() {
     return {
+      missionSourceText: sampleMissionText,
       missionText: sampleMissionText,
+      missionValidation: null,
       missions: [],
       route: null,
       currentStopIndex: 0,
@@ -40,11 +42,26 @@ deliver baijini 2scu etam 1scu neon`;
     };
   }
 
+  function normalizeValidation(value) {
+    if (!value || typeof value !== 'object') return null;
+    return {
+      ...value,
+      sourceText: String(value.sourceText ?? ''),
+      reviewedText: String(value.reviewedText ?? ''),
+      confirmedCustomLocations: { ...(value.confirmedCustomLocations ?? {}) },
+      summary: value.summary && typeof value.summary === 'object' ? { ...value.summary } : null,
+      issues: Array.isArray(value.issues) ? value.issues.map((item) => ({ ...item })) : []
+    };
+  }
+
   function normalize(nextState) {
     const defaults = initialState();
     return {
       ...defaults,
       ...nextState,
+      missionSourceText: String(nextState?.missionSourceText ?? nextState?.missionValidation?.sourceText ?? nextState?.missionText ?? defaults.missionSourceText),
+      missionText: String(nextState?.missionText ?? defaults.missionText),
+      missionValidation: normalizeValidation(nextState?.missionValidation),
       cargoCorrections: { ...defaults.cargoCorrections, ...(nextState?.cargoCorrections ?? {}) },
       cargoZoneOverrides: { ...defaults.cargoZoneOverrides, ...(nextState?.cargoZoneOverrides ?? {}) },
       routePlannerSettings: { ...defaults.routePlannerSettings, ...(nextState?.routePlannerSettings ?? {}) }
@@ -80,4 +97,5 @@ deliver baijini 2scu etam 1scu neon`;
 
   const api = Object.freeze({ getState, patch, replace, reset, sampleMissionText });
   root.SCCompanionSession = api;
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
 }(typeof globalThis !== 'undefined' ? globalThis : window));
