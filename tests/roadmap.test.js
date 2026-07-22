@@ -34,19 +34,19 @@ test('current, next and future releases form one linear delivery path', () => {
   assert.ok(roadmap.releases.slice(nextIndex + 1).every((release) => release.status === 'future'));
 });
 
-test('v0.20 delivers Fleet Loadouts after sourced Location Context', () => {
-  const validation = roadmap.releases.find((item) => item.version === '0.18');
+test('v0.21 prioritizes UX Foundation and Starmap 2.0 before Session History', () => {
   const context = roadmap.releases.find((item) => item.version === '0.19');
-  const current = roadmap.releases.find((item) => item.version === '0.20');
-  const next = roadmap.releases.find((item) => item.version === '0.21');
-  assert.equal(validation.status, 'done');
+  const loadouts = roadmap.releases.find((item) => item.version === '0.20');
+  const current = roadmap.releases.find((item) => item.version === '0.21');
+  const next = roadmap.releases.find((item) => item.version === '0.22');
   assert.equal(context.status, 'done');
-  assert.match(context.title, /Location context/i);
+  assert.equal(loadouts.status, 'done');
+  assert.match(loadouts.title, /Fleet loadouts/i);
   assert.equal(current.status, 'current');
-  assert.match(current.title, /Fleet loadouts/i);
-  assert.ok(current.changes.some((change) => /component slots and provenance/i.test(change)));
-  assert.ok(current.changes.some((change) => /legacy/i.test(change)));
-  assert.ok(current.changes.some((change) => /quantum, cargo and handling/i.test(change)));
+  assert.match(current.title, /UX foundation/i);
+  assert.ok(current.changes.some((change) => /distinct navigation layers/i.test(change)));
+  assert.ok(current.changes.some((change) => /Persistent selected-object/i.test(change)));
+  assert.ok(current.changes.some((change) => /mobile bottom-sheet/i.test(change)));
   assert.equal(next.status, 'next');
   assert.match(next.title, /Session history/i);
 });
