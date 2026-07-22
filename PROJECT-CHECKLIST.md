@@ -17,18 +17,29 @@
 - [x] Retain the six-workspace navigation model.
 - [x] Add regression tests that reject legacy UI imports and full-page embedding.
 
-## v0.16 visual hardening
+## v0.16 interstellar navigation
 
-- [ ] Add automated browser screenshots at 1664×936, 1366×768 and mobile width.
-- [ ] Test Operations with no route, active route and completed route.
-- [ ] Test every Operations tool open, closed and expanded.
+- [x] Verify the current Alpha 4.9.x official web-source boundary and record the verification date.
+- [x] Register Checkmate Station, Orbituary, Ruin Station and Levski as real Pyro/Nyx locations.
+- [x] Register Stanton–Pyro, Pyro–Nyx and placeholder Stanton–Nyx topology.
+- [x] Keep jump tunnels separate from normal-space distance estimates.
+- [x] Add navigation time ranges affected by the selected ship quantum factor.
+- [x] Show estimates in Planner, Operations route index and Starmap.
+- [x] Exercise the exact three-mission interstellar sample in Chromium.
+- [x] Enforce a readable 12–36 px type scale across desktop and mobile.
+- [x] Reject map-label clipping, overlap and horizontal page overflow in browser tests.
+- [x] Keep official facts, static snapshot metadata and derived estimates visibly distinct.
+
+## v0.17 visual hardening
+
+- [ ] Add automated screenshots at 1366×768 and additional mobile widths.
+- [ ] Test Operations with no route and a completed route in Chromium.
+- [ ] Test every Operations tool expanded as well as open and closed.
 - [ ] Test long destination, mission and commodity names.
-- [ ] Test Fleet with Corsair, Cutlass and multiple saved ships.
-- [ ] Test Starmap with no route, repeated locations and cross-system data.
+- [ ] Test Fleet with Cutlass and multiple saved ships.
 - [ ] Audit keyboard navigation and visible focus states.
-- [ ] Audit horizontal overflow on every workspace.
 - [ ] Audit semantic colors and icon reuse against the UI Kit.
-- [ ] Remove unused legacy UI files after successful screenshots and regression tests.
+- [ ] Remove unused legacy UI files after successful regression coverage.
 
 ## Later
 
