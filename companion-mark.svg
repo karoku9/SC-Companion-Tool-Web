@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title desc">
+  <title id="title">SC Companion MFD</title>
+  <desc id="desc">A cargo cube crossed by a routed flight path inside a cockpit display frame.</desc>
+  <path fill="#17140d" stroke="#e7a13d" stroke-width="3" d="M5 5h44l10 10v44H15L5 49Z"/>
+  <path fill="none" stroke="#e7a13d" stroke-width="2" d="m18 24 14-7 14 7-14 7zM18 24v16l14 7 14-7V24M32 31v16"/>
+  <path fill="none" stroke="#ffc066" stroke-width="3" stroke-linecap="square" d="M13 48h9c7 0 6-10 13-10h12"/>
+  <path fill="#ffc066" d="m44 34 8 4-8 4z"/>
+  <path fill="#e7a13d" d="M11 11h12v3H11zM11 17h7v2h-7z"/>
+</svg>
