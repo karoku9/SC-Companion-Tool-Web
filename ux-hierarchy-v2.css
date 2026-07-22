@@ -1,0 +1,106 @@
+.planner-options {
+  display: grid;
+  grid-template-columns: minmax(280px, 1.4fr) minmax(150px, .55fr) minmax(180px, .7fr);
+  gap: 10px;
+  padding: 14px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(255, 255, 255, .012);
+}
+
+.planner-toggle,
+.planner-number {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid rgba(112, 128, 135, .34);
+  background: rgba(8, 12, 14, .72);
+}
+
+.planner-toggle {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: start;
+  gap: 10px;
+}
+
+.planner-toggle input {
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  accent-color: var(--accent);
+}
+
+.planner-toggle span,
+.planner-number {
+  display: grid;
+  gap: 4px;
+}
+
+.planner-toggle strong { font-size: .82rem; }
+.planner-toggle small,
+.planner-number small { color: #7f8e94; font-size: .67rem; line-height: 1.35; }
+.planner-number > span { color: #7f8e94; font-size: .55rem; font-weight: 900; letter-spacing: .09em; }
+.planner-number > div { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 7px; }
+.planner-number input { min-width: 0; height: 36px; padding: 0 9px; border: 1px solid var(--line); background: #080c0e; color: #fff; font-weight: 800; }
+.planner-number b { color: #8e9ca2; font-size: .58rem; }
+.planner-profile-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.planner-profile-title > div { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 5px; }
+.planner-profile-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.planner-profile-metrics b { overflow-wrap: anywhere; }
+.planner-stop-total strong { font-size: .78rem; }
+.current-stop-card h3,
+.operation-focus h3 { font-size: clamp(1.7rem, 4vw, 3rem); line-height: 1.02; }
+.operation-list { display: grid; gap: 7px; }
+.operation-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "primary mission" "context mission"; align-items: center; gap: 3px 12px; padding: 11px 0; border-top: 1px solid rgba(105, 121, 128, .28); background: transparent; }
+.operation-row:first-child { border-top: 0; }
+.operation-primary { grid-area: primary; display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px; }
+.operation-primary span { color: var(--accent); font-size: .55rem; font-weight: 900; letter-spacing: .1em; }
+.operation-primary strong { color: #f2f6f7; font-size: 1rem; letter-spacing: -.01em; }
+.operation-context { grid-area: context; color: #8b989e; font-size: .7rem; }
+.operation-mission,
+.operation-row > small { grid-area: mission; max-width: 180px; color: #6f7d83; font-size: .6rem; font-weight: 700; text-align: right; }
+.move-row,
+.onboard-row { border-color: rgba(105, 121, 128, .27); }
+.move-row { grid-template-columns: 46px minmax(0, 1fr); padding: 11px 0; }
+.move-row i { align-self: start; padding-top: 3px; }
+.move-primary,
+.onboard-row > div { display: grid; gap: 3px; }
+.move-primary b,
+.onboard-row b { color: #edf3f5; font-size: .92rem; }
+.move-primary span,
+.onboard-row span { color: #8a989e; font-size: .7rem; }
+.move-primary small,
+.onboard-row small { color: #68767c; font-size: .6rem; }
+.onboard-row > strong { color: #8fa0a7; font-size: .58rem; letter-spacing: .07em; }
+.correction-panel { margin-top: 14px; }
+.correction-row { border-color: rgba(105, 121, 128, .28); background: rgba(8, 12, 14, .45); }
+.correction-identity strong { color: #eef4f6; font-size: .92rem; }
+.correction-identity span { color: #8b999f; font-size: .7rem; }
+.correction-identity small { color: #68767c; font-size: .59rem; text-transform: none; }
+.cargo-legend-item strong { font-size: .9rem; }
+.cargo-legend-item span { color: #8b999f; }
+.cargo-legend-item small { color: #68777d; font-size: .6rem; text-transform: none; }
+.blueprint-panel,
+.blueprint-card,
+.planner-profile-panel,
+.planner-detail-panel { box-shadow: none; }
+.panel-title { margin-bottom: 11px; }
+.panel-title span,
+.card-kicker,
+.eyebrow { letter-spacing: .09em; }
+.field-help,
+.correction-help,
+.section-subtitle { color: #839198; }
+
+@media (max-width: 900px) {
+  .planner-options { grid-template-columns: 1fr 1fr; }
+  .planner-toggle { grid-column: 1 / -1; }
+}
+
+@media (max-width: 700px) {
+  .planner-options,
+  .planner-profile-grid { grid-template-columns: 1fr; }
+  .planner-toggle { grid-column: auto; }
+  .operation-row { grid-template-columns: 1fr; grid-template-areas: "primary" "context" "mission"; }
+  .operation-mission,
+  .operation-row > small { max-width: none; text-align: left; }
+}
