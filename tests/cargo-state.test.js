@@ -80,14 +80,16 @@ test('cargo planner keys duplicate lot ids by mission as well as lot', () => {
   assert.equal(plan.assignments.find((assignment) => assignment.missionId === 'mission-b').pickupStopIndex, 1);
 });
 
-test('stable planned slots resolve to cargo zones and vertical layers', () => {
+test('planned slots stay stable while non-overlapping cargo reuses released cells', () => {
   const route = buildExample();
   const model = ships.getModel('drake-corsair');
   const plan = cargoPlanner.planCargo(route, model);
-  assert.deepEqual(plan.assignments.map((assignment) => assignment.planSlotIndex), [0, 1, 2, 3, 4]);
+  assert.deepEqual(plan.assignments.map((assignment) => assignment.planSlotIndex), [0, 1, 2, 3, 0]);
+  assert.equal(plan.peakPlannedScu, 4);
   const first = cargoLayout.locateSlot(model, plan.assignments[0].planSlotIndex);
-  const last = cargoLayout.locateSlot(model, plan.assignments.at(-1).planSlotIndex);
+  const reused = cargoLayout.locateSlot(model, plan.assignments.at(-1).planSlotIndex);
   assert.ok(first.zoneLabel);
   assert.equal(first.layer, 0);
-  assert.ok(last.layer >= 0);
+  assert.equal(reused.zoneLabel, first.zoneLabel);
+  assert.equal(reused.layer, first.layer);
 });
