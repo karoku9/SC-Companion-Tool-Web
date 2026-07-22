@@ -10,11 +10,11 @@ function read(file) {
 }
 
 function cleanCss() {
-  return ['design-system-legibility.css', 'mission-validation.css', 'location-context.css', 'location-context-adapters.css', 'ui-v2-shell.css', 'ui-v2-operations.css', 'ui-v2-workspaces.css', 'ui-v2-responsive.css'].map(read).join('\n');
+  return ['design-system-legibility.css', 'mission-validation.css', 'location-context.css', 'location-context-adapters.css', 'fleet-loadouts.css', 'ui-v2-shell.css', 'ui-v2-operations.css', 'ui-v2-workspaces.css', 'ui-v2-responsive.css'].map(read).join('\n');
 }
 
 test('clean UI scripts remain valid JavaScript', () => {
-  ['app.js', 'ui-v2.js', 'ui-v2-operations.js', 'ui-v2-shell.js', 'ui-v2-accessibility.js', 'product-shell.js', 'mission-validation.js', 'mission-view.js', 'location-context.js', 'location-context-planner.js', 'location-intel-view.js', 'route-view.js', 'hangar-view.js', 'starmap-view.js'].forEach((file) => {
+  ['app.js', 'ui-v2.js', 'ui-v2-operations.js', 'ui-v2-shell.js', 'ui-v2-accessibility.js', 'product-shell.js', 'mission-validation.js', 'mission-view.js', 'location-context.js', 'location-context-planner.js', 'location-intel-view.js', 'fleet-loadouts.js', 'fleet-estimate-adapter.js', 'fleet-loadouts-view.js', 'route-view.js', 'hangar-view.js', 'starmap-view.js'].forEach((file) => {
     assert.doesNotThrow(() => new Function(read(file)), `${file} contains invalid JavaScript`);
   });
 });
@@ -27,6 +27,7 @@ test('the application loads one design system and one page-layout entry', () => 
   assert.match(entry, /mission-validation\.css/);
   assert.match(entry, /location-context\.css/);
   assert.match(entry, /location-context-adapters\.css/);
+  assert.match(entry, /fleet-loadouts\.css/);
   assert.match(entry, /design-system-legibility\.css/);
   ['styles.css', 'sections.css', 'planner.css', 'starmap.css', 'product-shell.css', 'workspace-consolidation.css', 'ui-rebuild.css', 'drake-mfd.css', 'mfd-layout-v2.css'].forEach((legacy) => {
     assert.doesNotMatch(html, new RegExp(`href="${legacy.replace('.', '\\.')}"`));
@@ -101,11 +102,14 @@ test('Location Context replaces string risk guesses with shared sourced guidance
 test('Fleet and Starmap use dedicated visual components', () => {
   const html = read('index.html');
   const fleet = read('hangar-view.js');
+  const loadoutView = read('fleet-loadouts-view.js');
   const map = read('starmap-view.js');
   assert.match(html, /id="ship-hologram"/);
   assert.match(html, /id="fleet-zone-form"/);
   assert.match(fleet, /Drake Corsair schematic/);
   assert.match(fleet, /normalizeZones/);
+  assert.match(loadoutView, /fleet-loadout-editor/);
+  assert.match(loadoutView, /Structured components/);
   assert.match(html, /<svg id="starmap-canvas"/);
   assert.match(map, /renderRouteMode/);
   assert.match(map, /renderLocalMode/);
@@ -113,10 +117,11 @@ test('Fleet and Starmap use dedicated visual components', () => {
   assert.doesNotMatch(map, /getContext\('2d'\)|camera\.yaw|pointer\.down/);
 });
 
-test('Location Context follows delivered Mission Validation', () => {
+test('Fleet Loadouts follow delivered Mission Validation and Location Context', () => {
   const roadmap = require('../roadmap.js');
-  assert.equal(roadmap.currentVersion, '0.19');
+  assert.equal(roadmap.currentVersion, '0.20');
   assert.equal(roadmap.releases.find((release) => release.version === '0.18').status, 'done');
-  assert.equal(roadmap.releases.find((release) => release.version === '0.19').title, 'Location context');
+  assert.equal(roadmap.releases.find((release) => release.version === '0.19').status, 'done');
   assert.equal(roadmap.releases.find((release) => release.version === '0.20').title, 'Fleet loadouts');
+  assert.equal(roadmap.releases.find((release) => release.version === '0.21').title, 'Session history');
 });
