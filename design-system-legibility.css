@@ -82,6 +82,7 @@
 .section-heading .eyebrow,
 .planner-method-note strong,
 .planner-method-note span,
+.mobile-page-picker,
 .page-status,
 .app-footer {
   font-size: var(--ds-type-xs);
@@ -94,6 +95,8 @@ body { font-size: var(--ds-type-md); }
 .operation-mission,
 .move-item span,
 .manifest-item span,
+.move-item .action-code,
+.tool-section-title strong,
 .hangar-card dd,
 .hangar-form label,
 .planner-profile-card p,
