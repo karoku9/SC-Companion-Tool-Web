@@ -38,11 +38,18 @@ try {
   const state = await page.evaluate(() => {
     const current = window.SCCompanionSession.getState();
     const performance = window.SCCompanionFleetLoadouts.activePerformance(current);
+    const plannerContext = window.SCCompanionRoutePlannerEngine.enrichedContext({});
     return {
       selectedShipId: current.selectedShipId,
       activeLoadoutId: current.activeLoadoutByShip[current.selectedShipId],
       shadowShip: current.hangarShips.find((ship) => ship.id === current.selectedShipId),
-      performance
+      performance,
+      plannerContext: {
+        quantumTimeFactor: plannerContext.quantumTimeFactor,
+        handlingTimeFactor: plannerContext.handlingTimeFactor,
+        physicalCapacityScu: plannerContext.physicalCapacityScu,
+        fuelEfficiencyFactor: plannerContext.fuelEfficiencyFactor
+      }
     };
   });
   assert.equal(state.selectedShipId, 'corsair-main');
@@ -51,6 +58,12 @@ try {
   assert.equal(state.performance.operationalCargoCapacityScu, 68);
   assert.equal(state.performance.handlingTimeFactor, 0.75);
   assert.equal(state.performance.quantumDriveName, 'VK-00 test profile');
+  assert.deepEqual(state.plannerContext, {
+    quantumTimeFactor: 0.82,
+    handlingTimeFactor: 0.75,
+    physicalCapacityScu: 68,
+    fuelEfficiencyFactor: 0.9
+  });
   assert.match(await page.locator('#fleet-quantum-factor').textContent(), /0\.82/);
   assert.match(await page.locator('#fleet-grid-capacity').textContent(), /68 SCU/);
 
@@ -63,6 +76,11 @@ try {
   });
   assert.equal(migrated.loadouts, 2);
   assert.equal(migrated.shipId, 'corsair-main');
+
+  await page.reload({ waitUntil: 'networkidle' });
+  await page.locator('[data-view-target="hangar"]').click();
+  await page.locator('.fleet-loadout-card.is-active').filter({ hasText: 'Fast Stanton' }).waitFor({ state: 'visible' });
+  assert.equal(await page.locator('.fleet-loadout-card').count(), 2);
 
   const metrics = await page.evaluate(() => ({ viewport: innerWidth, document: document.documentElement.scrollWidth }));
   assert.ok(metrics.document <= metrics.viewport + 2, `Fleet desktop overflow: ${JSON.stringify(metrics)}`);
