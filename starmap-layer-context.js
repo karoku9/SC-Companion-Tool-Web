@@ -50,9 +50,9 @@
       }
     }
 
-    openSystem.addEventListener('click', () => requestAnimationFrame(syncSelectedSystemCopy));
-    systemSelect.addEventListener('change', () => requestAnimationFrame(syncSelectedSystemCopy));
-    window.addEventListener('sc:session-change', () => requestAnimationFrame(syncSelectedSystemCopy));
+    openSystem.addEventListener('click', syncSelectedSystemCopy);
+    systemSelect.addEventListener('change', syncSelectedSystemCopy);
+    window.addEventListener('sc:session-change', syncSelectedSystemCopy);
 
     dialog.addEventListener('cancel', (event) => {
       event.preventDefault();
