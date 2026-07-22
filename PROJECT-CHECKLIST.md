@@ -32,18 +32,33 @@
 
 ## v0.17 visual hardening
 
-- [ ] Add automated screenshots at 1366×768 and additional mobile widths.
-- [ ] Test Operations with no route and a completed route in Chromium.
-- [ ] Test every Operations tool expanded as well as open and closed.
-- [ ] Test long destination, mission and commodity names.
-- [ ] Test Fleet with Cutlass and multiple saved ships.
-- [ ] Audit keyboard navigation and visible focus states.
-- [ ] Audit semantic colors and icon reuse against the UI Kit.
-- [ ] Remove unused legacy UI files after successful regression coverage.
+- [x] Add automated coverage at 1664×936, 1366×768, 430×932 and 390×844.
+- [x] Test Operations with no route, an active route and a completed route in Chromium.
+- [x] Test Moves, Cargo, Adjust and Route open, expanded, closed by Escape and with focus restoration.
+- [x] Test long destination, mission and commodity names.
+- [x] Test Fleet with Corsair, Cutlass Black and multiple saved ships.
+- [x] Add visible focus rings and Arrow/Home/End tab navigation.
+- [x] Trap focus only inside the expanded Operations dialog and return it to the originating tool.
+- [x] Enforce 44 px mobile interaction targets.
+- [x] Replace mobile navigation scrolling with a six-icon rail and full workspace picker.
+- [x] Replace the clipped mobile cargo-zone table with stacked editing cards.
+- [x] Support reduced-motion and forced-colour interaction states.
+- [x] Remove the Development initialization race by awaiting clean-shell readiness.
+- [x] Keep published Changelog history separate from unreleased planning.
+
+## v0.18 mission validation
+
+- [ ] Assign confidence to parsed mission fields and location matches.
+- [ ] Warn before generation when required fields are missing or ambiguous.
+- [ ] Provide inline review and correction of uncertain values.
+- [ ] Preserve original mission text and provenance after corrections.
+
+## Repository cleanup
+
+- [ ] Remove legacy CSS and view files in a dedicated reference-cleanup change after confirming no documentation or historical test still links to them.
 
 ## Later
 
-- [ ] Mission Validation.
 - [ ] Location danger context with sourced data.
 - [ ] Additional manufacturer MFD themes using the same semantic components.
 - [ ] Expanded universe data and assisted intake.
