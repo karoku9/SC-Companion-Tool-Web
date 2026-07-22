@@ -9,7 +9,8 @@
     const locations = window.SCCompanionLocations;
     const routeCorrections = window.SCCompanionRouteCorrections;
     const routeProgress = window.SCCompanionRouteProgress;
-    if (!store || !routeCorrections || !routeProgress) return false;
+    const navigation = window.SCCompanionNavigationEstimates;
+    if (!store || !routeCorrections || !routeProgress || !navigation) return false;
 
     const stopName = document.querySelector('#current-stop-name');
     const operations = document.querySelector('#current-stop-operations');
@@ -21,11 +22,6 @@
     const progressLabel = document.querySelector('#route-progress-label');
     if (!stopName || !operations || !stopList || !complete || !previous) return false;
     initialized = true;
-
-    function destinationText(locationId, fallback) {
-      const location = locations?.getLocation(locationId);
-      return location?.navigationTarget ?? fallback;
-    }
 
     function operationAction(operation) {
       if (operation.type === 'delivery') return 'DROP OFF';
@@ -65,7 +61,7 @@
         .filter((operation) => operation.type === 'delivery' && operation.lotId)
         .reduce((sum, operation) => sum + Number(operation.scu ?? 0), 0);
       const parts = [];
-      if (unload) parts.push(`Drop ${unload} SCU`);
+      if (unload) parts.push(`Drop off ${unload} SCU`);
       if (load) parts.push(`Pick up ${load} SCU`);
       return parts.join(' · ') || `${stop.operations.length} objective${stop.operations.length === 1 ? '' : 's'}`;
     }
@@ -74,6 +70,21 @@
       const route = routeCorrections.deriveRoute(state.route, state.routeCorrections);
       const progress = routeProgress.derive(route, state.completedStopIds, state.currentStopIndex);
       return { route, progress };
+    }
+
+    function activeQuantumFactor(state) {
+      const ship = (state.hangarShips ?? []).find((item) => item.id === state.selectedShipId);
+      return Number(ship?.quantumTimeFactor ?? 1);
+    }
+
+    function legSummary(previousStop, stop, state) {
+      if (!previousStop || previousStop.skipped || stop.skipped) return '';
+      const estimate = navigation.estimateLeg(previousStop.locationId, stop.locationId, {
+        quantumTimeFactor: activeQuantumFactor(state)
+      });
+      if (!estimate) return 'Navigation estimate unavailable';
+      const jumps = estimate.jumpCount ? ` · ${estimate.jumpCount} jump${estimate.jumpCount === 1 ? '' : 's'}` : '';
+      return `${estimate.distanceLabel} · ${estimate.minMinutes}–${estimate.maxMinutes} min${jumps}`;
     }
 
     function render(state) {
@@ -105,7 +116,14 @@
         item.className = [isComplete ? 'is-complete' : '', isCurrent ? 'is-current' : '', stop.skipped ? 'is-skipped' : ''].filter(Boolean).join(' ');
         if (isCurrent) item.setAttribute('aria-current', 'step');
         const flags = [stop.skipped ? 'Skipped' : '', stop.mandatory ? 'Mandatory' : ''].filter(Boolean).join(' · ');
-        item.innerHTML = `<span>${String(index + 1).padStart(2, '0')}</span><div><strong>${stop.locationLabel}</strong><small>${operationSummary(stop)}${flags ? ` · ${flags}` : ''}</small></div>`;
+        const leg = legSummary(index ? allStops[index - 1] : null, stop, state);
+        item.innerHTML = `
+          <span>${String(index + 1).padStart(2, '0')}</span>
+          <div>
+            <strong>${stop.locationLabel}</strong>
+            <small>${operationSummary(stop)}${flags ? ` · ${flags}` : ''}</small>
+            ${leg ? `<small class="route-leg-estimate">${leg}</small>` : ''}
+          </div>`;
         stopList.append(item);
       });
 
@@ -143,6 +161,7 @@
     });
 
     window.addEventListener('sc:session-change', (event) => render(event.detail));
+    window.addEventListener('sc:navigation-runtime-ready', () => render(store.getState()));
     render(store.getState());
     return true;
   }
