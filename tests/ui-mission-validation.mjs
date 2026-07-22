@@ -16,6 +16,39 @@ const errors = [];
 page.on('pageerror', (error) => errors.push(`pageerror: ${error.message}`));
 page.on('console', (message) => { if (message.type() === 'error') errors.push(`console: ${message.text()}`); });
 
+async function assertReviewFieldsFit(label) {
+  const result = await page.evaluate(() => {
+    const panel = document.querySelector('#mission-validation-panel').getBoundingClientRect();
+    const controls = [...document.querySelectorAll('.mission-review-row select, .mission-review-row input:not([type="checkbox"]), .mission-field-status')]
+      .filter((element) => {
+        const box = element.getBoundingClientRect();
+        const style = getComputedStyle(element);
+        return box.width > 0 && box.height > 0 && style.visibility !== 'hidden';
+      })
+      .map((element) => {
+        const box = element.getBoundingClientRect();
+        return {
+          text: element.textContent?.trim() || element.value || element.getAttribute('aria-label') || element.className,
+          left: box.left,
+          right: box.right,
+          clippedText: element.classList.contains('mission-field-status') && (element.scrollWidth > element.clientWidth + 2 || element.scrollHeight > element.clientHeight + 2)
+        };
+      });
+    return {
+      viewport: window.innerWidth,
+      documentWidth: document.documentElement.scrollWidth,
+      panel: { left: panel.left, right: panel.right },
+      controls
+    };
+  });
+  assert.ok(result.documentWidth <= result.viewport + 2, `${label}: document overflows horizontally`);
+  result.controls.forEach((control) => {
+    assert.ok(control.left >= result.panel.left - 2, `${label}: control escapes panel left: ${JSON.stringify(control)}`);
+    assert.ok(control.right <= result.panel.right + 2, `${label}: control escapes panel right: ${JSON.stringify(control)}`);
+    assert.equal(control.clippedText, false, `${label}: status text is clipped: ${JSON.stringify(control)}`);
+  });
+}
+
 let failure = null;
 let step = 'initialization';
 try {
@@ -34,6 +67,7 @@ try {
   assert.match(issueText, /unknown action/i);
   assert.equal(await page.locator('#mission-generate-validated').isDisabled(), true);
   assert.equal(await page.evaluate(() => window.SCCompanionSession.getState().route), null);
+  await assertReviewFieldsFit('Blocked review');
   await page.screenshot({ path: `${output}/mission-validation-blocked.png`, fullPage: true });
 
   step = 'confirm custom location and apply suggested action';
@@ -46,6 +80,7 @@ try {
   const reviewedText = await page.locator('#mission-text').inputValue();
   assert.match(reviewedText, /deliver area18/i);
   assert.doesNotMatch(reviewedText, /delver/);
+  await assertReviewFieldsFit('Reviewed custom location');
   await page.screenshot({ path: `${output}/mission-validation-reviewed-custom.png`, fullPage: true });
 
   step = 'generate corrected session';
@@ -74,6 +109,7 @@ try {
   await page.locator('.mission-suggestion').first().click();
   await page.locator('#mission-validation-title').filter({ hasText: /Ready/ }).waitFor({ state: 'visible' });
   assert.equal(await page.locator('#mission-generate-validated').isEnabled(), true);
+  await assertReviewFieldsFit('Resolved ambiguous location');
   await page.screenshot({ path: `${output}/mission-validation-ambiguous-resolved.png`, fullPage: true });
 
   assert.deepEqual(errors, [], `Browser errors:\n${errors.join('\n')}`);
