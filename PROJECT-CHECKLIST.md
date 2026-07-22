@@ -32,18 +32,25 @@
 
 ## v0.17 visual hardening
 
-- [ ] Add automated screenshots at 1366×768 and additional mobile widths.
-- [ ] Test Operations with no route and a completed route in Chromium.
-- [ ] Test every Operations tool expanded as well as open and closed.
-- [ ] Test long destination, mission and commodity names.
-- [ ] Test Fleet with Cutlass and multiple saved ships.
-- [ ] Audit keyboard navigation and visible focus states.
-- [ ] Audit semantic colors and icon reuse against the UI Kit.
-- [ ] Remove unused legacy UI files after successful regression coverage.
+- [x] Add automated screenshots at 1366×768, 430×932 and 360×800.
+- [x] Test Operations with no route and a completed route in Chromium.
+- [x] Test every Operations tool open and expanded.
+- [x] Test long mission and commodity names without horizontal overflow.
+- [x] Test Fleet with Cutlass Black and multiple saved ships.
+- [x] Add and verify visible keyboard focus states.
+- [x] Add reduced-motion and disabled-control behavior.
+- [x] Keep visual rules on semantic design-system tokens.
+- [x] Keep legacy files unloaded and document rollback retention until Mission Validation.
+
+## v0.18 mission validation
+
+- [ ] Add field-level confidence for parsed mission data.
+- [ ] Warn on incomplete pickup, delivery, commodity or SCU information.
+- [ ] Provide inline correction before route generation.
+- [ ] Preserve mission identity and pickup provenance through edits.
 
 ## Later
 
-- [ ] Mission Validation.
 - [ ] Location danger context with sourced data.
 - [ ] Additional manufacturer MFD themes using the same semantic components.
 - [ ] Expanded universe data and assisted intake.
