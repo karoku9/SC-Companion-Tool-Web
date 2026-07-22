@@ -44,12 +44,17 @@
     return { ship, base, capacity: Number(ship?.cargoCapacityScu ?? base.capacityScu) };
   }
 
-  function cloneZones(zones) {
-    return zones.map((zone) => ({ ...zone }));
-  }
+  function cloneZones(zones) { return zones.map((zone) => ({ ...zone })); }
 
   function totalAssigned() {
     return draft.reduce((sum, zone) => sum + Math.max(0, Number(zone.capacityScu) || 0), 0);
+  }
+
+  function nextZoneId() {
+    const used = new Set(draft.map((zone) => String(zone.id)));
+    let index = 1;
+    while (used.has(`zone-${index}`)) index += 1;
+    return `zone-${index}`;
   }
 
   function updateSummary() {
@@ -78,7 +83,6 @@
     draft.forEach((zone, index) => {
       const row = document.createElement('article');
       row.className = 'cargo-zone-editor-row';
-
       const handle = document.createElement('div');
       handle.className = 'cargo-zone-index';
       handle.innerHTML = `<span>${String(index + 1).padStart(2, '0')}</span><small>ZONE</small>`;
@@ -104,8 +108,7 @@
       remove.textContent = 'REMOVE';
       remove.disabled = draft.length === 1;
 
-      const inputs = [labelField.input, accessField.input, capacityField.input, layersField.input, columnsField.input, checkbox];
-      inputs.forEach((input) => input.addEventListener('input', () => {
+      [labelField.input, accessField.input, capacityField.input, layersField.input, columnsField.input, checkbox].forEach((input) => input.addEventListener('input', () => {
         zone.label = labelField.input.value;
         zone.access = accessField.input.value;
         zone.capacityScu = Number(capacityField.input.value);
@@ -152,8 +155,9 @@
       elements.message.textContent = 'Maximum eight zones.';
       return;
     }
+    const id = nextZoneId();
     draft.push({
-      id: `zone-${draft.length + 1}`,
+      id,
       label: `Zone ${String.fromCharCode(65 + draft.length)}`,
       access: 'Shared access',
       capacityScu: Math.max(1, capacity - totalAssigned()),
