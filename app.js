@@ -15,10 +15,7 @@
   };
 
   function humanizeType(type) {
-    const labels = {
-      system: 'System', planet: 'Planet', 'landing-zone': 'Landing zone',
-      spaceport: 'Spaceport', 'orbital-station': 'Orbital station'
-    };
+    const labels = { system: 'System', planet: 'Planet', 'landing-zone': 'Landing zone', spaceport: 'Spaceport', 'orbital-station': 'Orbital station' };
     return labels[type] ?? type;
   }
 
@@ -67,10 +64,7 @@
     renderSearchResults(results);
   }
 
-  elements.form.addEventListener('submit', (event) => {
-    event.preventDefault();
-    runSearch();
-  });
+  elements.form.addEventListener('submit', (event) => { event.preventDefault(); runSearch(); });
   elements.query.addEventListener('input', () => {
     const value = elements.query.value.trim();
     renderSearchResults(value ? model.searchOperationalLocations(value) : []);
@@ -82,7 +76,7 @@
 (function loadOperationalRuntimes() {
   [
     'cargo-operations.css', 'cargo-corrections.css', 'route-corrections.css', 'changelog.css',
-    'route-planner-live.css', 'ux-refresh.css', 'ux-hierarchy-v2.css'
+    'route-planner-live.css', 'ux-refresh.css', 'ux-hierarchy-v2.css', 'workspace-consolidation.css', 'release-roadmap.css'
   ].forEach((href) => {
     if (document.querySelector(`link[href="${href}"]`)) return;
     const stylesheet = document.createElement('link');
@@ -96,20 +90,23 @@
     import('./route-progress.js'),
     import('./route-planner-engine.js'),
     import('./cargo-state.js'),
-    import('./cargo-layout.js')
+    import('./cargo-layout.js'),
+    import('./cargo-zone-model.js')
   ])
     .then(() => {
       window.dispatchEvent(new Event('sc:route-runtime-ready'));
       window.dispatchEvent(new Event('sc:cargo-runtime-ready'));
-      return Promise.all([
-        import('./load-operations-view.js'),
-        import('./cargo-corrections-view.js'),
-        import('./route-corrections-view.js'),
-        import('./route-planner-view.js'),
-        import('./changelog-view.js'),
-        import('./ux-shell.js')
-      ]);
+      return import('./load-operations-view.js');
     })
+    .then(() => Promise.all([
+      import('./cargo-corrections-view.js'),
+      import('./cargo-zone-editor-view.js'),
+      import('./route-corrections-view.js'),
+      import('./route-planner-view.js'),
+      import('./changelog-view.js'),
+      import('./ux-shell.js'),
+      import('./workspace-shell.js')
+    ]))
     .then(() => window.dispatchEvent(new Event('sc:dynamic-pages-ready')))
     .catch((error) => console.error('Operational runtime failed to load.', error));
 }());

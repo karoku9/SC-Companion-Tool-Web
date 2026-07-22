@@ -3,44 +3,30 @@
 (function initializeLoadOperationsView() {
   const store = window.SCCompanionSession;
   const catalog = window.SCCompanionShipCatalog;
+  const zoneModel = window.SCCompanionCargoZones;
   const planner = window.SCCompanionCargoPlanner;
   const cargoState = window.SCCompanionCargoState;
   const cargoLayout = window.SCCompanionCargoLayout;
   const routeCorrections = window.SCCompanionRouteCorrections;
   const routeProgress = window.SCCompanionRouteProgress;
   const root = document.querySelector('#load-operations');
-  if (!store || !catalog || !planner || !cargoState || !cargoLayout || !routeCorrections || !routeProgress || !root) return;
+  if (!store || !catalog || !zoneModel || !planner || !cargoState || !cargoLayout || !routeCorrections || !routeProgress || !root) return;
 
   root.innerHTML = `
-    <header class="section-heading blueprint-heading">
-      <div><p class="eyebrow">LIVE CARGO</p><h2>Load and unload instructions</h2></div>
-      <span class="page-status is-foundation">FOUNDATION</span>
-    </header>
+    <header class="section-heading internal-section-heading"><div><p class="eyebrow">LIVE CARGO</p><h2>Moves at this stop</h2></div></header>
     <div class="blueprint-layout operations-blueprint">
       <article class="blueprint-card is-primary operation-focus">
         <span class="card-kicker" id="load-stop-kicker">NO ACTIVE SESSION</span>
         <h3 id="load-stop-title">Generate a mission route</h3>
         <p id="load-stop-summary">The move queue will show exactly what enters or leaves the ship.</p>
         <div class="operation-progress" id="load-operation-progress"></div>
-        <div class="operation-buttons">
-          <button type="button" id="load-previous" disabled>PREVIOUS</button>
-          <button type="button" class="accent-button" id="load-next" disabled>COMPLETE STOP — NEXT</button>
-        </div>
+        <div class="operation-buttons"><button type="button" id="load-previous" disabled>PREVIOUS</button><button type="button" class="accent-button" id="load-next" disabled>COMPLETE STOP — NEXT</button></div>
       </article>
-      <section class="blueprint-panel">
-        <div class="panel-title"><span>MOVE QUEUE</span><small id="load-queue-status">WAITING FOR ROUTE</small></div>
-        <div id="load-move-queue" class="move-queue"></div>
-      </section>
+      <section class="blueprint-panel"><div class="panel-title"><span>MOVE QUEUE</span><small id="load-queue-status">WAITING FOR ROUTE</small></div><div id="load-move-queue" class="move-queue"></div></section>
     </div>
     <div class="blueprint-split load-state-split">
-      <section class="blueprint-panel">
-        <div class="panel-title"><span>ONBOARD NOW</span><small>ACTIVE CARGO ONLY</small></div>
-        <div id="load-onboard-list" class="onboard-list"></div>
-      </section>
-      <section class="blueprint-panel">
-        <div class="panel-title"><span>SESSION CARGO</span><small id="load-capacity-note">PHYSICAL GRID</small></div>
-        <div class="summary-strip cargo-state-summary" id="load-cargo-totals"></div>
-      </section>
+      <section class="blueprint-panel"><div class="panel-title"><span>ONBOARD NOW</span><small>ACTIVE CARGO ONLY</small></div><div id="load-onboard-list" class="onboard-list"></div></section>
+      <section class="blueprint-panel"><div class="panel-title"><span>SESSION CARGO</span><small id="load-capacity-note">PHYSICAL GRID</small></div><div class="summary-strip cargo-state-summary" id="load-cargo-totals"></div></section>
     </div>`;
 
   const elements = {
@@ -60,13 +46,10 @@
   }
 
   function activeModel(state) {
-    const base = catalog.getModel(state.selectedShipModelId) ?? catalog.models[0];
-    const ship = (state.hangarShips ?? []).find((item) => item.id === state.selectedShipId);
-    return {
-      ...base,
-      capacityScu: ship?.cargoCapacityScu ?? base.capacityScu,
-      offGridAllowanceScu: Math.max(0, Number(state.routePlannerSettings?.offGridAllowanceScu ?? 0))
-    };
+    const ship = (state.hangarShips ?? []).find((item) => item.id === state.selectedShipId) ?? null;
+    const base = catalog.getModel(ship?.modelId ?? state.selectedShipModelId) ?? catalog.models[0];
+    const resolved = zoneModel.resolveModel(base, ship, state.cargoZoneOverrides);
+    return { ...resolved, offGridAllowanceScu: Math.max(0, Number(state.routePlannerSettings?.offGridAllowanceScu ?? 0)) };
   }
 
   function assignmentMap(plan) {
@@ -92,38 +75,27 @@
     const detail = move.action === 'unload'
       ? `${positionText(model, assignment)} · loaded at ${lot?.originLocationLabel ?? move.operation.originLocationLabel}`
       : `${lot?.originLocationLabel ?? move.operation.locationLabel} → ${lot?.deliveryLocationLabel ?? move.operation.destinationLocationLabel} · ${positionText(model, assignment)}`;
-    row.innerHTML = `
-      <i>${move.action.toUpperCase()}</i>
-      <div class="move-primary"><b>${quantity} SCU ${commodity}</b><span>${detail}</span><small>${lot?.missionTitle ?? move.operation.missionTitle}</small></div>`;
+    row.innerHTML = `<i>${move.action.toUpperCase()}</i><div class="move-primary"><b>${quantity} SCU ${commodity}</b><span>${detail}</span><small>${lot?.missionTitle ?? move.operation.missionTitle}</small></div>`;
     return row;
   }
 
   function renderOnboard(lifecycle, model, assignments) {
     elements.onboard.replaceChildren();
     if (!lifecycle.onboardLots.length) {
-      const empty = document.createElement('div');
-      empty.className = 'empty-inline-state';
-      empty.textContent = lifecycle.complete ? 'No cargo remains onboard for the active route.' : 'No mission cargo is currently onboard.';
-      elements.onboard.append(empty);
+      elements.onboard.innerHTML = `<div class="empty-inline-state">${lifecycle.complete ? 'No cargo remains onboard for the active route.' : 'No mission cargo is currently onboard.'}</div>`;
       return;
     }
     lifecycle.onboardLots.forEach((lot) => {
       const row = document.createElement('article');
       row.className = 'onboard-row';
       const assignment = assignments.get(lot.key);
-      row.innerHTML = `
-        <div><b>${lot.scu} SCU ${lot.commodity}</b><span>Deliver to ${lot.deliveryLocationLabel} · ${positionText(model, assignment)}</span><small>${lot.missionTitle}</small></div>
-        <strong>${assignment?.offGrid ? 'OFF-GRID' : lot.corrected ? 'CORRECTED' : 'ONBOARD'}</strong>`;
+      row.innerHTML = `<div><b>${lot.scu} SCU ${lot.commodity}</b><span>Deliver to ${lot.deliveryLocationLabel} · ${positionText(model, assignment)}</span><small>${lot.missionTitle}</small></div><strong>${assignment?.offGrid ? 'OFF-GRID' : lot.corrected ? 'CORRECTED' : 'ONBOARD'}</strong>`;
       elements.onboard.append(row);
     });
   }
 
   function renderTotals(lifecycle) {
-    elements.totals.innerHTML = `
-      <span>Pending<strong>${lifecycle.totals.pendingScu} SCU</strong></span>
-      <span>Onboard<strong>${lifecycle.totals.onboardScu} SCU</strong></span>
-      <span>Delivered<strong>${lifecycle.totals.deliveredScu} SCU</strong></span>
-      <span>Lost<strong>${lifecycle.totals.lostScu} SCU</strong></span>`;
+    elements.totals.innerHTML = `<span>Pending<strong>${lifecycle.totals.pendingScu} SCU</strong></span><span>Onboard<strong>${lifecycle.totals.onboardScu} SCU</strong></span><span>Delivered<strong>${lifecycle.totals.deliveredScu} SCU</strong></span><span>Lost<strong>${lifecycle.totals.lostScu} SCU</strong></span>`;
   }
 
   function context(state) {
@@ -156,9 +128,7 @@
     elements.previous.disabled = !progress.completedStopIds.length;
     elements.next.disabled = progress.complete;
     elements.progress.textContent = `${progress.completedCount} completed · ${progress.totalStops} active stops`;
-    elements.capacityNote.textContent = plan.offGridAllowanceScu
-      ? `${plan.capacityScu} GRID + ${plan.offGridAllowanceScu} OFF-GRID`
-      : `${plan.capacityScu} SCU GRID`;
+    elements.capacityNote.textContent = plan.offGridAllowanceScu ? `${plan.capacityScu} GRID + ${plan.offGridAllowanceScu} OFF-GRID` : `${plan.capacityScu} SCU GRID`;
 
     if (progress.complete) {
       elements.kicker.textContent = 'ACTIVE ROUTE COMPLETE';

@@ -22,11 +22,11 @@
   function renderStatus(state) {
     const context = effectiveProgress(state);
     status.classList.toggle('is-active-session', Boolean(context));
-    status.title = context ? 'Open Active Route' : 'Open Overview';
+    status.title = context ? 'Open Operations' : 'Open Missions';
     status.tabIndex = 0;
     status.setAttribute('role', 'button');
     if (!context) {
-      status.innerHTML = '<span class="status-dot"></span><strong>READY</strong><small>NO ACTIVE SESSION</small>';
+      status.innerHTML = '<span class="status-dot"></span><strong>READY</strong><small>BUILD A SESSION</small>';
       return;
     }
     const { route, progress } = context;
@@ -35,7 +35,7 @@
   }
 
   function openStatusTarget() {
-    const target = store.getState().route?.stops?.length ? 'route' : 'overview';
+    const target = store.getState().route?.stops?.length ? 'route' : 'missions';
     document.querySelector(`[data-view-target="${target}"]`)?.click();
   }
 

@@ -1,70 +1,46 @@
 'use strict';
 
-(function renderRoadmapBoard() {
+(function renderReleaseRoadmap() {
   const roadmap = window.SCCompanionRoadmap;
   const board = document.querySelector('#roadmap-board');
+  if (!roadmap?.releases || !board) return;
 
-  if (!roadmap || !board) return;
+  const statusLabels = { done: 'RELEASED', current: 'CURRENT', next: 'NEXT', future: 'PLANNED' };
 
-  const statusLabels = {
-    done: 'COMPLETED',
-    active: 'IN PROGRESS',
-    next: 'NEXT',
-    future: 'FUTURE'
-  };
-
-  function createItem(item) {
-    const element = document.createElement('li');
-    element.className = `roadmap-item is-${item.status}`;
-
-    const marker = document.createElement('span');
-    marker.className = 'roadmap-marker';
-    marker.setAttribute('aria-hidden', 'true');
-
-    const content = document.createElement('div');
-    content.className = 'roadmap-item-content';
-
-    const label = document.createElement('strong');
-    label.textContent = item.label;
-
-    const status = document.createElement('span');
-    status.className = 'roadmap-item-status';
-    status.textContent = statusLabels[item.status] ?? item.status;
-
-    content.append(label, status);
-    element.append(marker, content);
-    return element;
-  }
-
-  function createPhase(phase) {
+  function releaseCard(release) {
     const article = document.createElement('article');
-    article.className = `roadmap-phase is-${phase.status}`;
+    article.className = `release-roadmap-card is-${release.status}`;
+    article.dataset.version = release.version;
 
     const header = document.createElement('header');
-    header.className = 'roadmap-phase-header';
+    header.innerHTML = `<span>v${release.version}</span><em>${statusLabels[release.status]}</em>`;
 
-    const order = document.createElement('span');
-    order.className = 'roadmap-order';
-    order.textContent = phase.order;
-
-    const titleGroup = document.createElement('div');
     const title = document.createElement('h3');
-    title.textContent = phase.title;
+    title.textContent = release.title;
     const summary = document.createElement('p');
-    summary.textContent = phase.summary;
-    titleGroup.append(title, summary);
+    summary.textContent = release.summary;
 
-    header.append(order, titleGroup);
+    const list = document.createElement('ul');
+    release.changes.forEach((change) => {
+      const item = document.createElement('li');
+      item.textContent = change;
+      list.append(item);
+    });
 
-    const list = document.createElement('ol');
-    list.className = 'roadmap-items';
-    phase.items.forEach((item) => list.append(createItem(item)));
-
-    article.append(header, list);
+    article.append(header, title, summary, list);
     return article;
   }
 
-  const fragment = document.createDocumentFragment();
-  roadmap.phases.forEach((phase) => fragment.append(createPhase(phase)));
-  board.replaceChildren(fragment);
+  const released = roadmap.releases.filter((release) => release.status === 'done' || release.status === 'current').length;
+  const progress = document.createElement('div');
+  progress.className = 'release-roadmap-progress';
+  progress.innerHTML = `<span>PRODUCT PATH</span><strong>${released} / ${roadmap.releases.length} RELEASES</strong><div><i style="width:${(released / roadmap.releases.length) * 100}%"></i></div><small>Current build: v${roadmap.currentVersion}</small>`;
+
+  const track = document.createElement('div');
+  track.className = 'release-roadmap-track';
+  roadmap.releases.forEach((release) => track.append(releaseCard(release)));
+  board.replaceChildren(progress, track);
+
+  const current = track.querySelector('.is-current');
+  if (current) requestAnimationFrame(() => { track.scrollLeft = Math.max(0, current.offsetLeft - 20); });
 }());

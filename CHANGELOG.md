@@ -7,10 +7,39 @@ The project was already under active development before this changelog was intro
 ## [Unreleased]
 
 ### Planned
-- Cargo Zone Editor for per-ship separators and layers.
+- Mission input validation, confidence and inline correction review.
 - Expanded location intelligence and sourced danger context.
 - Additional ship and component integrations.
 - Traceable fuel estimates.
+
+---
+
+## [0.10.0] - 2026-07-22
+
+### Added
+- Per-ship Cargo Zone Editor with editable labels, access paths, capacities, layers, columns and separators.
+- Expandable Operations drawer for load moves, cargo layout, cargo corrections and route corrections.
+- Compact cargo and next-move previews inside the Operations workspace.
+- Contextual Location Intel inside the Route Planner.
+- Development tabs combining Roadmap and Changelog.
+- Linear release roadmap from v0.1 through v1.0.
+
+### Improved
+- Primary navigation now contains only six workspaces: Operations, Missions, Planner, Starmap, Fleet and Development.
+- Cargo layout and load instructions use the saved logical zones of the selected ship instance.
+- Secondary tools can expand to a full-screen operational panel without leaving the current route.
+- Page hierarchy now prioritizes active workspaces and hides unfinished mockups from normal navigation.
+- Old cargo, load-operations, location and changelog links resolve to their new contextual panels.
+
+### Changed
+- Cargo Layout, Load Operations, Manual Corrections and Route Corrections are no longer separate primary pages.
+- Location Intel is no longer a separate primary page.
+- Changelog is now part of the Development workspace.
+- The roadmap is organized by sequential releases instead of parallel product departments.
+
+### Fixed
+- Route Planner no longer depends on a generated blueprint page to create its runtime host.
+- Saved sessions migrate with empty cargo-zone overrides without losing existing route or cargo state.
 
 ---
 
