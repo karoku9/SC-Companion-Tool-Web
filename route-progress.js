@@ -18,12 +18,13 @@
     const completedSet = new Set(completed);
     const currentStop = route?.stops?.find((stop) => !completedSet.has(String(stop.id))) ?? null;
     const currentStopIndex = currentStop ? route.stops.findIndex((stop) => String(stop.id) === String(currentStop.id)) : (route?.stops?.length ?? 0);
+    const hasGeneratedRoute = Boolean(route?.allStops?.length ?? route?.stops?.length);
     return Object.freeze({
       completedStopIds: completed,
       completedSet,
       currentStop,
       currentStopIndex,
-      complete: Boolean(route?.stops?.length) && !currentStop,
+      complete: hasGeneratedRoute && !currentStop,
       completedCount: completed.length,
       totalStops: route?.stops?.length ?? 0
     });
