@@ -42,8 +42,8 @@ test('v0.14 establishes the design system before page migrations', () => {
   assert.match(previous.title, /MFD layout rebuild/i);
   assert.equal(current.status, 'current');
   assert.match(current.title, /Design system foundation/i);
-  assert.ok(current.changes.some((change) => /Semantic design tokens/.test(change)));
-  assert.ok(current.changes.some((change) => /Development UI Kit/.test(change)));
+  assert.ok(current.changes.some((change) => /semantic design tokens/i.test(change)));
+  assert.ok(current.changes.some((change) => /Development UI Kit/i.test(change)));
   assert.equal(next.status, 'next');
   assert.match(next.title, /Operations components/i);
 });
