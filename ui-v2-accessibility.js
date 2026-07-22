@@ -89,6 +89,27 @@
     }
   });
 
+  function activateDevelopmentTab(button) {
+    const selected = button?.dataset.developmentTab;
+    if (!selected) return;
+    document.querySelectorAll('[data-development-tab]').forEach((item) => {
+      const active = item === button;
+      item.setAttribute('aria-selected', String(active));
+      item.tabIndex = active ? 0 : -1;
+    });
+    document.querySelectorAll('[data-development-pane]').forEach((pane) => {
+      pane.hidden = pane.dataset.developmentPane !== selected;
+    });
+  }
+
+  const developmentTabs = document.querySelector('.development-tabs');
+  developmentTabs?.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-development-tab]');
+    if (button) activateDevelopmentTab(button);
+  });
+  const initiallySelectedDevelopmentTab = document.querySelector('[data-development-tab][aria-selected="true"]');
+  if (initiallySelectedDevelopmentTab) activateDevelopmentTab(initiallySelectedDevelopmentTab);
+
   function bindRovingTabs(containerSelector, buttonSelector, selectedAttribute) {
     document.querySelectorAll(containerSelector).forEach((container) => {
       container.addEventListener('keydown', (event) => {
@@ -104,7 +125,10 @@
         event.preventDefault();
         const next = buttons[nextIndex];
         next.focus();
-        if (selectedAttribute) next.click();
+        if (selectedAttribute) {
+          next.click();
+          if (next.dataset.developmentTab) activateDevelopmentTab(next);
+        }
       });
     });
   }
@@ -114,6 +138,7 @@
 
   window.SCCompanionAccessibility = Object.freeze({
     focusableElements,
+    activateDevelopmentTab,
     getLastToolTrigger: () => lastToolTrigger
   });
 }());
