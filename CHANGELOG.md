@@ -7,9 +7,31 @@ The project was already under active development before this changelog was intro
 ## [Unreleased]
 
 ### Planned
-- Structured ship components and named per-ship loadouts.
-- Quantum and performance estimates driven by the selected loadout.
-- Explicit component provenance and unavailable-data handling.
+- Completed-session archive and operational outcomes.
+- Planned versus observed timings and incident notes.
+- Reusable session templates built from completed runs.
+
+---
+
+## [0.20.0] - 2026-07-22
+
+### Added
+- Structured component slots with explicit source kind, authority, reference and notes.
+- Named loadouts saved independently for every ship instance.
+- Responsive Fleet loadout browser and editor.
+- Active-loadout performance covering quantum time, spool assumptions, fuel factor, handling factor and cargo-capacity delta.
+- Domain and Chromium coverage for migration, switching, persistence, capacity and mobile layout.
+
+### Changed
+- Fleet now separates ship identity from installed configuration.
+- Navigation estimates consume the active loadout quantum factor.
+- Route handling ranges and capacity validation consume the active loadout.
+- Existing ship stat readouts remain compatible through synchronized shadow fields.
+
+### Fixed
+- Legacy free-text quantum records now migrate to an `Imported configuration` loadout instead of being discarded.
+- Unsourced component data remains visibly unknown rather than receiving an invented specification.
+- Switching configurations no longer requires duplicating a saved ship.
 
 ---
 
@@ -115,7 +137,7 @@ The project was already under active development before this changelog was intro
 ### Added
 - Four-layer design-system registry covering primitive tokens, semantic roles, component contracts and manufacturer themes.
 - Project-derived Drake palette documented as an approximation rather than an official CIG palette.
-- Semantic roles for surfaces, content, borders, actions, cargo pickup/drop-off/mixed/off-grid and system states.
+- Semantic roles for surfaces, content, borders, actions, cargo pickup/dropoff/mixed/off-grid and system states.
 - Canonical button, panel, field, status, spacing, typography and icon definitions.
 - Development → UI Kit and UI research implementation rules.
 
