@@ -4,7 +4,9 @@
   const store = window.SCCompanionSession;
   const planner = window.SCCompanionRoutePlanner;
   const locations = window.SCCompanionLocations;
-  if (!store || !planner) return;
+  const routeCorrections = window.SCCompanionRouteCorrections;
+  const routeProgress = window.SCCompanionRouteProgress;
+  if (!store || !planner || !routeCorrections || !routeProgress) return;
 
   const stopName = document.querySelector('#current-stop-name');
   const operations = document.querySelector('#current-stop-operations');
@@ -43,13 +45,18 @@
     return item;
   }
 
+  function routeState(state) {
+    const route = routeCorrections.deriveRoute(state.route, state.routeCorrections);
+    const progress = routeProgress.derive(route, state.completedStopIds, state.currentStopIndex);
+    return { route, progress };
+  }
+
   function render(state) {
-    const route = state.route;
-    const currentIndex = state.currentStopIndex ?? 0;
+    const baseRoute = state.route;
     stopList.replaceChildren();
     operations.replaceChildren();
 
-    if (!route?.stops?.length) {
+    if (!baseRoute?.stops?.length) {
       stopName.textContent = 'Generate a session first';
       complete.disabled = true;
       previous.disabled = true;
@@ -59,42 +66,49 @@
       return;
     }
 
-    route.stops.forEach((stop, index) => {
+    const { route, progress } = routeState(state);
+    route.allStops.forEach((stop, index) => {
       const item = document.createElement('li');
-      item.className = index < currentIndex ? 'is-complete' : index === currentIndex ? 'is-current' : '';
-      item.innerHTML = `<span>${String(index + 1).padStart(2, '0')}</span><div><strong>${stop.locationLabel}</strong><small>${stop.operations.length} operations</small></div>`;
+      const isComplete = progress.completedSet.has(String(stop.id));
+      item.className = [isComplete ? 'is-complete' : '', progress.currentStop?.id === stop.id ? 'is-current' : '', stop.skipped ? 'is-skipped' : ''].filter(Boolean).join(' ');
+      const flags = [stop.skipped ? 'SKIPPED' : '', stop.mandatory ? 'MANDATORY' : ''].filter(Boolean).join(' · ');
+      item.innerHTML = `<span>${String(index + 1).padStart(2, '0')}</span><div><strong>${stop.locationLabel}</strong><small>${stop.operations.length} operations${flags ? ` · ${flags}` : ''}</small></div>`;
       stopList.append(item);
     });
 
-    previous.disabled = currentIndex <= 0;
-    if (currentIndex >= route.stops.length) {
-      stopName.textContent = 'SESSION COMPLETE';
+    previous.disabled = !progress.completedStopIds.length;
+    if (progress.complete) {
+      stopName.textContent = route.allStops.some((stop) => stop.skipped) ? 'ACTIVE ROUTE COMPLETE' : 'SESSION COMPLETE';
       complete.disabled = true;
-      phoneStop.textContent = 'Session complete';
+      phoneStop.textContent = 'Active route complete';
       phoneDestination.textContent = '—';
-      phoneAction.textContent = 'All stops completed';
+      phoneAction.textContent = route.allStops.some((stop) => stop.skipped) ? 'Skipped stops remain available' : 'All stops completed';
       return;
     }
 
-    const current = route.stops[currentIndex];
+    const current = progress.currentStop;
     stopName.textContent = current.locationLabel;
     current.operations.forEach((operation) => operations.append(renderOperation(operation)));
     complete.disabled = false;
     phoneStop.textContent = current.locationLabel;
     phoneDestination.textContent = `IN GAME: ${destinationText(current.locationId, current.locationLabel).toUpperCase()}`;
-    phoneAction.textContent = planner.operationInstruction(current.operations[0]);
+    phoneAction.textContent = current.operations[0] ? planner.operationInstruction(current.operations[0]) : 'Complete stop';
   }
 
   previous.addEventListener('click', () => {
     const state = store.getState();
     if (!state.route) return;
-    store.patch({ currentStopIndex: Math.max(0, (state.currentStopIndex ?? 0) - 1) });
+    const route = routeCorrections.deriveRoute(state.route, state.routeCorrections);
+    const completedStopIds = routeProgress.previous(route, state.completedStopIds, state.currentStopIndex);
+    store.patch({ completedStopIds, currentStopIndex: completedStopIds.length });
   });
 
   complete.addEventListener('click', () => {
     const state = store.getState();
     if (!state.route) return;
-    store.patch({ currentStopIndex: Math.min((state.currentStopIndex ?? 0) + 1, state.route.stops.length) });
+    const route = routeCorrections.deriveRoute(state.route, state.routeCorrections);
+    const completedStopIds = routeProgress.completeCurrent(route, state.completedStopIds, state.currentStopIndex);
+    store.patch({ completedStopIds, currentStopIndex: completedStopIds.length });
   });
 
   window.addEventListener('sc:session-change', (event) => render(event.detail));
