@@ -214,18 +214,16 @@ textarea,
 }
 
 @media (max-width: 700px) {
-  :where(
+  .app-frame :where(
     button,
     select,
     input:not([type="hidden"]),
-    .button,
-    .ds-button,
-    .icon-button,
+    textarea,
     summary
   ) {
-    min-height: 44px;
+    min-height: 44px !important;
   }
-  .icon-button { min-width: 44px; }
+  .app-frame .icon-button { min-width: 44px; }
 }
 
 @media (max-width: 560px) {
