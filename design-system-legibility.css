@@ -161,12 +161,15 @@ textarea,
 #starmap-route-list small { display: block; font-weight: 400; }
 #starmap-canvas text,
 #starmap-canvas .map-node-index,
-#starmap-canvas .map-node-sub,
-#starmap-canvas .map-route-summary {
+#starmap-canvas .map-node-sub {
   font-size: var(--ds-type-xs);
 }
 #starmap-canvas .map-route-label {
   font-size: var(--ds-type-sm);
+}
+/* Cargo detail remains in the persistent route list; repeating it beside dense map nodes causes collisions. */
+#starmap-canvas .map-route-summary {
+  display: none;
 }
 
 @media (max-width: 900px) {
