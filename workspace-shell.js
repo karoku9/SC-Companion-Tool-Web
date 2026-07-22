@@ -3,17 +3,20 @@
 (function prepareWorkspaceConsolidation() {
   function initialize() {
     const route = document.querySelector('#route');
+    const routeLayout = route?.querySelector('.route-layout');
     const loadOperations = document.querySelector('#load-operations');
     const cargo = document.querySelector('#cargo');
     const corrections = loadOperations?.querySelector('.correction-panel');
     const routeCorrections = route?.querySelector('.route-correction-panel');
-    if (!route || !loadOperations || !cargo) return;
+    const icons = window.SCCompanionMfdIcons;
+    if (!route || !routeLayout || !loadOperations || !cargo) return;
 
+    const icon = (name) => icons?.render(name, 'mfd-icon') ?? '';
     const routeHeading = route.querySelector('.section-heading');
     if (routeHeading) {
       const eyebrow = routeHeading.querySelector('.eyebrow');
       const heading = routeHeading.querySelector('h2');
-      if (eyebrow) eyebrow.textContent = 'Live session';
+      if (eyebrow) eyebrow.textContent = 'Flight deck / live session';
       if (heading) heading.textContent = 'Current operation';
     }
     const fleetHeading = document.querySelector('#hangar .section-heading h2');
@@ -26,26 +29,34 @@
       section.classList.add('workspace-tool-content');
     }
 
-    const shell = document.createElement('section');
-    shell.className = 'operations-workspace-tools';
-    shell.innerHTML = `
-      <div class="operations-command-strip">
-        <button type="button" data-open-workspace-panel="moves"><span>Next moves</span><strong id="workspace-move-preview">No active cargo moves</strong><small>Load and unload queue</small></button>
-        <button type="button" data-open-workspace-panel="cargo"><span>Cargo now</span><strong id="workspace-cargo-preview">0 SCU onboard</strong><small>Hold, zones and editor</small></button>
-        <button type="button" data-open-workspace-panel="corrections"><span>Adjust</span><strong>Corrections</strong><small>Actual SCU and cargo state</small></button>
-        <button type="button" data-open-workspace-panel="route-tools"><span>Route</span><strong>Route tools</strong><small>Skip, lock and reorder</small></button>
+    const workspace = document.createElement('div');
+    workspace.className = 'operations-mfd-frame';
+    const mainColumn = document.createElement('div');
+    mainColumn.className = 'operations-main-column';
+    routeLayout.before(workspace);
+    mainColumn.append(routeLayout);
+    workspace.append(mainColumn);
+
+    const tools = document.createElement('section');
+    tools.className = 'operations-workspace-tools';
+    tools.innerHTML = `
+      <div class="operations-command-strip" aria-label="Operational tools">
+        <button type="button" data-open-workspace-panel="moves">${icon('moves')}<span><small>Moves</small><strong id="workspace-move-preview">No active cargo moves</strong></span></button>
+        <button type="button" data-open-workspace-panel="cargo">${icon('cargo')}<span><small>Cargo</small><strong id="workspace-cargo-preview">0 SCU onboard</strong></span></button>
+        <button type="button" data-open-workspace-panel="corrections">${icon('corrections')}<span><small>Adjust</small><strong>Actual cargo state</strong></span></button>
+        <button type="button" data-open-workspace-panel="route-tools">${icon('route')}<span><small>Route</small><strong>Skip, lock, reorder</strong></span></button>
       </div>
       <div class="workspace-drawer-backdrop" hidden></div>
       <aside class="workspace-drawer" aria-label="Operational tools" hidden>
         <header class="workspace-drawer-header">
-          <div><span>Operational tool</span><h2 id="workspace-drawer-title">Moves</h2></div>
-          <div><button type="button" id="workspace-drawer-expand" aria-pressed="false">Full screen</button><button type="button" id="workspace-drawer-close">Close</button></div>
+          <div class="workspace-drawer-identity"><span class="workspace-drawer-icon">${icon('moves')}</span><div><small>Auxiliary display</small><h2 id="workspace-drawer-title">Moves</h2></div></div>
+          <div class="workspace-drawer-actions"><button type="button" id="workspace-drawer-expand" aria-pressed="false">${icon('expand')}<span>Full screen</span></button><button type="button" id="workspace-drawer-close">${icon('close')}<span>Close</span></button></div>
         </header>
         <nav class="workspace-drawer-tabs" aria-label="Operational tool panels">
-          <button type="button" data-workspace-tab="moves">Moves</button>
-          <button type="button" data-workspace-tab="cargo">Cargo</button>
-          <button type="button" data-workspace-tab="corrections">Corrections</button>
-          <button type="button" data-workspace-tab="route-tools">Route</button>
+          <button type="button" data-workspace-tab="moves">${icon('moves')}<span>Moves</span></button>
+          <button type="button" data-workspace-tab="cargo">${icon('cargo')}<span>Cargo</span></button>
+          <button type="button" data-workspace-tab="corrections">${icon('corrections')}<span>Corrections</span></button>
+          <button type="button" data-workspace-tab="route-tools">${icon('route')}<span>Route</span></button>
         </nav>
         <div class="workspace-drawer-body">
           <div data-workspace-pane="moves"></div>
@@ -54,14 +65,19 @@
           <div data-workspace-pane="route-tools" hidden></div>
         </div>
       </aside>`;
-    route.append(shell);
 
-    const drawer = shell.querySelector('.workspace-drawer');
-    const backdrop = shell.querySelector('.workspace-drawer-backdrop');
-    const title = shell.querySelector('#workspace-drawer-title');
-    const expand = shell.querySelector('#workspace-drawer-expand');
-    const close = shell.querySelector('#workspace-drawer-close');
-    const pane = (id) => shell.querySelector(`[data-workspace-pane="${id}"]`);
+    const commandStrip = tools.querySelector('.operations-command-strip');
+    mainColumn.append(commandStrip);
+    workspace.append(tools);
+
+    const drawer = tools.querySelector('.workspace-drawer');
+    const backdrop = tools.querySelector('.workspace-drawer-backdrop');
+    const title = tools.querySelector('#workspace-drawer-title');
+    const drawerIcon = tools.querySelector('.workspace-drawer-icon');
+    const expand = tools.querySelector('#workspace-drawer-expand');
+    const close = tools.querySelector('#workspace-drawer-close');
+    const pane = (id) => tools.querySelector(`[data-workspace-pane="${id}"]`);
+    const dockedMedia = window.matchMedia('(min-width: 1260px)');
 
     internalize(loadOperations);
     internalize(cargo);
@@ -82,30 +98,52 @@
       pane('route-tools').innerHTML = '<div class="empty-inline-state">Route correction tools are unavailable.</div>';
     }
 
-    const labels = { moves: 'Load and unload', cargo: 'Cargo hold', corrections: 'Cargo corrections', 'route-tools': 'Route tools' };
+    const labels = {
+      moves: { title: 'Move queue', icon: 'moves' },
+      cargo: { title: 'Cargo hold', icon: 'cargo' },
+      corrections: { title: 'Cargo corrections', icon: 'corrections' },
+      'route-tools': { title: 'Route tools', icon: 'route' }
+    };
+
+    function updateBodyLock() {
+      const shouldLock = !drawer.hidden && (!dockedMedia.matches || drawer.classList.contains('is-expanded'));
+      document.body.classList.toggle('workspace-drawer-open', shouldLock);
+    }
 
     function openPanel(panelId = 'moves') {
       const resolved = pane(panelId) ? panelId : 'moves';
+      const descriptor = labels[resolved];
       drawer.hidden = false;
       backdrop.hidden = false;
-      title.textContent = labels[resolved];
-      shell.querySelectorAll('[data-workspace-pane]').forEach((element) => { element.hidden = element.dataset.workspacePane !== resolved; });
-      shell.querySelectorAll('[data-workspace-tab]').forEach((button) => button.setAttribute('aria-selected', String(button.dataset.workspaceTab === resolved)));
-      document.body.classList.add('workspace-drawer-open');
+      workspace.classList.add('has-utility-panel');
+      tools.classList.add('is-open');
+      title.textContent = descriptor.title;
+      drawerIcon.innerHTML = icon(descriptor.icon);
+      tools.querySelectorAll('[data-workspace-pane]').forEach((element) => { element.hidden = element.dataset.workspacePane !== resolved; });
+      tools.querySelectorAll('[data-workspace-tab]').forEach((button) => button.setAttribute('aria-selected', String(button.dataset.workspaceTab === resolved)));
+      tools.querySelectorAll('[data-open-workspace-panel]').forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.openWorkspacePanel === resolved)));
+      updateBodyLock();
     }
 
     function closePanel() {
       drawer.hidden = true;
       backdrop.hidden = true;
+      workspace.classList.remove('has-utility-panel');
+      tools.classList.remove('is-open');
       drawer.classList.remove('is-expanded');
       expand.setAttribute('aria-pressed', 'false');
-      expand.textContent = 'Full screen';
-      document.body.classList.remove('workspace-drawer-open');
+      expand.querySelector('span').textContent = 'Full screen';
+      tools.querySelectorAll('[data-open-workspace-panel]').forEach((button) => button.setAttribute('aria-pressed', 'false'));
+      updateBodyLock();
     }
 
-    shell.addEventListener('click', (event) => {
+    commandStrip.addEventListener('click', (event) => {
       const opener = event.target.closest('[data-open-workspace-panel]');
-      if (opener) openPanel(opener.dataset.openWorkspacePanel);
+      if (!opener) return;
+      const alreadyOpen = !drawer.hidden && opener.getAttribute('aria-pressed') === 'true' && dockedMedia.matches;
+      if (alreadyOpen) closePanel(); else openPanel(opener.dataset.openWorkspacePanel);
+    });
+    tools.querySelector('.workspace-drawer-tabs').addEventListener('click', (event) => {
       const tab = event.target.closest('[data-workspace-tab]');
       if (tab) openPanel(tab.dataset.workspaceTab);
     });
@@ -114,15 +152,17 @@
     expand.addEventListener('click', () => {
       const expanded = drawer.classList.toggle('is-expanded');
       expand.setAttribute('aria-pressed', String(expanded));
-      expand.textContent = expanded ? 'Restore' : 'Full screen';
+      expand.querySelector('span').textContent = expanded ? 'Restore' : 'Full screen';
+      updateBodyLock();
     });
     window.addEventListener('keydown', (event) => { if (event.key === 'Escape' && !drawer.hidden) closePanel(); });
+    dockedMedia.addEventListener('change', updateBodyLock);
     window.addEventListener('sc:open-internal-panel', (event) => {
       if (event.detail?.parentView === 'route') openPanel(event.detail.panel === 'companion' ? 'moves' : event.detail.panel);
     });
 
-    const movePreview = shell.querySelector('#workspace-move-preview');
-    const cargoPreview = shell.querySelector('#workspace-cargo-preview');
+    const movePreview = commandStrip.querySelector('#workspace-move-preview');
+    const cargoPreview = commandStrip.querySelector('#workspace-cargo-preview');
     function updatePreview(state) {
       if (!state.route?.stops?.length || !window.SCCompanionRouteCorrections || !window.SCCompanionRouteProgress || !window.SCCompanionCargoState) {
         movePreview.textContent = 'No active cargo moves';
@@ -147,7 +187,7 @@
       internalize(locations);
       locationDetails = document.createElement('details');
       locationDetails.className = 'contextual-tool locations-context-tool';
-      locationDetails.innerHTML = '<summary><span>Location intel</span><strong>Search services and arrival context</strong><em>Expand</em></summary><div class="contextual-tool-body"></div>';
+      locationDetails.innerHTML = `<summary>${icon('starmap')}<span><small>Location intel</small><strong>Services and arrival context</strong></span><em>Expand</em></summary><div class="contextual-tool-body"></div>`;
       locationDetails.querySelector('.contextual-tool-body').append(locations);
       planner.append(locationDetails);
       window.addEventListener('sc:open-internal-panel', (event) => { if (event.detail?.panel === 'locations') locationDetails.open = true; });
@@ -195,13 +235,11 @@
 
     const initialPage = window.SCCompanionPages?.getPage(location.hash.slice(1));
     if (initialPage?.parentView) {
-      requestAnimationFrame(() => {
-        window.dispatchEvent(new CustomEvent('sc:open-internal-panel', { detail: {
-          pageId: initialPage.id,
-          panel: initialPage.panel,
-          parentView: initialPage.parentView
-        } }));
-      });
+      requestAnimationFrame(() => window.dispatchEvent(new CustomEvent('sc:open-internal-panel', { detail: {
+        pageId: initialPage.id,
+        panel: initialPage.panel,
+        parentView: initialPage.parentView
+      } })));
     }
   }
 
