@@ -84,6 +84,27 @@
   .planner-profile-metrics { grid-template-columns: 1fr; }
   .changelog-hero { grid-template-columns: 1fr; }
   .changelog-hero-summary { flex-wrap: wrap; }
+
+  /* The top picker carries the workspace name; the bottom rail stays icon-first and fully visible. */
+  .product-navigation { overflow-x: hidden; }
+  .product-navigation button { flex: 1 1 0; min-width: 0; }
+  .product-navigation .nav-copy { display: none; }
+
+  /* Cargo zones become stacked editing cards instead of a clipped desktop table. */
+  .zone-form { overflow: visible; }
+  .zone-form-row {
+    min-width: 0;
+    grid-template-columns: repeat(2,minmax(0,1fr));
+    gap: 8px;
+    padding: 10px;
+    border: 1px solid var(--ds-border-subtle);
+    background: var(--ds-surface-screen);
+  }
+  .zone-form-row label:nth-child(1),
+  .zone-form-row label:nth-child(2),
+  .zone-form-row button { grid-column: 1 / -1; }
+  .zone-form-actions { display: grid; grid-template-columns: 1fr; }
+  .zone-schematic article div { display: grid; gap: 4px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

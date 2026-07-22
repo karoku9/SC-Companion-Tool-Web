@@ -1,7 +1,7 @@
 /*
- * SC Companion legibility contract.
+ * SC Companion legibility and interaction contract.
  * This is a design-system layer, not a page-specific override.
- * Visible operational text must remain readable at normal desktop distance.
+ * Visible operational text and keyboard focus must remain clear at normal distance.
  */
 :root,
 [data-theme="drake"] {
@@ -14,6 +14,7 @@
   --ds-type-3xl: 2rem;        /* 32 px */
   --ds-type-operational-max: 2.25rem;
   --ds-type-visible-min: .75rem;
+  --ds-focus-ring: var(--ds-action-primary-hover);
 }
 
 /* Global operational floor. Decorative marks and screen-reader content are excluded. */
@@ -82,6 +83,11 @@
 .section-heading .eyebrow,
 .planner-method-note strong,
 .planner-method-note span,
+.changelog-release summary small,
+.changelog-release summary em,
+.changelog-hero > div > span,
+.changelog-hero > div > p,
+.changelog-hero-summary span,
 .mobile-page-picker,
 .page-status,
 .app-footer {
@@ -149,6 +155,36 @@ textarea,
   font-size: var(--ds-type-sm);
 }
 
+/* Keyboard focus is a first-class state, not a browser-dependent accident. */
+:where(
+  button,
+  a[href],
+  input,
+  select,
+  textarea,
+  summary,
+  [role="button"],
+  [tabindex]:not([tabindex="-1"])
+):focus-visible {
+  outline: 3px solid var(--ds-focus-ring);
+  outline-offset: 3px;
+  box-shadow:
+    0 0 0 1px var(--ds-surface-canvas),
+    0 0 0 5px color-mix(in srgb, var(--ds-focus-ring) 35%, transparent);
+}
+
+#starmap-canvas .map-node:focus-visible { outline: none; box-shadow: none; }
+#starmap-canvas .map-node:focus-visible circle {
+  stroke: var(--ds-focus-ring);
+  stroke-width: 4;
+  filter: drop-shadow(0 0 5px color-mix(in srgb, var(--ds-focus-ring) 70%, transparent));
+}
+
+:where(button, input, select, textarea)[disabled],
+[aria-disabled="true"] {
+  cursor: not-allowed;
+}
+
 .planner-context-bar { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .planner-profile-metrics { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .planner-profile-metrics span { font-size: var(--ds-type-xs); }
@@ -177,8 +213,43 @@ textarea,
   .planner-profile-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
+@media (max-width: 700px) {
+  .app-frame :where(
+    button,
+    select,
+    input:not([type="hidden"]),
+    textarea,
+    summary
+  ) {
+    min-height: 44px !important;
+  }
+  .app-frame .icon-button { min-width: 44px; }
+}
+
 @media (max-width: 560px) {
   .planner-context-bar,
   .planner-profile-metrics { grid-template-columns: 1fr; }
   #current-stop-name { font-size: var(--ds-type-2xl); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0s !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0s !important;
+  }
+}
+
+@media (forced-colors: active) {
+  :where(button, a[href], input, select, textarea, summary, [role="button"], [tabindex]):focus-visible {
+    outline: 3px solid Highlight;
+    box-shadow: none;
+  }
+  #starmap-canvas .map-node:focus-visible circle {
+    stroke: Highlight;
+    filter: none;
+  }
 }

@@ -89,7 +89,8 @@
         import('./route-planner-view.js'),
         import('./changelog-view.js'),
         import('./design-system-view.js'),
-        import('./ui-v2.js')
+        import('./ui-v2.js').then(() => window.SCCompanionCleanInterfaceReady),
+        import('./ui-v2-accessibility.js')
       ]);
     })
     .then(() => window.dispatchEvent(new Event('sc:dynamic-pages-ready')))

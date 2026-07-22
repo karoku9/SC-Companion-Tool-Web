@@ -14,7 +14,7 @@ function cleanCss() {
 }
 
 test('clean interface scripts remain valid JavaScript', () => {
-  ['app.js', 'ui-v2.js', 'ui-v2-operations.js', 'ui-v2-shell.js', 'mfd-icons.js', 'product-shell.js', 'route-view.js', 'hangar-view.js', 'starmap-view.js'].forEach((file) => {
+  ['app.js', 'ui-v2.js', 'ui-v2-operations.js', 'ui-v2-shell.js', 'ui-v2-accessibility.js', 'mfd-icons.js', 'product-shell.js', 'route-view.js', 'hangar-view.js', 'starmap-view.js'].forEach((file) => {
     assert.doesNotThrow(() => new Function(read(file)), `${file} contains invalid JavaScript`);
   });
 });
@@ -47,11 +47,14 @@ test('Operations uses one primary display, one route index and native auxiliary 
 
 test('close and expand controls operate on the native panel only', () => {
   const ui = read('ui-v2-operations.js');
+  const accessibility = read('ui-v2-accessibility.js');
   const css = cleanCss();
   assert.match(ui, /function closeTool/);
   assert.match(ui, /toolPanel\.hidden = true/);
   assert.match(ui, /toolPanel\.classList\.remove\('is-expanded'\)/);
   assert.match(ui, /event\.key === 'Escape'/);
+  assert.match(accessibility, /toolPanel\.setAttribute\('role', expanded \? 'dialog' : 'region'\)/);
+  assert.match(accessibility, /lastToolTrigger/);
   assert.match(css, /tool-panel\.is-expanded \{ position: fixed/);
   assert.doesNotMatch(css, /has-utility-panel/);
 });
@@ -67,10 +70,10 @@ test('navigation continues using the canonical SVG icon family', () => {
   assert.match(shell, /SCCompanionMfdIcons/);
 });
 
-test('interstellar navigation follows the delivered clean rebuild', () => {
+test('visual hardening follows interstellar navigation', () => {
   const roadmap = require('../roadmap.js');
-  assert.equal(roadmap.currentVersion, '0.16');
-  assert.equal(roadmap.releases.find((release) => release.version === '0.15').status, 'done');
-  assert.match(roadmap.releases.find((release) => release.version === '0.16').title, /Interstellar navigation/i);
+  assert.equal(roadmap.currentVersion, '0.17');
+  assert.equal(roadmap.releases.find((release) => release.version === '0.16').status, 'done');
   assert.match(roadmap.releases.find((release) => release.version === '0.17').title, /Visual hardening/i);
+  assert.match(roadmap.releases.find((release) => release.version === '0.18').title, /Mission validation/i);
 });
