@@ -1,0 +1,86 @@
+/* v0.17 visual hardening: shared interaction, focus and reduced-motion rules. */
+:root {
+  --ds-focus-ring: 0 0 0 2px var(--ds-surface-canvas), 0 0 0 4px var(--ds-action-primary-hover);
+}
+
+:where(button, a, input, select, textarea, summary, [tabindex]):focus {
+  outline: none;
+}
+
+:where(button, a, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--ds-action-primary-hover);
+  outline-offset: 3px;
+  box-shadow: var(--ds-focus-ring);
+  position: relative;
+  z-index: 2;
+}
+
+:where(button, [role="button"], summary) {
+  -webkit-tap-highlight-color: transparent;
+}
+
+:where(button, .button, .ds-button, .map-toolbar button, .development-tabs button) {
+  min-block-size: 36px;
+}
+
+:where(input, select, textarea) {
+  caret-color: var(--ds-action-primary-hover);
+}
+
+:where(input, select, textarea):focus-visible {
+  border-color: var(--ds-action-primary-hover);
+}
+
+[aria-disabled="true"],
+button:disabled,
+input:disabled,
+select:disabled,
+textarea:disabled {
+  cursor: not-allowed;
+  opacity: .55;
+}
+
+.app-view[hidden],
+[hidden] {
+  display: none !important;
+}
+
+/* Keep long operational strings inside their workspace instead of widening the page. */
+:where(
+  .operation-primary,
+  .operation-context,
+  .operation-mission,
+  .route-stop-list strong,
+  .route-stop-list small,
+  .mission-card,
+  .planner-profile-card,
+  .planner-stop-main,
+  .map-info-panel,
+  #starmap-route-list strong,
+  .hangar-card,
+  .tool-panel
+) {
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+  }
+}
+
+@media (max-width: 560px) {
+  :where(button, .button, .ds-button, .map-toolbar button, .development-tabs button) {
+    min-block-size: 42px;
+  }
+
+  :where(input, select, textarea) {
+    min-block-size: 42px;
+  }
+}
