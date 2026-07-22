@@ -16,7 +16,9 @@
 
   function renderMissions(missions) {
     cards.replaceChildren();
-    title.textContent = missions.length ? `${missions.length} missions ready` : 'No generated session';
+    title.textContent = missions.length
+      ? `${missions.length} mission${missions.length === 1 ? '' : 's'} ready`
+      : 'No generated session';
     missions.forEach((mission) => {
       const card = document.createElement('article');
       card.className = 'mission-card';
