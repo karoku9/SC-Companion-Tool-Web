@@ -53,14 +53,15 @@ test('index loads the generated navigation shell before section routing', () => 
   assert.ok(html.indexOf('src="product-shell.js"') < html.indexOf('src="sections.js"'));
 });
 
-test('changelog and live planner runtimes are registered', () => {
+test('changelog and cargo-aware planner runtimes are registered', () => {
   const changelog = fs.readFileSync(path.join(__dirname, '..', 'CHANGELOG.md'), 'utf8');
   const app = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
-  assert.match(changelog, /## \[0\.8\.0\]/);
+  assert.match(changelog, /## \[0\.9\.0\]/);
   assert.match(app, /changelog-view\.js/);
   assert.match(app, /route-planner-engine\.js/);
   assert.match(app, /route-planner-view\.js/);
   assert.match(app, /ux-shell\.js/);
+  assert.match(app, /ux-hierarchy-v2\.css/);
 });
 
 test('OCR and Game.log remain in the deferred automation phase', () => {
