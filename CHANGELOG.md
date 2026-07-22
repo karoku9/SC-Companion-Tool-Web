@@ -7,11 +7,38 @@ The project was already under active development before this changelog was intro
 ## [Unreleased]
 
 ### Planned
-- Panel-native Operations components for Moves, Cargo, Adjust and Route.
-- Fleet visual rebuild with ship silhouette and cargo-zone schematic.
-- Route-first Starmap with predictable navigation and fit-to-route controls.
-- Missions and Planner migration to the approved component system.
-- Mission input validation after UI hardening.
+- Browser screenshot hardening for desktop, tool-open, mobile and completed-session states.
+- Keyboard, overflow, contrast and responsive audits.
+- Removal of dead legacy visual files after verification.
+- Mission input validation after visual hardening.
+
+---
+
+## [0.15.0] - 2026-07-22
+
+### Added
+- Second-generation clean frontend built directly on the shared design system.
+- Panel-native Moves, Cargo, Adjust and Route displays inside Operations.
+- Explicit PICK UP and DROP OFF operational hierarchy.
+- Original schematic line art for the Drake Corsair and Cutlass Black in Fleet.
+- Integrated per-ship cargo-zone editor in the Fleet workspace.
+- Route-first SVG Starmap with Route, Stanton and Systems modes.
+- Project-state and visual-hardening verification documents.
+
+### Changed
+- `index.html` now loads only the design system and one clean page-layout entry instead of the accumulated legacy stylesheet stack.
+- `app.js` no longer loads the old workspace shell, UI override layers or embedded cargo-page runtimes.
+- Operations tools render below the primary operation and route-index displays instead of creating a squeezed third desktop column.
+- Pickup/drop-off action and SCU/commodity are primary; route context is secondary; mission provenance is tertiary.
+- Missions, Planner, Fleet, Starmap and Development now use the same clean shell generation.
+- Mission Validation follows a dedicated browser visual-hardening release.
+
+### Fixed
+- Opening Cargo, Moves, Adjust or Route can no longer produce the broken narrow page-within-a-panel layout.
+- Auxiliary tool closing and expansion no longer mutate the main Operations grid.
+- Fleet no longer presents configuration as an unstructured form without a selected-ship visual.
+- Starmap no longer relies on difficult free-camera 3D canvas controls for the primary hauling workflow.
+- Legacy UI contracts in CI were replaced with explicit clean-frontend, design-system and hierarchy tests.
 
 ---
 
