@@ -6,11 +6,27 @@
   const routeList = document.querySelector('#planner-route-list');
   if (!contextModel || !locations || !routeList) return;
 
+  function normalizeLabel(value) {
+    return String(value ?? '')
+      .trim()
+      .toLowerCase()
+      .replace(/[·/]/g, ' ')
+      .replace(/[^a-z0-9]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
   function resolveLocation(label) {
-    const normalized = String(label ?? '').trim().toLowerCase();
-    const candidates = locations.searchOperationalLocations(label);
-    return candidates.find((location) => locations.formatOperationalLabel(location).toLowerCase() === normalized)
-      ?? candidates[0]
+    const normalized = normalizeLabel(label);
+    const shortLabel = String(label ?? '').split('·')[0].trim();
+    const candidates = [
+      ...locations.searchOperationalLocations(label),
+      ...locations.searchOperationalLocations(shortLabel)
+    ];
+    const unique = [...new Map(candidates.map((location) => [location.id, location])).values()];
+    return unique.find((location) => normalizeLabel(locations.formatOperationalLabel(location)) === normalized)
+      ?? unique.find((location) => normalizeLabel(location.navigationTarget ?? location.name) === normalizeLabel(shortLabel))
+      ?? unique[0]
       ?? null;
   }
 
@@ -24,7 +40,7 @@
       const label = item.querySelector('.planner-stop-main > strong')?.textContent?.trim();
       if (!label) return;
       const location = resolveLocation(label);
-      const locationId = location?.id ?? `custom-${label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`;
+      const locationId = location?.id ?? `custom-${normalizeLabel(label).replace(/\s+/g, '-')}`;
       const context = contextModel.buildContext(locationId, { onboardScu: onboardScu(item), label });
       let panel = item.querySelector('.planner-location-context');
       if (!panel) {
