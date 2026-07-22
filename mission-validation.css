@@ -1,9 +1,5 @@
 /* Mission Validation — review-first contract intake */
 .missions-grid { align-items: start; }
-.mission-editor,
-.mission-validation-panel {
-  min-height: 680px;
-}
 .mission-editor {
   grid-template-rows: auto minmax(360px, 1fr) auto auto auto;
 }
@@ -17,6 +13,15 @@
   min-height: 250px;
   display: grid;
   grid-template-rows: auto 1fr;
+}
+
+@media (min-width: 921px) {
+  .mission-editor,
+  .mission-validation-panel {
+    height: clamp(620px, calc(100vh - 180px), 780px);
+    min-height: 0;
+    max-height: 780px;
+  }
 }
 
 .mission-validation-panel[data-status="blocked"] .mfd-header > span { color: var(--ds-status-danger); }
@@ -101,6 +106,7 @@
   gap: 8px;
   padding: 10px;
   overflow-y: auto;
+  overscroll-behavior: contain;
   background: var(--ds-surface-canvas);
 }
 .mission-review-card {
@@ -136,7 +142,7 @@
 .mission-review-row {
   min-width: 0;
   display: grid;
-  grid-template-columns: 42px 105px minmax(150px, 1fr) minmax(180px, 1.15fr) 118px;
+  grid-template-columns: 42px 105px minmax(190px, 1.25fr) minmax(145px, .9fr) 128px;
   gap: 7px;
   align-items: end;
   padding: 9px;
@@ -253,7 +259,7 @@
 
 @media (max-width: 1180px) {
   .mission-review-row {
-    grid-template-columns: 42px 105px minmax(150px, 1fr) minmax(180px, 1fr);
+    grid-template-columns: 42px 105px minmax(170px, 1.2fr) minmax(145px, .9fr);
   }
   .mission-field-status { grid-column: 2 / -1; justify-self: start; }
 }
@@ -262,7 +268,11 @@
   .missions-grid { grid-template-columns: 1fr; }
   .mission-output { grid-column: auto; }
   .mission-editor,
-  .mission-validation-panel { min-height: auto; }
+  .mission-validation-panel {
+    height: auto;
+    min-height: auto;
+    max-height: none;
+  }
   .mission-editor { grid-template-rows: auto minmax(360px, 52vh) auto auto auto; }
   .mission-review-list { max-height: 620px; }
 }
