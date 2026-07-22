@@ -26,7 +26,7 @@ test('product shell reserves every planned page with unique ids', () => {
 test('page statuses distinguish live, blueprint and deferred work', () => {
   assert.equal(pages.getPage('missions').status, 'live');
   assert.equal(pages.getPage('changelog').status, 'live');
-  assert.equal(pages.getPage('route-planner').status, 'blueprint');
+  assert.equal(pages.getPage('route-planner').status, 'live');
   assert.equal(pages.getPage('automation').status, 'later');
 });
 
@@ -53,11 +53,14 @@ test('index loads the generated navigation shell before section routing', () => 
   assert.ok(html.indexOf('src="product-shell.js"') < html.indexOf('src="sections.js"'));
 });
 
-test('changelog markdown contains the current release and is loaded by the runtime', () => {
+test('changelog and live planner runtimes are registered', () => {
   const changelog = fs.readFileSync(path.join(__dirname, '..', 'CHANGELOG.md'), 'utf8');
   const app = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
-  assert.match(changelog, /## \[0\.7\.0\]/);
+  assert.match(changelog, /## \[0\.8\.0\]/);
   assert.match(app, /changelog-view\.js/);
+  assert.match(app, /route-planner-engine\.js/);
+  assert.match(app, /route-planner-view\.js/);
+  assert.match(app, /ux-shell\.js/);
 });
 
 test('OCR and Game.log remain in the deferred automation phase', () => {
