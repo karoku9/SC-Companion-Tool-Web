@@ -2,10 +2,11 @@
 
 (function initializeLocationWorkspace() {
   const model = window.SCCompanionLocations;
-  if (!model) throw new Error('Location model failed to load.');
+  const form = document.querySelector('#location-search');
+  if (!model || !form) return;
 
   const elements = {
-    form: document.querySelector('#location-search'),
+    form,
     query: document.querySelector('#location-query'),
     results: document.querySelector('#search-results'),
     title: document.querySelector('#destination-title'),
@@ -19,73 +20,49 @@
     return labels[type] ?? type;
   }
 
-  function renderDestination(location) {
-    elements.title.textContent = model.formatOperationalLabel(location);
-    elements.navigationTarget.textContent = location.navigationTarget ?? location.name;
-    elements.type.textContent = humanizeType(location.type);
-    elements.path.textContent = model.formatLocationPath(location);
-    window.dispatchEvent(new CustomEvent('sc:location-selected', { detail: { locationId: location.id } }));
-  }
-
-  function selectLocation(location) {
-    renderDestination(location);
-    elements.query.value = location.navigationTarget ?? location.name;
-    renderSearchResults([]);
-  }
-
-  function createResultButton(location) {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'result-button';
-    const title = document.createElement('strong');
-    title.textContent = model.formatOperationalLabel(location);
-    const detail = document.createElement('span');
-    detail.textContent = `In game: ${location.navigationTarget ?? location.name}`;
-    button.append(title, detail);
-    button.addEventListener('click', () => selectLocation(location));
-    return button;
-  }
-
   function renderSearchResults(results) {
-    elements.results.replaceChildren();
-    if (!results.length) {
-      elements.results.hidden = true;
+    elements.results?.replaceChildren();
+    if (!elements.results || !results.length) {
+      if (elements.results) elements.results.hidden = true;
       return;
     }
-    const fragment = document.createDocumentFragment();
-    results.forEach((location) => fragment.append(createResultButton(location)));
-    elements.results.append(fragment);
+    results.forEach((location) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'result-button';
+      button.innerHTML = `<strong>${model.formatOperationalLabel(location)}</strong><span>In game: ${location.navigationTarget ?? location.name}</span>`;
+      button.addEventListener('click', () => selectLocation(location));
+      elements.results.append(button);
+    });
     elements.results.hidden = false;
   }
 
+  function selectLocation(location) {
+    if (!location) return;
+    if (elements.title) elements.title.textContent = model.formatOperationalLabel(location);
+    if (elements.navigationTarget) elements.navigationTarget.textContent = location.navigationTarget ?? location.name;
+    if (elements.type) elements.type.textContent = humanizeType(location.type);
+    if (elements.path) elements.path.textContent = model.formatLocationPath(location);
+    if (elements.query) elements.query.value = location.navigationTarget ?? location.name;
+    renderSearchResults([]);
+    window.dispatchEvent(new CustomEvent('sc:location-selected', { detail: { locationId: location.id } }));
+  }
+
   function runSearch() {
-    const results = model.searchOperationalLocations(elements.query.value);
-    if (results.length === 1) return selectLocation(results[0]);
-    renderSearchResults(results);
+    const results = model.searchOperationalLocations(elements.query?.value ?? '');
+    if (results.length === 1) selectLocation(results[0]);
+    else renderSearchResults(results);
   }
 
   elements.form.addEventListener('submit', (event) => { event.preventDefault(); runSearch(); });
-  elements.query.addEventListener('input', () => {
+  elements.query?.addEventListener('input', () => {
     const value = elements.query.value.trim();
     renderSearchResults(value ? model.searchOperationalLocations(value) : []);
   });
-
-  renderDestination(model.getLocation('stanton-hurston-lorville-teasa'));
+  selectLocation(model.getLocation('stanton-hurston-lorville-teasa'));
 }());
 
-(function loadOperationalRuntimes() {
-  [
-    'cargo-operations.css', 'cargo-corrections.css', 'route-corrections.css', 'changelog.css',
-    'route-planner-live.css', 'ux-refresh.css', 'ux-hierarchy-v2.css', 'workspace-consolidation.css',
-    'release-roadmap.css', 'ui-rebuild.css', 'drake-mfd.css', 'mfd-layout-v2.css', 'design-system.css'
-  ].forEach((href) => {
-    if (document.querySelector(`link[href="${href}"]`)) return;
-    const stylesheet = document.createElement('link');
-    stylesheet.rel = 'stylesheet';
-    stylesheet.href = href;
-    document.head.append(stylesheet);
-  });
-
+(function loadApplicationRuntimes() {
   Promise.all([
     import('./route-corrections.js'),
     import('./route-progress.js'),
@@ -97,20 +74,13 @@
     .then(() => {
       window.dispatchEvent(new Event('sc:route-runtime-ready'));
       window.dispatchEvent(new Event('sc:cargo-runtime-ready'));
-      return import('./load-operations-view.js');
+      return Promise.all([
+        import('./route-planner-view.js'),
+        import('./changelog-view.js'),
+        import('./design-system-view.js'),
+        import('./ui-v2.js')
+      ]);
     })
-    .then(() => import('./design-system-view.js'))
-    .then(() => Promise.all([
-      import('./cargo-corrections-view.js'),
-      import('./cargo-zone-editor-view.js'),
-      import('./route-corrections-view.js'),
-      import('./route-planner-view.js'),
-      import('./changelog-view.js'),
-      import('./ux-shell.js'),
-      import('./workspace-shell.js'),
-      import('./ui-rebuild.js'),
-      import('./mfd-layout-v2.js')
-    ]))
     .then(() => window.dispatchEvent(new Event('sc:dynamic-pages-ready')))
-    .catch((error) => console.error('Operational runtime failed to load.', error));
+    .catch((error) => console.error('Application runtime failed to load.', error));
 }());
