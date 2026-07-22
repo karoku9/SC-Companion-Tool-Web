@@ -87,6 +87,22 @@
 - [x] Preserve current free-text ship records through migration.
 - [x] Add responsive desktop/mobile Fleet loadout coverage.
 
+## v0.21 UX foundation and Starmap 2.0
+
+- [x] Treat Itinerary, System and Network as different navigation layers.
+- [x] Keep selected stop, body or system state visible and persistent.
+- [x] Show current, next and final route objectives without opening a detail panel.
+- [x] Add pan, zoom, fit and center-current map controls.
+- [x] Support arrow-key pan, `+`/`-` zoom, `Home` fit and keyboard node activation.
+- [x] Stop route-list selection from silently changing the active map layer.
+- [x] Make system selection explicit inside the System layer.
+- [x] Reduce map/list duplication by moving full route detail into a collapsible drawer.
+- [x] Replace stacked mobile map panels with an open/close bottom sheet.
+- [x] Preserve 44 px mobile targets, reduced-motion and forced-colour behaviour.
+- [x] Add static tests for orientation, selection, camera controls and layer separation.
+- [ ] Inspect generated desktop, tablet and mobile screenshots before merge.
+- [ ] Confirm route selection, network selection and Open system tasks in Chromium before merge.
+
 ## Repository cleanup
 
 - [ ] Remove legacy CSS and view files in a dedicated reference-cleanup change after confirming no documentation or historical test still links to them.
