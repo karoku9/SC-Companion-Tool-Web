@@ -167,3 +167,21 @@ The project was already under active development before this changelog was intro
 - Four-layer design-system registry covering primitive tokens, semantic roles, component contracts and manufacturer themes.
 - Project-derived Drake palette documented as an approximation rather than an official CIG palette.
 - Semantic roles for surfaces, content, borders, actions, cargo pickup/dropoff/mixed/off-grid and system states.
+- Canonical button, panel, field, status, spacing, typography and icon definitions.
+- Development → UI Kit and UI research implementation rules.
+
+---
+
+## [0.13.0] - 2026-07-22
+
+### Added
+- Compact cockpit-style Operations display with a fixed top status rail and bottom function-key rail.
+- Dedicated route-index display and defensive auxiliary-panel closing.
+
+### Improved
+- Destination typography, page headings, forms and planner cards use cockpit-display proportions.
+- Current actions use action/cargo, operational destination and mission provenance hierarchy.
+
+### Fixed
+- Close and Escape reliably dismiss the auxiliary display.
+- Hidden panels cannot be forced visible by later display declarations.
