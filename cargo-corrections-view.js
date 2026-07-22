@@ -40,7 +40,7 @@
     const row = document.createElement('article');
     row.className = `correction-row${lot.corrected ? ' is-corrected' : ''}`;
     const correction = state.cargoCorrections?.[lot.key] ?? {};
-    const allowed = cargoState.allowedStatuses(lot, lot.correction ? lot.correction.currentStopIndex : state.currentStopIndex);
+    const allowed = cargoState.allowedStatuses(lot, state.currentStopIndex);
 
     const identity = document.createElement('div');
     identity.className = 'correction-identity';
