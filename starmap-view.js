@@ -3,24 +3,151 @@
 (function initializeStarmap() {
   const data = window.SCCompanionStarmapData;
   const session = window.SCCompanionSession;
-  const svg = document.querySelector('#starmap-canvas');
-  if (!data || !session || !svg) return;
+  const page = document.querySelector('#map');
+  if (!data || !session || !page) return;
 
   const NS = 'http://www.w3.org/2000/svg';
+  const BASE_CAMERA = Object.freeze({ x: 0, y: 0, width: 1200, height: 720 });
+  const MIN_CAMERA_WIDTH = 360;
+  const MAX_CAMERA_WIDTH = 1800;
+
+  page.classList.add('starmap-page-v2');
+  page.innerHTML = `
+    <header class="page-header starmap-page-header">
+      <div>
+        <small>NAVIGATION DISPLAY</small>
+        <h2>Starmap</h2>
+        <p>Read the route at a glance, inspect its system context, then return to the next objective without losing your place.</p>
+      </div>
+      <span class="status-tag status-tag--ready">UX foundation</span>
+    </header>
+
+    <div class="starmap-shell">
+      <section class="mfd-panel starmap-primary-panel" aria-label="Interactive navigation map">
+        <header class="starmap-commandbar">
+          <div class="starmap-layer-control">
+            <small>VIEW</small>
+            <div class="starmap-segments" role="tablist" aria-label="Navigation layer">
+              <button type="button" role="tab" data-map-mode="route" aria-selected="true" aria-pressed="true">Itinerary</button>
+              <button type="button" role="tab" data-map-mode="local" aria-selected="false" aria-pressed="false">System</button>
+              <button type="button" role="tab" data-map-mode="network" aria-selected="false" aria-pressed="false">Network</button>
+            </div>
+          </div>
+
+          <label class="starmap-system-picker" for="starmap-system-select" hidden>
+            <span>System</span>
+            <select id="starmap-system-select" aria-label="Select system"></select>
+          </label>
+
+          <div class="starmap-camera-controls" aria-label="Map controls">
+            <button type="button" data-map-action="zoom-out" aria-label="Zoom out" title="Zoom out">−</button>
+            <button type="button" data-map-action="fit" aria-label="Fit map" title="Fit map">Fit</button>
+            <button type="button" data-map-action="current" aria-label="Center current objective" title="Center current objective">Current</button>
+            <button type="button" data-map-action="zoom-in" aria-label="Zoom in" title="Zoom in">+</button>
+          </div>
+        </header>
+
+        <div class="starmap-stage-wrap">
+          <svg id="starmap-canvas" class="starmap-canvas" viewBox="0 0 1200 720" role="img" tabindex="0" aria-label="Interactive route and system map" aria-describedby="starmap-data-note"></svg>
+
+          <div class="starmap-objective-hud" aria-label="Route orientation">
+            <button type="button" data-hud-stop="current">
+              <small>CURRENT OBJECTIVE</small>
+              <strong id="starmap-hud-current">No active route</strong>
+              <span id="starmap-hud-current-meta">Generate a session first</span>
+            </button>
+            <button type="button" data-hud-stop="next">
+              <small>NEXT</small>
+              <strong id="starmap-hud-next">—</strong>
+              <span id="starmap-hud-next-meta">—</span>
+            </button>
+            <button type="button" data-hud-stop="final">
+              <small>FINAL DESTINATION</small>
+              <strong id="starmap-hud-final">—</strong>
+              <span id="starmap-hud-final-meta">—</span>
+            </button>
+          </div>
+
+          <button type="button" class="starmap-context-toggle" id="starmap-context-toggle" aria-controls="starmap-context-panel" aria-expanded="false">
+            <span>Details</span><strong id="starmap-context-toggle-title">Route</strong>
+          </button>
+        </div>
+
+        <footer class="starmap-statusbar">
+          <div><small id="starmap-mode">Itinerary overview</small><strong id="starmap-route-status">No mapped route</strong></div>
+          <span>Wheel or +/− to zoom · drag or arrow keys to move · Home to fit</span>
+        </footer>
+      </section>
+
+      <button type="button" class="starmap-context-backdrop" id="starmap-context-backdrop" aria-label="Close details" tabindex="-1"></button>
+
+      <aside class="mfd-panel starmap-context-panel" id="starmap-context-panel" aria-label="Selected map object">
+        <header class="mfd-header starmap-context-header">
+          <div><small>SELECTED</small><strong id="starmap-selection-title">Route overview</strong></div>
+          <div><span id="starmap-selection-type">Itinerary</span><button type="button" id="starmap-context-close" aria-label="Close details">×</button></div>
+        </header>
+
+        <div class="starmap-selection-card">
+          <p id="starmap-selection-detail">Generate a session to display route stops.</p>
+          <div class="starmap-selection-actions">
+            <button type="button" class="button button--primary" id="starmap-open-system" hidden>Open system</button>
+            <button type="button" class="button button--secondary" id="starmap-center-selection" hidden>Center selection</button>
+          </div>
+        </div>
+
+        <details class="starmap-route-drawer" open>
+          <summary><span>Route sequence</span><strong id="starmap-route-count">0 stops</strong></summary>
+          <ol id="starmap-route-list"></ol>
+        </details>
+
+        <p class="data-note" id="starmap-data-note">Positions are schematic and optimized for navigation clarity, not physical scale.</p>
+      </aside>
+    </div>
+
+    <div class="sr-only" id="starmap-live-status" aria-live="polite"></div>`;
+
+  const svg = page.querySelector('#starmap-canvas');
   const elements = {
-    mode: document.querySelector('#starmap-mode'),
-    title: document.querySelector('#starmap-selection-title'),
-    type: document.querySelector('#starmap-selection-type'),
-    detail: document.querySelector('#starmap-selection-detail'),
-    route: document.querySelector('#starmap-route-status'),
-    routeList: document.querySelector('#starmap-route-list'),
-    note: document.querySelector('#starmap-data-note'),
-    buttons: [...document.querySelectorAll('[data-map-mode]')]
+    mode: page.querySelector('#starmap-mode'),
+    title: page.querySelector('#starmap-selection-title'),
+    type: page.querySelector('#starmap-selection-type'),
+    detail: page.querySelector('#starmap-selection-detail'),
+    route: page.querySelector('#starmap-route-status'),
+    routeCount: page.querySelector('#starmap-route-count'),
+    routeList: page.querySelector('#starmap-route-list'),
+    note: page.querySelector('#starmap-data-note'),
+    buttons: [...page.querySelectorAll('[data-map-mode]')],
+    systemPicker: page.querySelector('.starmap-system-picker'),
+    systemSelect: page.querySelector('#starmap-system-select'),
+    openSystem: page.querySelector('#starmap-open-system'),
+    centerSelection: page.querySelector('#starmap-center-selection'),
+    contextToggle: page.querySelector('#starmap-context-toggle'),
+    contextToggleTitle: page.querySelector('#starmap-context-toggle-title'),
+    contextClose: page.querySelector('#starmap-context-close'),
+    contextBackdrop: page.querySelector('#starmap-context-backdrop'),
+    liveStatus: page.querySelector('#starmap-live-status'),
+    hudCurrent: page.querySelector('#starmap-hud-current'),
+    hudCurrentMeta: page.querySelector('#starmap-hud-current-meta'),
+    hudNext: page.querySelector('#starmap-hud-next'),
+    hudNextMeta: page.querySelector('#starmap-hud-next-meta'),
+    hudFinal: page.querySelector('#starmap-hud-final'),
+    hudFinalMeta: page.querySelector('#starmap-hud-final-meta')
   };
 
+  data.systems.forEach((system) => {
+    const option = document.createElement('option');
+    option.value = system.id;
+    option.textContent = system.name;
+    elements.systemSelect.append(option);
+  });
+
   let mode = 'route';
-  let selectedKey = 'route';
+  let selected = { kind: 'route', key: 'route', systemId: null, object: null };
   let selectedSystemId = 'stanton';
+  let camera = { ...BASE_CAMERA };
+  let pointByKey = new Map();
+  let drag = null;
+  let hudStops = { current: null, next: null, final: null };
 
   function navigation() {
     return window.SCCompanionNavigationEstimates ?? null;
@@ -43,12 +170,13 @@
     return element;
   }
 
-  function clear() {
-    svg.replaceChildren();
-    const defs = add(svg, 'defs');
-    const pattern = add(defs, 'pattern', { id: 'map-grid', width: 40, height: 40, patternUnits: 'userSpaceOnUse' });
-    add(pattern, 'path', { d: 'M 40 0 L 0 0 0 40', class: 'map-grid-line', fill: 'none' });
-    add(svg, 'rect', { x: 0, y: 0, width: 1000, height: 600, fill: 'url(#map-grid)' });
+  function trimLabel(value, maximum = 34) {
+    const text = String(value ?? '');
+    return text.length > maximum ? `${text.slice(0, maximum - 1)}…` : text;
+  }
+
+  function formatType(value) {
+    return String(value ?? '').replace(/-/g, ' ').replace(/\b\w/g, (character) => character.toUpperCase());
   }
 
   function routeContext() {
@@ -74,22 +202,16 @@
   }
 
   function operationSummary(stop) {
+    if (!stop?.operations) return 'No operation details';
     const pickup = stop.operations.filter((operation) => operation.type !== 'delivery' && operation.lotId).reduce((sum, operation) => sum + Number(operation.scu ?? 0), 0);
     const drop = stop.operations.filter((operation) => operation.type === 'delivery' && operation.lotId).reduce((sum, operation) => sum + Number(operation.scu ?? 0), 0);
-    return [drop ? `Drop off ${drop} SCU` : '', pickup ? `Pick up ${pickup} SCU` : ''].filter(Boolean).join(' · ') || `${stop.operations.length} objective${stop.operations.length === 1 ? '' : 's'}`;
+    return [drop ? `Drop ${drop} SCU` : '', pickup ? `Pick up ${pickup} SCU` : ''].filter(Boolean).join(' · ') || `${stop.operations.length} objective${stop.operations.length === 1 ? '' : 's'}`;
   }
 
   function legText(estimate) {
     if (!estimate) return 'Navigation estimate unavailable';
     const jumps = estimate.jumpCount ? ` · ${estimate.jumpCount} jump${estimate.jumpCount === 1 ? '' : 's'}` : '';
     return `${estimate.distanceLabel} · ${estimate.minMinutes}–${estimate.maxMinutes} min${jumps}`;
-  }
-
-  function setSelection(title, type, detail, key = '') {
-    selectedKey = key || title;
-    elements.title.textContent = title;
-    elements.type.textContent = type;
-    elements.detail.textContent = detail;
   }
 
   function stopState(stop, context) {
@@ -99,207 +221,578 @@
     return 'future';
   }
 
-  function addRouteNode(parent, stop, index, x, y, context) {
-    const state = stopState(stop, context);
-    const group = add(parent, 'g', { class: `map-node map-route-node is-${state}`, tabindex: 0, role: 'button', 'aria-label': `${index + 1}. ${stop.locationLabel}. ${operationSummary(stop)}` });
-    add(group, 'circle', { cx: x, cy: y, r: state === 'current' ? 24 : 20 });
-    add(group, 'text', { x, y: y + 4, 'text-anchor': 'middle', class: 'map-node-index' }, String(index + 1).padStart(2, '0'));
-    const label = stop.locationLabel.length > 34 ? `${stop.locationLabel.slice(0, 32)}…` : stop.locationLabel;
-    const labelOnLeft = x > 740;
-    const labelX = labelOnLeft ? x - 32 : x + 32;
-    const textAnchor = labelOnLeft ? 'end' : 'start';
-    const labelY = index % 2 === 0 ? y - 24 : y + 34;
-    add(group, 'text', { x: labelX, y: labelY, 'text-anchor': textAnchor, class: 'map-route-label' }, label);
-    add(group, 'text', { x: labelX, y: labelY + 18, 'text-anchor': textAnchor, class: 'map-node-sub map-route-summary' }, operationSummary(stop));
-    const previousStop = index ? context.stops[index - 1] : null;
-    group.addEventListener('click', () => {
-      const estimate = estimateLeg(previousStop, stop, context);
-      setSelection(stop.locationLabel, `Route stop ${index + 1}`, `${operationSummary(stop)}. ${previousStop ? `From ${previousStop.locationLabel}: ${legText(estimate)}.` : 'Session starting stop.'}${stop.mandatory ? ' Mandatory.' : ''}${stop.skipped ? ' Skipped.' : ''}`, String(stop.id));
-    });
-    group.addEventListener('keydown', (event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); group.click(); } });
-    return { x, y };
-  }
-
-  function routePositions(count) {
-    if (count <= 4) {
-      const gap = 780 / Math.max(1, count - 1);
-      return Array.from({ length: count }, (_, index) => ({ x: 100 + index * gap, y: 300 }));
-    }
-    const columns = 4;
-    const rows = Math.ceil(count / columns);
-    const positions = [];
-    for (let index = 0; index < count; index += 1) {
-      const row = Math.floor(index / columns);
-      const columnInRow = index % columns;
-      const direction = row % 2 === 0 ? columnInRow : columns - 1 - columnInRow;
-      positions.push({ x: 120 + direction * 245, y: 145 + row * (310 / Math.max(1, rows - 1)) });
-    }
-    return positions;
+  function activeStops(context) {
+    return context.stops.filter((stop) => !stop.skipped);
   }
 
   function routeSummary(context) {
-    if (!context.stops.length || !navigation()) return null;
-    return navigation().summarizeRoute(context.stops, { quantumTimeFactor: activeQuantumFactor(context) });
+    const stops = activeStops(context);
+    if (!stops.length || !navigation()) return null;
+    return navigation().summarizeRoute(stops, { quantumTimeFactor: activeQuantumFactor(context) });
+  }
+
+  function defaultSystemId(context) {
+    const selectedAnchor = selected.kind === 'stop' ? data.getLocationAnchor(selected.object?.locationId) : null;
+    const current = context.progress?.currentStop ?? activeStops(context)[0] ?? null;
+    return selectedAnchor?.systemId ?? data.getLocationAnchor(current?.locationId)?.systemId ?? selectedSystemId;
+  }
+
+  function cameraViewBox() {
+    return `${camera.x} ${camera.y} ${camera.width} ${camera.height}`;
+  }
+
+  function applyCamera() {
+    svg.setAttribute('viewBox', cameraViewBox());
+  }
+
+  function resetCamera() {
+    camera = { ...BASE_CAMERA };
+    applyCamera();
+  }
+
+  function zoomAt(factor, centerX = camera.x + camera.width / 2, centerY = camera.y + camera.height / 2) {
+    const nextWidth = Math.min(MAX_CAMERA_WIDTH, Math.max(MIN_CAMERA_WIDTH, camera.width * factor));
+    const ratio = nextWidth / camera.width;
+    const nextHeight = nextWidth * BASE_CAMERA.height / BASE_CAMERA.width;
+    camera = {
+      x: centerX - (centerX - camera.x) * ratio,
+      y: centerY - (centerY - camera.y) * ratio,
+      width: nextWidth,
+      height: nextHeight
+    };
+    applyCamera();
+  }
+
+  function panBy(dx, dy) {
+    camera.x += dx;
+    camera.y += dy;
+    applyCamera();
+  }
+
+  function svgPoint(clientX, clientY) {
+    const rect = svg.getBoundingClientRect();
+    return {
+      x: camera.x + ((clientX - rect.left) / Math.max(rect.width, 1)) * camera.width,
+      y: camera.y + ((clientY - rect.top) / Math.max(rect.height, 1)) * camera.height
+    };
+  }
+
+  function centerOnKey(key, announce = true) {
+    const point = pointByKey.get(String(key));
+    if (!point) return false;
+    const targetWidth = Math.min(camera.width, 720);
+    const targetHeight = targetWidth * BASE_CAMERA.height / BASE_CAMERA.width;
+    camera = {
+      x: point.x - targetWidth / 2,
+      y: point.y - targetHeight / 2,
+      width: targetWidth,
+      height: targetHeight
+    };
+    applyCamera();
+    if (announce) elements.liveStatus.textContent = `Centered ${selected.object?.locationLabel ?? selected.object?.name ?? elements.title.textContent}`;
+    return true;
+  }
+
+  function clearMap() {
+    svg.replaceChildren();
+    pointByKey = new Map();
+    const defs = add(svg, 'defs');
+    const pattern = add(defs, 'pattern', { id: 'map-grid-v2', width: 48, height: 48, patternUnits: 'userSpaceOnUse' });
+    add(pattern, 'path', { d: 'M 48 0 L 0 0 0 48', class: 'map-grid-line', fill: 'none' });
+    const arrow = add(defs, 'marker', { id: 'map-arrow', markerWidth: 8, markerHeight: 8, refX: 6, refY: 3, orient: 'auto', markerUnits: 'strokeWidth' });
+    add(arrow, 'path', { d: 'M0,0 L0,6 L7,3 z', class: 'map-arrow-head' });
+    add(svg, 'rect', { x: -2000, y: -1200, width: 5200, height: 3200, fill: 'url(#map-grid-v2)', class: 'map-background' });
+  }
+
+  function setSelection(next, options = {}) {
+    selected = next;
+    elements.title.textContent = next.title;
+    elements.type.textContent = next.type;
+    elements.detail.textContent = next.detail;
+    elements.contextToggleTitle.textContent = trimLabel(next.title, 23);
+    elements.openSystem.hidden = !next.systemId;
+    elements.openSystem.textContent = next.kind === 'system' ? 'Open system' : 'View in system';
+    elements.centerSelection.hidden = !pointByKey.has(String(next.key));
+    page.querySelectorAll('.map-node.is-selected').forEach((item) => item.classList.remove('is-selected'));
+    page.querySelector(`[data-map-key="${CSS.escape(String(next.key))}"]`)?.classList.add('is-selected');
+    page.querySelectorAll('#starmap-route-list button').forEach((button) => button.classList.toggle('is-selected', button.dataset.stopId === String(next.key)));
+    if (options.announce !== false) elements.liveStatus.textContent = `Selected ${next.title}`;
+    if (options.openPanel) openContextPanel();
+  }
+
+  function selectStop(stop, index, context, options = {}) {
+    if (!stop) return;
+    const previousStop = index > 0 ? context.stops[index - 1] : null;
+    const estimate = estimateLeg(previousStop, stop, context);
+    const anchor = data.getLocationAnchor(stop.locationId);
+    setSelection({
+      kind: 'stop',
+      key: String(stop.id),
+      object: stop,
+      systemId: anchor?.systemId ?? null,
+      title: stop.locationLabel,
+      type: `Stop ${index + 1} of ${context.stops.length}`,
+      detail: `${operationSummary(stop)}. ${previousStop ? `From ${previousStop.locationLabel}: ${legText(estimate)}.` : 'Session starting point.'}${stop.mandatory ? ' Mandatory stop.' : ''}${stop.skipped ? ' Currently skipped.' : ''}`
+    }, options);
+  }
+
+  function selectSystem(system, options = {}) {
+    if (!system) return;
+    selectedSystemId = system.id;
+    elements.systemSelect.value = system.id;
+    setSelection({
+      kind: 'system',
+      key: system.id,
+      object: system,
+      systemId: system.id,
+      title: system.name,
+      type: system.classification,
+      detail: `${system.security}. ${system.availability}. Select System to inspect bodies and route stops.`
+    }, options);
+  }
+
+  function addAccessibleGroup(parent, attributes, onActivate) {
+    const group = add(parent, 'g', { tabindex: 0, role: 'button', ...attributes });
+    group.addEventListener('click', onActivate);
+    group.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        onActivate();
+      }
+    });
+    return group;
+  }
+
+  function routePositions(count) {
+    if (count <= 1) return [{ x: 600, y: 360 }];
+    const columns = Math.min(4, count);
+    const rows = Math.ceil(count / columns);
+    const xStart = columns === 1 ? 600 : 150;
+    const xGap = columns === 1 ? 0 : 900 / (columns - 1);
+    const yStart = rows === 1 ? 360 : 175;
+    const yGap = rows === 1 ? 0 : 370 / (rows - 1);
+    return Array.from({ length: count }, (_, index) => {
+      const row = Math.floor(index / columns);
+      const column = index % columns;
+      const visualColumn = row % 2 === 0 ? column : columns - 1 - column;
+      return { x: xStart + visualColumn * xGap, y: yStart + row * yGap, row };
+    });
+  }
+
+  function routePath(from, to) {
+    if (Math.abs(from.y - to.y) < 2) return `M ${from.x} ${from.y} L ${to.x} ${to.y}`;
+    const midpointY = (from.y + to.y) / 2;
+    return `M ${from.x} ${from.y} C ${from.x} ${midpointY}, ${to.x} ${midpointY}, ${to.x} ${to.y}`;
+  }
+
+  function addRouteNode(parent, stop, index, position, context) {
+    const state = stopState(stop, context);
+    const key = String(stop.id);
+    pointByKey.set(key, position);
+    const group = addAccessibleGroup(parent, {
+      class: `map-node map-route-node is-${state}${selected.key === key ? ' is-selected' : ''}`,
+      'data-map-key': key,
+      'aria-label': `${index + 1}. ${stop.locationLabel}. ${operationSummary(stop)}. ${state}`
+    }, () => selectStop(stop, index, context, { openPanel: window.matchMedia('(max-width: 900px)').matches }));
+
+    add(group, 'circle', { cx: position.x, cy: position.y, r: state === 'current' ? 29 : 24, class: 'map-node-halo' });
+    add(group, 'circle', { cx: position.x, cy: position.y, r: state === 'current' ? 19 : 16, class: 'map-node-core' });
+    add(group, 'text', { x: position.x, y: position.y + 4, 'text-anchor': 'middle', class: 'map-node-index' }, String(index + 1).padStart(2, '0'));
+
+    const labelAbove = position.row % 2 === 1;
+    const labelY = labelAbove ? position.y - 73 : position.y + 38;
+    const labelWidth = 220;
+    const labelX = Math.min(1200 - labelWidth - 20, Math.max(20, position.x - labelWidth / 2));
+    add(group, 'rect', { x: labelX, y: labelY, width: labelWidth, height: 52, rx: 4, class: 'map-label-plate' });
+    add(group, 'text', { x: labelX + 10, y: labelY + 20, class: 'map-route-label' }, trimLabel(stop.locationLabel, 31));
+    add(group, 'text', { x: labelX + 10, y: labelY + 39, class: 'map-node-sub' }, trimLabel(operationSummary(stop), 36));
   }
 
   function renderRouteMode(context) {
-    elements.mode.textContent = 'Active route';
-    if (!context.route?.stops?.length) {
-      add(svg, 'text', { x: 500, y: 285, 'text-anchor': 'middle', fill: 'currentColor' }, 'NO ACTIVE ROUTE');
-      add(svg, 'text', { x: 500, y: 315, 'text-anchor': 'middle', class: 'map-node-sub' }, 'Generate a hauling session to display stop order.');
-      elements.route.textContent = 'No active route';
-      setSelection('Active route', 'Route', 'Generate a session to display route stops.', 'route');
+    elements.mode.textContent = 'Itinerary overview';
+    elements.systemPicker.hidden = true;
+    const stops = context.stops;
+    if (!stops.length) {
+      add(svg, 'text', { x: 600, y: 330, 'text-anchor': 'middle', class: 'map-empty-title' }, 'NO ACTIVE ROUTE');
+      add(svg, 'text', { x: 600, y: 370, 'text-anchor': 'middle', class: 'map-empty-copy' }, 'Generate a hauling session in Missions to display the itinerary.');
+      elements.route.textContent = 'No mapped route';
+      setSelection({ kind: 'route', key: 'route', object: null, systemId: null, title: 'Route overview', type: 'Itinerary', detail: 'Generate a session to display route stops.' }, { announce: false });
       return;
     }
-    const positions = routePositions(context.stops.length);
+
+    const positions = routePositions(stops.length);
+    const links = add(svg, 'g', { class: 'map-route-links' });
     for (let index = 1; index < positions.length; index += 1) {
-      add(svg, 'path', { d: `M ${positions[index - 1].x} ${positions[index - 1].y} L ${positions[index].x} ${positions[index].y}`, class: 'map-link map-link--active' });
+      const destinationState = stopState(stops[index], context);
+      add(links, 'path', {
+        d: routePath(positions[index - 1], positions[index]),
+        class: `map-link map-link--route is-${destinationState}`,
+        'marker-end': 'url(#map-arrow)'
+      });
     }
-    context.stops.forEach((stop, index) => addRouteNode(svg, stop, index, positions[index].x, positions[index].y, context));
-    const activeCount = context.route.stops.length;
+    const nodes = add(svg, 'g', { class: 'map-route-nodes' });
+    stops.forEach((stop, index) => addRouteNode(nodes, stop, index, positions[index], context));
+
     const summary = routeSummary(context);
+    const completed = context.progress?.completedStopIds.length ?? 0;
     elements.route.textContent = summary
-      ? `${activeCount} stops · ${summary.distanceLabel} · ${summary.minMinutes}–${summary.maxMinutes} min navigation`
-      : `${activeCount} active stops · ${context.progress?.completedStopIds.length ?? 0} complete`;
-    if (selectedKey === 'route') {
-      setSelection('Active route', 'Route', summary
-        ? `${activeCount} active stops. Estimated normal-space distance ${summary.distanceLabel}; navigation ${summary.minMinutes}–${summary.maxMinutes} minutes. Arrival and cargo handling are shown in Planner.`
-        : `${activeCount} active stops. Click a node or route-list entry for details.`, 'route');
+      ? `${completed}/${stops.length} complete · ${summary.minMinutes}–${summary.maxMinutes} min navigation · ${summary.distanceLabel}`
+      : `${completed}/${stops.length} stops complete`;
+
+    if (selected.kind === 'route') {
+      setSelection({
+        kind: 'route', key: 'route', object: context.route, systemId: null,
+        title: 'Route overview', type: 'Itinerary',
+        detail: summary
+          ? `${stops.length} stops across ${new Set(stops.map((stop) => data.getLocationAnchor(stop.locationId)?.systemId).filter(Boolean)).size} systems. Estimated navigation ${summary.minMinutes}–${summary.maxMinutes} minutes. Select a stop for cargo and leg details.`
+          : `${stops.length} stops. Select a stop for details.`
+      }, { announce: false });
     }
   }
 
   function projectedBodyPoints(system) {
     const maxRadius = Math.max(...system.bodies.map((body) => Number(body.radius ?? 0)), 1);
-    const scale = 235 / maxRadius;
+    const scale = 270 / maxRadius;
     return new Map(system.bodies.map((body) => {
-      if (!body.radius) return [body.id, [500, 300]];
+      if (!body.radius) return [body.id, [600, 360]];
       const angle = Number(body.angle ?? 0) * Math.PI / 180;
-      return [body.id, [500 + Math.cos(angle) * body.radius * scale, 300 + Math.sin(angle) * body.radius * scale]];
+      return [body.id, [600 + Math.cos(angle) * body.radius * scale, 360 + Math.sin(angle) * body.radius * scale]];
     }));
   }
 
-  function currentSystemId(context) {
-    const current = context.progress?.currentStop ?? context.stops.find((stop) => !stop.skipped) ?? null;
-    return data.getLocationAnchor(current?.locationId)?.systemId ?? selectedSystemId;
-  }
-
   function renderLocalMode(context) {
-    selectedSystemId = currentSystemId(context);
+    selectedSystemId = defaultSystemId(context);
     const system = data.getSystem(selectedSystemId) ?? data.getSystem('stanton');
+    selectedSystemId = system.id;
+    elements.systemSelect.value = system.id;
+    elements.systemPicker.hidden = false;
     elements.mode.textContent = `${system.name} system`;
+
     const points = projectedBodyPoints(system);
-    const maxOrbit = 235;
     const orbitBodies = system.bodies.filter((body) => body.radius);
+    const maxRadius = Math.max(...orbitBodies.map((body) => Number(body.radius ?? 1)), 1);
     orbitBodies.forEach((body) => {
-      const radius = Number(body.radius ?? 0) / Math.max(...orbitBodies.map((item) => Number(item.radius ?? 1))) * maxOrbit;
-      add(svg, 'circle', { cx: 500, cy: 300, r: radius, class: 'map-orbit' });
+      add(svg, 'circle', { cx: 600, cy: 360, r: Number(body.radius ?? 0) / maxRadius * 270, class: 'map-orbit' });
     });
+
+    const bodiesLayer = add(svg, 'g', { class: 'map-system-bodies' });
     system.bodies.forEach((body) => {
       const [x, y] = points.get(body.id);
-      const group = add(svg, 'g', { class: 'map-node', tabindex: 0, role: 'button' });
-      add(group, 'circle', { cx: x, cy: y, r: body.type.includes('star') ? 20 : 13 });
-      const labelOnLeft = x > 760;
-      add(group, 'text', { x: labelOnLeft ? x - 22 : x + 22, y: y + 4, 'text-anchor': labelOnLeft ? 'end' : 'start' }, body.name);
-      group.addEventListener('click', () => setSelection(body.name, body.type.replace(/-/g, ' '), `${system.name} · ${system.security}`, body.id));
+      const key = body.id;
+      pointByKey.set(key, { x, y });
+      const group = addAccessibleGroup(bodiesLayer, {
+        class: `map-node map-body-node${selected.key === key ? ' is-selected' : ''}`,
+        'data-map-key': key,
+        'aria-label': `${body.name}, ${formatType(body.type)}`
+      }, () => setSelection({
+        kind: 'body', key, object: body, systemId: system.id,
+        title: body.name, type: formatType(body.type),
+        detail: `${system.name} system. Orbital placement is schematic and used only for navigation context.`
+      }, { openPanel: window.matchMedia('(max-width: 900px)').matches }));
+      const radius = body.type.includes('star') ? 24 : Math.max(9, Number(body.size ?? 5) + 7);
+      add(group, 'circle', { cx: x, cy: y, r: radius, class: 'map-node-core' });
+      const labelOnLeft = x > 860;
+      add(group, 'text', { x: labelOnLeft ? x - radius - 12 : x + radius + 12, y: y + 4, 'text-anchor': labelOnLeft ? 'end' : 'start', class: 'map-body-label' }, body.name);
     });
 
     const mapped = context.stops.filter((stop) => data.getLocationAnchor(stop.locationId)?.systemId === system.id);
-    mapped.forEach((stop, index) => {
+    const offsetsByBody = new Map();
+    const stopsLayer = add(svg, 'g', { class: 'map-system-stops' });
+    mapped.forEach((stop) => {
+      const routeIndex = context.stops.indexOf(stop);
       const anchor = data.getLocationAnchor(stop.locationId);
-      const [baseX, baseY] = points.get(anchor.bodyId) ?? [500, 300];
-      const angle = index * 1.9;
-      const x = baseX + Math.cos(angle) * 38;
-      const y = baseY + Math.sin(angle) * 38;
-      addRouteNode(svg, stop, context.stops.indexOf(stop), x, y, context);
+      const [baseX, baseY] = points.get(anchor.bodyId) ?? [600, 360];
+      const offsetIndex = offsetsByBody.get(anchor.bodyId) ?? 0;
+      offsetsByBody.set(anchor.bodyId, offsetIndex + 1);
+      const angle = -Math.PI / 3 + offsetIndex * 1.25;
+      const x = baseX + Math.cos(angle) * 58;
+      const y = baseY + Math.sin(angle) * 58;
+      const key = String(stop.id);
+      pointByKey.set(key, { x, y });
+      const state = stopState(stop, context);
+      const group = addAccessibleGroup(stopsLayer, {
+        class: `map-node map-system-stop is-${state}${selected.key === key ? ' is-selected' : ''}`,
+        'data-map-key': key,
+        'aria-label': `${stop.locationLabel}. Route stop ${routeIndex + 1}. ${state}`
+      }, () => selectStop(stop, routeIndex, context, { openPanel: window.matchMedia('(max-width: 900px)').matches }));
+      add(group, 'line', { x1: baseX, y1: baseY, x2: x, y2: y, class: 'map-anchor-link' });
+      add(group, 'circle', { cx: x, cy: y, r: state === 'current' ? 18 : 14, class: 'map-node-core' });
+      add(group, 'text', { x, y: y + 4, 'text-anchor': 'middle', class: 'map-node-index' }, String(routeIndex + 1).padStart(2, '0'));
+      const labelX = x > 850 ? x - 24 : x + 24;
+      add(group, 'text', { x: labelX, y: y - 3, 'text-anchor': x > 850 ? 'end' : 'start', class: 'map-route-label' }, trimLabel(stop.locationLabel, 29));
+      add(group, 'text', { x: labelX, y: y + 15, 'text-anchor': x > 850 ? 'end' : 'start', class: 'map-node-sub' }, trimLabel(operationSummary(stop), 31));
     });
-    elements.route.textContent = `${mapped.length} route stop${mapped.length === 1 ? '' : 's'} in ${system.name}`;
-    if (selectedKey === 'route') setSelection(system.name, system.classification, `${system.security}. ${mapped.length} active route stops mapped here.`, system.id);
+
+    elements.route.textContent = `${mapped.length} route stop${mapped.length === 1 ? '' : 's'} in ${system.name} · ${system.security}`;
+    if (selected.kind === 'route' || (selected.systemId && selected.systemId !== system.id)) selectSystem(system, { announce: false });
   }
 
   function renderNetworkMode(context) {
+    elements.systemPicker.hidden = true;
     elements.mode.textContent = 'System network';
-    const points = { stanton: [230, 350], pyro: [505, 190], nyx: [775, 360] };
+    const points = { stanton: { x: 225, y: 455 }, pyro: { x: 600, y: 220 }, nyx: { x: 975, y: 455 } };
+    const routeSystems = activeStops(context).map((stop) => data.getLocationAnchor(stop.locationId)?.systemId).filter(Boolean);
+    const activeSystems = new Set(routeSystems);
+
+    const linksLayer = add(svg, 'g', { class: 'map-network-links' });
     data.connections.forEach((connection) => {
       const from = points[connection.from];
       const to = points[connection.to];
-      const placeholder = connection.status === 'active-placeholder' || connection.status === 'placeholder';
-      add(svg, 'path', { d: `M ${from[0]} ${from[1]} L ${to[0]} ${to[1]}`, class: `map-link${placeholder ? ' is-placeholder' : ''}` });
-      const midpointX = (from[0] + to[0]) / 2;
-      const midpointY = (from[1] + to[1]) / 2;
-      add(svg, 'text', { x: midpointX, y: midpointY - 8, 'text-anchor': 'middle', class: 'map-node-sub' }, placeholder ? 'ACTIVE PLACEHOLDER' : 'ACTIVE JUMP');
-    });
-    const activeSystems = new Set(context.stops.map((stop) => data.getLocationAnchor(stop.locationId)?.systemId).filter(Boolean));
-    data.systems.forEach((system) => {
-      const [x, y] = points[system.id];
-      const group = add(svg, 'g', { class: `map-node${activeSystems.has(system.id) ? ' is-current' : ''}`, tabindex: 0, role: 'button' });
-      add(group, 'circle', { cx: x, cy: y, r: activeSystems.has(system.id) ? 25 : 19 });
-      add(group, 'text', { x: x + 33, y: y - 3 }, system.name.toUpperCase());
-      add(group, 'text', { x: x + 33, y: y + 16, class: 'map-node-sub' }, system.availability);
-      group.addEventListener('click', () => {
-        selectedSystemId = system.id;
-        setSelection(system.name, system.classification, `${system.security} · ${system.availability}. Select Local system to inspect its route stops.`, system.id);
+      const isRouteLink = routeSystems.some((systemId, index) => index > 0 && ((routeSystems[index - 1] === connection.from && systemId === connection.to) || (routeSystems[index - 1] === connection.to && systemId === connection.from)));
+      const placeholder = connection.status.includes('placeholder');
+      add(linksLayer, 'path', {
+        d: `M ${from.x} ${from.y} L ${to.x} ${to.y}`,
+        class: `map-link map-network-link${placeholder ? ' is-placeholder' : ''}${isRouteLink ? ' is-route' : ''}`,
+        'marker-end': isRouteLink ? 'url(#map-arrow)' : ''
       });
+      const midpointX = (from.x + to.x) / 2;
+      const midpointY = (from.y + to.y) / 2;
+      add(linksLayer, 'text', { x: midpointX, y: midpointY - 12, 'text-anchor': 'middle', class: 'map-network-label' }, placeholder ? 'TEMPORARY LINK' : 'JUMP LINK');
     });
+
+    const systemsLayer = add(svg, 'g', { class: 'map-network-systems' });
+    data.systems.forEach((system) => {
+      const point = points[system.id];
+      pointByKey.set(system.id, point);
+      const isActive = activeSystems.has(system.id);
+      const group = addAccessibleGroup(systemsLayer, {
+        class: `map-node map-system-node${isActive ? ' is-route-system' : ''}${selected.key === system.id ? ' is-selected' : ''}`,
+        'data-map-key': system.id,
+        'aria-label': `${system.name}. ${system.classification}. ${isActive ? 'Contains active route stops.' : 'No active route stops.'}`
+      }, () => selectSystem(system, { openPanel: window.matchMedia('(max-width: 900px)').matches }));
+      add(group, 'circle', { cx: point.x, cy: point.y, r: isActive ? 38 : 31, class: 'map-node-halo' });
+      add(group, 'circle', { cx: point.x, cy: point.y, r: isActive ? 25 : 20, class: 'map-node-core' });
+      add(group, 'rect', { x: point.x - 92, y: point.y + 52, width: 184, height: 62, rx: 4, class: 'map-label-plate' });
+      add(group, 'text', { x: point.x, y: point.y + 76, 'text-anchor': 'middle', class: 'map-system-label' }, system.name.toUpperCase());
+      add(group, 'text', { x: point.x, y: point.y + 97, 'text-anchor': 'middle', class: 'map-node-sub' }, isActive ? `${routeSystems.filter((id) => id === system.id).length} route stops` : system.availability);
+    });
+
     const summary = routeSummary(context);
     elements.route.textContent = activeSystems.size
-      ? `${activeSystems.size} systems · ${summary?.jumpCount ?? 0} route jumps · ${summary?.distanceLabel ?? 'distance unavailable'}`
-      : 'No mapped active route';
-    if (selectedKey === 'route') {
+      ? `${activeSystems.size} systems on route · ${summary?.jumpCount ?? 0} jumps · ${summary?.distanceLabel ?? 'distance unavailable'}`
+      : 'No systems on an active route';
+    if (selected.kind === 'route') {
       const snapshot = official()?.snapshot;
-      setSelection('System network', 'Navigation', `Stanton, Pyro and Nyx jump topology. ${snapshot ? `Official web snapshot ${snapshot.gameVersion}, verified ${snapshot.verifiedAt}.` : ''}`, 'network');
+      setSelection({
+        kind: 'network', key: 'network', object: null, systemId: null,
+        title: 'System network', type: 'Navigation layer',
+        detail: `Stanton, Pyro and Nyx jump topology.${snapshot ? ` Official web snapshot ${snapshot.gameVersion}, verified ${snapshot.verifiedAt}.` : ''} Select a system to inspect it.`
+      }, { announce: false });
     }
+  }
+
+  function updateHud(context) {
+    const active = activeStops(context);
+    const current = context.progress?.currentStop ?? active.find((stop) => !context.progress?.completedSet.has(String(stop.id))) ?? active[0] ?? null;
+    const currentIndex = current ? active.indexOf(current) : -1;
+    const next = currentIndex >= 0 ? active.slice(currentIndex + 1).find((stop) => !context.progress?.completedSet.has(String(stop.id))) ?? null : null;
+    const final = active.at(-1) ?? null;
+    hudStops = { current, next, final };
+
+    const setHud = (stop, titleElement, metaElement, fallback) => {
+      titleElement.textContent = stop?.locationLabel ?? fallback;
+      metaElement.textContent = stop ? operationSummary(stop) : '—';
+      titleElement.closest('button').disabled = !stop;
+    };
+    setHud(current, elements.hudCurrent, elements.hudCurrentMeta, 'No active route');
+    setHud(next, elements.hudNext, elements.hudNextMeta, 'Route ends here');
+    setHud(final, elements.hudFinal, elements.hudFinalMeta, '—');
   }
 
   function renderRouteList(context) {
     elements.routeList.replaceChildren();
-    if (!context.stops.length) return;
+    elements.routeCount.textContent = `${context.stops.length} stop${context.stops.length === 1 ? '' : 's'}`;
+    if (!context.stops.length) {
+      const empty = document.createElement('li');
+      empty.className = 'starmap-route-empty';
+      empty.textContent = 'No active route';
+      elements.routeList.append(empty);
+      return;
+    }
+
     context.stops.forEach((stop, index) => {
       const item = document.createElement('li');
       const button = document.createElement('button');
       button.type = 'button';
-      if (context.progress?.currentStop?.id === stop.id) button.setAttribute('aria-current', 'step');
+      button.dataset.stopId = String(stop.id);
+      const state = stopState(stop, context);
+      button.className = `is-${state}${selected.key === String(stop.id) ? ' is-selected' : ''}`;
+      if (state === 'current') button.setAttribute('aria-current', 'step');
       const estimate = estimateLeg(index ? context.stops[index - 1] : null, stop, context);
-      const navigationText = index ? legText(estimate) : 'Session starting stop';
-      button.innerHTML = `<span>${String(index + 1).padStart(2, '0')}</span><strong>${stop.locationLabel}<small>${operationSummary(stop)}</small><small class="map-leg-estimate">${navigationText}</small></strong>`;
-      button.addEventListener('click', () => {
-        const anchor = data.getLocationAnchor(stop.locationId);
-        selectedSystemId = anchor?.systemId ?? selectedSystemId;
-        setSelection(stop.locationLabel, `Route stop ${index + 1}`, `${operationSummary(stop)}. ${navigationText}.`, String(stop.id));
-        if (mode !== 'route') {
-          mode = 'route';
-          syncButtons();
-          render();
-        }
-      });
+      const navigationText = index ? legText(estimate) : 'Session starting point';
+      const indexNode = document.createElement('span');
+      indexNode.textContent = String(index + 1).padStart(2, '0');
+      const copy = document.createElement('strong');
+      const name = document.createElement('b');
+      name.textContent = stop.locationLabel;
+      const operation = document.createElement('small');
+      operation.textContent = operationSummary(stop);
+      const leg = document.createElement('small');
+      leg.className = 'map-leg-estimate';
+      leg.textContent = navigationText;
+      copy.append(name, operation, leg);
+      button.append(indexNode, copy);
+      button.addEventListener('click', () => selectStop(stop, index, context, { openPanel: false }));
       item.append(button);
       elements.routeList.append(item);
     });
   }
 
   function syncButtons() {
-    elements.buttons.forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.mapMode === mode)));
+    elements.buttons.forEach((button) => {
+      const active = button.dataset.mapMode === mode;
+      button.setAttribute('aria-pressed', String(active));
+      button.setAttribute('aria-selected', String(active));
+      button.tabIndex = active ? 0 : -1;
+    });
   }
 
   function render() {
     const context = routeContext();
-    clear();
-    if (mode === 'local' || mode === 'stanton') renderLocalMode(context);
+    clearMap();
+    if (mode === 'local') renderLocalMode(context);
     else if (mode === 'network') renderNetworkMode(context);
     else renderRouteMode(context);
     renderRouteList(context);
+    updateHud(context);
+    syncButtons();
+    applyCamera();
     const snapshot = official()?.snapshot;
-    if (elements.note && snapshot) elements.note.textContent = `Official RSI universe snapshot: ${snapshot.gameVersion}, verified ${snapshot.verifiedAt}. Distances and times are project-derived estimates; jump tunnels are counted separately.`;
+    if (elements.note && snapshot) elements.note.textContent = `Official RSI universe snapshot: ${snapshot.gameVersion}, verified ${snapshot.verifiedAt}. Positions and travel times are project-derived estimates; jump tunnels are counted separately.`;
+    requestAnimationFrame(() => {
+      page.querySelector(`[data-map-key="${CSS.escape(String(selected.key))}"]`)?.classList.add('is-selected');
+      elements.centerSelection.hidden = !pointByKey.has(String(selected.key));
+    });
   }
 
-  elements.buttons.forEach((button) => button.addEventListener('click', () => {
-    mode = button.dataset.mapMode === 'stanton' ? 'local' : button.dataset.mapMode;
-    selectedKey = 'route';
-    syncButtons();
+  function switchMode(nextMode, options = {}) {
+    mode = nextMode === 'stanton' ? 'local' : nextMode;
+    if (mode === 'local' && options.systemId) selectedSystemId = options.systemId;
+    resetCamera();
     render();
+    elements.buttons.find((button) => button.dataset.mapMode === mode)?.focus({ preventScroll: true });
+    elements.liveStatus.textContent = `${elements.mode.textContent} view`;
+  }
+
+  function openContextPanel() {
+    page.classList.add('is-context-open');
+    elements.contextToggle.setAttribute('aria-expanded', 'true');
+  }
+
+  function closeContextPanel() {
+    page.classList.remove('is-context-open');
+    elements.contextToggle.setAttribute('aria-expanded', 'false');
+    if (window.matchMedia('(max-width: 900px)').matches) elements.contextToggle.focus({ preventScroll: true });
+  }
+
+  elements.buttons.forEach((button, buttonIndex) => {
+    button.addEventListener('click', () => switchMode(button.dataset.mapMode));
+    button.addEventListener('keydown', (event) => {
+      if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
+      event.preventDefault();
+      const offset = event.key === 'ArrowRight' ? 1 : -1;
+      const next = elements.buttons[(buttonIndex + offset + elements.buttons.length) % elements.buttons.length];
+      switchMode(next.dataset.mapMode);
+    });
+  });
+
+  elements.systemSelect.addEventListener('change', () => {
+    selectedSystemId = elements.systemSelect.value;
+    const system = data.getSystem(selectedSystemId);
+    if (system) selected = { kind: 'system', key: system.id, object: system, systemId: system.id, title: system.name, type: system.classification, detail: `${system.security}. ${system.availability}.` };
+    resetCamera();
+    render();
+  });
+
+  page.querySelectorAll('[data-map-action]').forEach((button) => button.addEventListener('click', () => {
+    const action = button.dataset.mapAction;
+    if (action === 'zoom-in') zoomAt(0.78);
+    if (action === 'zoom-out') zoomAt(1.28);
+    if (action === 'fit') resetCamera();
+    if (action === 'current') {
+      const context = routeContext();
+      const current = context.progress?.currentStop ?? activeStops(context)[0] ?? null;
+      if (!current) return;
+      if (!pointByKey.has(String(current.id)) && mode !== 'route') switchMode('route');
+      selectStop(current, context.stops.indexOf(current), context, { announce: false });
+      centerOnKey(current.id);
+    }
   }));
+
+  page.querySelectorAll('[data-hud-stop]').forEach((button) => button.addEventListener('click', () => {
+    const context = routeContext();
+    const stop = hudStops[button.dataset.hudStop];
+    if (!stop) return;
+    selectStop(stop, context.stops.indexOf(stop), context, { openPanel: window.matchMedia('(max-width: 900px)').matches });
+    if (pointByKey.has(String(stop.id))) centerOnKey(stop.id, false);
+  }));
+
+  elements.openSystem.addEventListener('click', () => {
+    const systemId = selected.systemId;
+    if (!systemId) return;
+    selectedSystemId = systemId;
+    mode = 'local';
+    resetCamera();
+    render();
+    openContextPanel();
+  });
+
+  elements.centerSelection.addEventListener('click', () => centerOnKey(selected.key));
+  elements.contextToggle.addEventListener('click', () => page.classList.contains('is-context-open') ? closeContextPanel() : openContextPanel());
+  elements.contextClose.addEventListener('click', closeContextPanel);
+  elements.contextBackdrop.addEventListener('click', closeContextPanel);
+
+  svg.addEventListener('wheel', (event) => {
+    event.preventDefault();
+    const point = svgPoint(event.clientX, event.clientY);
+    zoomAt(event.deltaY < 0 ? 0.86 : 1.16, point.x, point.y);
+  }, { passive: false });
+
+  svg.addEventListener('pointerdown', (event) => {
+    if (event.button !== 0 || event.target.closest('.map-node')) return;
+    const point = svgPoint(event.clientX, event.clientY);
+    drag = { pointerId: event.pointerId, point, camera: { ...camera } };
+    svg.setPointerCapture(event.pointerId);
+    svg.classList.add('is-dragging');
+  });
+
+  svg.addEventListener('pointermove', (event) => {
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    const point = svgPoint(event.clientX, event.clientY);
+    camera.x = drag.camera.x - (point.x - drag.point.x);
+    camera.y = drag.camera.y - (point.y - drag.point.y);
+    applyCamera();
+  });
+
+  function endDrag(event) {
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    drag = null;
+    svg.classList.remove('is-dragging');
+    if (svg.hasPointerCapture(event.pointerId)) svg.releasePointerCapture(event.pointerId);
+  }
+  svg.addEventListener('pointerup', endDrag);
+  svg.addEventListener('pointercancel', endDrag);
+
+  svg.addEventListener('keydown', (event) => {
+    const step = camera.width * 0.08;
+    if (event.key === 'ArrowLeft') { event.preventDefault(); panBy(-step, 0); }
+    if (event.key === 'ArrowRight') { event.preventDefault(); panBy(step, 0); }
+    if (event.key === 'ArrowUp') { event.preventDefault(); panBy(0, -step); }
+    if (event.key === 'ArrowDown') { event.preventDefault(); panBy(0, step); }
+    if (event.key === '+' || event.key === '=') { event.preventDefault(); zoomAt(0.78); }
+    if (event.key === '-') { event.preventDefault(); zoomAt(1.28); }
+    if (event.key === 'Home') { event.preventDefault(); resetCamera(); }
+    if (event.key === 'Escape') closeContextPanel();
+  });
+
+  window.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && page.classList.contains('is-context-open')) closeContextPanel();
+  });
   window.addEventListener('sc:session-change', render);
   window.addEventListener('sc:route-runtime-ready', render);
   window.addEventListener('sc:navigation-runtime-ready', render);
-  syncButtons();
+  window.matchMedia('(min-width: 901px)').addEventListener?.('change', (event) => { if (event.matches) closeContextPanel(); });
+
+  resetCamera();
   render();
 }());
