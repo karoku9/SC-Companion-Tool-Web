@@ -9,6 +9,7 @@ await fs.mkdir(output, { recursive: true });
 const browser = await chromium.launch({ headless: true });
 const page = await browser.newPage({ viewport: { width: 1664, height: 936 }, deviceScaleFactor: 1 });
 const errors = [];
+let step = 'initialization';
 page.on('pageerror', (error) => errors.push(`pageerror: ${error.message}`));
 page.on('console', (message) => { if (message.type() === 'error') errors.push(`console: ${message.text()}`); });
 
@@ -19,23 +20,29 @@ async function noHorizontalOverflow(label) {
 }
 
 async function openWorkspace(id) {
+  step = `open workspace ${id}`;
   await page.locator(`[data-view-target="${id}"]`).click();
   await page.locator(`[data-view="${id}"]`).waitFor({ state: 'visible' });
 }
 
+let failure = null;
 try {
+  step = 'load Missions';
   await page.goto(`${baseUrl}/#missions`, { waitUntil: 'networkidle' });
   await page.locator('#mission-text').waitFor({ state: 'visible' });
+  step = 'generate default session';
   await page.locator('#mission-form button[type="submit"]').click();
   await page.locator('#mission-preview-title').filter({ hasText: 'missions ready' }).waitFor({ state: 'visible' });
   await noHorizontalOverflow('Missions');
   await page.screenshot({ path: `${output}/missions-desktop.png`, fullPage: true });
 
   await openWorkspace('route');
+  step = 'inspect Operations closed';
   await page.locator('#current-stop-name').waitFor({ state: 'visible' });
   await noHorizontalOverflow('Operations closed');
   await page.screenshot({ path: `${output}/operations-desktop.png`, fullPage: true });
 
+  step = 'open Cargo auxiliary display';
   await page.locator('[data-ops-tool="cargo"]').click();
   const tool = page.locator('#ops-tool-panel');
   await tool.waitFor({ state: 'visible' });
@@ -45,31 +52,43 @@ try {
   assert.ok(box.width >= 700, `Cargo tool is squeezed: ${box.width}px`);
   await noHorizontalOverflow('Operations cargo open');
   await page.screenshot({ path: `${output}/operations-cargo-open.png`, fullPage: true });
+  step = 'close Cargo auxiliary display';
   await page.locator('#ops-tool-close').click();
   await tool.waitFor({ state: 'hidden' });
 
   await openWorkspace('hangar');
+  step = 'inspect Fleet';
   await page.locator('#ship-hologram svg').waitFor({ state: 'visible' });
   assert.ok(await page.locator('#fleet-zone-form .zone-form-row').count() >= 2, 'Fleet cargo-zone editor did not render');
   await noHorizontalOverflow('Fleet');
   await page.screenshot({ path: `${output}/fleet-desktop.png`, fullPage: true });
 
   await openWorkspace('map');
+  step = 'inspect Starmap';
   await page.locator('svg#starmap-canvas').waitFor({ state: 'visible' });
   assert.equal(await page.locator('canvas#starmap-canvas').count(), 0, 'Legacy canvas Starmap is still present');
   assert.ok(await page.locator('#starmap-canvas .map-node').count() > 0, 'Route-first Starmap rendered no nodes');
   await noHorizontalOverflow('Starmap');
   await page.screenshot({ path: `${output}/starmap-desktop.png`, fullPage: true });
 
+  step = 'switch to mobile viewport';
   await page.setViewportSize({ width: 390, height: 844 });
   await openWorkspace('route');
   await noHorizontalOverflow('Operations mobile');
+  step = 'open Moves on mobile';
   await page.locator('[data-ops-tool="moves"]').click();
   await page.locator('#ops-tool-panel').waitFor({ state: 'visible' });
   await noHorizontalOverflow('Operations mobile tool open');
   await page.screenshot({ path: `${output}/operations-mobile.png`, fullPage: true });
 
+  step = 'check browser errors';
   assert.deepEqual(errors, [], `Browser errors:\n${errors.join('\n')}`);
+} catch (error) {
+  failure = error;
+  await fs.writeFile(`${output}/failure.txt`, `Step: ${step}\n\n${error.stack ?? error.message}\n\nBrowser errors:\n${errors.join('\n')}`);
+  await page.screenshot({ path: `${output}/failure-state.png`, fullPage: true }).catch(() => {});
 } finally {
   await browser.close();
 }
+
+if (failure) throw failure;
