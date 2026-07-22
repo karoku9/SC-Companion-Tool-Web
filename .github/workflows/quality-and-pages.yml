@@ -26,7 +26,10 @@ jobs:
       - name: Test design system
         run: node --test tests/design-system.test.js
       - name: Test mission validation and provenance
-        run: node --test tests/mission-validation.test.js
+        run: |
+          mkdir -p ui-smoke-artifacts
+          set -o pipefail
+          node --test tests/mission-validation.test.js 2>&1 | tee ui-smoke-artifacts/mission-validation-test.log
       - name: Test interstellar universe and navigation estimates
         run: node --test tests/interstellar-navigation.test.js
       - name: Test cargo capacity and visual hierarchy
