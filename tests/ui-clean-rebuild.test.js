@@ -10,11 +10,11 @@ function read(file) {
 }
 
 function cleanCss() {
-  return ['design-system-legibility.css', 'ui-v2-shell.css', 'ui-v2-operations.css', 'ui-v2-workspaces.css', 'ui-v2-responsive.css'].map(read).join('\n');
+  return ['design-system-legibility.css', 'mission-validation.css', 'ui-v2-shell.css', 'ui-v2-operations.css', 'ui-v2-workspaces.css', 'ui-v2-responsive.css'].map(read).join('\n');
 }
 
 test('clean UI scripts remain valid JavaScript', () => {
-  ['app.js', 'ui-v2.js', 'ui-v2-operations.js', 'ui-v2-shell.js', 'ui-v2-accessibility.js', 'product-shell.js', 'route-view.js', 'hangar-view.js', 'starmap-view.js'].forEach((file) => {
+  ['app.js', 'ui-v2.js', 'ui-v2-operations.js', 'ui-v2-shell.js', 'ui-v2-accessibility.js', 'product-shell.js', 'mission-validation.js', 'mission-view.js', 'route-view.js', 'hangar-view.js', 'starmap-view.js'].forEach((file) => {
     assert.doesNotThrow(() => new Function(read(file)), `${file} contains invalid JavaScript`);
   });
 });
@@ -24,6 +24,7 @@ test('the application loads one design system and one page-layout entry', () => 
   const entry = read('ui-v2.css');
   assert.match(html, /href="design-system\.css"/);
   assert.match(html, /href="ui-v2\.css"/);
+  assert.match(entry, /mission-validation\.css/);
   assert.match(entry, /design-system-legibility\.css/);
   ['styles.css', 'sections.css', 'planner.css', 'starmap.css', 'product-shell.css', 'workspace-consolidation.css', 'ui-rebuild.css', 'drake-mfd.css', 'mfd-layout-v2.css'].forEach((legacy) => {
     assert.doesNotMatch(html, new RegExp(`href="${legacy.replace('.', '\\.')}"`));
@@ -67,6 +68,19 @@ test('visual hardening provides deterministic focus and responsive contracts', (
   assert.match(responsive, /product-navigation \.nav-copy \{ display: none/);
 });
 
+test('Mission Validation adds a review gate without replacing the clean shell', () => {
+  const view = read('mission-view.js');
+  const validator = read('mission-validation.js');
+  const css = read('mission-validation.css');
+  assert.match(view, /Review contracts/);
+  assert.match(view, /Generate validated session/);
+  assert.match(view, /confirmedCustomLocations/);
+  assert.match(validator, /inspectMissionText/);
+  assert.match(validator, /unverified-location/);
+  assert.match(validator, /unknown-action/);
+  assert.match(css, /mission-review-row/);
+});
+
 test('Fleet and Starmap use dedicated visual components', () => {
   const html = read('index.html');
   const fleet = read('hangar-view.js');
@@ -82,11 +96,10 @@ test('Fleet and Starmap use dedicated visual components', () => {
   assert.doesNotMatch(map, /getContext\('2d'\)|camera\.yaw|pointer\.down/);
 });
 
-test('visual hardening follows the delivered clean and interstellar releases', () => {
+test('Mission Validation follows the delivered visual-hardening release', () => {
   const roadmap = require('../roadmap.js');
-  assert.equal(roadmap.currentVersion, '0.17');
-  assert.equal(roadmap.releases.find((release) => release.version === '0.15').status, 'done');
-  assert.equal(roadmap.releases.find((release) => release.version === '0.16').status, 'done');
-  assert.equal(roadmap.releases.find((release) => release.version === '0.17').title, 'Visual hardening');
+  assert.equal(roadmap.currentVersion, '0.18');
+  assert.equal(roadmap.releases.find((release) => release.version === '0.17').status, 'done');
   assert.equal(roadmap.releases.find((release) => release.version === '0.18').title, 'Mission validation');
+  assert.equal(roadmap.releases.find((release) => release.version === '0.19').title, 'Location context');
 });
