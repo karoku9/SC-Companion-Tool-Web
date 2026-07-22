@@ -123,6 +123,7 @@ jobs:
           node --check ui-v2-operations.js
           node --check ui-v2-shell.js
           node --check tests/ui-browser-smoke.mjs
+          node --check tests/ui-visual-hardening.mjs
       - name: Install browser smoke dependencies
         run: |
           npm install --no-save playwright@1.55.0
@@ -131,6 +132,7 @@ jobs:
         run: |
           python3 -m http.server 4173 >/tmp/sc-companion-http.log 2>&1 &
           UI_BASE_URL=http://127.0.0.1:4173 node tests/ui-browser-smoke.mjs
+          UI_BASE_URL=http://127.0.0.1:4173 node tests/ui-visual-hardening.mjs
       - name: Upload interface screenshots
         if: always()
         uses: actions/upload-artifact@v4
