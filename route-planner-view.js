@@ -5,6 +5,7 @@
   const corrections = window.SCCompanionRouteCorrections;
   const progressModel = window.SCCompanionRouteProgress;
   const engine = window.SCCompanionRoutePlannerEngine;
+  const catalog = window.SCCompanionShipCatalog;
   const root = document.querySelector('#route-planner');
   if (!store || !corrections || !progressModel || !engine || !root) return;
 
@@ -21,11 +22,7 @@
           <div><span>VALID CANDIDATES</span><strong id="planner-candidate-count">0</strong></div>
           <div><span>ESTIMATE BASIS</span><strong>SCHEMATIC · INDICATIVE</strong></div>
         </div>
-        <div class="planner-empty" id="planner-empty">
-          <strong>Generate a mission route first</strong>
-          <span>The planner will compare dependency-safe orders for the remaining stops.</span>
-          <button type="button" data-shell-link="missions">OPEN MISSION BUILDER</button>
-        </div>
+        <div class="planner-empty" id="planner-empty"></div>
         <div class="planner-profile-grid" id="planner-profile-grid" hidden></div>
       </section>
       <section class="planner-detail-panel" id="planner-detail-panel" hidden>
@@ -73,6 +70,28 @@
 
   function activeShip(state) {
     return (state.hangarShips ?? []).find((ship) => ship.id === state.selectedShipId) ?? null;
+  }
+
+  function shipLabel(state) {
+    const ship = activeShip(state);
+    const model = catalog?.getModel(ship?.modelId ?? state.selectedShipModelId);
+    return ship?.nickname || (model ? `${model.manufacturer} ${model.model}` : 'Selected ship');
+  }
+
+  function showEmpty(title, message, target, buttonLabel) {
+    elements.empty.replaceChildren();
+    const heading = document.createElement('strong');
+    heading.textContent = title;
+    const detail = document.createElement('span');
+    detail.textContent = message;
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.dataset.shellLink = target;
+    button.textContent = buttonLabel;
+    elements.empty.append(heading, detail, button);
+    elements.empty.hidden = false;
+    elements.profiles.hidden = true;
+    elements.detail.hidden = true;
   }
 
   function currentOrder(route, progress) {
@@ -174,22 +193,27 @@
       latestModel = null;
       elements.sessionLabel.textContent = 'No route generated';
       elements.candidateCount.textContent = '0';
-      elements.empty.hidden = false;
-      elements.profiles.hidden = true;
-      elements.detail.hidden = true;
+      showEmpty('Generate a mission route first', 'The planner will compare dependency-safe orders for the remaining stops.', 'missions', 'OPEN MISSION BUILDER');
       return;
     }
 
     const route = corrections.deriveRoute(state.route, state.routeCorrections);
     const progress = progressModel.derive(route, state.completedStopIds, state.currentStopIndex);
+    elements.sessionLabel.textContent = `${progress.completedCount}/${route.stops.length} complete · ${shipLabel(state)}`;
+
+    if (progress.complete) {
+      latestModel = null;
+      elements.candidateCount.textContent = '0';
+      showEmpty('Session route complete', 'Use PREVIOUS in Active Route to reopen the last completed stop before replanning.', 'route', 'OPEN ACTIVE ROUTE');
+      return;
+    }
+
     const context = buildContext(state, route, progress);
     const model = engine.compare(route, progress, context);
     latestModel = { route, progress, model, context };
     const baseline = engine.evaluateOrder(route.stops.filter((stop) => !progress.completedSet.has(String(stop.id))), context);
     const currentIds = currentOrder(route, progress);
-    const ship = activeShip(state);
 
-    elements.sessionLabel.textContent = `${progress.completedCount}/${route.stops.length} complete · ${ship?.nickname || ship?.quantumDrive || 'Selected ship'}`;
     elements.candidateCount.textContent = String(model.candidateCount);
     elements.empty.hidden = true;
     elements.profiles.hidden = false;
