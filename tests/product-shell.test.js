@@ -50,8 +50,8 @@ test('dynamic hosts are created before section routing', () => {
   assert.match(html, /id="product-navigation"/);
   assert.match(html, /id="future-pages-root"/);
   assert.ok(html.indexOf('src="product-shell.js"') < html.indexOf('src="sections.js"'));
-  assert.match(shell, /id=\\"route-planner\\"/);
-  assert.match(shell, /id=\\"load-operations\\"/);
+  assert.match(shell, /id="route-planner"/);
+  assert.match(shell, /id="load-operations"/);
 });
 
 test('v0.10 workspace, roadmap and cargo-zone runtimes are registered', () => {
