@@ -1,6 +1,6 @@
 /* Clean UI generation 2. The interface is split by responsibility, not accumulated overrides. */
-@import url('./design-system-legibility.css');
 @import url('./ui-v2-shell.css');
 @import url('./ui-v2-operations.css');
 @import url('./ui-v2-workspaces.css');
 @import url('./ui-v2-responsive.css');
+@import url('./design-system-legibility.css');
