@@ -3,8 +3,12 @@
 (function initializeHangarView() {
   const store = window.SCCompanionSession;
   const catalog = window.SCCompanionShipCatalog;
+  if (!store || !catalog) return;
   const zoneModel = window.SCCompanionCargoZones;
-  if (!store || !catalog || !zoneModel) return;
+  if (!zoneModel) {
+    window.addEventListener('sc:cargo-runtime-ready', initializeHangarView, { once: true });
+    return;
+  }
 
   const form = document.querySelector('#hangar-form');
   const modelSelect = document.querySelector('#hangar-model');
