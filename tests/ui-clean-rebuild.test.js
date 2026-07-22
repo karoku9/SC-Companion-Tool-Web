@@ -10,7 +10,7 @@ function read(file) {
 }
 
 function cleanCss() {
-  return ['ui-v2-shell.css', 'ui-v2-operations.css', 'ui-v2-workspaces.css', 'ui-v2-responsive.css'].map(read).join('\n');
+  return ['design-system-legibility.css', 'ui-v2-shell.css', 'ui-v2-operations.css', 'ui-v2-workspaces.css', 'ui-v2-responsive.css'].map(read).join('\n');
 }
 
 test('clean UI scripts remain valid JavaScript', () => {
@@ -21,8 +21,10 @@ test('clean UI scripts remain valid JavaScript', () => {
 
 test('the application loads one design system and one page-layout entry', () => {
   const html = read('index.html');
+  const entry = read('ui-v2.css');
   assert.match(html, /href="design-system\.css"/);
   assert.match(html, /href="ui-v2\.css"/);
+  assert.match(entry, /design-system-legibility\.css/);
   ['styles.css', 'sections.css', 'planner.css', 'starmap.css', 'product-shell.css', 'workspace-consolidation.css', 'ui-rebuild.css', 'drake-mfd.css', 'mfd-layout-v2.css'].forEach((legacy) => {
     assert.doesNotMatch(html, new RegExp(`href="${legacy.replace('.', '\\.')}"`));
   });
@@ -61,13 +63,15 @@ test('Fleet and Starmap use dedicated visual components', () => {
   assert.match(fleet, /normalizeZones/);
   assert.match(html, /<svg id="starmap-canvas"/);
   assert.match(map, /renderRouteMode/);
-  assert.match(map, /renderStantonMode/);
+  assert.match(map, /renderLocalMode/);
   assert.match(map, /renderNetworkMode/);
   assert.doesNotMatch(map, /getContext\('2d'\)|camera\.yaw|pointer\.down/);
 });
 
-test('clean rebuild is registered as v0.15 before visual hardening', () => {
+test('clean rebuild stays delivered while interstellar navigation becomes current', () => {
   const roadmap = require('../roadmap.js');
-  assert.equal(roadmap.currentVersion, '0.15');
-  assert.equal(roadmap.releases.find((release) => release.version === '0.16').title, 'Visual hardening');
+  assert.equal(roadmap.currentVersion, '0.16');
+  assert.equal(roadmap.releases.find((release) => release.version === '0.15').status, 'done');
+  assert.equal(roadmap.releases.find((release) => release.version === '0.16').title, 'Interstellar navigation');
+  assert.equal(roadmap.releases.find((release) => release.version === '0.17').title, 'Visual hardening');
 });

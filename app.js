@@ -16,7 +16,15 @@
   };
 
   function humanizeType(type) {
-    const labels = { system: 'System', planet: 'Planet', 'landing-zone': 'Landing zone', spaceport: 'Spaceport', 'orbital-station': 'Orbital station' };
+    const labels = {
+      system: 'System',
+      planet: 'Planet',
+      planetoid: 'Planetoid',
+      'asteroid-belt': 'Asteroid belt',
+      'landing-zone': 'Landing zone',
+      spaceport: 'Spaceport',
+      'orbital-station': 'Orbital station'
+    };
     return labels[type] ?? type;
   }
 
@@ -63,17 +71,20 @@
 }());
 
 (function loadApplicationRuntimes() {
-  Promise.all([
-    import('./route-corrections.js'),
-    import('./route-progress.js'),
-    import('./route-planner-engine.js'),
-    import('./cargo-state.js'),
-    import('./cargo-layout.js'),
-    import('./cargo-zone-model.js')
-  ])
+  import('./official-universe-data.js')
+    .then(() => import('./navigation-estimates.js'))
+    .then(() => Promise.all([
+      import('./route-corrections.js'),
+      import('./route-progress.js'),
+      import('./route-planner-engine.js'),
+      import('./cargo-state.js'),
+      import('./cargo-layout.js'),
+      import('./cargo-zone-model.js')
+    ]))
     .then(() => {
       window.dispatchEvent(new Event('sc:route-runtime-ready'));
       window.dispatchEvent(new Event('sc:cargo-runtime-ready'));
+      window.dispatchEvent(new Event('sc:navigation-runtime-ready'));
       return Promise.all([
         import('./route-planner-view.js'),
         import('./changelog-view.js'),

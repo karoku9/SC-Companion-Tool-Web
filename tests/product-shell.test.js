@@ -62,10 +62,12 @@ test('design system, icons and clean shell load before page routing', () => {
   assert.match(shell, /SCCompanionMfdIcons/);
 });
 
-test('v0.15 clean rebuild and core runtimes are registered', () => {
+test('v0.16 interstellar navigation and clean UI runtimes are registered', () => {
   const app = read('app.js');
   const designSystem = read('design-system.js');
-  assert.equal(roadmap.currentVersion, '0.15');
+  assert.equal(roadmap.currentVersion, '0.16');
+  assert.match(app, /official-universe-data\.js/);
+  assert.match(app, /navigation-estimates\.js/);
   assert.match(app, /cargo-zone-model\.js/);
   assert.match(app, /ui-v2\.js/);
   assert.match(app, /design-system-view\.js/);
@@ -74,7 +76,7 @@ test('v0.15 clean rebuild and core runtimes are registered', () => {
 });
 
 test('assisted OCR and Game.log intake remain after interface hardening', () => {
-  const assisted = roadmap.releases.find((release) => release.version === '0.24');
+  const assisted = roadmap.releases.find((release) => release.version === '0.25');
   assert.equal(assisted.status, 'future');
   assert.ok(assisted.changes.some((change) => /OCR/.test(change)));
   assert.ok(assisted.changes.some((change) => /Game\.log/.test(change)));

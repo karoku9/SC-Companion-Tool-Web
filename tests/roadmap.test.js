@@ -34,16 +34,19 @@ test('current, next and future releases form one linear delivery path', () => {
   assert.ok(roadmap.releases.slice(nextIndex + 1).every((release) => release.status === 'future'));
 });
 
-test('v0.15 is the clean rebuild and visual hardening follows it', () => {
-  const previous = roadmap.releases.find((item) => item.version === '0.14');
-  const current = roadmap.releases.find((item) => item.version === '0.15');
-  const next = roadmap.releases.find((item) => item.version === '0.16');
-  assert.equal(previous.status, 'done');
-  assert.match(previous.title, /Design system foundation/i);
+test('v0.16 delivers interstellar navigation after the clean rebuild', () => {
+  const design = roadmap.releases.find((item) => item.version === '0.14');
+  const clean = roadmap.releases.find((item) => item.version === '0.15');
+  const current = roadmap.releases.find((item) => item.version === '0.16');
+  const next = roadmap.releases.find((item) => item.version === '0.17');
+  assert.equal(design.status, 'done');
+  assert.match(design.title, /Design system foundation/i);
+  assert.equal(clean.status, 'done');
+  assert.match(clean.title, /Clean UI rebuild/i);
   assert.equal(current.status, 'current');
-  assert.match(current.title, /Clean UI rebuild/i);
-  assert.ok(current.changes.some((change) => /Native Operations tools/.test(change)));
-  assert.ok(current.changes.some((change) => /Route-first 2D Starmap/.test(change)));
+  assert.match(current.title, /Interstellar navigation/i);
+  assert.ok(current.changes.some((change) => /Alpha 4\.9/.test(change)));
+  assert.ok(current.changes.some((change) => /Navigation time ranges/.test(change)));
   assert.equal(next.status, 'next');
   assert.match(next.title, /Visual hardening/i);
 });
