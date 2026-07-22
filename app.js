@@ -110,6 +110,6 @@
       import('./ui-rebuild.js'),
       import('./mfd-layout-v2.js')
     ]))
-    .then(() => window.dispatchEvent(new Event('sc:dynamic-pages-ready'))
+    .then(() => window.dispatchEvent(new Event('sc:dynamic-pages-ready')))
     .catch((error) => console.error('Operational runtime failed to load.', error));
 }());
