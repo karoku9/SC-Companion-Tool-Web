@@ -9,10 +9,7 @@ const catalog = require('../ship-catalog.js');
 const roadmap = require('../roadmap.js');
 
 const visiblePages = ['route', 'missions', 'route-planner', 'map', 'hangar', 'roadmap'];
-
-function read(file) {
-  return fs.readFileSync(path.join(__dirname, '..', file), 'utf8');
-}
+function read(file) { return fs.readFileSync(path.join(__dirname, '..', file), 'utf8'); }
 
 test('primary navigation contains only six focused workspaces', () => {
   const ids = pages.pages.map((page) => page.id);
@@ -20,10 +17,7 @@ test('primary navigation contains only six focused workspaces', () => {
   assert.equal(new Set(ids).size, ids.length);
   assert.equal(pages.defaultPageId, 'route');
   assert.equal(pages.groups.length, 3);
-  pages.pages.forEach((page) => {
-    assert.ok(page.icon);
-    assert.ok(page.hint);
-  });
+  pages.pages.forEach((page) => { assert.ok(page.icon); assert.ok(page.hint); });
 });
 
 test('secondary links resolve into their parent workspace', () => {
@@ -39,11 +33,7 @@ test('ship cargo zones remain separable, layered and capacity-safe', () => {
     const zones = model.layout.zones;
     assert.ok(Array.isArray(zones) && zones.length > 1);
     assert.equal(zones.reduce((total, zone) => total + zone.capacityScu, 0), model.capacityScu);
-    zones.forEach((zone) => {
-      assert.ok(zone.layers > 0);
-      assert.ok(zone.columns > 0);
-      assert.equal(zone.separable, true);
-    });
+    zones.forEach((zone) => { assert.ok(zone.layers > 0); assert.ok(zone.columns > 0); assert.equal(zone.separable, true); });
     assert.equal(model.layout.geometryStatus, 'concept');
   });
 });
@@ -62,17 +52,19 @@ test('design system, icons and clean shell load before page routing', () => {
   assert.match(shell, /SCCompanionMfdIcons/);
 });
 
-test('v0.16 interstellar navigation and clean UI runtimes are registered', () => {
+test('v0.17 visual hardening keeps interstellar and clean UI runtimes registered', () => {
   const app = read('app.js');
   const designSystem = read('design-system.js');
-  assert.equal(roadmap.currentVersion, '0.16');
+  const legibility = read('design-system-legibility.css');
+  assert.equal(roadmap.currentVersion, '0.17');
   assert.match(app, /official-universe-data\.js/);
   assert.match(app, /navigation-estimates\.js/);
   assert.match(app, /cargo-zone-model\.js/);
   assert.match(app, /ui-v2\.js/);
-  assert.match(app, /design-system-view\.js/);
   assert.doesNotMatch(app, /workspace-shell\.js/);
   assert.match(designSystem, /manufacturer: 'Drake Interplanetary'/);
+  assert.match(legibility, /:focus-visible/);
+  assert.match(legibility, /prefers-reduced-motion/);
 });
 
 test('assisted OCR and Game.log intake remain after interface hardening', () => {
