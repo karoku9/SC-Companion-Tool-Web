@@ -10,11 +10,11 @@ function read(file) {
 }
 
 function cleanCss() {
-  return ['design-system-legibility.css', 'mission-validation.css', 'location-context.css', 'location-context-adapters.css', 'ui-v2-shell.css', 'ui-v2-operations.css', 'ui-v2-workspaces.css', 'ui-v2-responsive.css'].map(read).join('\n');
+  return ['design-system-legibility.css', 'mission-validation.css', 'location-context.css', 'location-context-adapters.css', 'fleet-loadouts.css', 'ui-v2-shell.css', 'ui-v2-operations.css', 'ui-v2-workspaces.css', 'ui-v2-responsive.css'].map(read).join('\n');
 }
 
 test('clean interface scripts remain valid JavaScript', () => {
-  ['app.js', 'ui-v2.js', 'ui-v2-operations.js', 'ui-v2-shell.js', 'ui-v2-accessibility.js', 'mfd-icons.js', 'product-shell.js', 'mission-validation.js', 'mission-view.js', 'location-context.js', 'location-context-planner.js', 'location-intel-view.js', 'route-view.js', 'hangar-view.js', 'starmap-view.js'].forEach((file) => {
+  ['app.js', 'ui-v2.js', 'ui-v2-operations.js', 'ui-v2-shell.js', 'ui-v2-accessibility.js', 'mfd-icons.js', 'product-shell.js', 'mission-validation.js', 'mission-view.js', 'location-context.js', 'location-context-planner.js', 'location-intel-view.js', 'fleet-loadouts.js', 'fleet-estimate-adapter.js', 'fleet-loadouts-view.js', 'route-view.js', 'hangar-view.js', 'starmap-view.js'].forEach((file) => {
     assert.doesNotThrow(() => new Function(read(file)), `${file} contains invalid JavaScript`);
   });
 });
@@ -28,6 +28,7 @@ test('clean UI replaces accumulated layout layers rather than overriding them', 
   assert.match(entry, /mission-validation\.css/);
   assert.match(entry, /location-context\.css/);
   assert.match(entry, /location-context-adapters\.css/);
+  assert.match(entry, /fleet-loadouts\.css/);
   assert.match(entry, /design-system-legibility\.css/);
   assert.doesNotMatch(html, /styles\.css|workspace-consolidation\.css|ui-rebuild\.css|drake-mfd\.css|mfd-layout-v2\.css/);
   assert.doesNotMatch(app, /workspace-shell\.js|ui-rebuild\.js|mfd-layout-v2\.js|ux-shell\.js/);
@@ -74,10 +75,14 @@ test('navigation continues using the canonical SVG icon family', () => {
   assert.match(shell, /SCCompanionMfdIcons/);
 });
 
-test('Location Context follows Mission Validation', () => {
+test('Fleet Loadouts follow Mission Validation and Location Context', () => {
   const roadmap = require('../roadmap.js');
-  assert.equal(roadmap.currentVersion, '0.19');
+  const app = read('app.js');
+  assert.equal(roadmap.currentVersion, '0.20');
   assert.equal(roadmap.releases.find((release) => release.version === '0.18').status, 'done');
-  assert.match(roadmap.releases.find((release) => release.version === '0.19').title, /Location context/i);
+  assert.equal(roadmap.releases.find((release) => release.version === '0.19').status, 'done');
   assert.match(roadmap.releases.find((release) => release.version === '0.20').title, /Fleet loadouts/i);
+  assert.match(roadmap.releases.find((release) => release.version === '0.21').title, /Session history/i);
+  assert.match(app, /fleet-estimate-adapter\.js/);
+  assert.match(app, /fleet-loadouts-view\.js/);
 });

@@ -78,12 +78,14 @@
 
 ## v0.20 fleet loadouts
 
-- [ ] Define structured component records and provenance.
-- [ ] Save named loadouts per ship instance.
-- [ ] Switch active loadouts without rewriting ship identity.
-- [ ] Make navigation estimates consume the selected quantum-drive configuration.
-- [ ] Expose estimation assumptions and unknown component data.
-- [ ] Preserve current free-text ship records through migration.
+- [x] Define structured component records and provenance.
+- [x] Save named loadouts per ship instance.
+- [x] Switch active loadouts without rewriting ship identity.
+- [x] Make navigation estimates consume the selected quantum-drive configuration.
+- [x] Make cargo capacity and handling estimates consume the selected loadout.
+- [x] Expose estimation assumptions and unknown component data.
+- [x] Preserve current free-text ship records through migration.
+- [x] Add responsive desktop/mobile Fleet loadout coverage.
 
 ## Repository cleanup
 

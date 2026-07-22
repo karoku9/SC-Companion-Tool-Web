@@ -32,6 +32,8 @@ jobs:
           node --test tests/mission-validation.test.js 2>&1 | tee ui-smoke-artifacts/mission-validation-test.log
       - name: Test sourced location context
         run: node --test tests/location-context.test.js
+      - name: Test structured Fleet loadouts
+        run: node --test tests/fleet-loadouts.test.js
       - name: Test interstellar universe and navigation estimates
         run: node --test tests/interstellar-navigation.test.js
       - name: Test cargo capacity and visual hierarchy
@@ -68,7 +70,7 @@ jobs:
         run: |
           for file in tests/*.test.js; do
             case "$file" in
-              tests/checkpoint2.test.js|tests/checkpoint3.test.js|tests/locations.test.js|tests/missions.test.js|tests/roadmap.test.js|tests/starmap.test.js|tests/product-shell.test.js|tests/cargo-state.test.js|tests/cargo-corrections.test.js|tests/route-corrections.test.js|tests/route-planner.test.js|tests/cargo-zone-model.test.js|tests/workspace-consolidation.test.js|tests/ui-clean-rebuild.test.js|tests/ui-rebuild.test.js|tests/design-system.test.js|tests/mission-validation.test.js|tests/location-context.test.js|tests/interstellar-navigation.test.js|tests/cargo-capacity.test.js|tests/ux-hierarchy.test.js|tests/planner.test.js) ;;
+              tests/checkpoint2.test.js|tests/checkpoint3.test.js|tests/locations.test.js|tests/missions.test.js|tests/roadmap.test.js|tests/starmap.test.js|tests/product-shell.test.js|tests/cargo-state.test.js|tests/cargo-corrections.test.js|tests/route-corrections.test.js|tests/route-planner.test.js|tests/cargo-zone-model.test.js|tests/workspace-consolidation.test.js|tests/ui-clean-rebuild.test.js|tests/ui-rebuild.test.js|tests/design-system.test.js|tests/mission-validation.test.js|tests/location-context.test.js|tests/fleet-loadouts.test.js|tests/interstellar-navigation.test.js|tests/cargo-capacity.test.js|tests/ux-hierarchy.test.js|tests/planner.test.js) ;;
               *) node --test "$file" ;;
             esac
           done
@@ -105,6 +107,9 @@ jobs:
           node --check route-corrections.js
           node --check route-progress.js
           node --check ship-catalog.js
+          node --check fleet-loadouts.js
+          node --check fleet-estimate-adapter.js
+          node --check fleet-loadouts-view.js
           node --check cargo-planner.js
           node --check cargo-state.js
           node --check cargo-layout.js
@@ -137,6 +142,7 @@ jobs:
           node --check tests/ui-browser-hardening.mjs
           node --check tests/ui-mission-validation.mjs
           node --check tests/ui-location-context.mjs
+          node --check tests/ui-fleet-loadouts.mjs
       - name: Install browser smoke dependencies
         run: |
           npm install --no-save playwright@1.55.0
@@ -147,6 +153,7 @@ jobs:
           UI_BASE_URL=http://127.0.0.1:4173 node tests/ui-browser-smoke.mjs
           UI_BASE_URL=http://127.0.0.1:4173 node tests/ui-mission-validation.mjs
           UI_BASE_URL=http://127.0.0.1:4173 node tests/ui-location-context.mjs
+          UI_BASE_URL=http://127.0.0.1:4173 node tests/ui-fleet-loadouts.mjs
           UI_BASE_URL=http://127.0.0.1:4173 node tests/ui-browser-hardening.mjs
       - name: Upload interface screenshots
         if: always()
