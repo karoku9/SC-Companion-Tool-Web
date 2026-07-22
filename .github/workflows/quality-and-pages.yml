@@ -19,6 +19,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+      - name: Test clean UI generation
+        run: |
+          node --test tests/ui-clean-rebuild.test.js
+          node --test tests/ui-rebuild.test.js
+      - name: Test design system
+        run: node --test tests/design-system.test.js
       - name: Test legacy checkpoint compatibility when present
         run: |
           [ ! -f tests/checkpoint2.test.js ] || node --test tests/checkpoint2.test.js
@@ -49,7 +55,7 @@ jobs:
         run: |
           for file in tests/*.test.js; do
             case "$file" in
-              tests/checkpoint2.test.js|tests/checkpoint3.test.js|tests/locations.test.js|tests/missions.test.js|tests/roadmap.test.js|tests/starmap.test.js|tests/product-shell.test.js|tests/cargo-state.test.js|tests/cargo-corrections.test.js|tests/route-corrections.test.js|tests/route-planner.test.js|tests/cargo-zone-model.test.js|tests/workspace-consolidation.test.js|tests/planner.test.js) ;;
+              tests/checkpoint2.test.js|tests/checkpoint3.test.js|tests/locations.test.js|tests/missions.test.js|tests/roadmap.test.js|tests/starmap.test.js|tests/product-shell.test.js|tests/cargo-state.test.js|tests/cargo-corrections.test.js|tests/route-corrections.test.js|tests/route-planner.test.js|tests/cargo-zone-model.test.js|tests/workspace-consolidation.test.js|tests/ui-clean-rebuild.test.js|tests/ui-rebuild.test.js|tests/design-system.test.js|tests/planner.test.js) ;;
               *) node --test "$file" ;;
             esac
           done
@@ -105,6 +111,9 @@ jobs:
           node --check starmap-view.js
           node --check location-intel-view.js
           node --check roadmap-view.js
+          node --check ui-v2.js
+          node --check ui-v2-operations.js
+          node --check ui-v2-shell.js
 
   deploy:
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
