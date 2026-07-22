@@ -1,0 +1,27 @@
+/* Starmap 2.0 inherits the canonical readable type floor from the shared design system. */
+.starmap-page-v2 .starmap-layer-control > small,
+.starmap-page-v2 .starmap-system-picker > span,
+.starmap-page-v2 .starmap-objective-hud small,
+.starmap-page-v2 .starmap-statusbar small,
+.starmap-page-v2 .starmap-statusbar > span,
+.starmap-page-v2 .starmap-context-toggle span,
+.starmap-page-v2 .starmap-context-header > div:last-child > span,
+.starmap-page-v2 .starmap-route-drawer summary,
+.starmap-page-v2 .starmap-route-drawer summary strong,
+.starmap-page-v2 #starmap-route-list b,
+.starmap-page-v2 #starmap-route-list small,
+.starmap-page-v2 .data-note {
+  font-size: var(--ds-type-xs, .75rem) !important;
+}
+
+.starmap-page-v2 .starmap-objective-hud strong,
+.starmap-page-v2 .starmap-objective-hud span,
+.starmap-page-v2 .starmap-statusbar strong,
+.starmap-page-v2 .starmap-context-toggle strong {
+  font-size: var(--ds-type-sm, .8125rem) !important;
+}
+
+.starmap-page-v2 .starmap-selection-card > p,
+.starmap-page-v2 .starmap-route-empty {
+  font-size: var(--ds-type-sm, .8125rem);
+}
