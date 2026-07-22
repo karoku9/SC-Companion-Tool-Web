@@ -8,26 +8,26 @@ const pages = require('../product-pages.js');
 const catalog = require('../ship-catalog.js');
 const roadmap = require('../roadmap.js');
 
-const requiredPages = [
-  'overview', 'missions', 'route', 'cargo', 'load-operations',
-  'route-planner', 'map', 'locations', 'hangar', 'ship-catalog',
-  'loadouts', 'trading', 'market-intel', 'history', 'companion',
-  'settings', 'roadmap', 'changelog', 'automation'
-];
+const visiblePages = ['route', 'missions', 'route-planner', 'map', 'hangar', 'roadmap'];
 
-test('product shell reserves every planned page with unique ids', () => {
+function read(file) {
+  return fs.readFileSync(path.join(__dirname, '..', file), 'utf8');
+}
+
+test('primary navigation contains only six focused workspaces', () => {
   const ids = pages.pages.map((page) => page.id);
-  assert.equal(ids.length, 19);
+  assert.deepEqual(ids, visiblePages);
   assert.equal(new Set(ids).size, ids.length);
-  requiredPages.forEach((id) => assert.ok(ids.includes(id), `missing page ${id}`));
-  assert.equal(pages.defaultPageId, 'overview');
+  assert.equal(pages.defaultPageId, 'route');
+  assert.equal(pages.groups.length, 3);
 });
 
-test('page statuses distinguish live, blueprint and deferred work', () => {
-  assert.equal(pages.getPage('missions').status, 'live');
-  assert.equal(pages.getPage('changelog').status, 'live');
-  assert.equal(pages.getPage('route-planner').status, 'live');
-  assert.equal(pages.getPage('automation').status, 'later');
+test('secondary tools resolve into their parent workspace', () => {
+  assert.equal(pages.resolveView('cargo'), 'route');
+  assert.equal(pages.resolveView('load-operations'), 'route');
+  assert.equal(pages.resolveView('locations'), 'route-planner');
+  assert.equal(pages.resolveView('changelog'), 'roadmap');
+  assert.equal(pages.resolveView('route-planner'), 'route-planner');
 });
 
 test('ship cargo zones are separable, layered and capacity-safe', () => {
@@ -44,29 +44,30 @@ test('ship cargo zones are separable, layered and capacity-safe', () => {
   });
 });
 
-test('index loads the generated navigation shell before section routing', () => {
-  const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+test('dynamic hosts are created before section routing', () => {
+  const html = read('index.html');
+  const shell = read('product-shell.js');
   assert.match(html, /id="product-navigation"/);
   assert.match(html, /id="future-pages-root"/);
-  assert.match(html, /src="product-pages\.js"/);
-  assert.match(html, /src="product-shell\.js"/);
   assert.ok(html.indexOf('src="product-shell.js"') < html.indexOf('src="sections.js"'));
+  assert.match(shell, /id=\\"route-planner\\"/);
+  assert.match(shell, /id=\\"load-operations\\"/);
 });
 
-test('changelog and cargo-aware planner runtimes are registered', () => {
-  const changelog = fs.readFileSync(path.join(__dirname, '..', 'CHANGELOG.md'), 'utf8');
-  const app = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
-  assert.match(changelog, /## \[0\.9\.0\]/);
-  assert.match(app, /changelog-view\.js/);
-  assert.match(app, /route-planner-engine\.js/);
-  assert.match(app, /route-planner-view\.js/);
-  assert.match(app, /ux-shell\.js/);
-  assert.match(app, /ux-hierarchy-v2\.css/);
+test('v0.10 workspace, roadmap and cargo-zone runtimes are registered', () => {
+  const changelog = read('CHANGELOG.md');
+  const app = read('app.js');
+  assert.match(changelog, /## \[0\.10\.0\]/);
+  assert.equal(roadmap.currentVersion, '0.10');
+  assert.match(app, /cargo-zone-model\.js/);
+  assert.match(app, /cargo-zone-editor-view\.js/);
+  assert.match(app, /workspace-shell\.js/);
+  assert.match(app, /release-roadmap\.css/);
 });
 
-test('OCR and Game.log remain in the deferred automation phase', () => {
-  const automation = roadmap.phases.find((phase) => phase.id === 'automation');
-  assert.equal(automation.status, 'future');
-  assert.equal(automation.items.find((item) => item.id === 'ocr').status, 'future');
-  assert.equal(automation.items.find((item) => item.id === 'game-log').status, 'future');
+test('assisted OCR and Game.log intake remain after the current release', () => {
+  const assisted = roadmap.releases.find((release) => release.version === '0.18');
+  assert.equal(assisted.status, 'future');
+  assert.ok(assisted.changes.some((change) => /OCR/.test(change)));
+  assert.ok(assisted.changes.some((change) => /Game\.log/.test(change)));
 });
