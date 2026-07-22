@@ -44,7 +44,7 @@ test('visible UI Kit documents palette, type, buttons, icons and manufacturer co
   assert.match(view, /Seven approved sizes/);
   assert.match(view, /Canonical icon family/);
   assert.match(view, /Manufacturer theme contract/);
-  assert.match(view, /data-development-tab = 'ui-kit'/);
+  assert.match(view, /button\.dataset\.developmentTab = 'ui-kit'/);
 });
 
 test('design foundation loads before page runtimes and is current v0.14', () => {
