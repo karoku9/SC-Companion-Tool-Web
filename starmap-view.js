@@ -3,413 +3,220 @@
 (function initializeStarmap() {
   const data = window.SCCompanionStarmapData;
   const session = window.SCCompanionSession;
-  const canvas = document.querySelector('#starmap-canvas');
-  if (!data || !canvas) return;
+  const svg = document.querySelector('#starmap-canvas');
+  if (!data || !session || !svg) return;
 
-  const context = canvas.getContext('2d');
-  if (!context) return;
-
+  const NS = 'http://www.w3.org/2000/svg';
   const elements = {
     mode: document.querySelector('#starmap-mode'),
     title: document.querySelector('#starmap-selection-title'),
     type: document.querySelector('#starmap-selection-type'),
     detail: document.querySelector('#starmap-selection-detail'),
     route: document.querySelector('#starmap-route-status'),
+    routeList: document.querySelector('#starmap-route-list'),
     note: document.querySelector('#starmap-data-note'),
     buttons: [...document.querySelectorAll('[data-map-mode]')]
   };
 
-  const camera = { yaw: -0.35, pitch: -0.28, zoom: 1 };
-  const pointer = { down: false, moved: false, x: 0, y: 0 };
-  const projectedItems = [];
-  let mode = 'network';
-  let selectedId = 'stanton';
-  let frameRequested = false;
+  let mode = 'route';
+  let selectedKey = 'route';
 
-  function createStars(count) {
-    let seed = 43891;
-    return Array.from({ length: count }, () => {
-      seed = (seed * 1664525 + 1013904223) >>> 0;
-      const x = (seed % 10000) / 10000;
-      seed = (seed * 1664525 + 1013904223) >>> 0;
-      const y = (seed % 10000) / 10000;
-      seed = (seed * 1664525 + 1013904223) >>> 0;
-      const size = 0.35 + ((seed % 1000) / 1000) * 1.4;
-      return { x, y, size };
-    });
+  function node(name, attributes = {}, text = '') {
+    const element = document.createElementNS(NS, name);
+    Object.entries(attributes).forEach(([key, value]) => element.setAttribute(key, String(value)));
+    if (text) element.textContent = text;
+    return element;
   }
 
-  const stars = createStars(220);
+  function add(parent, name, attributes = {}, text = '') {
+    const element = node(name, attributes, text);
+    parent.append(element);
+    return element;
+  }
 
-  function resize() {
-    const rect = canvas.getBoundingClientRect();
-    const ratio = Math.min(window.devicePixelRatio || 1, 2);
-    const width = Math.max(1, Math.round(rect.width * ratio));
-    const height = Math.max(1, Math.round(rect.height * ratio));
-    if (canvas.width !== width || canvas.height !== height) {
-      canvas.width = width;
-      canvas.height = height;
+  function clear() {
+    svg.replaceChildren();
+    const defs = add(svg, 'defs');
+    const pattern = add(defs, 'pattern', { id: 'map-grid', width: 40, height: 40, patternUnits: 'userSpaceOnUse' });
+    add(pattern, 'path', { d: 'M 40 0 L 0 0 0 40', class: 'map-grid-line', fill: 'none' });
+    add(svg, 'rect', { x: 0, y: 0, width: 1000, height: 600, fill: 'url(#map-grid)' });
+  }
+
+  function routeContext() {
+    const state = session.getState();
+    if (!state.route?.stops?.length) return { state, route: null, progress: null, stops: [] };
+    const corrections = window.SCCompanionRouteCorrections;
+    const progressModel = window.SCCompanionRouteProgress;
+    const route = corrections ? corrections.deriveRoute(state.route, state.routeCorrections) : state.route;
+    const progress = progressModel ? progressModel.derive(route, state.completedStopIds, state.currentStopIndex) : null;
+    return { state, route, progress, stops: route.allStops ?? route.stops };
+  }
+
+  function operationSummary(stop) {
+    const pickup = stop.operations.filter((operation) => operation.type !== 'delivery' && operation.lotId).reduce((sum, operation) => sum + Number(operation.scu ?? 0), 0);
+    const drop = stop.operations.filter((operation) => operation.type === 'delivery' && operation.lotId).reduce((sum, operation) => sum + Number(operation.scu ?? 0), 0);
+    return [drop ? `Drop ${drop} SCU` : '', pickup ? `Pick up ${pickup} SCU` : ''].filter(Boolean).join(' · ') || `${stop.operations.length} objective${stop.operations.length === 1 ? '' : 's'}`;
+  }
+
+  function setSelection(title, type, detail, key = '') {
+    selectedKey = key || title;
+    elements.title.textContent = title;
+    elements.type.textContent = type;
+    elements.detail.textContent = detail;
+  }
+
+  function stopState(stop, context) {
+    if (stop.skipped) return 'skipped';
+    if (context.progress?.completedSet.has(String(stop.id))) return 'complete';
+    if (context.progress?.currentStop?.id === stop.id) return 'current';
+    return 'future';
+  }
+
+  function addRouteNode(parent, stop, index, x, y, context) {
+    const state = stopState(stop, context);
+    const group = add(parent, 'g', { class: `map-node map-route-node is-${state}`, tabindex: 0, role: 'button', 'aria-label': `${index + 1}. ${stop.locationLabel}. ${operationSummary(stop)}` });
+    add(group, 'circle', { cx: x, cy: y, r: state === 'current' ? 24 : 20 });
+    add(group, 'text', { x, y: y + 4, 'text-anchor': 'middle', class: 'map-node-index' }, String(index + 1).padStart(2, '0'));
+    const label = stop.locationLabel.length > 34 ? `${stop.locationLabel.slice(0, 32)}…` : stop.locationLabel;
+    add(group, 'text', { x: x + 32, y: y - 4 }, label);
+    add(group, 'text', { x: x + 32, y: y + 14, class: 'map-node-sub' }, operationSummary(stop));
+    group.addEventListener('click', () => setSelection(stop.locationLabel, `Route stop ${index + 1}`, `${operationSummary(stop)}${stop.mandatory ? ' · Mandatory' : ''}${stop.skipped ? ' · Skipped' : ''}`, String(stop.id)));
+    group.addEventListener('keydown', (event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); group.click(); } });
+    return { x, y };
+  }
+
+  function routePositions(count) {
+    if (count <= 4) {
+      const gap = 780 / Math.max(1, count - 1);
+      return Array.from({ length: count }, (_, index) => ({ x: 100 + index * gap, y: 300 }));
     }
-    context.setTransform(ratio, 0, 0, ratio, 0, 0);
-    requestDraw();
-  }
-
-  function rotatePoint(point) {
-    const [x, y, z] = point;
-    const cosYaw = Math.cos(camera.yaw);
-    const sinYaw = Math.sin(camera.yaw);
-    const yawX = x * cosYaw - z * sinYaw;
-    const yawZ = x * sinYaw + z * cosYaw;
-    const cosPitch = Math.cos(camera.pitch);
-    const sinPitch = Math.sin(camera.pitch);
-    return [yawX, y * cosPitch - yawZ * sinPitch, y * sinPitch + yawZ * cosPitch];
-  }
-
-  function project(point, sceneScale = 1) {
-    const [x, y, z] = rotatePoint(point);
-    const rect = canvas.getBoundingClientRect();
-    const focal = Math.min(rect.width, rect.height) * 1.6;
-    const depth = Math.max(0.35, (focal + z * sceneScale) / focal);
-    const scale = camera.zoom * sceneScale / depth;
-    return {
-      x: rect.width / 2 + x * scale,
-      y: rect.height / 2 + y * scale,
-      depth,
-      scale
-    };
-  }
-
-  function drawBackground(time) {
-    const rect = canvas.getBoundingClientRect();
-    const gradient = context.createRadialGradient(rect.width * 0.47, rect.height * 0.43, 8, rect.width * 0.5, rect.height * 0.5, Math.max(rect.width, rect.height) * 0.75);
-    gradient.addColorStop(0, '#132127');
-    gradient.addColorStop(0.38, '#091014');
-    gradient.addColorStop(1, '#030608');
-    context.fillStyle = gradient;
-    context.fillRect(0, 0, rect.width, rect.height);
-
-    stars.forEach((star, index) => {
-      const pulse = 0.34 + Math.sin(time * 0.0008 + index * 0.63) * 0.12;
-      context.globalAlpha = pulse;
-      context.fillStyle = '#dcecf4';
-      context.beginPath();
-      context.arc(star.x * rect.width, star.y * rect.height, star.size, 0, Math.PI * 2);
-      context.fill();
-    });
-    context.globalAlpha = 1;
-  }
-
-  function line(from, to, options = {}) {
-    context.save();
-    context.strokeStyle = options.color ?? 'rgba(122, 164, 181, 0.55)';
-    context.lineWidth = options.width ?? 1;
-    context.setLineDash(options.dash ?? []);
-    context.shadowColor = options.glow ?? 'transparent';
-    context.shadowBlur = options.blur ?? 0;
-    context.beginPath();
-    context.moveTo(from.x, from.y);
-    context.lineTo(to.x, to.y);
-    context.stroke();
-    context.restore();
-  }
-
-  function label(text, point, options = {}) {
-    context.save();
-    context.font = `${options.weight ?? 700} ${options.size ?? 12}px Inter, system-ui, sans-serif`;
-    context.textAlign = options.align ?? 'left';
-    context.textBaseline = 'middle';
-    context.fillStyle = options.color ?? '#dbe5e9';
-    context.shadowColor = '#030608';
-    context.shadowBlur = 5;
-    context.fillText(text, point.x, point.y);
-    context.restore();
-  }
-
-  function node(point, radius, options = {}) {
-    context.save();
-    context.shadowColor = options.glow ?? '#f4a340';
-    context.shadowBlur = options.blur ?? 18;
-    const gradient = context.createRadialGradient(point.x - radius * 0.3, point.y - radius * 0.3, 1, point.x, point.y, radius);
-    gradient.addColorStop(0, options.core ?? '#fff6d8');
-    gradient.addColorStop(0.42, options.color ?? '#f4a340');
-    gradient.addColorStop(1, options.edge ?? '#5a2d0d');
-    context.fillStyle = gradient;
-    context.beginPath();
-    context.arc(point.x, point.y, radius, 0, Math.PI * 2);
-    context.fill();
-    if (options.selected) {
-      context.strokeStyle = '#fff0cb';
-      context.lineWidth = 1.5;
-      context.beginPath();
-      context.arc(point.x, point.y, radius + 7, 0, Math.PI * 2);
-      context.stroke();
+    const columns = 4;
+    const rows = Math.ceil(count / columns);
+    const positions = [];
+    for (let index = 0; index < count; index += 1) {
+      const row = Math.floor(index / columns);
+      const columnInRow = index % columns;
+      const direction = row % 2 === 0 ? columnInRow : columns - 1 - columnInRow;
+      positions.push({ x: 120 + direction * 245, y: 145 + row * (310 / Math.max(1, rows - 1)) });
     }
-    context.restore();
+    return positions;
   }
 
-  function getSystemPoint(systemId) {
-    const system = data.getSystem(systemId);
-    return system ? project(system.position, 3.1) : null;
-  }
-
-  function routeSystemIds() {
-    const route = session?.getState().route;
-    if (!route?.stops?.length) return [];
-    const result = [];
-    route.stops.forEach((stop) => {
-      const anchor = data.getLocationAnchor(stop.locationId);
-      const inferred = anchor?.systemId ?? (stop.locationId.startsWith('stanton-') ? 'stanton' : null);
-      if (inferred && result[result.length - 1] !== inferred) result.push(inferred);
-    });
-    return result;
-  }
-
-  function drawNetwork() {
-    data.connections.forEach((connection) => {
-      const from = getSystemPoint(connection.from);
-      const to = getSystemPoint(connection.to);
-      if (!from || !to) return;
-      line(from, to, {
-        color: connection.status === 'placeholder' ? 'rgba(160, 173, 181, 0.38)' : 'rgba(244, 163, 64, 0.52)',
-        width: connection.status === 'placeholder' ? 1 : 1.6,
-        dash: connection.status === 'placeholder' ? [7, 7] : [],
-        glow: connection.status === 'placeholder' ? 'transparent' : 'rgba(244, 163, 64, 0.48)',
-        blur: 8
-      });
-      label(connection.status === 'placeholder' ? 'PLACEHOLDER' : 'JUMP LINK', {
-        x: (from.x + to.x) / 2,
-        y: (from.y + to.y) / 2 - 9
-      }, { align: 'center', size: 9, color: connection.status === 'placeholder' ? '#87949a' : '#c99355' });
-    });
-
-    const activeSystems = routeSystemIds();
-    for (let index = 0; index < activeSystems.length - 1; index += 1) {
-      const from = getSystemPoint(activeSystems[index]);
-      const to = getSystemPoint(activeSystems[index + 1]);
-      if (from && to) line(from, to, { color: '#b9f18b', width: 3, glow: '#75d638', blur: 12 });
-    }
-
-    data.systems
-      .map((system) => ({ system, point: getSystemPoint(system.id) }))
-      .sort((left, right) => right.point.depth - left.point.depth)
-      .forEach(({ system, point }) => {
-        const radius = Math.max(9, 13 / point.depth);
-        node(point, radius, {
-          color: system.id === 'pyro' ? '#e56d37' : system.id === 'nyx' ? '#b8d8e8' : '#f4a340',
-          edge: system.id === 'pyro' ? '#4e160b' : '#21343c',
-          glow: system.id === 'pyro' ? '#d7411d' : '#f4a340',
-          selected: selectedId === system.id
-        });
-        label(system.name.toUpperCase(), { x: point.x + radius + 12, y: point.y - 2 }, { size: 13, color: '#eef5f7' });
-        label(system.availability, { x: point.x + radius + 12, y: point.y + 14 }, { size: 9, weight: 600, color: '#87969d' });
-        projectedItems.push({ id: system.id, kind: 'system', object: system, x: point.x, y: point.y, radius: radius + 12 });
-      });
-  }
-
-  function orbitPoint(radius, angle) {
-    return [Math.cos(angle) * radius, Math.sin(angle * 0.37) * radius * 0.04, Math.sin(angle) * radius];
-  }
-
-  function drawOrbit(radius, type) {
-    const points = [];
-    for (let index = 0; index <= 96; index += 1) {
-      points.push(project(orbitPoint(radius, index / 96 * Math.PI * 2), 3.05));
-    }
-    context.save();
-    context.strokeStyle = type === 'asteroid-belt' ? 'rgba(167, 186, 195, 0.28)' : 'rgba(100, 137, 151, 0.26)';
-    context.lineWidth = type === 'asteroid-belt' ? 4 : 1;
-    context.setLineDash(type === 'asteroid-belt' ? [2, 5] : []);
-    context.beginPath();
-    points.forEach((point, index) => index ? context.lineTo(point.x, point.y) : context.moveTo(point.x, point.y));
-    context.stroke();
-    context.restore();
-  }
-
-  function bodyColor(type, systemId) {
-    if (type.includes('star')) return systemId === 'pyro' ? '#ff7241' : '#ffe5a7';
-    if (type === 'gas-giant') return '#b8c3a0';
-    if (type === 'ice-giant') return '#91c0d4';
-    if (type === 'asteroid-settlement') return '#c5b7a0';
-    return systemId === 'pyro' ? '#a96849' : '#7295a4';
-  }
-
-  function drawRouteOverlay(system) {
-    const route = session?.getState().route;
-    if (!route?.stops?.length) {
-      elements.route.textContent = 'No active mission route to overlay.';
+  function renderRouteMode(context) {
+    elements.mode.textContent = 'Active route';
+    if (!context.route?.stops?.length) {
+      add(svg, 'text', { x: 500, y: 285, 'text-anchor': 'middle', fill: 'currentColor' }, 'NO ACTIVE ROUTE');
+      add(svg, 'text', { x: 500, y: 315, 'text-anchor': 'middle', class: 'map-node-sub' }, 'Generate a hauling session to display stop order.');
+      elements.route.textContent = 'No active route';
+      setSelection('Active route', 'Route', 'Generate a session to display route stops.', 'route');
       return;
     }
-    const routePoints = route.stops
-      .map((stop, routeIndex) => ({ stop, routeIndex, anchor: data.getLocationAnchor(stop.locationId) }))
-      .filter((entry) => entry.anchor?.systemId === system.id)
-      .map((entry) => ({ ...entry, point: project(entry.anchor.position, 3.05) }));
-
-    elements.route.textContent = routePoints.length
-      ? `${routePoints.length} mapped stop${routePoints.length === 1 ? '' : 's'} in ${system.name}.`
-      : `The active route has no mapped stop in ${system.name}.`;
-
-    routePoints.forEach((entry, index) => {
-      if (index) line(routePoints[index - 1].point, entry.point, { color: '#b9f18b', width: 3, glow: '#75d638', blur: 12 });
-      context.save();
-      context.fillStyle = '#b9f18b';
-      context.shadowColor = '#75d638';
-      context.shadowBlur = 13;
-      context.beginPath();
-      context.arc(entry.point.x, entry.point.y, 7, 0, Math.PI * 2);
-      context.fill();
-      context.fillStyle = '#071007';
-      context.font = '800 9px Inter, system-ui, sans-serif';
-      context.textAlign = 'center';
-      context.textBaseline = 'middle';
-      context.fillText(String(entry.routeIndex + 1), entry.point.x, entry.point.y + 0.5);
-      context.restore();
-      label(entry.anchor.label, { x: entry.point.x + 11, y: entry.point.y - 10 }, { size: 10, color: '#ccefb4' });
-      projectedItems.push({ id: `route-${entry.routeIndex}`, kind: 'route-stop', object: entry, x: entry.point.x, y: entry.point.y, radius: 16 });
-    });
+    const positions = routePositions(context.stops.length);
+    for (let index = 1; index < positions.length; index += 1) {
+      add(svg, 'path', { d: `M ${positions[index - 1].x} ${positions[index - 1].y} L ${positions[index].x} ${positions[index].y}`, class: 'map-link map-link--active' });
+    }
+    context.stops.forEach((stop, index) => addRouteNode(svg, stop, index, positions[index].x, positions[index].y, context));
+    const activeCount = context.route.stops.length;
+    elements.route.textContent = `${activeCount} active stop${activeCount === 1 ? '' : 's'} · ${context.progress?.completedStopIds.length ?? 0} complete`;
+    if (selectedKey === 'route') setSelection('Active route', 'Route', `${activeCount} active stops. Click a node or route-list entry for details.`, 'route');
   }
 
-  function drawSystem(system) {
-    system.bodies.filter((body) => body.radius > 0).forEach((body) => drawOrbit(body.radius, body.type));
+  function bodyPoint(bodyId) {
+    const points = {
+      'stanton-star': [500, 300], hurston: [235, 215], crusader: [365, 455], arccorp: [705, 220], microtech: [795, 455]
+    };
+    return points[bodyId] ?? [500, 300];
+  }
 
-    system.bodies
-      .map((body) => ({ body, position: data.bodyPosition(body) }))
-      .map((entry) => ({ ...entry, point: project(entry.position, 3.05) }))
-      .sort((left, right) => right.point.depth - left.point.depth)
-      .forEach(({ body, point }) => {
-        if (body.type === 'asteroid-belt') {
-          label(body.name.toUpperCase(), { x: point.x, y: point.y - 14 }, { align: 'center', size: 9, color: '#8fa4ad' });
-          return;
+  function renderStantonMode(context) {
+    elements.mode.textContent = 'Stanton system';
+    const system = data.getSystem('stanton');
+    [95, 170, 245, 320].forEach((radius) => add(svg, 'circle', { cx: 500, cy: 300, r: radius, class: 'map-orbit' }));
+    system.bodies.forEach((body) => {
+      const [x, y] = bodyPoint(body.id);
+      const group = add(svg, 'g', { class: 'map-node', tabindex: 0, role: 'button' });
+      add(group, 'circle', { cx: x, cy: y, r: body.type.includes('star') ? 20 : 13 });
+      add(group, 'text', { x: x + 22, y: y + 4 }, body.name);
+      group.addEventListener('click', () => setSelection(body.name, body.type.replace(/-/g, ' '), `${system.name} · ${system.security}`, body.id));
+    });
+
+    const mapped = context.stops.filter((stop) => data.getLocationAnchor(stop.locationId)?.systemId === 'stanton');
+    mapped.forEach((stop, index) => {
+      const anchor = data.getLocationAnchor(stop.locationId);
+      const [baseX, baseY] = bodyPoint(anchor.bodyId);
+      const angle = index * 1.9;
+      const x = baseX + Math.cos(angle) * 38;
+      const y = baseY + Math.sin(angle) * 38;
+      addRouteNode(svg, stop, context.stops.indexOf(stop), x, y, context);
+    });
+    elements.route.textContent = `${mapped.length} mapped route stop${mapped.length === 1 ? '' : 's'} in Stanton`;
+    if (selectedKey === 'route') setSelection('Stanton', system.classification, system.security, 'stanton');
+  }
+
+  function renderNetworkMode(context) {
+    elements.mode.textContent = 'System network';
+    const points = { stanton: [230, 350], pyro: [505, 190], nyx: [775, 360] };
+    data.connections.forEach((connection) => {
+      const from = points[connection.from];
+      const to = points[connection.to];
+      add(svg, 'path', { d: `M ${from[0]} ${from[1]} L ${to[0]} ${to[1]}`, class: `map-link${connection.status === 'placeholder' ? ' is-placeholder' : ''}` });
+    });
+    const activeSystems = new Set(context.stops.map((stop) => data.getLocationAnchor(stop.locationId)?.systemId).filter(Boolean));
+    data.systems.forEach((system) => {
+      const [x, y] = points[system.id];
+      const group = add(svg, 'g', { class: `map-node${activeSystems.has(system.id) ? ' is-current' : ''}`, tabindex: 0, role: 'button' });
+      add(group, 'circle', { cx: x, cy: y, r: activeSystems.has(system.id) ? 25 : 19 });
+      add(group, 'text', { x: x + 33, y: y - 3 }, system.name.toUpperCase());
+      add(group, 'text', { x: x + 33, y: y + 14, class: 'map-node-sub' }, system.availability);
+      group.addEventListener('click', () => setSelection(system.name, system.classification, `${system.security} · ${system.availability}`, system.id));
+    });
+    elements.route.textContent = activeSystems.size ? `Active route crosses ${activeSystems.size} mapped system${activeSystems.size === 1 ? '' : 's'}` : 'No mapped active route';
+    if (selectedKey === 'route') setSelection('System network', 'Navigation', 'Stanton, Pyro and Nyx schematic jump links.', 'network');
+  }
+
+  function renderRouteList(context) {
+    elements.routeList.replaceChildren();
+    if (!context.stops.length) return;
+    context.stops.forEach((stop, index) => {
+      const item = document.createElement('li');
+      const button = document.createElement('button');
+      button.type = 'button';
+      if (context.progress?.currentStop?.id === stop.id) button.setAttribute('aria-current', 'step');
+      button.innerHTML = `<span>${String(index + 1).padStart(2, '0')}</span><strong>${stop.locationLabel}<br><small>${operationSummary(stop)}</small></strong>`;
+      button.addEventListener('click', () => {
+        setSelection(stop.locationLabel, `Route stop ${index + 1}`, operationSummary(stop), String(stop.id));
+        if (mode !== 'route') {
+          mode = 'route';
+          syncButtons();
+          render();
         }
-        const radius = Math.max(3.5, body.size / point.depth);
-        node(point, radius, {
-          color: bodyColor(body.type, system.id),
-          edge: '#172329',
-          glow: body.type.includes('star') ? bodyColor(body.type, system.id) : 'rgba(120, 170, 188, 0.45)',
-          blur: body.type.includes('star') ? 26 : 9,
-          selected: selectedId === body.id
-        });
-        if (camera.zoom > 0.66 || body.type.includes('star')) {
-          label(body.name, { x: point.x + radius + 8, y: point.y - 1 }, { size: body.type.includes('star') ? 13 : 10 });
-        }
-        projectedItems.push({ id: body.id, kind: 'body', object: body, system, x: point.x, y: point.y, radius: radius + 10 });
       });
-
-    drawRouteOverlay(system);
-  }
-
-  function draw(time = performance.now()) {
-    frameRequested = false;
-    projectedItems.length = 0;
-    drawBackground(time);
-    if (mode === 'network') {
-      drawNetwork();
-      elements.mode.textContent = 'SYSTEM NETWORK · SCHEMATIC 3D';
-      elements.route.textContent = routeSystemIds().length ? 'Active route systems are highlighted in green.' : 'Generate a mission route to add an overlay.';
-      elements.note.textContent = 'System coordinates are visual layout coordinates, not claimed physical distances.';
-    } else {
-      const system = data.getSystem(mode);
-      if (system) drawSystem(system);
-      elements.mode.textContent = `${system?.name.toUpperCase() ?? 'SYSTEM'} · SCHEMATIC ORBITS`;
-      elements.note.textContent = 'Orbit radii and body angles are visualized schematically. Names and system composition use reference data.';
-    }
-    requestDraw();
-  }
-
-  function requestDraw() {
-    if (!frameRequested) {
-      frameRequested = true;
-      requestAnimationFrame(draw);
-    }
-  }
-
-  function updateButtons() {
-    elements.buttons.forEach((button) => {
-      button.setAttribute('aria-pressed', String(button.dataset.mapMode === mode));
+      item.append(button);
+      elements.routeList.append(item);
     });
   }
 
-  function setSelection(item) {
-    if (!item) return;
-    selectedId = item.id;
-    if (item.kind === 'system') {
-      elements.title.textContent = item.object.name;
-      elements.type.textContent = item.object.classification;
-      elements.detail.textContent = `${item.object.security}. ${item.object.availability}.`;
-    } else if (item.kind === 'body') {
-      elements.title.textContent = item.object.name;
-      elements.type.textContent = item.object.type.replaceAll('-', ' ');
-      elements.detail.textContent = `${item.system.name} system · schematic orbital position.`;
-    } else if (item.kind === 'route-stop') {
-      elements.title.textContent = item.object.anchor.label;
-      elements.type.textContent = `Route stop ${item.object.routeIndex + 1}`;
-      elements.detail.textContent = `${item.object.stop.operations.length} operation${item.object.stop.operations.length === 1 ? '' : 's'} at this stop.`;
-    }
-    requestDraw();
+  function syncButtons() {
+    elements.buttons.forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.mapMode === mode)));
   }
 
-  function setMode(nextMode) {
-    mode = nextMode === 'network' || data.getSystem(nextMode) ? nextMode : 'network';
-    selectedId = mode === 'network' ? 'stanton' : `${mode}-star`;
-    camera.yaw = mode === 'network' ? -0.35 : -0.52;
-    camera.pitch = mode === 'network' ? -0.28 : -0.48;
-    camera.zoom = mode === 'network' ? 1 : 0.86;
-    updateButtons();
-    const selectedSystem = data.getSystem(mode);
-    if (selectedSystem) setSelection({ id: selectedSystem.id, kind: 'system', object: selectedSystem });
-    requestDraw();
+  function render() {
+    const context = routeContext();
+    clear();
+    if (mode === 'stanton') renderStantonMode(context);
+    else if (mode === 'network') renderNetworkMode(context);
+    else renderRouteMode(context);
+    renderRouteList(context);
   }
 
-  function nearestItem(clientX, clientY) {
-    const rect = canvas.getBoundingClientRect();
-    const x = clientX - rect.left;
-    const y = clientY - rect.top;
-    return projectedItems
-      .map((item) => ({ item, distance: Math.hypot(item.x - x, item.y - y) }))
-      .filter((entry) => entry.distance <= entry.item.radius)
-      .sort((left, right) => left.distance - right.distance)[0]?.item ?? null;
-  }
-
-  elements.buttons.forEach((button) => button.addEventListener('click', () => setMode(button.dataset.mapMode)));
-
-  canvas.addEventListener('pointerdown', (event) => {
-    pointer.down = true;
-    pointer.moved = false;
-    pointer.x = event.clientX;
-    pointer.y = event.clientY;
-    canvas.setPointerCapture(event.pointerId);
-  });
-
-  canvas.addEventListener('pointermove', (event) => {
-    if (!pointer.down) return;
-    const dx = event.clientX - pointer.x;
-    const dy = event.clientY - pointer.y;
-    if (Math.abs(dx) + Math.abs(dy) > 2) pointer.moved = true;
-    camera.yaw += dx * 0.007;
-    camera.pitch = Math.max(-1.25, Math.min(1.25, camera.pitch + dy * 0.006));
-    pointer.x = event.clientX;
-    pointer.y = event.clientY;
-    requestDraw();
-  });
-
-  canvas.addEventListener('pointerup', (event) => {
-    if (!pointer.moved) setSelection(nearestItem(event.clientX, event.clientY));
-    pointer.down = false;
-  });
-
-  canvas.addEventListener('dblclick', (event) => {
-    const item = nearestItem(event.clientX, event.clientY);
-    if (mode === 'network' && item?.kind === 'system') setMode(item.object.id);
-  });
-
-  canvas.addEventListener('wheel', (event) => {
-    event.preventDefault();
-    camera.zoom = Math.max(0.42, Math.min(2.25, camera.zoom * (event.deltaY > 0 ? 0.9 : 1.1)));
-    requestDraw();
-  }, { passive: false });
-
-  window.addEventListener('sc:session-change', requestDraw);
-  new ResizeObserver(resize).observe(canvas);
-  setSelection({ id: 'stanton', kind: 'system', object: data.getSystem('stanton') });
-  updateButtons();
-  resize();
+  elements.buttons.forEach((button) => button.addEventListener('click', () => {
+    mode = button.dataset.mapMode;
+    selectedKey = 'route';
+    syncButtons();
+    render();
+  }));
+  window.addEventListener('sc:session-change', render);
+  window.addEventListener('sc:route-runtime-ready', render);
+  syncButtons();
+  render();
 }());
