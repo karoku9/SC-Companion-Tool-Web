@@ -2,45 +2,59 @@
 
 ## Current release
 
-**v0.20 — Fleet loadouts**
+**v0.21 — UX Foundation and Starmap 2.0**
 
-Fleet now separates a saved ship instance from the configuration currently installed on it. Named loadouts contain structured component records, source provenance and explicit performance inputs. Switching a loadout keeps the ship identity, cargo zones, route state and notes intact while updating the estimates that depend on the selected configuration.
+The product paused feature expansion to repair navigation UX at the structural level. Starmap now separates the itinerary, the selected local system and the inter-system network into distinct layers instead of presenting three unrelated models as interchangeable map modes. The current objective, next stop and final destination remain visible while the user inspects route or universe context.
+
+## Active Starmap architecture
+
+- `starmap-view.js` owns the task-oriented Starmap interface and interaction state.
+- `starmap-v2.css` is loaded after the clean interface and legibility contracts so the map can use the established design tokens without creating a parallel visual system.
+- Itinerary, System and Network are explicit navigation layers with separate labels and purposes.
+- Selected stops, bodies and systems remain selected until the user chooses another object.
+- Selecting a route-list entry no longer forces an unexpected return to the itinerary layer.
+- Current, next and final route objectives remain visible in the map HUD.
+- Pan, wheel/button zoom, fit and center-current controls operate on the SVG view box.
+- Keyboard users can move with arrow keys, zoom with `+` and `-`, fit with `Home` and activate nodes with Enter or Space.
+- System selection is explicit in the System layer.
+- Desktop keeps a persistent context panel; mobile uses a focused bottom sheet instead of stacking a full desktop sidebar below the map.
+
+## Starmap information hierarchy
+
+1. Current objective and route orientation.
+2. Map surface and selected object.
+3. Route progress and navigation estimate.
+4. Full stop sequence and source boundary.
+
+The interface does not treat every available datum as equally important. Detailed leg estimates remain available in the route drawer while the map itself prioritizes location, order, state and direction.
+
+## Browser verification contract
+
+- The map must expose current, next and final objective labels for an active route.
+- Itinerary, System and Network must remain distinct layers.
+- Selecting a route-list entry must not silently change the active layer.
+- The selected object must have a persistent visible state.
+- Fit, zoom and center-current controls must update the SVG camera without document overflow.
+- Route labels must remain inside the visible map and avoid overlap in the interstellar sample.
+- Desktop, tablet and mobile screenshots must be inspected rather than accepted only because code tests pass.
+- Mobile map controls must retain the established 44 px interaction target.
+- The mobile details panel must open and close without hiding the map permanently or creating horizontal overflow.
+- Existing mission validation, Location Context, Fleet Loadouts, accessibility, Operations dialog and multi-viewport suites remain required.
 
 ## Active Fleet Loadout architecture
 
-- `fleet-loadouts.js` is the domain source for structured components, named loadouts, migration and derived ship performance.
-- Component records use explicit slots and retain source kind, authority, reference, review note and optional performance inputs.
-- Loadouts are stored per ship instance in `fleetLoadouts`; the selected configuration is stored separately in `activeLoadoutByShip`.
-- Ship identity is not duplicated when a loadout changes.
+- `fleet-loadouts.js` remains the domain source for structured components, named loadouts, migration and derived ship performance.
+- Component records retain explicit slots, source kind, authority, reference, review note and optional performance inputs.
+- Loadouts remain stored per ship instance in `fleetLoadouts`; the selected configuration remains separate in `activeLoadoutByShip`.
 - Existing free-text quantum-drive and factor fields migrate into an `Imported configuration` loadout with `legacy` provenance.
-- Compatibility fields remain on each ship record so older route, Starmap and cargo consumers continue to work during the transition.
-- Missing or unsourced component data remains visibly unknown rather than being replaced with an invented catalogue value.
+- Missing or unsourced component data remains visibly unknown rather than receiving an invented catalogue value.
 
 ## Loadout-derived estimates
 
 - The active quantum time factor feeds normal-space and interstellar navigation estimates.
 - The active cargo-capacity delta changes the physical capacity used by the Route Planner and Fleet readout.
 - The active handling factor changes pickup and delivery handling ranges and total route estimates.
-- Fuel-efficiency and quantum-spool inputs are stored with their assumptions for later fuel and detailed drive modelling.
 - `fleet-estimate-adapter.js` enriches the existing planner engine without replacing mission, dependency or cargo-capacity rules.
-- Planner results retain the same capacity-safe and dependency-safe guarantees after loadout selection.
-
-## Fleet interface
-
-- Fleet contains a responsive named-loadout browser and structured editor below the existing ship and cargo-zone surfaces.
-- Loadouts can be created, edited, activated and deleted while every ship keeps at least one configuration.
-- The editor records component slot, name, manufacturer, size/class, source kind, authority, reference and notes.
-- Operational factors are shown as assumptions and never presented as official component specifications unless the saved source explicitly says so.
-- The selected ship readout updates immediately with active quantum drive, travel factor and operational cargo capacity.
-
-## Browser verification contract
-
-- A pre-v0.20 Corsair session must migrate to one `Imported configuration` loadout without changing the ship ID.
-- A second named loadout must activate without losing the first configuration.
-- Active loadout values must update compatibility fields and derived performance.
-- Fleet must remain free of document-level horizontal overflow on desktop and mobile.
-- Mobile loadout controls must keep the established 44 px interaction target.
-- Existing mission validation, Location Context, accessibility, Operations dialog and multi-viewport suites remain required.
 
 ## Active Location Context architecture
 
@@ -71,12 +85,12 @@ Fleet now separates a saved ship instance from the configuration currently insta
 - Six primary workspaces: Operations, Missions, Planner, Starmap, Fleet and Development.
 - Operations tools remain native compact views.
 - Fleet includes ship schematics, cargo-zone editing and structured loadouts.
-- Starmap remains route-first and two-dimensional.
+- Starmap is two-dimensional, task-oriented and explicit about schematic geometry.
 - Drake remains a project-derived manufacturer theme, not an official CIG visual package.
 
 ## Next release
 
-**v0.21 — Session history**
+**v0.22 — Session history**
 
 - Archive completed sessions without mutating the active route.
 - Record planned and observed timings, incidents and corrections.

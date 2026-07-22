@@ -13,6 +13,35 @@ The project was already under active development before this changelog was intro
 
 ---
 
+## [0.21.0] - 2026-07-22
+
+### Added
+- Task-oriented Starmap layers for Itinerary, System and Network context.
+- Persistent selected-object state for route stops, celestial bodies and systems.
+- Current, next and final objective HUD.
+- Pan, wheel/button zoom, fit and center-current controls.
+- Keyboard map navigation with arrow keys, `+`, `-`, `Home`, Enter and Space.
+- Explicit system picker and Open system action.
+- Mobile Starmap detail bottom sheet with open, close and backdrop controls.
+- Static UX contracts for orientation, selection, camera controls and navigation-layer separation.
+
+### Changed
+- Route-first map mode is now labelled as an itinerary instead of pretending to be a spatial map.
+- Local system and inter-system network are presented as distinct navigation layers.
+- Full route details move into a collapsible context drawer so the map surface remains primary.
+- The map fills the available operational height instead of leaving a large unused upper region.
+- Desktop keeps persistent context while mobile uses a dedicated interaction model.
+- Session History moves to v0.22 so navigation UX can be repaired before further feature expansion.
+
+### Fixed
+- Selecting a stop from the route list no longer forces an unexpected return to the itinerary layer.
+- Selected nodes now remain visibly highlighted.
+- Current-route orientation no longer disappears while inspecting systems or network context.
+- Map controls no longer depend only on pointer interaction.
+- Mobile no longer stacks a full desktop detail sidebar underneath the map.
+
+---
+
 ## [0.20.0] - 2026-07-22
 
 ### Added

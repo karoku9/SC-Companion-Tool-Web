@@ -1,0 +1,98 @@
+/* Starmap 2.0 inherits the canonical readable type floor from the shared design system. */
+.starmap-page-v2 .starmap-layer-control > small,
+.starmap-page-v2 .starmap-system-picker > span,
+.starmap-page-v2 .starmap-objective-hud small,
+.starmap-page-v2 .starmap-statusbar small,
+.starmap-page-v2 .starmap-statusbar > span,
+.starmap-page-v2 .starmap-context-toggle span,
+.starmap-page-v2 .starmap-context-header > div:last-child > span,
+.starmap-page-v2 .starmap-route-drawer summary,
+.starmap-page-v2 .starmap-route-drawer summary strong,
+.starmap-page-v2 .starmap-segments button,
+.starmap-page-v2 .starmap-camera-controls button,
+.starmap-page-v2 .starmap-selection-actions .button,
+.starmap-page-v2 #starmap-route-list button > span,
+.starmap-page-v2 #starmap-route-list b,
+.starmap-page-v2 #starmap-route-list small,
+.starmap-page-v2 .data-note {
+  font-size: var(--ds-type-xs, .75rem) !important;
+}
+
+.starmap-page-v2 .starmap-objective-hud strong,
+.starmap-page-v2 .starmap-objective-hud span,
+.starmap-page-v2 .starmap-statusbar strong,
+.starmap-page-v2 .starmap-context-toggle strong {
+  font-size: var(--ds-type-sm, .8125rem) !important;
+}
+
+.starmap-page-v2 .starmap-selection-card > p,
+.starmap-page-v2 .starmap-route-empty {
+  font-size: var(--ds-type-sm, .8125rem);
+}
+
+/* Local-system stops are identified by their numbered markers; details stay in the route drawer. */
+.starmap-page-v2 .map-system-stops .map-route-label,
+.starmap-page-v2 .map-system-stops .map-node-sub {
+  display: none;
+}
+
+/* Do not offer a drill-down action when the System layer is already open. */
+.starmap-page-v2:has(.starmap-system-picker:not([hidden])) #starmap-open-system {
+  display: none !important;
+}
+
+/* The details surface is a normal grid panel on desktop and a native top-layer dialog on mobile. */
+dialog.starmap-context-panel {
+  position: static;
+  width: auto;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  color: var(--ds-content-primary);
+}
+dialog.starmap-context-panel:not([open]) { display: none !important; }
+dialog.starmap-context-panel[open] { display: grid; }
+dialog.starmap-context-panel::backdrop { background: rgb(0 0 0 / .56); }
+
+@media (max-width: 900px) {
+  .starmap-page-v2 .starmap-context-toggle {
+    position: fixed;
+    z-index: 65;
+    right: 12px;
+    bottom: 76px;
+  }
+  .starmap-page-v2 .starmap-context-backdrop { display: none !important; }
+  dialog.starmap-context-panel.is-mobile-dialog {
+    position: fixed !important;
+    top: auto !important;
+    right: 10px !important;
+    bottom: 74px !important;
+    left: 10px !important;
+    width: auto !important;
+    max-width: none !important;
+    max-height: min(76svh, 690px) !important;
+    margin: 0 !important;
+    transform: none !important;
+  }
+  dialog.starmap-context-panel.is-mobile-dialog .starmap-context-header > div:last-child > span,
+  dialog.starmap-context-panel.is-mobile-dialog .starmap-route-drawer summary,
+  dialog.starmap-context-panel.is-mobile-dialog .starmap-route-drawer summary strong,
+  dialog.starmap-context-panel.is-mobile-dialog .starmap-selection-actions .button,
+  dialog.starmap-context-panel.is-mobile-dialog #starmap-route-list button > span,
+  dialog.starmap-context-panel.is-mobile-dialog #starmap-route-list b,
+  dialog.starmap-context-panel.is-mobile-dialog #starmap-route-list small,
+  dialog.starmap-context-panel.is-mobile-dialog .data-note {
+    font-size: var(--ds-type-xs, .75rem) !important;
+  }
+  dialog.starmap-context-panel.is-mobile-dialog .starmap-selection-card > p {
+    font-size: var(--ds-type-sm, .8125rem) !important;
+  }
+}
+
+@media (max-width: 620px) {
+  .starmap-page-v2 .starmap-context-toggle { right: 8px; }
+  dialog.starmap-context-panel.is-mobile-dialog {
+    right: 6px !important;
+    left: 6px !important;
+  }
+}

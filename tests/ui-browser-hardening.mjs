@@ -167,6 +167,62 @@ async function exerciseTool(target, toolId) {
   await target.waitForFunction((id) => document.activeElement?.dataset?.opsTool === id, toolId);
 }
 
+async function exerciseStarmapUx(target) {
+  step = 'verify Starmap route orientation and camera';
+  await openWorkspace(target, 'map');
+  await target.locator('#starmap-canvas .map-node').first().waitFor({ state: 'visible' });
+  assert.notEqual((await target.locator('#starmap-hud-current').textContent())?.trim(), 'No active route');
+  assert.notEqual((await target.locator('#starmap-hud-next').textContent())?.trim(), '—');
+  assert.notEqual((await target.locator('#starmap-hud-final').textContent())?.trim(), '—');
+
+  const stage = await target.locator('.starmap-stage-wrap').boundingBox();
+  assert.ok(stage && stage.height >= 500, `Starmap surface is too short: ${JSON.stringify(stage)}`);
+  const initialViewBox = await target.locator('#starmap-canvas').getAttribute('viewBox');
+  await target.locator('[data-map-action="zoom-in"]').click();
+  assert.notEqual(await target.locator('#starmap-canvas').getAttribute('viewBox'), initialViewBox, 'Zoom did not update the SVG camera');
+  await target.locator('[data-map-action="fit"]').click();
+  assert.equal(await target.locator('#starmap-canvas').getAttribute('viewBox'), '0 0 1200 720');
+
+  step = 'verify persistent stop selection';
+  const secondRouteEntry = target.locator('#starmap-route-list button').nth(1);
+  const selectedStopName = (await secondRouteEntry.locator('b').textContent())?.trim();
+  await secondRouteEntry.click();
+  assert.equal((await target.locator('#starmap-selection-title').textContent())?.trim(), selectedStopName);
+  assert.equal(await target.locator('#starmap-canvas .map-node.is-selected').count(), 1);
+
+  step = 'verify layer does not change when route list is used';
+  await target.locator('[data-map-mode="network"]').click();
+  assert.equal(await target.locator('[data-map-mode="network"]').getAttribute('aria-selected'), 'true');
+  await target.locator('#starmap-route-list button').nth(2).click();
+  assert.equal(await target.locator('[data-map-mode="network"]').getAttribute('aria-selected'), 'true', 'Route selection silently changed the navigation layer');
+  assert.equal((await target.locator('#starmap-mode').textContent())?.trim(), 'System network');
+
+  step = 'verify network-to-system drilldown';
+  await target.locator('#starmap-canvas [data-map-key="pyro"]').click();
+  await target.locator('#starmap-open-system').click();
+  assert.equal(await target.locator('[data-map-mode="local"]').getAttribute('aria-selected'), 'true');
+  assert.equal(await target.locator('#starmap-system-select').inputValue(), 'pyro');
+  assert.match((await target.locator('#starmap-mode').textContent()) ?? '', /Pyro system/);
+  await noHorizontalOverflow(target, 'Starmap active desktop');
+  await target.screenshot({ path: `${output}/hardening-starmap-v2-active-1664.png`, fullPage: true });
+}
+
+async function exerciseMobileStarmap(target, label) {
+  step = `verify ${label} mobile Starmap details`;
+  await openWorkspace(target, 'map');
+  await noHorizontalOverflow(target, `${label} Starmap`);
+  assert.equal(await target.locator('#starmap-context-toggle').isVisible(), true);
+  await target.locator('#starmap-context-toggle').click();
+  assert.equal(await target.locator('#map').evaluate((element) => element.classList.contains('is-context-open')), true);
+  const box = await target.locator('#starmap-context-panel').boundingBox();
+  const viewport = target.viewportSize();
+  assert.ok(box && box.x >= 0 && box.x + box.width <= viewport.width + 2, `${label}: mobile details escape viewport: ${JSON.stringify(box)}`);
+  await minimumTouchTargets(target, `${label} Starmap`);
+  await target.screenshot({ path: `${output}/hardening-starmap-v2-mobile-details.png`, fullPage: true });
+  await target.locator('#starmap-context-close').click();
+  assert.equal(await target.locator('#map').evaluate((element) => element.classList.contains('is-context-open')), false);
+}
+
 let failure = null;
 try {
   page = await createPage(1664, 936);
@@ -202,7 +258,10 @@ try {
   for (const toolId of ['moves', 'cargo', 'adjust', 'route']) await exerciseTool(page, toolId);
   await page.screenshot({ path: `${output}/hardening-operations-long-1664.png`, fullPage: true });
 
+  await exerciseStarmapUx(page);
+
   step = 'verify completed route state';
+  await openWorkspace(page, 'route');
   let guard = 20;
   while (!(await page.locator('#complete-stop').isDisabled()) && guard > 0) {
     await page.locator('#complete-stop').click();
@@ -247,9 +306,17 @@ try {
   await inspectAllWorkspaces(page, '1366x768');
   await page.screenshot({ path: `${output}/hardening-development-1366.png`, fullPage: true });
 
+  step = 'verify 768 tablet';
+  await page.setViewportSize({ width: 768, height: 1024 });
+  await openWorkspace(page, 'map');
+  await noHorizontalOverflow(page, '768x1024 Starmap');
+  await readableTypography(page, '768x1024 Starmap');
+  await page.screenshot({ path: `${output}/hardening-starmap-v2-768.png`, fullPage: true });
+
   step = 'verify 390 mobile';
   await page.setViewportSize({ width: 390, height: 844 });
   await inspectAllWorkspaces(page, '390x844');
+  await exerciseMobileStarmap(page, '390x844');
   await openWorkspace(page, 'route');
   await minimumTouchTargets(page, '390x844 Operations');
   await page.screenshot({ path: `${output}/hardening-operations-390.png`, fullPage: true });
