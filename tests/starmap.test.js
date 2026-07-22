@@ -78,12 +78,15 @@ test('Starmap 2.0 keeps orientation, selection and camera controls explicit', ()
   const view = read('starmap-view.js');
   assert.match(view, /CURRENT OBJECTIVE/);
   assert.match(view, /FINAL DESTINATION/);
+  assert.match(view, /Session complete/);
+  assert.match(view, /No further stops/);
   assert.match(view, /data-map-action="fit"/);
   assert.match(view, /data-map-action="current"/);
   assert.match(view, /centerOnKey/);
   assert.match(view, /is-selected/);
   assert.match(view, /pointerdown/);
   assert.match(view, /Home/);
+  assert.doesNotMatch(view, /const jumps = estimate\.jumpCount/);
   assert.doesNotMatch(view, /if \(mode !== 'route'\).*mode = 'route'/s);
 });
 
