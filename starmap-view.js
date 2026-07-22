@@ -20,6 +20,15 @@
 
   let mode = 'route';
   let selectedKey = 'route';
+  let selectedSystemId = 'stanton';
+
+  function navigation() {
+    return window.SCCompanionNavigationEstimates ?? null;
+  }
+
+  function official() {
+    return window.SCCompanionOfficialUniverseData ?? null;
+  }
 
   function node(name, attributes = {}, text = '') {
     const element = document.createElementNS(NS, name);
@@ -52,10 +61,28 @@
     return { state, route, progress, stops: route.allStops ?? route.stops };
   }
 
+  function activeQuantumFactor(context) {
+    const ship = (context.state.hangarShips ?? []).find((item) => item.id === context.state.selectedShipId);
+    return Number(ship?.quantumTimeFactor ?? 1);
+  }
+
+  function estimateLeg(previousStop, stop, context) {
+    if (!previousStop) return null;
+    return navigation()?.estimateLeg(previousStop.locationId, stop.locationId, {
+      quantumTimeFactor: activeQuantumFactor(context)
+    }) ?? null;
+  }
+
   function operationSummary(stop) {
     const pickup = stop.operations.filter((operation) => operation.type !== 'delivery' && operation.lotId).reduce((sum, operation) => sum + Number(operation.scu ?? 0), 0);
     const drop = stop.operations.filter((operation) => operation.type === 'delivery' && operation.lotId).reduce((sum, operation) => sum + Number(operation.scu ?? 0), 0);
-    return [drop ? `Drop ${drop} SCU` : '', pickup ? `Pick up ${pickup} SCU` : ''].filter(Boolean).join(' · ') || `${stop.operations.length} objective${stop.operations.length === 1 ? '' : 's'}`;
+    return [drop ? `Drop off ${drop} SCU` : '', pickup ? `Pick up ${pickup} SCU` : ''].filter(Boolean).join(' · ') || `${stop.operations.length} objective${stop.operations.length === 1 ? '' : 's'}`;
+  }
+
+  function legText(estimate) {
+    if (!estimate) return 'Navigation estimate unavailable';
+    const jumps = estimate.jumpCount ? ` · ${estimate.jumpCount} jump${estimate.jumpCount === 1 ? '' : 's'}` : '';
+    return `${estimate.distanceLabel} · ${estimate.minMinutes}–${estimate.maxMinutes} min${jumps}`;
   }
 
   function setSelection(title, type, detail, key = '') {
@@ -84,7 +111,11 @@
     const labelY = index % 2 === 0 ? y - 24 : y + 34;
     add(group, 'text', { x: labelX, y: labelY, 'text-anchor': textAnchor, class: 'map-route-label' }, label);
     add(group, 'text', { x: labelX, y: labelY + 18, 'text-anchor': textAnchor, class: 'map-node-sub map-route-summary' }, operationSummary(stop));
-    group.addEventListener('click', () => setSelection(stop.locationLabel, `Route stop ${index + 1}`, `${operationSummary(stop)}${stop.mandatory ? ' · Mandatory' : ''}${stop.skipped ? ' · Skipped' : ''}`, String(stop.id)));
+    const previousStop = index ? context.stops[index - 1] : null;
+    group.addEventListener('click', () => {
+      const estimate = estimateLeg(previousStop, stop, context);
+      setSelection(stop.locationLabel, `Route stop ${index + 1}`, `${operationSummary(stop)}. ${previousStop ? `From ${previousStop.locationLabel}: ${legText(estimate)}.` : 'Session starting stop.'}${stop.mandatory ? ' Mandatory.' : ''}${stop.skipped ? ' Skipped.' : ''}`, String(stop.id));
+    });
     group.addEventListener('keydown', (event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); group.click(); } });
     return { x, y };
   }
@@ -106,6 +137,11 @@
     return positions;
   }
 
+  function routeSummary(context) {
+    if (!context.stops.length || !navigation()) return null;
+    return navigation().summarizeRoute(context.stops, { quantumTimeFactor: activeQuantumFactor(context) });
+  }
+
   function renderRouteMode(context) {
     elements.mode.textContent = 'Active route';
     if (!context.route?.stops?.length) {
@@ -121,40 +157,63 @@
     }
     context.stops.forEach((stop, index) => addRouteNode(svg, stop, index, positions[index].x, positions[index].y, context));
     const activeCount = context.route.stops.length;
-    elements.route.textContent = `${activeCount} active stop${activeCount === 1 ? '' : 's'} · ${context.progress?.completedStopIds.length ?? 0} complete`;
-    if (selectedKey === 'route') setSelection('Active route', 'Route', `${activeCount} active stops. Click a node or route-list entry for details.`, 'route');
+    const summary = routeSummary(context);
+    elements.route.textContent = summary
+      ? `${activeCount} stops · ${summary.distanceLabel} · ${summary.minMinutes}–${summary.maxMinutes} min navigation`
+      : `${activeCount} active stops · ${context.progress?.completedStopIds.length ?? 0} complete`;
+    if (selectedKey === 'route') {
+      setSelection('Active route', 'Route', summary
+        ? `${activeCount} active stops. Estimated normal-space distance ${summary.distanceLabel}; navigation ${summary.minMinutes}–${summary.maxMinutes} minutes. Arrival and cargo handling are shown in Planner.`
+        : `${activeCount} active stops. Click a node or route-list entry for details.`, 'route');
+    }
   }
 
-  function bodyPoint(bodyId) {
-    const points = {
-      'stanton-star': [500, 300], hurston: [235, 215], crusader: [365, 455], arccorp: [705, 220], microtech: [795, 455]
-    };
-    return points[bodyId] ?? [500, 300];
+  function projectedBodyPoints(system) {
+    const maxRadius = Math.max(...system.bodies.map((body) => Number(body.radius ?? 0)), 1);
+    const scale = 235 / maxRadius;
+    return new Map(system.bodies.map((body) => {
+      if (!body.radius) return [body.id, [500, 300]];
+      const angle = Number(body.angle ?? 0) * Math.PI / 180;
+      return [body.id, [500 + Math.cos(angle) * body.radius * scale, 300 + Math.sin(angle) * body.radius * scale]];
+    }));
   }
 
-  function renderStantonMode(context) {
-    elements.mode.textContent = 'Stanton system';
-    const system = data.getSystem('stanton');
-    [95, 170, 245, 320].forEach((radius) => add(svg, 'circle', { cx: 500, cy: 300, r: radius, class: 'map-orbit' }));
+  function currentSystemId(context) {
+    const current = context.progress?.currentStop ?? context.stops.find((stop) => !stop.skipped) ?? null;
+    return data.getLocationAnchor(current?.locationId)?.systemId ?? selectedSystemId;
+  }
+
+  function renderLocalMode(context) {
+    selectedSystemId = currentSystemId(context);
+    const system = data.getSystem(selectedSystemId) ?? data.getSystem('stanton');
+    elements.mode.textContent = `${system.name} system`;
+    const points = projectedBodyPoints(system);
+    const maxOrbit = 235;
+    const orbitBodies = system.bodies.filter((body) => body.radius);
+    orbitBodies.forEach((body) => {
+      const radius = Number(body.radius ?? 0) / Math.max(...orbitBodies.map((item) => Number(item.radius ?? 1))) * maxOrbit;
+      add(svg, 'circle', { cx: 500, cy: 300, r: radius, class: 'map-orbit' });
+    });
     system.bodies.forEach((body) => {
-      const [x, y] = bodyPoint(body.id);
+      const [x, y] = points.get(body.id);
       const group = add(svg, 'g', { class: 'map-node', tabindex: 0, role: 'button' });
       add(group, 'circle', { cx: x, cy: y, r: body.type.includes('star') ? 20 : 13 });
-      add(group, 'text', { x: x + 22, y: y + 4 }, body.name);
+      const labelOnLeft = x > 760;
+      add(group, 'text', { x: labelOnLeft ? x - 22 : x + 22, y: y + 4, 'text-anchor': labelOnLeft ? 'end' : 'start' }, body.name);
       group.addEventListener('click', () => setSelection(body.name, body.type.replace(/-/g, ' '), `${system.name} · ${system.security}`, body.id));
     });
 
-    const mapped = context.stops.filter((stop) => data.getLocationAnchor(stop.locationId)?.systemId === 'stanton');
+    const mapped = context.stops.filter((stop) => data.getLocationAnchor(stop.locationId)?.systemId === system.id);
     mapped.forEach((stop, index) => {
       const anchor = data.getLocationAnchor(stop.locationId);
-      const [baseX, baseY] = bodyPoint(anchor.bodyId);
+      const [baseX, baseY] = points.get(anchor.bodyId) ?? [500, 300];
       const angle = index * 1.9;
       const x = baseX + Math.cos(angle) * 38;
       const y = baseY + Math.sin(angle) * 38;
       addRouteNode(svg, stop, context.stops.indexOf(stop), x, y, context);
     });
-    elements.route.textContent = `${mapped.length} mapped route stop${mapped.length === 1 ? '' : 's'} in Stanton`;
-    if (selectedKey === 'route') setSelection('Stanton', system.classification, system.security, 'stanton');
+    elements.route.textContent = `${mapped.length} route stop${mapped.length === 1 ? '' : 's'} in ${system.name}`;
+    if (selectedKey === 'route') setSelection(system.name, system.classification, `${system.security}. ${mapped.length} active route stops mapped here.`, system.id);
   }
 
   function renderNetworkMode(context) {
@@ -163,7 +222,11 @@
     data.connections.forEach((connection) => {
       const from = points[connection.from];
       const to = points[connection.to];
-      add(svg, 'path', { d: `M ${from[0]} ${from[1]} L ${to[0]} ${to[1]}`, class: `map-link${connection.status === 'placeholder' ? ' is-placeholder' : ''}` });
+      const placeholder = connection.status === 'active-placeholder' || connection.status === 'placeholder';
+      add(svg, 'path', { d: `M ${from[0]} ${from[1]} L ${to[0]} ${to[1]}`, class: `map-link${placeholder ? ' is-placeholder' : ''}` });
+      const midpointX = (from[0] + to[0]) / 2;
+      const midpointY = (from[1] + to[1]) / 2;
+      add(svg, 'text', { x: midpointX, y: midpointY - 8, 'text-anchor': 'middle', class: 'map-node-sub' }, placeholder ? 'ACTIVE PLACEHOLDER' : 'ACTIVE JUMP');
     });
     const activeSystems = new Set(context.stops.map((stop) => data.getLocationAnchor(stop.locationId)?.systemId).filter(Boolean));
     data.systems.forEach((system) => {
@@ -171,11 +234,20 @@
       const group = add(svg, 'g', { class: `map-node${activeSystems.has(system.id) ? ' is-current' : ''}`, tabindex: 0, role: 'button' });
       add(group, 'circle', { cx: x, cy: y, r: activeSystems.has(system.id) ? 25 : 19 });
       add(group, 'text', { x: x + 33, y: y - 3 }, system.name.toUpperCase());
-      add(group, 'text', { x: x + 33, y: y + 14, class: 'map-node-sub' }, system.availability);
-      group.addEventListener('click', () => setSelection(system.name, system.classification, `${system.security} · ${system.availability}`, system.id));
+      add(group, 'text', { x: x + 33, y: y + 16, class: 'map-node-sub' }, system.availability);
+      group.addEventListener('click', () => {
+        selectedSystemId = system.id;
+        setSelection(system.name, system.classification, `${system.security} · ${system.availability}. Select Local system to inspect its route stops.`, system.id);
+      });
     });
-    elements.route.textContent = activeSystems.size ? `Active route crosses ${activeSystems.size} mapped system${activeSystems.size === 1 ? '' : 's'}` : 'No mapped active route';
-    if (selectedKey === 'route') setSelection('System network', 'Navigation', 'Stanton, Pyro and Nyx schematic jump links.', 'network');
+    const summary = routeSummary(context);
+    elements.route.textContent = activeSystems.size
+      ? `${activeSystems.size} systems · ${summary?.jumpCount ?? 0} route jumps · ${summary?.distanceLabel ?? 'distance unavailable'}`
+      : 'No mapped active route';
+    if (selectedKey === 'route') {
+      const snapshot = official()?.snapshot;
+      setSelection('System network', 'Navigation', `Stanton, Pyro and Nyx jump topology. ${snapshot ? `Official web snapshot ${snapshot.gameVersion}, verified ${snapshot.verifiedAt}.` : ''}`, 'network');
+    }
   }
 
   function renderRouteList(context) {
@@ -186,9 +258,13 @@
       const button = document.createElement('button');
       button.type = 'button';
       if (context.progress?.currentStop?.id === stop.id) button.setAttribute('aria-current', 'step');
-      button.innerHTML = `<span>${String(index + 1).padStart(2, '0')}</span><strong>${stop.locationLabel}<br><small>${operationSummary(stop)}</small></strong>`;
+      const estimate = estimateLeg(index ? context.stops[index - 1] : null, stop, context);
+      const navigationText = index ? legText(estimate) : 'Session starting stop';
+      button.innerHTML = `<span>${String(index + 1).padStart(2, '0')}</span><strong>${stop.locationLabel}<small>${operationSummary(stop)}</small><small class="map-leg-estimate">${navigationText}</small></strong>`;
       button.addEventListener('click', () => {
-        setSelection(stop.locationLabel, `Route stop ${index + 1}`, operationSummary(stop), String(stop.id));
+        const anchor = data.getLocationAnchor(stop.locationId);
+        selectedSystemId = anchor?.systemId ?? selectedSystemId;
+        setSelection(stop.locationLabel, `Route stop ${index + 1}`, `${operationSummary(stop)}. ${navigationText}.`, String(stop.id));
         if (mode !== 'route') {
           mode = 'route';
           syncButtons();
@@ -207,20 +283,23 @@
   function render() {
     const context = routeContext();
     clear();
-    if (mode === 'stanton') renderStantonMode(context);
+    if (mode === 'local' || mode === 'stanton') renderLocalMode(context);
     else if (mode === 'network') renderNetworkMode(context);
     else renderRouteMode(context);
     renderRouteList(context);
+    const snapshot = official()?.snapshot;
+    if (elements.note && snapshot) elements.note.textContent = `Official RSI universe snapshot: ${snapshot.gameVersion}, verified ${snapshot.verifiedAt}. Distances and times are project-derived estimates; jump tunnels are counted separately.`;
   }
 
   elements.buttons.forEach((button) => button.addEventListener('click', () => {
-    mode = button.dataset.mapMode;
+    mode = button.dataset.mapMode === 'stanton' ? 'local' : button.dataset.mapMode;
     selectedKey = 'route';
     syncButtons();
     render();
   }));
   window.addEventListener('sc:session-change', render);
   window.addEventListener('sc:route-runtime-ready', render);
+  window.addEventListener('sc:navigation-runtime-ready', render);
   syncButtons();
   render();
 }());
