@@ -2,18 +2,35 @@
 
 ## Current release
 
-**v0.16 — Interstellar navigation**
+**v0.17 — Visual hardening**
 
-The application now treats Stanton, Pyro and Nyx as operationally connected systems instead of accepting their locations as unstructured custom text. Mission parsing, route planning, Operations and Starmap use the same verified universe registry and transparent navigation-estimate boundary.
+The clean interface is now protected by browser-level contracts covering empty, active and completed Operations states, every auxiliary tool, long operational strings, multiple saved ships and desktop/mobile viewport classes. Visual correctness is no longer inferred from one screenshot.
 
 ## Active interface architecture
 
-- One shell stylesheet: `ui-v2.css`, plus shared design-system tokens, components and a final legibility contract.
+- One shell stylesheet: `ui-v2.css`, plus shared design-system tokens, components, the legibility contract and `visual-hardening.css`.
 - Six primary workspaces: Operations, Missions, Planner, Starmap, Fleet and Development.
 - Operations tools are native compact views. Cargo, Moves, Adjust and Route do not embed full pages.
 - Fleet includes original schematic ship line art and a cargo-zone editor tied to the selected ship.
 - Starmap is route-first and two-dimensional with Route, Local system and Systems modes.
 - Drake is the current manufacturer theme. Its palette and treatment are project-derived approximations, not official CIG design assets.
+
+## Browser contract
+
+- Chromium checks the primary 1664×936 path plus 1366×768, 430×932 and 360×800 layouts.
+- Operations is exercised with no route, an active route and a completed route.
+- Moves, Cargo, Adjust and Route are opened and expanded inside the viewport.
+- Long mission, commodity and destination strings must wrap without widening the document.
+- Fleet is tested with Corsair and Cutlass Black saved together.
+- Horizontal document overflow, invisible focus and browser console errors fail CI.
+
+## Interaction and accessibility contract
+
+- Keyboard focus uses one semantic `:focus-visible` ring across controls and SVG interactions.
+- Mobile controls use larger minimum targets while desktop density remains compact.
+- Reduced-motion preferences collapse animation and transition duration.
+- Disabled controls communicate state through both native behavior and visible treatment.
+- Hidden workspaces and panels remain absent from layout and focus order.
 
 ## Universe-data boundary
 
@@ -31,24 +48,15 @@ The application now treats Stanton, Pyro and Nyx as operationally connected syst
 - Arrival, cargo handling and navigation remain separate estimate categories.
 - Planner, Operations and Starmap expose the same distance/time result instead of calculating independent values.
 
-## UI and trust boundaries
-
-- Visible operational text uses a canonical 12–36 px scale; hierarchy is created through weight, colour and placement rather than microscopic metadata.
-- Route and cargo data remain browser-local.
-- Pickup must remain before delivery.
-- Mission identity and cargo provenance remain attached to every lot.
-- Ship silhouettes and cargo zones are operational schematics, not certified geometry.
-- Starmap drawing positions are schematic and optimized for navigation clarity, not physical scale.
-
 ## Legacy status
 
-Legacy CSS and view files remain in the repository temporarily for history and rollback, but `index.html` and `app.js` no longer load them. They can be deleted after the v0.17 visual-hardening pass confirms no missing functionality.
+Legacy CSS and view files remain physically available for rollback but are not loaded by the application. Deletion is intentionally deferred until Mission Validation lands, so visual cleanup does not remove parsing or correction references that may still be useful during that migration.
 
 ## Next release
 
-**v0.17 — Visual hardening**
+**v0.18 — Mission validation**
 
-- Broaden browser screenshots to more viewport sizes and completed-session states.
-- Complete keyboard, focus, contrast and responsive audits.
-- Remove dead legacy UI files after verification.
-- Resolve any remaining page-specific layout defects before Mission Validation.
+- Identify incomplete or ambiguous fields before route generation.
+- Show actionable warnings rather than silently accepting uncertain input.
+- Provide inline review and correction of parsed mission data.
+- Preserve mission identity, pickup provenance and dependency safety through corrections.
