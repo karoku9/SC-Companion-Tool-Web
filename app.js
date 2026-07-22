@@ -88,7 +88,7 @@
       window.dispatchEvent(new Event('sc:navigation-runtime-ready'));
       window.dispatchEvent(new Event('sc:location-context-ready'));
       return Promise.all([
-        import('./route-planner-view.js'),
+        import('./route-planner-view.js').then(() => import('./location-context-planner.js')),
         import('./changelog-view.js'),
         import('./design-system-view.js'),
         import('./ui-v2.js').then(() => window.SCCompanionCleanInterfaceReady),
