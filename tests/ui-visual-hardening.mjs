@@ -79,10 +79,11 @@ try {
   {
     const { context, page, errors } = await freshPage({ width: 1366, height: 768 });
     await page.goto(`${baseUrl}/#missions`, { waitUntil: 'networkidle' });
-    const longMission = `Extremely Long Multi-System Humanitarian Logistics Contract With Verified Cargo Provenance\ncollect teasa 2scu ultra-long-processed-medical-supplies-container\ndeliver area18 2scu ultra-long-processed-medical-supplies-container`;
+    const longMission = `Extremely Long Multi System Humanitarian Logistics Contract With Verified Cargo Provenance And Priority Handling\ncollect teasa 2scu ultralongprocessedmedicalsuppliescontainer\ndeliver area18 2scu ultralongprocessedmedicalsuppliescontainer`;
     await page.locator('#mission-text').fill(longMission);
     await page.locator('#mission-form button[type="submit"]').click();
-    await page.locator('#mission-preview-title').filter({ hasText: '1 mission ready' }).waitFor();
+    await page.locator('#mission-cards .mission-card').first().waitFor();
+    assert.match(await page.locator('#mission-cards').textContent(), /ultralongprocessedmedicalsuppliescontainer/i);
     await assertNoOverflow(page, 'long mission 1366');
     await page.screenshot({ path: `${output}/v017-long-content-1366.png`, fullPage: true });
 
