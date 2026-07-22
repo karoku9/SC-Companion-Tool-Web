@@ -1,9 +1,7 @@
 'use strict';
 
 (function exposeCargoPlanner(root) {
-  function cellKey(row, column) {
-    return `${row}:${column}`;
-  }
+  function cellKey(row, column) { return `${row}:${column}`; }
 
   function accessDistance(row, column, layout) {
     const distances = (layout.accessPoints ?? ['rear']).map((access) => {
@@ -23,25 +21,17 @@
     for (let row = 0; row < layout.rows; row += 1) {
       for (let column = 0; column < layout.columns; column += 1) {
         if (blocked.has(cellKey(row, column))) continue;
-        cells.push({
-          id: cellKey(row, column),
-          row,
-          column,
-          accessDistance: accessDistance(row, column, layout)
-        });
+        cells.push({ id: cellKey(row, column), row, column, accessDistance: accessDistance(row, column, layout) });
       }
     }
     return cells.slice(0, shipModel.capacityScu);
   }
 
   function findStopIndex(route, missionId, lotId, type) {
-    return route.stops.findIndex((stop) => (
-      stop.operations.some((operation) => (
-        operation.missionId === missionId
-        && operation.lotId === lotId
-        && operation.type === type
-      ))
-    ));
+    const stops = route.allStops ?? route.stops;
+    return stops.findIndex((stop) => stop.operations.some((operation) => (
+      operation.missionId === missionId && operation.lotId === lotId && operation.type === type
+    )));
   }
 
   function planCargo(route, shipModel, riskResolver = () => 0) {
