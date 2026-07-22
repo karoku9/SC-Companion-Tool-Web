@@ -100,8 +100,8 @@
 - [x] Replace stacked mobile map panels with an open/close bottom sheet.
 - [x] Preserve 44 px mobile targets, reduced-motion and forced-colour behaviour.
 - [x] Add static tests for orientation, selection, camera controls and layer separation.
-- [ ] Inspect generated desktop, tablet and mobile screenshots before merge.
-- [ ] Confirm route selection, network selection and Open system tasks in Chromium before merge.
+- [x] Inspect generated desktop, tablet and mobile screenshots before merge.
+- [x] Confirm route selection, network selection and Open system tasks in Chromium before merge.
 
 ## Repository cleanup
 
