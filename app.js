@@ -77,7 +77,7 @@
   [
     'cargo-operations.css', 'cargo-corrections.css', 'route-corrections.css', 'changelog.css',
     'route-planner-live.css', 'ux-refresh.css', 'ux-hierarchy-v2.css', 'workspace-consolidation.css',
-    'release-roadmap.css', 'ui-rebuild.css'
+    'release-roadmap.css', 'ui-rebuild.css', 'drake-mfd.css'
   ].forEach((href) => {
     if (document.querySelector(`link[href="${href}"]`)) return;
     const stylesheet = document.createElement('link');
