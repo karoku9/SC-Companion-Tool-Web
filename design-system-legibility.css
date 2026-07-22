@@ -18,165 +18,42 @@
   --ds-focus-offset: 3px;
 }
 
-.app-frame :where(
-  small,
-  .display-label,
-  .status-tag,
-  .page-status,
-  .nav-footer,
-  .nav-group h2,
-  .route-stop-list,
-  .tool-keys,
-  .planner-breakdown,
-  .planner-profile-metrics,
-  .map-route-summary,
-  .data-note,
-  .app-footer
-) {
+.app-frame :where(small,.display-label,.status-tag,.page-status,.nav-footer,.nav-group h2,.route-stop-list,.tool-keys,.planner-breakdown,.planner-profile-metrics,.map-route-summary,.data-note,.app-footer) {
   font-size: max(var(--ds-type-visible-min), 1em);
 }
 
-.brand-text small,
-.brand-text em,
-.nav-group h2,
-.nav-copy small,
-.nav-footer span,
-.nav-footer small,
-.page-context small,
-.session-chip strong,
-.session-chip small,
-.page-header small,
-.status-tag,
-.mfd-header small,
-.mfd-header strong,
-.mfd-header > span,
-.route-stop-list li > span,
-.route-stop-list li small,
-.tool-keys button > span,
-.tool-keys strong,
-.tool-keys small,
-.tool-summary-strip small,
-.move-item small,
-.manifest-item small,
-.route-tool-row small,
-.ship-stats dt,
-.hangar-card dt,
-.hangar-card p,
-.hangar-card span,
-.hangar-form label small,
-.zone-form-row label,
-.zone-error,
-.schematic-note,
-.map-toolbar button,
-.development-tabs button,
-.map-route-summary > small,
-.data-note,
-.planner-context-bar span,
-.planner-number > span,
-.planner-profile-title,
-.planner-profile-card > small,
-.planner-breakdown small,
-.planner-stop-total span,
-.planner-stop-total small,
-.planner-total span,
-.planner-total small,
-.section-heading .eyebrow,
-.planner-method-note strong,
-.planner-method-note span,
-.mobile-page-picker,
-.page-status,
-.app-footer {
+.brand-text small,.brand-text em,.nav-group h2,.nav-copy small,.nav-footer span,.nav-footer small,.page-context small,.session-chip strong,.session-chip small,.page-header small,.status-tag,.mfd-header small,.mfd-header strong,.mfd-header > span,.route-stop-list li > span,.route-stop-list li small,.tool-keys button > span,.tool-keys strong,.tool-keys small,.tool-summary-strip small,.move-item small,.manifest-item small,.route-tool-row small,.ship-stats dt,.hangar-card dt,.hangar-card p,.hangar-card span,.hangar-form label small,.zone-form-row label,.zone-error,.schematic-note,.map-toolbar button,.development-tabs button,.map-route-summary > small,.data-note,.planner-context-bar span,.planner-number > span,.planner-profile-title,.planner-profile-card > small,.planner-breakdown small,.planner-stop-total span,.planner-stop-total small,.planner-total span,.planner-total small,.section-heading .eyebrow,.planner-method-note strong,.planner-method-note span,.mobile-page-picker,.page-status,.app-footer {
   font-size: var(--ds-type-xs);
 }
 
 body { font-size: var(--ds-type-md); }
-.nav-copy strong,
-.route-stop-list li strong,
-.operation-context,
-.operation-mission,
-.move-item span,
-.manifest-item span,
-.move-item .action-code,
-.tool-section-title strong,
-.hangar-card dd,
-.hangar-form label,
-.planner-profile-card p,
-.planner-stop-main > span,
-.planner-stop-total strong,
-.planner-context-bar strong,
-.map-info-panel > p,
-#starmap-route-list strong,
-#starmap-route-list small {
+.nav-copy strong,.route-stop-list li strong,.operation-context,.operation-mission,.move-item span,.manifest-item span,.move-item .action-code,.tool-section-title strong,.hangar-card dd,.hangar-form label,.planner-profile-card p,.planner-stop-main > span,.planner-stop-total strong,.planner-context-bar strong,.map-info-panel > p,#starmap-route-list strong,#starmap-route-list small {
   font-size: var(--ds-type-sm);
 }
 
 .page-context h1 { font-size: var(--ds-type-xl); }
-.page-header h2,
-.section-heading h2 { font-size: var(--ds-type-2xl); }
-#current-stop-name {
-  max-width: 22ch;
-  font-size: clamp(var(--ds-type-2xl), 2.5vw, var(--ds-type-operational-max));
-  line-height: 1.08;
-}
+.page-header h2,.section-heading h2 { font-size: var(--ds-type-2xl); }
+#current-stop-name { max-width: 22ch; font-size: clamp(var(--ds-type-2xl), 2.5vw, var(--ds-type-operational-max)); line-height: 1.08; }
 .operation-primary span { font-size: var(--ds-type-sm); }
 .operation-primary strong { font-size: var(--ds-type-lg); }
 .planner-detail-heading h3 { font-size: var(--ds-type-xl); }
 .planner-total strong { font-size: var(--ds-type-xl); }
 
-.operation-mission,
-.move-item small,
-.manifest-item small,
-.route-leg-estimate,
-.map-leg-estimate,
-.data-note,
-.schematic-note {
-  color: var(--ds-content-muted);
-  line-height: 1.45;
-}
-.route-leg-estimate,
-.map-leg-estimate {
-  color: var(--ds-status-info) !important;
-  font-family: var(--ds-font-technical);
-}
+.operation-mission,.move-item small,.manifest-item small,.route-leg-estimate,.map-leg-estimate,.data-note,.schematic-note { color: var(--ds-content-muted); line-height: 1.45; }
+.route-leg-estimate,.map-leg-estimate { color: var(--ds-status-info) !important; font-family: var(--ds-font-technical); }
 
-button,
-input,
-select,
-textarea,
-.button,
-.ds-button {
-  font-size: var(--ds-type-sm);
-}
+button,input,select,textarea,.button,.ds-button { font-size: var(--ds-type-sm); }
 
-:where(
-  button,
-  [href],
-  input,
-  select,
-  textarea,
-  summary,
-  [tabindex]:not([tabindex="-1"])
-):focus,
-:where(
-  button,
-  [href],
-  input,
-  select,
-  textarea,
-  summary,
-  [tabindex]:not([tabindex="-1"])
-):focus-visible {
-  outline: var(--ds-focus-width) solid var(--ds-action-primary-hover);
-  outline-offset: var(--ds-focus-offset);
-  box-shadow: 0 0 0 1px var(--ds-surface-canvas), 0 0 0 6px color-mix(in srgb, var(--ds-action-primary) 28%, transparent);
+:where(button,[href],input,select,textarea,summary,[tabindex]:not([tabindex="-1"])):focus,
+:where(button,[href],input,select,textarea,summary,[tabindex]:not([tabindex="-1"])):focus-visible {
+  outline: var(--ds-focus-width) solid var(--ds-action-primary-hover) !important;
+  outline-offset: var(--ds-focus-offset) !important;
+  box-shadow: 0 0 0 1px var(--ds-surface-canvas), 0 0 0 6px color-mix(in srgb, var(--ds-action-primary) 28%, transparent) !important;
   position: relative;
   z-index: 5;
 }
 
-:where(button, input, select, textarea):disabled {
-  cursor: not-allowed;
-  opacity: .55;
-}
+:where(button,input,select,textarea):disabled { cursor: not-allowed; opacity: .55; }
 
 .planner-context-bar { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .planner-profile-metrics { grid-template-columns: repeat(4, minmax(0, 1fr)); }
@@ -188,36 +65,19 @@ textarea,
 #starmap-route-list button { grid-template-columns: 32px minmax(0, 1fr); }
 #starmap-route-list strong { display: grid; gap: var(--ds-space-2); }
 #starmap-route-list small { display: block; font-weight: 400; }
-#starmap-canvas text,
-#starmap-canvas .map-node-index,
-#starmap-canvas .map-node-sub {
-  font-size: var(--ds-type-xs);
-}
-#starmap-canvas .map-route-label {
-  font-size: var(--ds-type-sm);
-}
-#starmap-canvas .map-route-summary {
-  display: none;
-}
+#starmap-canvas text,#starmap-canvas .map-node-index,#starmap-canvas .map-node-sub { font-size: var(--ds-type-xs); }
+#starmap-canvas .map-route-label { font-size: var(--ds-type-sm); }
+#starmap-canvas .map-route-summary { display: none; }
 
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    scroll-behavior: auto !important;
-    animation-duration: .01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: .01ms !important;
-  }
+  *,*::before,*::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
 
 @media (max-width: 900px) {
-  .planner-context-bar,
-  .planner-profile-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .planner-context-bar,.planner-profile-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (max-width: 560px) {
-  .planner-context-bar,
-  .planner-profile-metrics { grid-template-columns: 1fr; }
+  .planner-context-bar,.planner-profile-metrics { grid-template-columns: 1fr; }
   #current-stop-name { font-size: var(--ds-type-2xl); }
 }
