@@ -12,7 +12,7 @@
   section.className = 'blueprint-panel correction-panel';
   section.innerHTML = `
     <div class="panel-title"><span>MANUAL CORRECTIONS</span><small id="correction-status">NO OVERRIDES</small></div>
-    <p class="correction-help">Keep the planned lot, but override its actual SCU or operational state. Invalid route states are rejected.</p>
+    <p class="correction-help">Override actual SCU or state without changing the original mission plan.</p>
     <div id="correction-list" class="correction-list"></div>`;
   root.append(section);
 
@@ -53,7 +53,10 @@
 
     const identity = document.createElement('div');
     identity.className = 'correction-identity';
-    identity.innerHTML = `<strong>${lot.missionTitle} · ${lot.commodity}</strong><span>${lot.originLocationLabel} → ${lot.deliveryLocationLabel}</span><small>PLANNED ${lot.plannedScu} SCU · AUTO ${lot.automaticStatus.toUpperCase()}</small>`;
+    identity.innerHTML = `
+      <strong>${lot.commodity}</strong>
+      <span>${lot.originLocationLabel} → ${lot.deliveryLocationLabel}</span>
+      <small>${lot.missionTitle} · planned ${lot.plannedScu} SCU · auto ${lot.automaticStatus}</small>`;
 
     const quantity = document.createElement('label');
     quantity.innerHTML = '<span>ACTUAL SCU</span>';
