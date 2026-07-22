@@ -2,6 +2,15 @@
 
 (function initializeCleanShell() {
   const sidebarToggle = document.querySelector('#sidebar-toggle');
+  const roadmap = window.SCCompanionRoadmap;
+
+  const buildLabel = document.querySelector('.nav-footer span');
+  if (buildLabel && roadmap?.currentVersion) buildLabel.textContent = `BUILD ${roadmap.currentVersion}`;
+  const localMapButton = document.querySelector('[data-map-mode="stanton"]');
+  if (localMapButton) {
+    localMapButton.dataset.mapMode = 'local';
+    localMapButton.textContent = 'Local system';
+  }
 
   sidebarToggle?.addEventListener('click', () => {
     const collapsed = document.documentElement.classList.toggle('nav-collapsed');
