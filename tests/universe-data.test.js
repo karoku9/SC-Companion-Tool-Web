@@ -91,9 +91,16 @@ test('expanded aliases feed the existing mission parser without custom locations
   assert.equal(parsed.missions[0].cargoLots[0].deliveryLocationId, 'stanton-crusader-seraphim');
 });
 
-test('generated community profiles add provenance without inventing services', () => {
-  const profile = profiles.getProfile('stanton-arc-l2-lively-pathway');
-  assert.equal(profile.dataStatus, 'community-registry');
-  assert.equal(profile.services.length, 0);
-  assert.ok(profile.sources.some((source) => source.id === 'scwiki-stanton-4-9'));
+test('reviewed profiles now add complete service and risk intelligence without claiming live telemetry', () => {
+  expectedOperational.forEach((locationId) => {
+    const profile = profiles.getProfile(locationId);
+    assert.ok(profile, `${locationId} lacks a reviewed profile`);
+    assert.equal(profile.dataStatus, 'community-reviewed');
+    assert.equal(profile.services.length, 12);
+    assert.notEqual(profile.risk.level, 'unknown');
+    assert.equal(profile.risk.live, false);
+    assert.ok(profile.sources.some((source) => source.id === 'scunpacked-starmap-4-9'));
+  });
+  assert.equal(profiles.coverage.complete, true);
+  assert.equal(profiles.coverage.reviewedProfiles, 34);
 });
