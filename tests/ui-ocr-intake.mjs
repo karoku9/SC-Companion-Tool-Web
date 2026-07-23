@@ -101,7 +101,7 @@ try {
   await page.locator('#mission-validation-title').filter({ hasText: /^Ready$/ }).waitFor({ state: 'visible' });
   const editorText = await page.locator('#mission-text').inputValue();
   assert.match(editorText, /collect ARC-L2 Lively Pathway Station 3scu titanium/);
-  assert.match(editorText, /deliver Teasa Spaceport 3scu titanium/);
+  assert.match(editorText, /deliver Lorville 3scu titanium/);
   assert.equal(await page.locator('#mission-generate-validated').isEnabled(), true);
   assert.equal(await page.evaluate(() => window.SCCompanionSession.getState().route), null);
 
