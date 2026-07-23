@@ -146,8 +146,8 @@
 - [x] Support orbital stations, landing zones, gateways, asteroid stations, outposts and distribution centers.
 - [x] Keep custom and unavailable destinations explicit instead of inheriting nearby data.
 - [x] Add static contracts for the seven operational cards and their data boundaries.
-- [ ] Inspect Checkmate Current Stop on desktop and mobile before merge.
-- [ ] Confirm no horizontal overflow and no regression to Operations completion controls in Chromium.
+- [x] Inspect Checkmate Current Stop on desktop and mobile before merge.
+- [x] Confirm no horizontal overflow and no regression to Operations completion controls in Chromium.
 
 ## v0.23 Game.log assisted intake
 
