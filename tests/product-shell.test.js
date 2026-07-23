@@ -60,9 +60,11 @@ test('design system, icons and clean shell load before page routing', () => {
   assert.doesNotMatch(shell, /id="load-operations"/);
   assert.match(shell, /nav-glyph/);
   assert.match(shell, /SCCompanionMfdIcons/);
+  assert.match(shell, /BUILD 0\.23/);
+  assert.match(shell, /explicit local files/);
 });
 
-test('v0.22 keeps delivered runtimes and adds the expanded universe registry', () => {
+test('v0.23 keeps delivered runtimes and adds assisted Game.log intake', () => {
   const app = read('app.js');
   const clean = read('ui-v2.js');
   const accessibility = read('ui-v2-accessibility.js');
@@ -77,8 +79,10 @@ test('v0.22 keeps delivered runtimes and adds the expanded universe registry', (
   const locations = read('locations.js');
   const mapData = read('starmap-data.js');
   const entry = read('ui-v2.css');
-  const designSystem = read('design-system.js');
-  assert.equal(roadmap.currentVersion, '0.22');
+  const gameLog = read('game-log-intake.js');
+  const gameLogCorrelation = read('game-log-intake-correlation.js');
+  const gameLogView = read('game-log-intake-view.js');
+  assert.equal(roadmap.currentVersion, '0.23');
   assert.match(app, /fleet-loadouts\.js/);
   assert.match(app, /fleet-estimate-adapter\.js/);
   assert.match(app, /fleet-loadouts-view\.js/);
@@ -88,6 +92,9 @@ test('v0.22 keeps delivered runtimes and adds the expanded universe registry', (
   assert.match(app, /location-context-planner\.js/);
   assert.match(app, /cargo-zone-model\.js/);
   assert.match(app, /ui-v2-accessibility\.js/);
+  assert.match(app, /game-log-intake\.js/);
+  assert.match(app, /game-log-intake-correlation\.js/);
+  assert.match(app, /game-log-intake-view\.js/);
   assert.match(app, /SCCompanionCleanInterfaceReady/);
   assert.match(clean, /SCCompanionCleanInterfaceReady/);
   assert.match(accessibility, /activateDevelopmentTab/);
@@ -104,21 +111,27 @@ test('v0.22 keeps delivered runtimes and adds the expanded universe registry', (
   assert.match(locations, /operationalDestinations/);
   assert.match(locations, /validateCatalog/);
   assert.match(mapData, /registry\.locations/);
+  assert.match(entry, /game-log-intake\.css/);
   assert.match(entry, /starmap-v2\.css/);
+  assert.match(gameLog, /mergeImportedEvents/);
+  assert.match(gameLogCorrelation, /nearest-preceding-contract-context/);
+  assert.match(gameLogView, /showOpenFilePicker/);
+  assert.match(gameLogView, /Load extracted draft into review/);
   assert.doesNotMatch(app, /workspace-shell\.js/);
-  assert.match(designSystem, /manufacturer: 'Drake Interplanetary'/);
+  assert.match(read('design-system.js'), /manufacturer: 'Drake Interplanetary'/);
 });
 
-test('v0.22, Game.log and OCR form the pre-hardening intake sequence', () => {
+test('Game.log, OCR and hardening form the remaining pre-1.0 sequence', () => {
   const universe = roadmap.releases.find((release) => release.version === '0.22');
   const gameLog = roadmap.releases.find((release) => release.version === '0.23');
   const ocr = roadmap.releases.find((release) => release.version === '0.24');
   const hardening = roadmap.releases.find((release) => release.version === '0.25');
-  assert.equal(universe.status, 'current');
+  assert.equal(universe.status, 'done');
   assert.match(universe.title, /Expanded universe data/i);
-  assert.equal(gameLog.status, 'next');
+  assert.equal(gameLog.status, 'current');
   assert.match(gameLog.title, /Game\.log assisted intake/i);
-  assert.equal(ocr.status, 'future');
+  assert.equal(ocr.status, 'next');
   assert.match(ocr.title, /OCR assisted intake/i);
+  assert.equal(hardening.status, 'future');
   assert.match(hardening.title, /Release hardening/i);
 });
