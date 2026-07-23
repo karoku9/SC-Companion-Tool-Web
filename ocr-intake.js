@@ -3,7 +3,7 @@
 (function exposeOcrIntake(root) {
   const ACTION_TERMS = Object.freeze([
     Object.freeze({ pattern: /\bdrop\s*off\b/i, value: 'deliver', confidence: 0.96, kind: 'explicit' }),
-    Object.freeze({ pattern: /\bdeliver(?:y|ed)?\b/i, value: 'deliver', confidence: 1, kind: 'explicit' }),
+    Object.freeze({ pattern: /\bdeliver(?:ed)?\b/i, value: 'deliver', confidence: 1, kind: 'explicit' }),
     Object.freeze({ pattern: /\bpick\s*up\b/i, value: 'pickup', confidence: 0.98, kind: 'explicit' }),
     Object.freeze({ pattern: /\bpickup\b/i, value: 'pickup', confidence: 1, kind: 'explicit' }),
     Object.freeze({ pattern: /\bretrieve\b/i, value: 'pickup', confidence: 0.9, kind: 'explicit' }),
@@ -12,6 +12,7 @@
     Object.freeze({ pattern: /^\s*from\s*[:\-]/i, value: 'pickup', confidence: 0.64, kind: 'derived-label' }),
     Object.freeze({ pattern: /^\s*(?:to|destination)\s*[:\-]/i, value: 'deliver', confidence: 0.64, kind: 'derived-label' })
   ]);
+  const TITLE_LABEL_PATTERN = /^\s*(?:mission|contract|title|name)\s*[:\-]/i;
   const NOISE_PATTERN = /^(?:accepted|abandoned|reward|payment|reputation|deadline|distance|difficulty|legal|illegal|remaining|status|objectives?|description|contractor|verified|tracking)\b/i;
 
   function freeze(value) {
@@ -65,6 +66,7 @@
   }
 
   function extractAction(line) {
+    if (!line?.text || TITLE_LABEL_PATTERN.test(line.text)) return null;
     for (const term of ACTION_TERMS) {
       if (term.pattern.test(line.text)) {
         return freeze({
@@ -75,6 +77,12 @@
       }
     }
     return null;
+  }
+
+  function selectActionAnchors(lines) {
+    const candidates = lines.map((line, index) => ({ index, action: extractAction(line) })).filter((item) => item.action);
+    const explicit = candidates.filter((item) => item.action.provenance.kind === 'explicit');
+    return (explicit.length ? explicit : candidates).map((item) => item.index);
   }
 
   function locationTerms(location, locationModel) {
@@ -92,9 +100,7 @@
     const matches = [];
     (locationModel.locations ?? []).filter((location) => location.operational).forEach((location) => {
       locationTerms(location, locationModel).forEach((term) => {
-        if ((` ${line.normalized} `).includes(` ${term.normalized} `)) {
-          matches.push({ location, term, length: term.normalized.length });
-        }
+        if ((` ${line.normalized} `).includes(` ${term.normalized} `)) matches.push({ location, term, length: term.normalized.length });
       });
     });
     matches.sort((left, right) => right.length - left.length || left.location.id.localeCompare(right.location.id));
@@ -268,7 +274,7 @@
   function inspectOcrText(text, locationModel, options = {}) {
     const rawText = String(text ?? '');
     const lines = makeLines(rawText, options);
-    const anchors = lines.map((line, index) => extractAction(line) ? index : null).filter((value) => value !== null);
+    const anchors = selectActionAnchors(lines);
     const title = extractTitle(lines, anchors, options.sourceName);
     const objectives = anchors.map((anchorPosition, index) => buildObjective(lines, anchorPosition, anchors[index + 1] ?? null, locationModel, index));
     const completeCount = objectives.filter((objective) => objective.status === 'complete').length;
