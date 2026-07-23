@@ -101,9 +101,10 @@ test('design foundation remains loaded before feature and Starmap UX layers', ()
   assert.match(app, /fleet-loadouts-view\.js/);
   assert.match(app, /ui-v2-accessibility\.js/);
   assert.match(app, /SCCompanionCleanInterfaceReady/);
-  assert.equal(roadmap.currentVersion, '0.21');
-  assert.match(roadmap.releases.find((item) => item.version === '0.21').title, /UX foundation/i);
-  assert.equal(roadmap.releases.find((item) => item.version === '0.22').title, 'Expanded universe data');
+  assert.equal(roadmap.currentVersion, '0.22');
+  assert.equal(roadmap.releases.find((item) => item.version === '0.21').status, 'done');
+  assert.equal(roadmap.releases.find((item) => item.version === '0.22').status, 'current');
+  assert.match(roadmap.releases.find((item) => item.version === '0.22').title, /Expanded universe data/i);
 });
 
 test('research rules prohibit page-specific invention', () => {
