@@ -62,7 +62,7 @@ test('design system, icons and clean shell load before page routing', () => {
   assert.match(shell, /SCCompanionMfdIcons/);
 });
 
-test('v0.21 keeps delivered runtimes and adds the Starmap UX layer', () => {
+test('v0.22 keeps delivered runtimes and adds the expanded universe registry', () => {
   const app = read('app.js');
   const clean = read('ui-v2.js');
   const accessibility = read('ui-v2-accessibility.js');
@@ -74,9 +74,11 @@ test('v0.21 keeps delivered runtimes and adds the Starmap UX layer', () => {
   const adapter = read('fleet-estimate-adapter.js');
   const fleetView = read('fleet-loadouts-view.js');
   const starmap = read('starmap-view.js');
+  const locations = read('locations.js');
+  const mapData = read('starmap-data.js');
   const entry = read('ui-v2.css');
   const designSystem = read('design-system.js');
-  assert.equal(roadmap.currentVersion, '0.21');
+  assert.equal(roadmap.currentVersion, '0.22');
   assert.match(app, /fleet-loadouts\.js/);
   assert.match(app, /fleet-estimate-adapter\.js/);
   assert.match(app, /fleet-loadouts-view\.js/);
@@ -99,19 +101,22 @@ test('v0.21 keeps delivered runtimes and adds the Starmap UX layer', () => {
   assert.match(fleetView, /Ship loadouts/);
   assert.match(starmap, /CURRENT OBJECTIVE/);
   assert.match(starmap, /data-map-action="current"/);
+  assert.match(locations, /operationalDestinations/);
+  assert.match(locations, /validateCatalog/);
+  assert.match(mapData, /registry\.locations/);
   assert.match(entry, /starmap-v2\.css/);
   assert.doesNotMatch(app, /workspace-shell\.js/);
   assert.match(designSystem, /manufacturer: 'Drake Interplanetary'/);
 });
 
-test('universe data, Game.log and OCR form the pre-hardening intake sequence', () => {
+test('v0.22, Game.log and OCR form the pre-hardening intake sequence', () => {
   const universe = roadmap.releases.find((release) => release.version === '0.22');
   const gameLog = roadmap.releases.find((release) => release.version === '0.23');
   const ocr = roadmap.releases.find((release) => release.version === '0.24');
   const hardening = roadmap.releases.find((release) => release.version === '0.25');
-  assert.equal(universe.status, 'next');
+  assert.equal(universe.status, 'current');
   assert.match(universe.title, /Expanded universe data/i);
-  assert.equal(gameLog.status, 'future');
+  assert.equal(gameLog.status, 'next');
   assert.match(gameLog.title, /Game\.log assisted intake/i);
   assert.equal(ocr.status, 'future');
   assert.match(ocr.title, /OCR assisted intake/i);
