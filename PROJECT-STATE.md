@@ -39,6 +39,17 @@ The application resolves ordinary hauling stations and surface facilities throug
 - Distribution centers emphasize hangars and cargo operations while public amenities remain limited or unavailable.
 - The complete dossier remains responsive and source-labelled on desktop and mobile.
 
+## Current Stop operational-intel contract
+
+- Operations shows destination intelligence directly below the current cargo actions instead of requiring a workspace change.
+- The inbound leg displays derived distance, jump count and travel-time range from the previous active stop.
+- A separate final-approach range covers alignment, ATC, landing and terminal access for stations, landing zones, outposts and distribution centers.
+- Security displays the reviewed destination-specific risk plus jurisdiction, protection or armistice state and communication coverage.
+- Hangar or pad, fuel/repair, food/drink and medical answers reuse the same reviewed service records as full Location Intel.
+- Missing data remains explicit; a custom destination never inherits services or safety from a nearby registered location.
+- Travel and approach times remain derived ranges and the panel never claims live traffic, shard, piracy or service telemetry.
+- Desktop, narrow desktop and mobile layouts keep the operational cards readable without horizontal overflow.
+
 ## Validation contract
 
 - Location IDs and source IDs must be unique.
@@ -48,6 +59,7 @@ The application resolves ordinary hauling stations and surface facilities throug
 - Supported aliases must pass through the existing mission parser without becoming custom locations.
 - Every supported destination must expose twelve service answers and non-unknown static-risk coverage.
 - Browser coverage exercises Checkmate, ARC-L2, Grim HEX, Teasa, HDMS-Bezdek, S4LD01 and Bud’s Growery.
+- Current Stop coverage must exercise inbound ETA, final approach, security, hangar/pad, fuel, food and medical cards.
 - Desktop and mobile screenshots must be inspected before merge.
 - Additional test-suite output is persisted in the workflow artifact for diagnosis.
 
@@ -92,6 +104,7 @@ The application resolves ordinary hauling stations and surface facilities throug
 
 - One shell stylesheet: `ui-v2.css`, plus shared design-system and feature modules.
 - Six primary workspaces: Operations, Missions, Planner, Starmap, Fleet and Development.
+- Operations keeps the cargo action primary and now fills the remaining Current Stop space with arrival and facility intelligence.
 - Operations tools remain native compact views.
 - Fleet includes ship schematics, cargo-zone editing and structured loadouts.
 - Starmap remains two-dimensional, task-oriented and explicit about schematic geometry.
