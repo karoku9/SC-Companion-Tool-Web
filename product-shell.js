@@ -10,6 +10,7 @@
   const futureRoot = document.querySelector('#future-pages-root');
   const pageEyebrow = document.querySelector('#shell-page-eyebrow');
   const pageTitle = document.querySelector('#shell-page-title');
+  const navFooter = document.querySelector('.nav-footer');
   const icon = (name) => icons?.render(name, 'mfd-icon') ?? name.slice(0, 2).toUpperCase();
 
   function renderNavigation() {
@@ -35,6 +36,14 @@
     futureRoot.insertAdjacentHTML('beforeend', '<section class="app-view page-view route-planner-page" data-view="route-planner" id="route-planner" hidden></section>');
   }
 
+  function renderReleaseFooter() {
+    if (!navFooter) return;
+    const build = navFooter.querySelector('span');
+    const privacy = navFooter.querySelector('small');
+    if (build) build.textContent = 'BUILD 0.22.1';
+    if (privacy) privacy.textContent = 'Private session · sourced universe data';
+  }
+
   function setContext(requestedId) {
     const viewId = registry.resolveView(requestedId);
     const page = registry.getPage(viewId) ?? registry.getPage(registry.defaultPageId);
@@ -58,6 +67,7 @@
   renderNavigation();
   renderMobileOptions();
   renderDynamicHosts();
+  renderReleaseFooter();
 
   navigation?.addEventListener('click', (event) => {
     const button = event.target.closest('[data-view-target]');
