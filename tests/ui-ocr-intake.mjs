@@ -31,8 +31,8 @@ export async function createWorker(language, oem, options) {
   };
 }`;
 
-const onePixelPng = Buffer.from(
-  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9WlS8AAAAASUVORK5CYII=',
+const validPng = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAAAKUlEQVR4nO3NMQEAAAjDMMC/52ECvlRA00nqs3m9AwAAAAAAAAAAgMMWx/EDPS4YA2MAAAAASUVORK5CYII=',
   'base64'
 );
 
@@ -74,7 +74,7 @@ try {
   await page.locator('#ocr-file-input').setInputFiles({
     name: 'covalex-contract.png',
     mimeType: 'image/png',
-    buffer: onePixelPng
+    buffer: validPng
   });
   await page.locator('.ocr-report').waitFor({ state: 'visible' });
   await page.locator('#ocr-progress-label').filter({ hasText: 'OCR complete' }).waitFor({ state: 'visible' });
