@@ -3,6 +3,7 @@
 (function bootstrapGameLogIntakeView() {
   const MAX_INITIAL_SCAN_BYTES = 24 * 1024 * 1024;
   const LINE_COUNT_CHUNK_BYTES = 4 * 1024 * 1024;
+  const HEAD_PROBE_BYTES = 4096;
   let initialized = false;
 
   function initialize() {
@@ -169,12 +170,25 @@
     }
 
     async function fileHeadHash(file) {
-      const probe = await file.slice(0, Math.min(file.size, 65536)).text();
+      const probe = await file.slice(0, Math.min(file.size, HEAD_PROBE_BYTES)).text();
       return intake.hash(probe);
     }
 
-    function sourceKey(file, headHash) {
-      return `${file.name}:${headHash}`;
+    function latestSourceForName(state, name) {
+      return Object.entries(state.sources ?? {})
+        .filter(([, source]) => source.name === name)
+        .sort((left, right) => String(right[1].importedAt ?? '').localeCompare(String(left[1].importedAt ?? '')))[0]
+        ? (() => {
+          const [key, source] = Object.entries(state.sources ?? {})
+            .filter(([, candidate]) => candidate.name === name)
+            .sort((left, right) => String(right[1].importedAt ?? '').localeCompare(String(left[1].importedAt ?? '')))[0];
+          return { key, source };
+        })()
+        : null;
+    }
+
+    function sourceKey(file, headHash, generation) {
+      return `${file.name}:generation-${generation}:${headHash}`;
     }
 
     function eventsForSource(state, key) {
@@ -197,17 +211,20 @@
       try {
         const previousImport = importState();
         const headHash = await fileHeadHash(file);
-        const key = sourceKey(file, headHash);
-        const previousSource = previousImport.sources?.[key] ?? null;
-        const sameNamedSources = Object.values(previousImport.sources ?? {}).filter((source) => source.name === file.name);
-        const rotated = Boolean(previousSource && file.size < previousSource.offset);
-        const isNewGeneration = !previousSource && sameNamedSources.length > 0;
+        const latestSource = latestSourceForName(previousImport, file.name);
+        const previousKey = latestSource?.key ?? null;
+        const previousSource = latestSource?.source ?? null;
+        const stableHeadComparable = Boolean(previousSource && previousSource.size >= HEAD_PROBE_BYTES && file.size >= HEAD_PROBE_BYTES);
+        const headChanged = Boolean(stableHeadComparable && previousSource.headHash && previousSource.headHash !== headHash);
+        const rotated = Boolean(previousSource && (file.size < previousSource.offset || headChanged));
+        const generationNumber = previousSource ? Number(previousSource.generation ?? previousSource.rotationCount ?? 0) + (rotated ? 1 : 0) : 0;
+        const key = previousSource && !rotated ? previousKey : sourceKey(file, headHash, generationNumber);
+        const isNewGeneration = Boolean(previousSource && rotated);
 
         let startOffset;
         if (previousSource && !rotated) startOffset = previousSource.offset;
         else startOffset = Math.max(0, file.size - MAX_INITIAL_SCAN_BYTES);
-        if (!previousSource && startOffset > 0) startOffset = await alignToNextLine(file, startOffset);
-        if (rotated) startOffset = 0;
+        if ((!previousSource || rotated) && startOffset > 0) startOffset = await alignToNextLine(file, startOffset);
 
         const baseLineNumber = previousSource && !rotated
           ? previousSource.lineCount + 1
@@ -232,7 +249,8 @@
             offset: range.nextOffset,
             lineCount: baseLineNumber - 1 + range.newlineCount,
             importedAt: new Date().toISOString(),
-            rotationCount: (previousSource?.rotationCount ?? 0) + (rotated || isNewGeneration ? 1 : 0)
+            generation: generationNumber,
+            rotationCount: generationNumber
           }
         };
         const nextImport = {
@@ -256,7 +274,7 @@
         activeSourceKey = key;
         latestDraft = draft;
         latestUnresolved = draft.unresolvedEvents;
-        fileState.textContent = `${file.name} · ${(file.size / 1024 / 1024).toFixed(1)} MB`;
+        fileState.textContent = `${file.name} · ${(file.size / 1024 / 1024).toFixed(1)} MB · generation ${generationNumber + 1}`;
         renderMetrics({
           freshCount: merged.fresh.length,
           completeCount: draft.completeEvents.length,
@@ -266,10 +284,10 @@
         renderEvents(sourceEvents);
         useDraftButton.disabled = !draft.draftText.trim();
         copyButton.disabled = !latestUnresolved.length;
-        const scanBoundary = startOffset > 0 && !previousSource
+        const scanBoundary = startOffset > 0 && (!previousSource || rotated)
           ? ` Initial scan used the newest ${Math.round((file.size - startOffset) / 1024 / 1024)} MB; future imports continue from byte ${range.nextOffset.toLocaleString('en-US')}.`
           : '';
-        const generation = rotated || isNewGeneration ? ' A new/truncated log generation was detected and isolated from the previous source.' : '';
+        const generation = isNewGeneration ? ' A new/truncated log generation was detected and isolated from the previous source.' : '';
         const incompleteTail = range.nextOffset < file.size ? ' The unfinished final line will be read on the next refresh.' : '';
         setMessage(
           `${merged.fresh.length} new relevant event${merged.fresh.length === 1 ? '' : 's'}; ${draft.completeEvents.length} complete objective candidate${draft.completeEvents.length === 1 ? '' : 's'} and ${draft.unresolvedEvents.length} needing review.${scanBoundary}${generation}${incompleteTail}`,
