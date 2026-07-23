@@ -1,4 +1,45 @@
 /* Complete Location Intel — reviewed services and static per-location risk */
+.location-essentials {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.location-essentials article {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+  padding: 10px 12px;
+  border: 1px solid var(--ds-border-subtle);
+  border-left-width: 3px;
+  background: var(--ds-surface-screen);
+}
+
+.location-essentials small {
+  color: var(--ds-content-muted);
+  font: 700 var(--ds-type-xs)/1 var(--ds-font-technical, ui-monospace, monospace);
+  text-transform: uppercase;
+}
+
+.location-essentials strong {
+  overflow-wrap: anywhere;
+  font-size: var(--ds-type-sm);
+}
+
+.location-essentials article[data-state="available"],
+.location-essentials article[data-state="low"] { border-left-color: var(--ds-status-success); }
+.location-essentials article[data-state="local-transfer"],
+.location-essentials article[data-state="limited"],
+.location-essentials article[data-state="guarded"] { border-left-color: var(--ds-status-info); }
+.location-essentials article[data-state="elevated"],
+.location-essentials article[data-state="unverified"] { border-left-color: var(--ds-status-warning); }
+.location-essentials article[data-state="high"],
+.location-essentials article[data-state="extreme"],
+.location-essentials article[data-state="unregulated"] { border-left-color: var(--ds-status-danger); }
+.location-essentials article[data-state="not-available"],
+.location-essentials article[data-state="unavailable-data"],
+.location-essentials article[data-state="unknown"] { border-left-color: var(--ds-content-muted); }
+
 .location-guidance-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -81,5 +122,6 @@
 }
 
 @media (max-width: 720px) {
+  .location-essentials { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .location-risk { grid-template-columns: 1fr; }
 }
