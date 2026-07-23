@@ -1,0 +1,85 @@
+/* Complete Location Intel — reviewed services and static per-location risk */
+.location-guidance-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.location-risk {
+  display: grid;
+  grid-template-columns: minmax(220px, .52fr) minmax(0, 1fr);
+  gap: 14px;
+  padding: 13px 14px;
+  border: 1px solid var(--ds-border-subtle);
+  background: var(--ds-surface-screen);
+}
+
+.location-risk small {
+  color: var(--ds-action-primary);
+  font: 700 var(--ds-type-xs)/1 var(--ds-font-technical, ui-monospace, monospace);
+  text-transform: uppercase;
+}
+
+.location-risk strong {
+  display: block;
+  margin-top: 5px;
+  font-size: var(--ds-type-lg);
+}
+
+.location-risk ul {
+  margin: 0;
+  padding-left: 20px;
+  color: var(--ds-content-secondary);
+}
+
+.location-risk-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 10px;
+}
+
+.location-risk-meta span {
+  padding: 5px 7px;
+  border: 1px solid var(--ds-border-subtle);
+  color: var(--ds-content-muted);
+  font: 700 var(--ds-type-xs)/1.2 var(--ds-font-technical, ui-monospace, monospace);
+}
+
+.location-risk[data-level="low"] { border-left: 4px solid var(--ds-status-success); }
+.location-risk[data-level="guarded"] { border-left: 4px solid var(--ds-status-info); }
+.location-risk[data-level="elevated"] { border-left: 4px solid var(--ds-status-warning); }
+.location-risk[data-level="high"],
+.location-risk[data-level="extreme"] { border-left: 4px solid var(--ds-status-danger); }
+.location-risk[data-level="unknown"] { border-left: 4px solid var(--ds-content-muted); }
+
+.location-service.is-local-transfer,
+.location-service.is-limited { border-left: 3px solid var(--ds-status-info); }
+
+.location-service.is-unregulated { border-left: 3px solid var(--ds-status-danger); }
+
+.location-service.is-not-available { border-left: 3px solid var(--ds-content-muted); opacity: .82; }
+
+.location-service.is-local-transfer > div span,
+.location-service.is-limited > div span { color: var(--ds-status-info); }
+
+.location-service.is-unregulated > div span { color: var(--ds-status-danger); }
+.location-service.is-available > div span { color: var(--ds-status-success); }
+
+#intel-service-summary {
+  color: var(--ds-content-secondary);
+  font: 700 var(--ds-type-xs)/1.2 var(--ds-font-technical, ui-monospace, monospace);
+  text-transform: uppercase;
+}
+
+@media (min-width: 1320px) {
+  .location-services { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+@media (max-width: 900px) {
+  .location-guidance-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 720px) {
+  .location-risk { grid-template-columns: 1fr; }
+}
