@@ -7,9 +7,34 @@ The project was already under active development before this changelog was intro
 ## [Unreleased]
 
 ### Planned
-- Completed-session archive and operational outcomes.
-- Planned versus observed timings and incident notes.
-- Reusable session templates built from completed runs.
+- Opt-in local Game.log selection and incremental import.
+- Mission and contract event extraction with raw-line, timestamp and file provenance.
+- Duplicate/replay protection and review before replacing the active route.
+
+---
+
+## [0.22.0] - 2026-07-23
+
+### Added
+- Canonical universe registry with 80 normalized records and 34 operational destinations.
+- Four Stanton spaceports, four orbital stations, Grim HEX, eighteen Lagrange stations and three gateways.
+- Search aliases for punctuation, spacing, abbreviations and full in-game station names.
+- Source authority, game version, review date and geometry status on maintained location records.
+- Catalog validation for duplicate IDs, missing parents, missing sources, invalid anchors and ambiguous operational aliases.
+- Starmap and distance anchors generated from the canonical registry for every operational destination.
+- Focused Node and Chromium coverage for `ARC-L2`, Seraphim Station and New Babbage.
+
+### Changed
+- Mission parsing, Location Context, navigation estimates and Starmap data now share stable operational destination IDs.
+- Operational labels remain separate from in-game navigation targets and searchable aliases.
+- Community-backed destinations expose source provenance without receiving invented service or traffic data.
+- UX Foundation and Starmap 2.0 are marked delivered; Game.log Assisted Intake becomes the next release.
+
+### Fixed
+- Common forms such as `ARC-L2`, `ARC L2`, `Lively Pathway`, `NBIS` and full station names now resolve predictably.
+- Non-operational hierarchy nodes no longer become selectable mission destinations.
+- Existing official confidence for Teasa, Riker and Baijini is preserved while new community-dependent records remain labelled appropriately.
+- Every operational destination now produces finite navigation and Starmap coordinates with an explicit geometry boundary.
 
 ---
 
@@ -31,7 +56,6 @@ The project was already under active development before this changelog was intro
 - Full route details move into a collapsible context drawer so the map surface remains primary.
 - The map fills the available operational height instead of leaving a large unused upper region.
 - Desktop keeps persistent context while mobile uses a dedicated interaction model.
-- Session History moves to v0.22 so navigation UX can be repaired before further feature expansion.
 
 ### Fixed
 - Selecting a stop from the route list no longer forces an unexpected return to the itinerary layer.

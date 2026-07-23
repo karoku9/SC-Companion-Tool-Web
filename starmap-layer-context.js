@@ -11,10 +11,11 @@
     const systemPicker = page?.querySelector('.starmap-system-picker');
     const systemSelect = page?.querySelector('#starmap-system-select');
     const openSystem = page?.querySelector('#starmap-open-system');
+    const networkButton = page?.querySelector('[data-map-mode="network"]');
     const title = page?.querySelector('#starmap-selection-title');
     const detail = page?.querySelector('#starmap-selection-detail');
     const contextToggle = page?.querySelector('#starmap-context-toggle');
-    if (!page || !data || !originalPanel || !systemPicker || !systemSelect || !openSystem || !title || !detail || !contextToggle) return false;
+    if (!page || !data || !originalPanel || !systemPicker || !systemSelect || !openSystem || !networkButton || !title || !detail || !contextToggle) return false;
 
     const dialog = document.createElement('dialog');
     dialog.id = originalPanel.id;
@@ -25,11 +26,24 @@
 
     const mobileQuery = window.matchMedia('(max-width: 900px)');
 
+    function selectedSystem() {
+      return data.systems.find((system) => system.name === title.textContent.trim()) ?? null;
+    }
+
     function syncSelectedSystemCopy() {
       if (systemPicker.hidden) return;
       const system = data.getSystem(systemSelect.value);
       if (!system || title.textContent.trim() !== system.name) return;
       detail.textContent = `${system.security}. ${system.availability}. Bodies and route stops are shown on this layer.`;
+    }
+
+    function syncNetworkSystemCopy() {
+      if (!systemPicker.hidden) return;
+      const system = selectedSystem();
+      if (!system) return;
+      const snapshot = data.snapshot;
+      const snapshotCopy = snapshot ? ` Universe registry ${snapshot.gameVersion}, reviewed ${snapshot.reviewedAt}.` : '';
+      detail.textContent = `${system.classification}. ${system.security}. ${system.availability}.${snapshotCopy} Open system to inspect bodies and route stops.`;
     }
 
     function closeMobileDialog() {
@@ -52,7 +66,11 @@
 
     openSystem.addEventListener('click', syncSelectedSystemCopy);
     systemSelect.addEventListener('change', syncSelectedSystemCopy);
-    window.addEventListener('sc:session-change', syncSelectedSystemCopy);
+    networkButton.addEventListener('click', syncNetworkSystemCopy);
+    window.addEventListener('sc:session-change', () => {
+      syncSelectedSystemCopy();
+      syncNetworkSystemCopy();
+    });
 
     dialog.addEventListener('cancel', (event) => {
       event.preventDefault();

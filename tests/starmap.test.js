@@ -35,26 +35,28 @@ test('jump connections resolve to known systems and identify the active placehol
   assert.match(placeholder.note, /placeholder/i);
 });
 
-test('supported mission locations resolve to stable system and distance anchors', () => {
+test('expanded mission locations resolve to stable system and distance anchors', () => {
   const anchors = [
     starmap.getLocationAnchor('stanton-hurston-lorville-teasa'),
-    starmap.getLocationAnchor('stanton-arccorp-area18-riker'),
-    starmap.getLocationAnchor('stanton-arccorp-baijini'),
+    starmap.getLocationAnchor('stanton-crusader-seraphim'),
+    starmap.getLocationAnchor('stanton-arc-l2-lively-pathway'),
+    starmap.getLocationAnchor('stanton-microtech-new-babbage-nbis'),
     starmap.getLocationAnchor('pyro-monox-checkmate'),
     starmap.getLocationAnchor('pyro-bloom-orbituary'),
     starmap.getLocationAnchor('pyro-terminus-ruin'),
     starmap.getLocationAnchor('nyx-delamar-levski')
   ];
   assert.equal(anchors[0].systemId, 'stanton');
-  assert.equal(anchors[3].systemId, 'pyro');
-  assert.equal(anchors[6].systemId, 'nyx');
-  assert.equal(anchors[2].label, 'Baijini Point · ArcCorp');
+  assert.equal(anchors[4].systemId, 'pyro');
+  assert.equal(anchors[7].systemId, 'nyx');
+  assert.equal(anchors[2].label, 'ARC-L2 Lively Pathway Station · ARC-L2');
   anchors.forEach((anchor) => {
     assert.equal(anchor.position.length, 3);
     assert.equal(anchor.distancePositionGm.length, 3);
     anchor.position.forEach((value) => assert.ok(Number.isFinite(value)));
     anchor.distancePositionGm.forEach((value) => assert.ok(Number.isFinite(value)));
   });
+  assert.equal(Object.keys(starmap.locationAnchors).length, 34);
 });
 
 test('Starmap 2.0 separates itinerary, system and network navigation layers', () => {
@@ -90,15 +92,16 @@ test('Starmap 2.0 keeps orientation, selection and camera controls explicit', ()
   assert.doesNotMatch(view, /if \(mode !== 'route'\).*mode = 'route'/s);
 });
 
-test('expanded universe data precedes separate Game.log and OCR intake releases', () => {
+test('v0.22 expanded universe data precedes separate Game.log and OCR intake releases', () => {
   const universe = roadmap.releases.find((release) => release.version === '0.22');
   const gameLog = roadmap.releases.find((release) => release.version === '0.23');
   const ocr = roadmap.releases.find((release) => release.version === '0.24');
   assert.ok(universe);
-  assert.equal(universe.status, 'next');
+  assert.equal(universe.status, 'current');
   assert.match(universe.title, /Expanded universe data/i);
+  assert.ok(universe.changes.some((change) => /34 operational destinations/i.test(change)));
   assert.ok(gameLog);
-  assert.equal(gameLog.status, 'future');
+  assert.equal(gameLog.status, 'next');
   assert.ok(gameLog.changes.some((change) => /Game\.log/.test(change)));
   assert.ok(gameLog.changes.some((change) => /event provenance/i.test(change)));
   assert.ok(ocr);

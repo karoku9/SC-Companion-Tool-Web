@@ -76,18 +76,19 @@ test('navigation continues using the canonical SVG icon family', () => {
   assert.match(shell, /SCCompanionMfdIcons/);
 });
 
-test('UX Foundation and Starmap 2.0 precede Expanded Universe Data', () => {
+test('Expanded Universe Data keeps the delivered Starmap and Fleet runtimes', () => {
   const roadmap = require('../roadmap.js');
   const app = read('app.js');
   const map = read('starmap-view.js');
-  assert.equal(roadmap.currentVersion, '0.21');
-  assert.equal(roadmap.releases.find((release) => release.version === '0.18').status, 'done');
-  assert.equal(roadmap.releases.find((release) => release.version === '0.19').status, 'done');
-  assert.equal(roadmap.releases.find((release) => release.version === '0.20').status, 'done');
-  assert.match(roadmap.releases.find((release) => release.version === '0.21').title, /UX foundation/i);
+  const locations = read('locations.js');
+  assert.equal(roadmap.currentVersion, '0.22');
+  assert.equal(roadmap.releases.find((release) => release.version === '0.21').status, 'done');
+  assert.equal(roadmap.releases.find((release) => release.version === '0.22').status, 'current');
   assert.match(roadmap.releases.find((release) => release.version === '0.22').title, /Expanded universe data/i);
   assert.match(app, /fleet-estimate-adapter\.js/);
   assert.match(app, /fleet-loadouts-view\.js/);
   assert.match(map, /data-map-mode="route"/);
   assert.match(map, /data-map-action="current"/);
+  assert.match(locations, /validateCatalog/);
+  assert.match(locations, /getCoverageSummary/);
 });

@@ -19,13 +19,18 @@
     const labels = {
       system: 'System',
       planet: 'Planet',
+      moon: 'Moon',
       planetoid: 'Planetoid',
       'asteroid-belt': 'Asteroid belt',
       'landing-zone': 'Landing zone',
       spaceport: 'Spaceport',
-      'orbital-station': 'Orbital station'
+      'orbital-station': 'Orbital station',
+      'asteroid-station': 'Asteroid station',
+      'lagrange-point': 'Lagrange point',
+      'lagrange-station': 'Lagrange station',
+      'jump-gateway': 'Jump gateway'
     };
-    return labels[type] ?? type;
+    return labels[type] ?? String(type ?? '').replace(/-/g, ' ');
   }
 
   function renderSearchResults(results) {

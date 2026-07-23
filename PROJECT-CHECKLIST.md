@@ -105,15 +105,20 @@
 
 ## v0.22 expanded universe data
 
-- [ ] Define the canonical location record and hierarchy contracts before expanding the dataset.
-- [ ] Inventory hauling destinations currently encountered in real mission text and logs.
-- [ ] Add searchable aliases while keeping the in-game navigation target explicit.
-- [ ] Expand Stanton, Pyro and Nyx destination coverage around hauling use cases.
-- [ ] Attach source authority, game version, review date and freshness state to maintained records.
-- [ ] Keep verified coordinates, derived distance anchors and schematic map placement separate.
-- [ ] Validate duplicate IDs, duplicate aliases, orphaned hierarchy nodes and ambiguous matches.
-- [ ] Exercise representative expanded-location missions through parser, Planner, Operations and Starmap.
-- [ ] Inspect dense-map desktop, tablet and mobile screenshots before merge.
+- [x] Define one canonical location, hierarchy, source and geometry contract.
+- [x] Expand the registry to 80 normalized records and 34 operational destinations.
+- [x] Add four Stanton spaceports, four orbital stations, Grim HEX, eighteen Lagrange stations and three gateways.
+- [x] Retain Checkmate, Orbituary, Ruin Station and Levski coverage.
+- [x] Add punctuation-tolerant aliases while keeping in-game navigation targets explicit.
+- [x] Attach source authority, game version and review date to maintained records.
+- [x] Keep parent mappings, derived offsets, Lagrange anchors and gateway anchors distinguishable.
+- [x] Validate duplicate IDs, missing parents, missing sources, invalid anchors and ambiguous operational aliases.
+- [x] Ensure every operational destination produces finite Starmap and distance coordinates.
+- [x] Reuse the existing parser and validation path for expanded destinations.
+- [x] Preserve unavailable facility data instead of inventing services for new locations.
+- [x] Add focused Node contracts for coverage, aliases, hierarchy, provenance and anchors.
+- [x] Exercise representative expanded-location missions through Planner, Operations and Starmap in Chromium.
+- [x] Inspect expanded Stanton desktop, tablet and mobile screenshots before merge.
 
 ## v0.23 Game.log assisted intake
 

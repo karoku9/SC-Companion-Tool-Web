@@ -34,10 +34,10 @@ test('current, next and future releases form one linear delivery path', () => {
   assert.ok(roadmap.releases.slice(nextIndex + 1).every((release) => release.status === 'future'));
 });
 
-test('core roadmap prioritizes universe data, Game.log and OCR before hardening', () => {
+test('v0.22 delivers universe data before Game.log and OCR intake', () => {
   const context = roadmap.releases.find((item) => item.version === '0.19');
   const loadouts = roadmap.releases.find((item) => item.version === '0.20');
-  const current = roadmap.releases.find((item) => item.version === '0.21');
+  const ux = roadmap.releases.find((item) => item.version === '0.21');
   const universe = roadmap.releases.find((item) => item.version === '0.22');
   const gameLog = roadmap.releases.find((item) => item.version === '0.23');
   const ocr = roadmap.releases.find((item) => item.version === '0.24');
@@ -46,12 +46,13 @@ test('core roadmap prioritizes universe data, Game.log and OCR before hardening'
 
   assert.equal(context.status, 'done');
   assert.equal(loadouts.status, 'done');
-  assert.match(loadouts.title, /Fleet loadouts/i);
-  assert.equal(current.status, 'current');
-  assert.match(current.title, /UX foundation/i);
-  assert.equal(universe.status, 'next');
+  assert.equal(ux.status, 'done');
+  assert.match(ux.title, /UX foundation/i);
+  assert.equal(universe.status, 'current');
   assert.match(universe.title, /Expanded universe data/i);
-  assert.ok(universe.changes.some((change) => /alias coverage/i.test(change)));
+  assert.ok(universe.changes.some((change) => /34 operational destinations/i.test(change)));
+  assert.ok(universe.changes.some((change) => /Starmap anchors/i.test(change)));
+  assert.equal(gameLog.status, 'next');
   assert.match(gameLog.title, /Game\.log assisted intake/i);
   assert.ok(gameLog.changes.some((change) => /event provenance/i.test(change)));
   assert.match(ocr.title, /OCR assisted intake/i);

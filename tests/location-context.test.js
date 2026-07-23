@@ -24,7 +24,7 @@ test('freshness uses explicit dates and never depends on hidden current time in 
 });
 
 test('official location facts and reviewed service data remain separate', () => {
-  const context = contextModel.buildContext(TEASA, { asOf: '2026-07-22' });
+  const context = contextModel.buildContext(TEASA, { asOf: '2026-07-23' });
   assert.equal(context.confidence.level, 'official-current');
   assert.equal(context.system.id, 'stanton');
   assert.ok(context.sources.some((source) => source.authority === 'official'));
@@ -35,7 +35,7 @@ test('official location facts and reviewed service data remain separate', () => 
 });
 
 test('locations without reviewed facility profiles expose missing data rather than invented services', () => {
-  const context = contextModel.buildContext(CHECKMATE, { asOf: '2026-07-22' });
+  const context = contextModel.buildContext(CHECKMATE, { asOf: '2026-07-23' });
   assert.equal(context.confidence.level, 'official-current');
   assert.equal(context.system.id, 'pyro');
   assert.ok(context.sources.some((source) => source.url?.includes('robertsspaceindustries.com')));
@@ -70,16 +70,16 @@ test('cargo placement compatibility derives a private priority without exposing 
   assert.equal(contextModel.placementPriority(LEVSKI), 1);
   assert.equal(contextModel.placementPriority(CHECKMATE), 3);
   assert.equal(contextModel.placementPriority('custom-hidden-depot'), 2);
-  const context = contextModel.buildContext(CHECKMATE, { onboardScu: 4, asOf: '2026-07-22' });
+  const context = contextModel.buildContext(CHECKMATE, { onboardScu: 4, asOf: '2026-07-23' });
   assert.equal('placementPriority' in context, false);
   assert.equal('riskScore' in context, false);
 });
 
 test('source ledger preserves authority, review date and link provenance', () => {
-  const checkmate = contextModel.buildContext(CHECKMATE, { asOf: '2026-07-22' });
+  const checkmate = contextModel.buildContext(CHECKMATE, { asOf: '2026-07-23' });
   const officialSource = checkmate.sources.find((source) => source.id === 'rsi-checkmate');
   assert.ok(officialSource);
   assert.equal(officialSource.authority, 'official');
-  assert.equal(officialSource.reviewedAt, '2026-07-22');
+  assert.equal(officialSource.reviewedAt, '2026-07-23');
   assert.match(officialSource.url, /^https:\/\/robertsspaceindustries\.com\//);
 });
