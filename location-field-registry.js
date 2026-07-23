@@ -31,9 +31,10 @@
 
   function aliasesFor(name) {
     const normalized = String(name).toLowerCase();
-    const compact = normalized.replace(/[^a-z0-9]/g, '');
-    const spaced = normalized.replace(/[-_]/g, ' ').replace(/\s+/g, ' ').trim();
-    return [...new Set([normalized, spaced, compact])];
+    const dequoted = normalized.replace(/['’]/g, '');
+    const compact = dequoted.replace(/[^a-z0-9]/g, '');
+    const spaced = dequoted.replace(/[-_]/g, ' ').replace(/\s+/g, ' ').trim();
+    return [...new Set([normalized, dequoted, spaced, compact])];
   }
 
   const planetForParent = {
