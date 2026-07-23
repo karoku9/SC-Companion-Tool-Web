@@ -7,7 +7,7 @@ const output = process.env.UI_SCREENSHOT_DIR ?? 'ui-smoke-artifacts';
 await fs.mkdir(output, { recursive: true });
 
 const interstellarMissionText = `Mission A — Stanton to Pyro and Nyx
-collect area18 12scu etam
+collect ARC-L2 12scu etam
 deliver checkmate station pyro 5scu etam
 deliver levski nyx 7scu etam
 
@@ -15,14 +15,14 @@ Mission B — Outer Systems Consolidation
 pickup ruin station pyro 4scu neon
 pickup orbituary pyro 6scu neon
 pickup levski nyx 3scu titanium
-deliver teasa 10scu neon 3scu titanium
+deliver Seraphim 10scu neon 3scu titanium
 
 Mission C — Three-System Relay
 collect teasa 8scu processedfood
 collect checkmate station pyro 5scu medicalsupplies
 collect levski nyx 6scu titanium
 deliver ruin station pyro 4scu processedfood 5scu medicalsupplies
-deliver area18 4scu processedfood 2scu titanium
+deliver New Babbage 4scu processedfood 2scu titanium
 deliver orbituary pyro 4scu titanium`;
 
 const browser = await chromium.launch({ headless: true });
@@ -87,21 +87,39 @@ try {
   await page.goto(`${baseUrl}/#missions`, { waitUntil: 'networkidle' });
   await page.locator('#mission-text').waitFor({ state: 'visible' });
   await page.locator('#mission-validation-panel').waitFor({ state: 'visible' });
+
+  step = 'verify expanded universe registry in browser';
+  const registry = await page.evaluate(() => {
+    const model = window.SCCompanionLocations;
+    return {
+      coverage: model.getCoverageSummary(),
+      arcL2: model.searchOperationalLocations('ARC L2')[0]?.id,
+      nbis: model.searchOperationalLocations('NBIS')[0]?.id,
+      seraphim: model.searchOperationalLocations('Seraphim')[0]?.id,
+      validation: model.validation
+    };
+  });
+  assert.equal(registry.coverage.operationalDestinations, 34);
+  assert.equal(registry.arcL2, 'stanton-arc-l2-lively-pathway');
+  assert.equal(registry.nbis, 'stanton-microtech-new-babbage-nbis');
+  assert.equal(registry.seraphim, 'stanton-crusader-seraphim');
+  assert.deepEqual(registry.validation, { errors: [], warnings: [] });
+
   await page.locator('#mission-text').fill(interstellarMissionText);
-  step = 'review interstellar session';
+  step = 'review expanded interstellar session';
   await page.locator('#mission-form button[type="submit"]').click();
   await page.locator('#mission-validation-title').filter({ hasText: /^Ready$/ }).waitFor({ state: 'visible' });
   assert.equal(await page.locator('.validation-issue.is-error').count(), 0);
   assert.equal(await page.locator('#mission-generate-validated').isEnabled(), true);
-  step = 'generate validated interstellar session';
+  step = 'generate validated expanded interstellar session';
   await page.locator('#mission-generate-validated').click();
   await page.locator('#mission-preview-title').filter({ hasText: '3 missions generated' }).waitFor({ state: 'visible' });
   const missionBody = await page.locator('#mission-cards').textContent();
-  ['Checkmate Station', 'Orbituary', 'Ruin Station', 'Levski'].forEach((name) => assert.match(missionBody, new RegExp(name)));
+  ['ARC-L2 Lively Pathway', 'Seraphim Station', 'New Babbage Interstellar Spaceport', 'Checkmate Station', 'Orbituary', 'Ruin Station', 'Levski'].forEach((name) => assert.match(missionBody, new RegExp(name)));
   assert.match(missionBody, /Source lines/);
   await noHorizontalOverflow('Missions');
   await readableTypography('Missions');
-  await page.screenshot({ path: `${output}/missions-validation-interstellar-desktop.png`, fullPage: true });
+  await page.screenshot({ path: `${output}/missions-expanded-universe-desktop.png`, fullPage: true });
 
   await openWorkspace('route');
   step = 'inspect Operations closed';
@@ -110,9 +128,12 @@ try {
   const routeIndexText = await page.locator('#route-stop-list').textContent();
   assert.match(routeIndexText, /Gm|km/);
   assert.match(routeIndexText, /jump/);
+  assert.match(routeIndexText, /Lively Pathway/);
+  assert.match(routeIndexText, /Seraphim/);
+  assert.match(routeIndexText, /New Babbage/);
   await noHorizontalOverflow('Operations closed');
   await readableTypography('Operations');
-  await page.screenshot({ path: `${output}/operations-interstellar-desktop.png`, fullPage: true });
+  await page.screenshot({ path: `${output}/operations-expanded-universe-desktop.png`, fullPage: true });
 
   step = 'open Cargo auxiliary display';
   await page.locator('[data-ops-tool="cargo"]').click();
@@ -138,7 +159,7 @@ try {
   assert.match(plannerText, /Gm|km/);
   await noHorizontalOverflow('Planner');
   await readableTypography('Planner');
-  await page.screenshot({ path: `${output}/planner-interstellar-desktop.png`, fullPage: true });
+  await page.screenshot({ path: `${output}/planner-expanded-universe-desktop.png`, fullPage: true });
 
   await openWorkspace('hangar');
   step = 'inspect Fleet';
@@ -149,7 +170,7 @@ try {
   await page.screenshot({ path: `${output}/fleet-desktop.png`, fullPage: true });
 
   await openWorkspace('map');
-  step = 'inspect Starmap';
+  step = 'inspect Starmap itinerary';
   await page.locator('svg#starmap-canvas').waitFor({ state: 'visible' });
   assert.equal(await page.locator('canvas#starmap-canvas').count(), 0, 'Legacy canvas Starmap is still present');
   assert.ok(await page.locator('#starmap-canvas .map-node').count() > 0, 'Route-first Starmap rendered no nodes');
@@ -181,13 +202,30 @@ try {
   }
   await noHorizontalOverflow('Starmap');
   await readableTypography('Starmap');
-  await page.screenshot({ path: `${output}/starmap-interstellar-desktop.png`, fullPage: true });
+  await page.screenshot({ path: `${output}/starmap-expanded-itinerary-desktop.png`, fullPage: true });
+
+  step = 'inspect expanded Stanton system anchors';
+  await page.locator('[data-map-mode="local"]').click();
+  await page.locator('#starmap-system-select').selectOption('stanton');
+  assert.ok(await page.locator('#starmap-canvas .map-system-stop').count() >= 3, 'Expanded Stanton route stops did not map into the System layer');
+  const stantonSystemText = await page.locator('#starmap-route-status').textContent();
+  assert.match(stantonSystemText, /Stanton/);
+  await noHorizontalOverflow('Expanded Stanton system');
+  await page.screenshot({ path: `${output}/starmap-expanded-stanton-desktop.png`, fullPage: true });
 
   step = 'switch Starmap to system network';
   await page.locator('[data-map-mode="network"]').click();
   const networkText = await page.locator('#starmap-selection-detail').textContent();
   assert.match(networkText, /Alpha 4\.9/);
   await page.screenshot({ path: `${output}/starmap-systems-desktop.png`, fullPage: true });
+
+  step = 'switch to tablet viewport';
+  await page.setViewportSize({ width: 768, height: 1024 });
+  await openWorkspace('map');
+  await page.locator('[data-map-mode="local"]').click();
+  await page.locator('#starmap-system-select').selectOption('stanton');
+  await noHorizontalOverflow('Expanded Stanton tablet');
+  await page.screenshot({ path: `${output}/starmap-expanded-stanton-tablet.png`, fullPage: true });
 
   step = 'switch to mobile viewport';
   await page.setViewportSize({ width: 390, height: 844 });
