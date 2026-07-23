@@ -64,13 +64,13 @@
       }
     }
 
-    openSystem.addEventListener('click', () => requestAnimationFrame(syncSelectedSystemCopy));
-    systemSelect.addEventListener('change', () => requestAnimationFrame(syncSelectedSystemCopy));
-    networkButton.addEventListener('click', () => requestAnimationFrame(syncNetworkSystemCopy));
-    window.addEventListener('sc:session-change', () => requestAnimationFrame(() => {
+    openSystem.addEventListener('click', syncSelectedSystemCopy);
+    systemSelect.addEventListener('change', syncSelectedSystemCopy);
+    networkButton.addEventListener('click', syncNetworkSystemCopy);
+    window.addEventListener('sc:session-change', () => {
       syncSelectedSystemCopy();
       syncNetworkSystemCopy();
-    }));
+    });
 
     dialog.addEventListener('cancel', (event) => {
       event.preventDefault();
