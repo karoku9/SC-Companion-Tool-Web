@@ -90,10 +90,19 @@ test('Starmap 2.0 keeps orientation, selection and camera controls explicit', ()
   assert.doesNotMatch(view, /if \(mode !== 'route'\).*mode = 'route'/s);
 });
 
-test('OCR and Game.log remain in the future assisted-intake release', () => {
-  const assisted = roadmap.releases.find((release) => release.version === '0.26');
-  assert.ok(assisted);
-  assert.equal(assisted.status, 'future');
-  assert.ok(assisted.changes.some((change) => /OCR/.test(change)));
-  assert.ok(assisted.changes.some((change) => /Game\.log/.test(change)));
+test('expanded universe data precedes separate Game.log and OCR intake releases', () => {
+  const universe = roadmap.releases.find((release) => release.version === '0.22');
+  const gameLog = roadmap.releases.find((release) => release.version === '0.23');
+  const ocr = roadmap.releases.find((release) => release.version === '0.24');
+  assert.ok(universe);
+  assert.equal(universe.status, 'next');
+  assert.match(universe.title, /Expanded universe data/i);
+  assert.ok(gameLog);
+  assert.equal(gameLog.status, 'future');
+  assert.ok(gameLog.changes.some((change) => /Game\.log/.test(change)));
+  assert.ok(gameLog.changes.some((change) => /event provenance/i.test(change)));
+  assert.ok(ocr);
+  assert.equal(ocr.status, 'future');
+  assert.ok(ocr.changes.some((change) => /OCR/.test(change)));
+  assert.ok(ocr.changes.some((change) => /validation pipeline/i.test(change)));
 });
