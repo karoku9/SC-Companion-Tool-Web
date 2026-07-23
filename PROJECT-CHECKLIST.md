@@ -151,14 +151,24 @@
 
 ## v0.23 Game.log assisted intake
 
-- [ ] Define an opt-in local Game.log import boundary with no silent file access.
-- [ ] Parse mission and contract events independently from UI wording.
-- [ ] Preserve raw event lines, timestamps and source-file identity.
-- [ ] Support incremental imports without duplicating previously processed events.
-- [ ] Reconstruct partial mission state while marking missing fields as unresolved.
-- [ ] Send extracted missions through the existing validation and correction flow.
-- [ ] Require explicit confirmation before replacing the active route.
-- [ ] Add replay fixtures from real and truncated logs.
+- [x] Define an opt-in local Game.log import boundary with no silent file access.
+- [x] Provide File System Access and standard file-input paths without retaining permission after reload.
+- [x] Parse mission and contract candidates independently from the Missions UI wording.
+- [x] Preserve raw event lines, timestamps, source generation, line numbers and byte offsets.
+- [x] Read only complete new lines from a persisted byte offset.
+- [x] Keep unfinished final lines pending until a later refresh.
+- [x] Use stable source prefixes so ordinary appends do not create false log generations.
+- [x] Isolate truncated or rotated log generations.
+- [x] Prevent duplicate and replayed events from creating duplicate mission objectives.
+- [x] Reconstruct supported complete events while marking missing fields unresolved.
+- [x] Correlate nearby contract/title context only with an explicit derived-confidence marker.
+- [x] Send extracted drafts through the existing validation and correction flow.
+- [x] Require explicit confirmation before replacing the active route.
+- [x] Provide raw unresolved-line export for empirical parser improvement.
+- [x] Add fixtures using an observed Game.log notification envelope and synthetic hauling payloads.
+- [x] Add Node contracts for noise rejection, provenance, partial events, correlation and replay protection.
+- [x] Keep the Missions panel readable in the existing Chromium viewport matrix.
+- [ ] Validate current Alpha 4.9 hauling payload signatures against a user-provided real `Game.log`.
 
 ## v0.24 OCR assisted intake
 

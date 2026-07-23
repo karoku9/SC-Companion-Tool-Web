@@ -34,7 +34,7 @@ test('current, next and future releases form one linear delivery path', () => {
   assert.ok(roadmap.releases.slice(nextIndex + 1).every((release) => release.status === 'future'));
 });
 
-test('v0.22 delivers complete universe data before Game.log and OCR intake', () => {
+test('v0.23 delivers reviewable Game.log intake after complete universe data', () => {
   const context = roadmap.releases.find((item) => item.version === '0.19');
   const loadouts = roadmap.releases.find((item) => item.version === '0.20');
   const ux = roadmap.releases.find((item) => item.version === '0.21');
@@ -48,15 +48,18 @@ test('v0.22 delivers complete universe data before Game.log and OCR intake', () 
   assert.equal(loadouts.status, 'done');
   assert.equal(ux.status, 'done');
   assert.match(ux.title, /UX foundation/i);
-  assert.equal(universe.status, 'current');
+  assert.equal(universe.status, 'done');
   assert.match(universe.title, /Expanded universe data/i);
   assert.ok(universe.changes.some((change) => /84 operational destinations/i.test(change)));
   assert.ok(universe.changes.some((change) => /43 surface.*outposts/i.test(change)));
   assert.ok(universe.changes.some((change) => /complete fuel, food, medical/i.test(change)));
   assert.ok(universe.changes.some((change) => /Starmap anchors/i.test(change)));
-  assert.equal(gameLog.status, 'next');
+  assert.equal(gameLog.status, 'current');
   assert.match(gameLog.title, /Game\.log assisted intake/i);
-  assert.ok(gameLog.changes.some((change) => /event provenance/i.test(change)));
+  assert.ok(gameLog.changes.some((change) => /raw line, timestamp, file/i.test(change)));
+  assert.ok(gameLog.changes.some((change) => /rotation/i.test(change)));
+  assert.ok(gameLog.changes.some((change) => /mission validation/i.test(change)));
+  assert.equal(ocr.status, 'next');
   assert.match(ocr.title, /OCR assisted intake/i);
   assert.ok(ocr.changes.some((change) => /existing mission validation pipeline/i.test(change)));
   assert.match(hardening.title, /Release hardening/i);

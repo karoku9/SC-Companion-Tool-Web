@@ -10,7 +10,7 @@ function read(file) {
 }
 
 function cleanCss() {
-  return ['design-system-legibility.css', 'mission-validation.css', 'location-context.css', 'location-context-adapters.css', 'fleet-loadouts.css', 'starmap-v2.css', 'ui-v2-shell.css', 'ui-v2-operations.css', 'ui-v2-workspaces.css', 'ui-v2-responsive.css'].map(read).join('\n');
+  return ['design-system-legibility.css', 'mission-validation.css', 'game-log-intake.css', 'location-context.css', 'location-context-adapters.css', 'fleet-loadouts.css', 'starmap-v2.css', 'ui-v2-shell.css', 'ui-v2-operations.css', 'ui-v2-workspaces.css', 'ui-v2-responsive.css'].map(read).join('\n');
 }
 
 test('clean interface scripts remain valid JavaScript', () => {
@@ -26,6 +26,7 @@ test('clean UI replaces accumulated layout layers rather than overriding them', 
   assert.match(html, /href="design-system\.css"/);
   assert.match(html, /href="ui-v2\.css"/);
   assert.match(entry, /mission-validation\.css/);
+  assert.match(entry, /game-log-intake\.css/);
   assert.match(entry, /location-context\.css/);
   assert.match(entry, /location-context-adapters\.css/);
   assert.match(entry, /fleet-loadouts\.css/);
@@ -76,17 +77,19 @@ test('navigation continues using the canonical SVG icon family', () => {
   assert.match(shell, /SCCompanionMfdIcons/);
 });
 
-test('Expanded Universe Data keeps the delivered Starmap and Fleet runtimes', () => {
+test('Game.log assisted intake keeps the delivered universe, Starmap and Fleet runtimes', () => {
   const roadmap = require('../roadmap.js');
   const app = read('app.js');
   const map = read('starmap-view.js');
   const locations = read('locations.js');
-  assert.equal(roadmap.currentVersion, '0.22');
+  assert.equal(roadmap.currentVersion, '0.23');
   assert.equal(roadmap.releases.find((release) => release.version === '0.21').status, 'done');
-  assert.equal(roadmap.releases.find((release) => release.version === '0.22').status, 'current');
-  assert.match(roadmap.releases.find((release) => release.version === '0.22').title, /Expanded universe data/i);
+  assert.equal(roadmap.releases.find((release) => release.version === '0.22').status, 'done');
+  assert.equal(roadmap.releases.find((release) => release.version === '0.23').status, 'current');
+  assert.match(roadmap.releases.find((release) => release.version === '0.23').title, /Game\.log assisted intake/i);
   assert.match(app, /fleet-estimate-adapter\.js/);
   assert.match(app, /fleet-loadouts-view\.js/);
+  assert.match(app, /game-log-intake-view\.js/);
   assert.match(map, /data-map-mode="route"/);
   assert.match(map, /data-map-action="current"/);
   assert.match(locations, /validateCatalog/);

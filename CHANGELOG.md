@@ -6,6 +6,45 @@ The project was already under active development before this changelog was intro
 
 ## [Unreleased]
 
+### Planned
+- Screenshot and cropped-image import for OCR-assisted mission intake.
+- Per-field OCR confidence, source-image provenance and inline correction.
+- Reuse of the existing mission validation flow before route generation.
+
+---
+
+## [0.23.0] - 2026-07-23
+
+### Added
+- Explicit local `Game.log` selection through the File System Access API with a standard file-input fallback.
+- Incremental reads from the last complete byte offset, preserving unfinished final lines for a later refresh.
+- Stable source generations with truncation and rotation isolation.
+- Duplicate and replay protection for previously processed event IDs.
+- Candidate extraction for timestamps, notification envelopes, contract IDs, titles, actions, registered locations, SCU and commodities.
+- Complete and partial event states with raw line, source file, line number, byte offset and timestamp provenance.
+- Bounded correlation between complete objectives and nearby preceding contract/title context.
+- A responsive Missions panel with event metrics, unresolved-line copying and raw-provenance details.
+- Explicit handoff from extracted draft to the existing field-by-field mission review.
+
+### Changed
+- Missions now supports manual text and Game.log-assisted intake through the same validation model.
+- The roadmap advances OCR assisted intake to the next release.
+- The navigation footer identifies build 0.23 and clarifies that local file access is explicit.
+
+### Fixed
+- Appending to a small growing log no longer creates a false new source generation.
+- Truncated or rotated logs no longer mix their draft with the previous generation.
+- Re-importing an unchanged line no longer duplicates a mission objective.
+- Incomplete log events no longer receive invented action, destination, SCU, commodity or contract values.
+- Selecting or importing a file cannot replace the active route without explicit review and generation.
+
+### Data boundary
+- The public test fixture uses a notification envelope observed in real Game.log output with synthetic hauling payloads. Actual Alpha 4.9 mission-bearing wording may vary and unsupported variants remain visible as unresolved raw events.
+
+---
+
+## [0.22.2] - 2026-07-23
+
 ### Added
 - Inline Current Stop operational intelligence with inbound travel ETA, distance and jump count.
 - Final-approach and landing/access ranges for stations, landing zones, outposts and distribution centers.
@@ -19,11 +58,6 @@ The project was already under active development before this changelog was intro
 ### Fixed
 - Players no longer need to leave the active Operations workflow to discover whether the current destination has landing support, refuel, food or medical care.
 - Travel-time information is no longer confined to the route index where it is easy to miss during approach.
-
-### Planned
-- Opt-in local Game.log selection and incremental import.
-- Mission and contract event extraction with raw-line, timestamp and file provenance.
-- Duplicate/replay protection and review before replacing the active route.
 
 ---
 

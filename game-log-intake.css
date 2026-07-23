@@ -1,0 +1,141 @@
+/* Game.log assisted intake remains inside Missions and never becomes a silent background watcher. */
+.mission-editor {
+  grid-template-rows: auto auto minmax(220px, 1fr) auto auto auto;
+}
+
+.game-log-intake {
+  min-width: 0;
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border-bottom: 1px solid var(--ds-border-subtle);
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--ds-action-primary) 5%, transparent) 1px, transparent 1px),
+    var(--ds-surface-panel);
+  background-size: 24px 24px, auto;
+}
+
+.game-log-intake-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 12px;
+}
+.game-log-intake-header > div { display: grid; gap: 4px; }
+.game-log-intake-header small {
+  color: var(--ds-action-primary);
+  font: 800 var(--ds-type-xs)/1 var(--ds-font-technical, ui-monospace, monospace);
+  letter-spacing: .09em;
+}
+.game-log-intake-header strong { color: var(--ds-content-primary); font-size: var(--ds-type-lg); }
+.game-log-intake-header > span { color: var(--ds-content-muted); font-size: var(--ds-type-xs); text-align: right; overflow-wrap: anywhere; }
+
+.game-log-controls {
+  display: grid;
+  grid-template-columns: minmax(150px, 1fr) minmax(150px, 1fr) minmax(150px, 1fr);
+  gap: 6px;
+}
+.game-log-controls .button { min-height: 40px; }
+
+.game-log-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+.game-log-summary article {
+  min-width: 0;
+  padding: 9px;
+  border: 1px solid var(--ds-border-subtle);
+  background: var(--ds-surface-screen);
+}
+.game-log-summary small { display: block; color: var(--ds-content-muted); font-size: var(--ds-type-xs); }
+.game-log-summary strong { display: block; margin-top: 4px; color: var(--ds-action-primary-hover); font-size: var(--ds-type-xl); }
+
+.game-log-message {
+  padding: 9px 10px;
+  border-left: 3px solid var(--ds-border-strong);
+  background: var(--ds-surface-screen);
+  color: var(--ds-content-secondary);
+  font-size: var(--ds-type-xs);
+  line-height: 1.5;
+}
+.game-log-message.is-success { border-left-color: var(--ds-status-success); }
+.game-log-message.is-warning { border-left-color: var(--ds-status-warning); }
+.game-log-message.is-error { border-left-color: var(--ds-status-danger); }
+
+.game-log-event-list {
+  max-height: 270px;
+  min-height: 0;
+  display: grid;
+  align-content: start;
+  gap: 7px;
+  overflow-y: auto;
+}
+.game-log-empty {
+  padding: 18px;
+  border: 1px dashed var(--ds-border-subtle);
+  color: var(--ds-content-muted);
+  text-align: center;
+}
+.game-log-event {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--ds-border-subtle);
+  border-left: 3px solid var(--ds-status-warning);
+  background: var(--ds-surface-screen);
+}
+.game-log-event.is-complete { border-left-color: var(--ds-status-success); }
+.game-log-event header { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+.game-log-event header strong { color: var(--ds-content-primary); font-size: var(--ds-type-sm); }
+.game-log-event header span { color: var(--ds-content-muted); font-size: var(--ds-type-xs); text-align: right; }
+.game-log-event-fields { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 5px; }
+.game-log-event-fields > span {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+  padding: 7px;
+  border: 1px solid var(--ds-border-subtle);
+  color: var(--ds-content-secondary);
+  font-size: var(--ds-type-xs);
+  overflow-wrap: anywhere;
+}
+.game-log-event-fields > span[data-state="ready"] { border-bottom-color: var(--ds-status-success); }
+.game-log-event-fields > span[data-state="missing"],
+.game-log-event-fields > span[data-state="unresolved"],
+.game-log-event-fields > span[data-state="ambiguous"] { border-bottom-color: var(--ds-status-warning); }
+.game-log-event-fields small { color: var(--ds-content-muted); font-size: var(--ds-type-xs); }
+.game-log-event p { margin: 0; color: var(--ds-content-secondary); font-size: var(--ds-type-xs); line-height: 1.5; overflow-wrap: anywhere; }
+.game-log-event details { color: var(--ds-content-muted); font-size: var(--ds-type-xs); }
+.game-log-event summary { cursor: pointer; }
+.game-log-event code { display: block; margin-top: 6px; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--ds-content-secondary); }
+
+.game-log-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+}
+.game-log-actions p { margin: 0; color: var(--ds-content-muted); font-size: var(--ds-type-xs); line-height: 1.45; }
+.game-log-actions .button { min-height: 42px; }
+
+@media (max-width: 1180px) {
+  .game-log-controls { grid-template-columns: 1fr; }
+  .game-log-event-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .game-log-actions { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 900px) {
+  .mission-editor { grid-template-rows: auto auto minmax(340px, auto) auto auto auto; }
+  .game-log-event-list { max-height: 420px; }
+}
+
+@media (max-width: 560px) {
+  .game-log-intake-header { align-items: start; flex-direction: column; }
+  .game-log-intake-header > span { text-align: left; }
+  .game-log-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .game-log-event header { align-items: start; flex-direction: column; }
+  .game-log-event header span { text-align: left; }
+  .game-log-event-fields { grid-template-columns: 1fr; }
+}
