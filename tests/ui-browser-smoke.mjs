@@ -96,13 +96,18 @@ try {
       arcL2: model.searchOperationalLocations('ARC L2')[0]?.id,
       nbis: model.searchOperationalLocations('NBIS')[0]?.id,
       seraphim: model.searchOperationalLocations('Seraphim')[0]?.id,
+      bezdek: model.searchOperationalLocations('HDMS Bezdek')[0]?.id,
+      depot: model.searchOperationalLocations('S4LD01')[0]?.id,
       validation: model.validation
     };
   });
-  assert.equal(registry.coverage.operationalDestinations, 34);
+  assert.equal(registry.coverage.operationalDestinations, 84);
+  assert.equal(registry.coverage.fieldDestinations, 50);
   assert.equal(registry.arcL2, 'stanton-arc-l2-lively-pathway');
   assert.equal(registry.nbis, 'stanton-microtech-new-babbage-nbis');
   assert.equal(registry.seraphim, 'stanton-crusader-seraphim');
+  assert.equal(registry.bezdek, 'stanton-hurston-arial-hdms-bezdek');
+  assert.equal(registry.depot, 'stanton-microtech-microtech-logistics-depot-s4ld01');
   assert.deepEqual(registry.validation, { errors: [], warnings: [] });
 
   await page.locator('#mission-text').fill(interstellarMissionText);
@@ -182,8 +187,8 @@ try {
     return {
       canvas: { left: canvas.left, right: canvas.right, top: canvas.top, bottom: canvas.bottom },
       labels: [...document.querySelectorAll('#starmap-canvas .map-route-label')].map((text) => {
-        const box = text.getBoundingClientRect();
-        return { content: text.textContent, left: box.left, right: box.right, top: box.top, bottom: box.bottom };
+        const labelBox = text.getBoundingClientRect();
+        return { content: text.textContent, left: labelBox.left, right: labelBox.right, top: labelBox.top, bottom: labelBox.bottom };
       })
     };
   });
