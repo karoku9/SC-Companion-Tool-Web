@@ -35,7 +35,7 @@ test('jump connections resolve to known systems and identify the active placehol
   assert.match(placeholder.note, /placeholder/i);
 });
 
-test('expanded mission locations resolve to stable system and distance anchors', () => {
+test('base expanded mission locations resolve to stable system and distance anchors', () => {
   const anchors = [
     starmap.getLocationAnchor('stanton-hurston-lorville-teasa'),
     starmap.getLocationAnchor('stanton-crusader-seraphim'),
@@ -99,7 +99,8 @@ test('v0.22 expanded universe data precedes separate Game.log and OCR intake rel
   assert.ok(universe);
   assert.equal(universe.status, 'current');
   assert.match(universe.title, /Expanded universe data/i);
-  assert.ok(universe.changes.some((change) => /34 operational destinations/i.test(change)));
+  assert.ok(universe.changes.some((change) => /84 operational destinations/i.test(change)));
+  assert.ok(universe.changes.some((change) => /surface.*outposts/i.test(change)));
   assert.ok(gameLog);
   assert.equal(gameLog.status, 'next');
   assert.ok(gameLog.changes.some((change) => /Game\.log/.test(change)));
