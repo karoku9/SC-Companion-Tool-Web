@@ -7,9 +7,34 @@ The project was already under active development before this changelog was intro
 ## [Unreleased]
 
 ### Planned
-- Completed-session archive and operational outcomes.
-- Planned versus observed timings and incident notes.
-- Reusable session templates built from completed runs.
+- Opt-in local Game.log selection and incremental import.
+- Mission and contract event extraction with raw-line, timestamp and file provenance.
+- Duplicate/replay protection and review before replacing the active route.
+
+---
+
+## [0.22.0] - 2026-07-23
+
+### Added
+- Canonical universe registry with 80 normalized records and 34 operational destinations.
+- Four Stanton spaceports, four orbital stations, Grim HEX, eighteen Lagrange stations and three gateways.
+- Search aliases for punctuation, spacing, abbreviations and full in-game station names.
+- Source authority, game version, review date and geometry status on maintained location records.
+- Catalog validation for duplicate IDs, missing parents, missing sources, invalid anchors and ambiguous operational aliases.
+- Starmap and distance anchors generated from the canonical registry for every operational destination.
+- Focused Node and Chromium coverage for `ARC-L2`, Seraphim Station and New Babbage.
+
+### Changed
+- Mission parsing, Location Context, navigation estimates and Starmap data now share stable operational destination IDs.
+- Operational labels remain separate from in-game navigation targets and searchable aliases.
+- Community-backed destinations expose source provenance without receiving invented service or traffic data.
+- UX Foundation and Starmap 2.0 are marked delivered; Game.log Assisted Intake becomes the next release.
+
+### Fixed
+- Common forms such as `ARC-L2`, `ARC L2`, `Lively Pathway`, `NBIS` and full station names now resolve predictably.
+- Non-operational hierarchy nodes no longer become selectable mission destinations.
+- Existing official confidence for Teasa, Riker and Baijini is preserved while new community-dependent records remain labelled appropriately.
+- Every operational destination now produces finite navigation and Starmap coordinates with an explicit geometry boundary.
 
 ---
 
@@ -31,7 +56,6 @@ The project was already under active development before this changelog was intro
 - Full route details move into a collapsible context drawer so the map surface remains primary.
 - The map fills the available operational height instead of leaving a large unused upper region.
 - Desktop keeps persistent context while mobile uses a dedicated interaction model.
-- Session History moves to v0.22 so navigation UX can be repaired before further feature expansion.
 
 ### Fixed
 - Selecting a stop from the route list no longer forces an unexpected return to the itinerary layer.
@@ -118,70 +142,3 @@ The project was already under active development before this changelog was intro
 ### Fixed
 - Mobile navigation and cargo-zone editing no longer rely on clipped desktop layouts.
 - Clean-shell initialization is deterministic before contextual content is moved.
-
----
-
-## [0.16.0] - 2026-07-22
-
-### Added
-- Operational Stanton, Pyro and Nyx registry with current jump topology.
-- Transparent normal-space distance and navigation-time estimates.
-- Interstellar estimates in Operations, Planner and Starmap.
-- Canonical readable typography contract.
-
-### Changed
-- Jump tunnels are counted separately and never converted into invented kilometres.
-- Official static snapshot data and derived estimates are labelled separately.
-
----
-
-## [0.15.0] - 2026-07-22
-
-### Added
-- Second-generation clean frontend built directly on the shared design system.
-- Panel-native Moves, Cargo, Adjust and Route displays inside Operations.
-- Explicit PICK UP and DROP OFF operational hierarchy.
-- Original schematic line art for the Drake Corsair and Cutlass Black in Fleet.
-- Integrated per-ship cargo-zone editor in the Fleet workspace.
-- Route-first SVG Starmap with Route, Local system and Systems modes.
-- Project-state and visual-hardening verification documents.
-
-### Changed
-- `index.html` loads only the design system and one clean page-layout entry instead of the accumulated legacy stylesheet stack.
-- `app.js` no longer loads the old workspace shell, UI override layers or embedded cargo-page runtimes.
-- Operations tools render below the primary operation and route-index displays instead of creating a squeezed third desktop column.
-- Pickup/drop-off action and SCU/commodity are primary; route context is secondary; mission provenance is tertiary.
-- Missions, Planner, Fleet, Starmap and Development use the same clean shell generation.
-
-### Fixed
-- Opening Cargo, Moves, Adjust or Route can no longer produce the broken narrow page-within-a-panel layout.
-- Auxiliary tool closing and expansion no longer mutate the main Operations grid.
-- Fleet no longer presents configuration as an unstructured form without a selected-ship visual.
-- Starmap no longer relies on difficult free-camera 3D canvas controls for the primary hauling workflow.
-
----
-
-## [0.14.0] - 2026-07-22
-
-### Added
-- Four-layer design-system registry covering primitive tokens, semantic roles, component contracts and manufacturer themes.
-- Project-derived Drake palette documented as an approximation rather than an official CIG palette.
-- Semantic roles for surfaces, content, borders, actions, cargo pickup/dropoff/mixed/off-grid and system states.
-- Canonical button, panel, field, status, spacing, typography and icon definitions.
-- Development → UI Kit and UI research implementation rules.
-
----
-
-## [0.13.0] - 2026-07-22
-
-### Added
-- Compact cockpit-style Operations display with a fixed top status rail and bottom function-key rail.
-- Dedicated route-index display and defensive auxiliary-panel closing.
-
-### Improved
-- Destination typography, page headings, forms and planner cards use cockpit-display proportions.
-- Current actions use action/cargo, operational destination and mission provenance hierarchy.
-
-### Fixed
-- Close and Escape reliably dismiss the auxiliary display.
-- Hidden panels cannot be forced visible by later display declarations.
