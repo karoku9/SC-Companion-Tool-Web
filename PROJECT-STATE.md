@@ -2,58 +2,61 @@
 
 ## Current release
 
-**v0.23 — Game.log Assisted Intake**
+**v0.24 — OCR Assisted Intake**
 
-The application can read an explicitly selected local `Game.log`, retain incremental import state, expose complete and partial mission-bearing events with raw provenance, and send supported extracted objectives through the existing mission review before any route can be generated.
+The application can recognize text from explicitly selected contract screenshots, expose independently reviewable mission fields with OCR-line provenance, and send corrected drafts through the same mission-validation gate used by manual and Game.log intake. OCR never creates or replaces an active route by itself.
 
-## Game.log access boundary
+## OCR access and dependency boundary
 
-- The static web application never claims silent access to the Star Citizen installation or arbitrary local files.
-- The user selects `Game.log` explicitly through the File System Access API where supported or a standard file input fallback.
-- A granted file handle exists only in page memory; after reload the user must select or authorize the file again.
-- Previously extracted candidate events can remain in local browser state without retaining filesystem permission.
-- The standard file-input fallback requires reselection before reading newer content.
-- Only mission-bearing candidate lines are retained, bounded to the latest 500 events and 4,000 processed event IDs.
+- The user explicitly selects one to six PNG, JPEG, WebP or BMP images inside the Missions workspace.
+- The application does not scan the clipboard, screenshot folders or arbitrary local files silently.
+- `ocr-intake-view.js` loads a pinned Tesseract.js 7.0.0 ESM module only when OCR is requested.
+- The JavaScript module, WebAssembly OCR core and English language model require network retrieval on first use; a fully offline first OCR run is not claimed.
+- Selected image pixels are passed to the browser OCR worker and are not uploaded by application code.
+- Source image bytes, object URLs and previews are not persisted in session state.
+- Saved OCR state contains bounded extracted text, source filename/hash/dimensions, field provenance and the last generated draft.
 
-## Incremental import contract
+## Image preprocessing contract
 
-- Every source generation stores its filename, stable prefix hash, size, modification time, byte offset, completed-line count, import time and generation number.
-- Reads begin from the last complete byte offset instead of reparsing the whole file.
-- An unfinished final line is not parsed and remains pending until a later refresh completes it.
-- First import scans at most the newest 24 MiB and aligns to a full line before parsing.
-- A fixed 4 KiB prefix avoids treating ordinary appends to a small growing log as a new source.
-- A smaller-than-offset file or changed stable prefix creates an isolated truncation/rotation generation.
-- Event identity includes the source generation and exact raw line.
-- Duplicate or replayed event IDs are rejected before storage and draft reconstruction.
+- Images are decoded in the browser and scaled so the longest processed dimension does not exceed 2,400 pixels.
+- Small images may be enlarged up to twice their source size before recognition.
+- The preprocessing canvas applies grayscale and increased contrast.
+- Average sampled luminance determines whether a dark-HUD inversion pass is used.
+- The processed canvas is the recognition source; the original selected image remains the visual preview for the current page session.
+- Preprocessing improves OCR conditions but is not presented as proof that recognized text is correct.
 
-## Event and provenance model
+## OCR field and provenance model
 
-- `game-log-intake.js` parses timestamps, notification envelopes, structured key/value fields, contract identifiers, titles, actions, registered locations, SCU and commodity candidates.
-- `game-log-intake-correlation.js` normalizes multi-word action phrases and may associate a complete objective with the nearest preceding contract/title context from the same source within a bounded line distance.
-- Correlation is marked as derived context and never upgrades a missing action, location, quantity or commodity into a complete event.
-- Every retained event preserves source filename, source generation, line number, byte offset, timestamp, raw line and extracted message.
-- Complete events require action, a registered location, positive SCU and a commodity.
-- Partial events remain visible with unresolved fields and can be copied as raw diagnostic lines.
-- Unrelated tutorial and ordinary log lines are ignored rather than shown as missions.
+- `ocr-intake.js` remains independent from the browser OCR engine and converts recognized text into reviewable mission fields.
+- Mission title, action, location, quantity and commodity retain separate values, confidence and source-line provenance.
+- Explicit action headings take priority over derived `From:` and `To:` labels so destination rows do not create duplicate objectives.
+- Titles containing words such as “delivery” do not become action objectives.
+- Destination candidates resolve through the same 84-destination registry used by manual and Game.log intake.
+- Exact, ambiguous and unresolved destination states remain distinguishable.
+- Positive explicit SCU expressions are preferred over lower-confidence labelled quantity inference.
+- Labelled commodity fields and commodity text on the same line as SCU are preferred over nearby unlabelled fallback text.
+- Missing action, destination, quantity or commodity remains unresolved; no field is invented merely to make an objective complete.
+- Each objective preserves its OCR source-line range and recognized text lines.
 
-## Mission review integration
+## OCR review integration
 
-- Supported complete events become compact mission-text drafts grouped by explicit contract ID, title or a clearly labelled unidentified import batch.
-- Duplicate objective candidates inside a draft are collapsed.
-- The user must choose **Load extracted draft into review** before the text enters mission validation.
-- Existing per-field action, location and cargo checks remain authoritative.
-- Ambiguous and unknown locations still require correction or explicit custom-location confirmation.
-- The active route is never replaced by file import, event parsing, correlation or draft loading.
-- Route replacement occurs only after the existing explicit validated-session generation action.
-- Stored Game.log draft metadata retains the event IDs that produced it, linking the review source back to local raw events.
+- The OCR panel appears inside Missions beneath Game.log intake and before the canonical mission text editor.
+- Source previews, raw extracted text and editable mission fields remain visible before handoff.
+- **Load raw text into editor** is available when field extraction is not useful.
+- **Load OCR draft into review** serializes the corrected title and objectives into the existing compact mission-text format.
+- Draft handoff triggers the normal mission-validation form rather than bypassing it.
+- Existing action, location, SCU, commodity, ambiguity, custom-location and stale-review rules remain authoritative.
+- The active route remains unchanged after image selection, OCR, field edits and draft loading.
+- Route replacement occurs only after the existing explicit **Generate validated session** action.
 
-## Empirical format boundary
+## Game.log assisted intake
 
-- The public fixture uses an `UpdateNotificationItem` envelope observed in real `Game.log` output.
-- Hauling payload wording inside the fixture is synthetic because no user-provided Alpha 4.9 mission-bearing log was available during implementation.
-- Structured key/value and natural-language extraction therefore represent supported parser patterns, not a claim that every current contract event uses those exact strings.
-- Unknown real-world variants remain unresolved and source-visible instead of receiving fabricated SCU, commodity, destination or contract information.
-- The **Copy unresolved lines** path exists specifically to improve format coverage from actual logs without weakening review safeguards.
+- Explicit local `Game.log` selection, complete-line incremental reads, stable byte offsets, source generations and replay protection remain delivered.
+- Raw filename, generation, line number, byte offset, timestamp and original line provenance remain retained for candidate events.
+- Complete and partial events remain separate.
+- Whitespace-delimited structured fields are normalized before extraction so repeated contract IDs group consistently.
+- Nearby contract/title correlation remains bounded and visibly marked as derived context.
+- Actual unsupported log formats remain unresolved rather than receiving fabricated fields.
 
 ## Active universe registry
 
@@ -62,62 +65,58 @@ The application can read an explicitly selected local `Game.log`, retain increme
 - The combined snapshot contains 130 normalized records and 84 operational destinations: 80 in Stanton, 3 in Pyro and 1 in Nyx.
 - The original 34 operational destinations cover spaceports, planetary orbitals, Grim HEX, Lagrange rest stops, gateways, Pyro stations and Levski.
 - The field extension adds 43 mining, research, agricultural or industrial outposts and 7 distribution centers or logistics complexes.
-- Mission validation and Game.log extraction resolve destination text through the same operational IDs, aliases and navigation targets.
+- Manual, Game.log and OCR destination text resolve through the same operational IDs, aliases and navigation targets.
 
-## Location and Operations context
+## Location, Operations and navigation context
 
 - All 84 operational destinations expose reviewed service and static-risk profiles.
-- Every profile answers hangars or pads, fuel/repair/rearm, food, medical care, habitation, transit, cargo services, refinery, ships or rentals, ground vehicles, commodity trade and unregulated trade.
+- Every profile answers hangars or pads, fuel/repair/rearm, food, medical care, habitation, transit, cargo services, refinery, rentals, ground vehicles, commodity trade and unregulated trade.
 - Risk is destination-specific and separate from onboard-cargo exposure.
 - Operations shows inbound travel range, final approach, risk, protection/comms, hangar/pad, fuel, food and medical information below current cargo actions.
-- Facility guidance and danger records remain static; they do not claim live shard, player, piracy, traffic, stock or service uptime.
+- Facility guidance and danger records remain static and do not claim live shard, player, piracy, traffic, stock or service uptime.
+- Itinerary, System and Network remain separate Starmap navigation layers with persistent selection and explicit camera controls.
+- Surface anchors remain schematic rather than surveyed coordinates.
 
-## Active Starmap architecture
-
-- `starmap-data.js` derives systems, connections and operational anchors from the combined registry.
-- Itinerary, System and Network remain explicit navigation layers with separate purposes.
-- Selected stops, bodies and systems remain selected until another object is chosen.
-- Current, next and final route objectives remain visible in the map HUD.
-- Pan, wheel/button zoom, fit, center-current and keyboard controls operate on the SVG view box.
-- Surface anchors support route estimates and stop placement but do not claim surveyed map coordinates.
-
-## Active Fleet and estimate architecture
+## Fleet and estimate architecture
 
 - `fleet-loadouts.js` remains the domain source for structured components, named loadouts, migration and derived ship performance.
 - Active quantum configuration feeds normal-space and interstellar estimates.
 - Active cargo and handling factors feed capacity and handling estimates.
 - Jump tunnels remain separate from normal-space distance and are never converted into invented kilometres.
 
-## Validation contract
+## Validation and CI contract
 
-- Game.log parser tests cover unrelated notification rejection, exact raw provenance, complete/partial separation, multi-word actions, location resolution, context correlation and replay rejection.
-- Static interface contracts require explicit file selection, incremental offsets, stable source generations, rotation isolation, raw provenance and reuse of the mission review form.
-- Existing location, route, cargo, Fleet, Starmap, responsive and Chromium suites must remain green.
-- Missions desktop and mobile layouts must remain readable without horizontal overflow.
-- An actual Alpha 4.9 hauling `Game.log` remains the required empirical input for expanding known payload signatures beyond the documented parser boundary.
+- OCR domain tests cover independent field extraction, incomplete-field preservation, correction serialization, explicit-versus-derived action anchors and dependency pinning.
+- The Chromium OCR workflow uses a real browser file upload and preprocessing path with a deterministic mocked OCR module.
+- Browser verification checks field rendering, line provenance, correction, mission-review handoff, unchanged route state, mobile targets and horizontal overflow.
+- The normal quality workflow now uses `pipefail`; additional test failures can no longer be hidden by `tee`.
+- Previously masked Current Stop, location-profile and Game.log grouping contracts were corrected and remain authoritative.
+- Existing route, cargo, location, Fleet, Starmap, responsive and accessibility suites must remain green.
+- Real Star Citizen screenshots remain the empirical input required to tune recognition and field-layout coverage beyond the deterministic fixture.
 
 ## Active interface architecture
 
 - Six primary workspaces remain: Operations, Missions, Planner, Starmap, Fleet and Development.
-- Game.log intake is embedded in Missions instead of becoming a separate workspace.
-- The mission text editor remains available as the universal manual fallback.
-- Complete and partial events, raw provenance and the review handoff are responsive on desktop and mobile.
+- Manual, Game.log and OCR input coexist inside Missions rather than becoming separate workspaces.
+- The mission text editor remains the universal manual fallback.
+- Assisted-input panels expand the Missions editor naturally instead of overlapping generated-session output.
+- OCR field cards collapse to a single-column mobile layout and retain 44-pixel interaction targets.
 - Drake remains a project-derived manufacturer theme, not an official CIG visual package.
 
 ## Next release
 
-**v0.24 — OCR Assisted Intake**
+**v0.25 — Release Hardening**
 
-- Accept screenshots and cropped mission images as a secondary import path.
-- Extract title, action, location and cargo fields with independent confidence.
-- Preserve source-image references and extracted text.
-- Reuse the existing ambiguity, custom-location, stale-review and explicit-generation safeguards.
-- Prevent OCR output from bypassing mission validation or replacing the active route automatically.
+- Add versioned export, backup and restore.
+- Add explicit, tested local-data migrations and pre-migration recovery snapshots.
+- Recover from corrupt or partially incompatible local state.
+- Verify large routes, location datasets and many saved ships/loadouts.
+- Verify Firefox and WebKit where supported, plus offline/static deployment boundaries.
+- Complete keyboard, screen-reader, contrast, zoom, reduced-motion and release verification.
 
 ## Locked path to v1.0
 
-1. **v0.24 — OCR assisted intake.** Screenshot fallback through the same review model.
-2. **v0.25 — Release hardening.** Backup, migrations, recovery, performance, accessibility and cross-browser verification.
-3. **v1.0 — Core companion release.** Stable mission-to-execution workflow.
+1. **v0.25 — Release hardening.** Backup, migrations, recovery, performance, accessibility and cross-browser verification.
+2. **v1.0 — Core companion release.** Stable mission-to-execution workflow.
 
 Session history, companion pairing and commodity trading remain deferred until after v1.0.
