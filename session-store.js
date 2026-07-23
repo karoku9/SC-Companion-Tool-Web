@@ -11,6 +11,16 @@ collect area18 1scu neon
 collect teasa 2scu etam
 deliver baijini 2scu etam 1scu neon`;
 
+  function initialGameLogImport() {
+    return {
+      version: 1,
+      sources: {},
+      events: [],
+      processedIds: [],
+      lastDraft: null
+    };
+  }
+
   function initialState() {
     return {
       missionSourceText: sampleMissionText,
@@ -23,6 +33,7 @@ deliver baijini 2scu etam 1scu neon`;
       routeCorrections: null,
       cargoCorrections: {},
       cargoZoneOverrides: {},
+      gameLogImport: initialGameLogImport(),
       routePlannerSettings: {
         protectCargo: false,
         safetyMarginMinutes: 15,
@@ -51,6 +62,59 @@ deliver baijini 2scu etam 1scu neon`;
       confirmedCustomLocations: { ...(value.confirmedCustomLocations ?? {}) },
       summary: value.summary && typeof value.summary === 'object' ? { ...value.summary } : null,
       issues: Array.isArray(value.issues) ? value.issues.map((item) => ({ ...item })) : []
+    };
+  }
+
+  function normalizeGameLogEvent(value) {
+    if (!value || typeof value !== 'object') return null;
+    return {
+      ...value,
+      id: String(value.id ?? ''),
+      sourceName: String(value.sourceName ?? 'Game.log'),
+      lineNumber: Number.isFinite(Number(value.lineNumber)) ? Number(value.lineNumber) : null,
+      byteOffset: Number.isFinite(Number(value.byteOffset)) ? Number(value.byteOffset) : 0,
+      timestamp: value.timestamp ? String(value.timestamp) : null,
+      rawLine: String(value.rawLine ?? ''),
+      message: String(value.message ?? ''),
+      status: value.status === 'complete' ? 'complete' : 'partial',
+      confidence: Number.isFinite(Number(value.confidence)) ? Number(value.confidence) : 0
+    };
+  }
+
+  function normalizeGameLogSource(value) {
+    if (!value || typeof value !== 'object') return null;
+    return {
+      name: String(value.name ?? 'Game.log'),
+      size: Math.max(0, Number(value.size ?? 0) || 0),
+      lastModified: Math.max(0, Number(value.lastModified ?? 0) || 0),
+      headHash: String(value.headHash ?? ''),
+      offset: Math.max(0, Number(value.offset ?? 0) || 0),
+      lineCount: Math.max(0, Number(value.lineCount ?? 0) || 0),
+      importedAt: value.importedAt ? String(value.importedAt) : null,
+      rotationCount: Math.max(0, Number(value.rotationCount ?? 0) || 0)
+    };
+  }
+
+  function normalizeGameLogImport(value) {
+    const defaults = initialGameLogImport();
+    if (!value || typeof value !== 'object') return defaults;
+    const sources = {};
+    Object.entries(value.sources ?? {}).forEach(([key, source]) => {
+      const normalized = normalizeGameLogSource(source);
+      if (normalized) sources[String(key)] = normalized;
+    });
+    return {
+      version: 1,
+      sources,
+      events: (Array.isArray(value.events) ? value.events : []).map(normalizeGameLogEvent).filter(Boolean).slice(-500),
+      processedIds: [...new Set((Array.isArray(value.processedIds) ? value.processedIds : []).map(String).filter(Boolean))].slice(-4000),
+      lastDraft: value.lastDraft && typeof value.lastDraft === 'object' ? {
+        ...value.lastDraft,
+        draftText: String(value.lastDraft.draftText ?? ''),
+        sourceName: String(value.lastDraft.sourceName ?? 'Game.log'),
+        createdAt: value.lastDraft.createdAt ? String(value.lastDraft.createdAt) : null,
+        eventIds: (Array.isArray(value.lastDraft.eventIds) ? value.lastDraft.eventIds : []).map(String)
+      } : null
     };
   }
 
@@ -178,6 +242,7 @@ deliver baijini 2scu etam 1scu neon`;
       missionValidation: normalizeValidation(migrated?.missionValidation),
       cargoCorrections: { ...defaults.cargoCorrections, ...(migrated?.cargoCorrections ?? {}) },
       cargoZoneOverrides: { ...defaults.cargoZoneOverrides, ...(migrated?.cargoZoneOverrides ?? {}) },
+      gameLogImport: normalizeGameLogImport(migrated?.gameLogImport),
       routePlannerSettings: { ...defaults.routePlannerSettings, ...(migrated?.routePlannerSettings ?? {}) }
     };
   }
@@ -210,7 +275,7 @@ deliver baijini 2scu etam 1scu neon`;
     return replace(initialState());
   }
 
-  const api = Object.freeze({ getState, patch, replace, reset, sampleMissionText, migrateKnownLocations, resolveLocationReference });
+  const api = Object.freeze({ getState, patch, replace, reset, sampleMissionText, migrateKnownLocations, resolveLocationReference, normalizeGameLogImport });
   root.SCCompanionSession = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 }(typeof globalThis !== 'undefined' ? globalThis : window));
