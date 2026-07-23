@@ -1,7 +1,11 @@
 /* OCR intake is explicit, local-review-first and subordinate to the canonical Missions editor. */
 .mission-editor {
-  grid-template-rows: auto auto auto minmax(220px, 1fr) auto auto auto;
+  height: auto;
+  min-height: 780px;
+  max-height: none;
+  grid-template-rows: auto auto auto minmax(240px, 1fr) auto auto auto;
 }
+.mission-editor #mission-text { min-height: 240px; }
 
 .ocr-intake {
   min-width: 0;
@@ -171,7 +175,7 @@
 }
 
 @media (max-width: 900px) {
-  .mission-editor { grid-template-rows: auto auto auto minmax(340px, auto) auto auto auto; }
+  .mission-editor { min-height: auto; grid-template-rows: auto auto auto minmax(340px, auto) auto auto auto; }
   .ocr-workspace { max-height: none; overflow: visible; }
   .ocr-preview-column,
   .ocr-review-list { overflow: visible; }
