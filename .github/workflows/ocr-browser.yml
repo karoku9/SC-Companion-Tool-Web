@@ -1,0 +1,67 @@
+name: OCR Browser Validation
+
+on:
+  pull_request:
+    paths:
+      - 'ocr-intake.js'
+      - 'ocr-intake-view.js'
+      - 'ocr-intake.css'
+      - 'mission-view.js'
+      - 'mission-validation.js'
+      - 'session-store.js'
+      - 'app.js'
+      - 'ui-v2.css'
+      - 'tests/ocr-intake.test.js'
+      - 'tests/ui-ocr-intake.mjs'
+      - '.github/workflows/ocr-browser.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'ocr-intake.js'
+      - 'ocr-intake-view.js'
+      - 'ocr-intake.css'
+      - 'mission-view.js'
+      - 'mission-validation.js'
+      - 'session-store.js'
+      - 'app.js'
+      - 'ui-v2.css'
+      - 'tests/ocr-intake.test.js'
+      - 'tests/ui-ocr-intake.mjs'
+      - '.github/workflows/ocr-browser.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ocr-browser-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test-ocr-browser:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Test OCR domain model
+        run: node --test tests/ocr-intake.test.js
+      - name: Check OCR JavaScript syntax
+        run: |
+          node --check ocr-intake.js
+          node --check ocr-intake-view.js
+          node --check tests/ui-ocr-intake.mjs
+      - name: Install Chromium
+        run: |
+          npm install --no-save playwright@1.55.0
+          npx playwright install --with-deps chromium
+      - name: Test OCR intake in Chromium
+        run: |
+          python3 -m http.server 4173 >/tmp/sc-companion-ocr-http.log 2>&1 &
+          UI_BASE_URL=http://127.0.0.1:4173 UI_SCREENSHOT_DIR=ocr-browser-artifacts node tests/ui-ocr-intake.mjs
+      - name: Upload OCR screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ocr-browser-screenshots
+          path: ocr-browser-artifacts
+          if-no-files-found: ignore
