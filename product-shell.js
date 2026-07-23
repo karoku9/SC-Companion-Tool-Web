@@ -40,8 +40,8 @@
     if (!navFooter) return;
     const build = navFooter.querySelector('span');
     const privacy = navFooter.querySelector('small');
-    if (build) build.textContent = 'BUILD 0.22.1';
-    if (privacy) privacy.textContent = 'Private session · sourced universe data';
+    if (build) build.textContent = 'BUILD 0.23';
+    if (privacy) privacy.textContent = 'Private session · explicit local files';
   }
 
   function setContext(requestedId) {
