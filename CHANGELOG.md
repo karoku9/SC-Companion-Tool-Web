@@ -142,3 +142,70 @@ The project was already under active development before this changelog was intro
 ### Fixed
 - Mobile navigation and cargo-zone editing no longer rely on clipped desktop layouts.
 - Clean-shell initialization is deterministic before contextual content is moved.
+
+---
+
+## [0.16.0] - 2026-07-22
+
+### Added
+- Operational Stanton, Pyro and Nyx registry with current jump topology.
+- Transparent normal-space distance and navigation-time estimates.
+- Interstellar estimates in Operations, Planner and Starmap.
+- Canonical readable typography contract.
+
+### Changed
+- Jump tunnels are counted separately and never converted into invented kilometres.
+- Official static snapshot data and derived estimates are labelled separately.
+
+---
+
+## [0.15.0] - 2026-07-22
+
+### Added
+- Second-generation clean frontend built directly on the shared design system.
+- Panel-native Moves, Cargo, Adjust and Route displays inside Operations.
+- Explicit PICK UP and DROP OFF operational hierarchy.
+- Original schematic line art for the Drake Corsair and Cutlass Black in Fleet.
+- Integrated per-ship cargo-zone editor in the Fleet workspace.
+- Route-first SVG Starmap with Route, Local system and Systems modes.
+- Project-state and visual-hardening verification documents.
+
+### Changed
+- `index.html` loads only the design system and one clean page-layout entry instead of the accumulated legacy stylesheet stack.
+- `app.js` no longer loads the old workspace shell, UI override layers or embedded cargo-page runtimes.
+- Operations tools render below the primary operation and route-index displays instead of creating a squeezed third desktop column.
+- Pickup/drop-off action and SCU/commodity are primary; route context is secondary; mission provenance is tertiary.
+- Missions, Planner, Fleet, Starmap and Development use the same clean shell generation.
+
+### Fixed
+- Opening Cargo, Moves, Adjust or Route can no longer produce the broken narrow page-within-a-panel layout.
+- Auxiliary tool closing and expansion no longer mutate the main Operations grid.
+- Fleet no longer presents configuration as an unstructured form without a selected-ship visual.
+- Starmap no longer relies on difficult free-camera 3D canvas controls for the primary hauling workflow.
+
+---
+
+## [0.14.0] - 2026-07-22
+
+### Added
+- Four-layer design-system registry covering primitive tokens, semantic roles, component contracts and manufacturer themes.
+- Project-derived Drake palette documented as an approximation rather than an official CIG palette.
+- Semantic roles for surfaces, content, borders, actions, cargo pickup/dropoff/mixed/off-grid and system states.
+- Canonical button, panel, field, status, spacing, typography and icon definitions.
+- Development → UI Kit and UI research implementation rules.
+
+---
+
+## [0.13.0] - 2026-07-22
+
+### Added
+- Compact cockpit-style Operations display with a fixed top status rail and bottom function-key rail.
+- Dedicated route-index display and defensive auxiliary-panel closing.
+
+### Improved
+- Destination typography, page headings, forms and planner cards use cockpit-display proportions.
+- Current actions use action/cargo, operational destination and mission provenance hierarchy.
+
+### Fixed
+- Close and Escape reliably dismiss the auxiliary display.
+- Hidden panels cannot be forced visible by later display declarations.
