@@ -104,9 +104,16 @@ test('v0.21 keeps delivered runtimes and adds the Starmap UX layer', () => {
   assert.match(designSystem, /manufacturer: 'Drake Interplanetary'/);
 });
 
-test('assisted OCR and Game.log intake remain after interface hardening', () => {
-  const assisted = roadmap.releases.find((release) => release.version === '0.26');
-  assert.equal(assisted.status, 'future');
-  assert.ok(assisted.changes.some((change) => /OCR/.test(change)));
-  assert.ok(assisted.changes.some((change) => /Game\.log/.test(change)));
+test('universe data, Game.log and OCR form the pre-hardening intake sequence', () => {
+  const universe = roadmap.releases.find((release) => release.version === '0.22');
+  const gameLog = roadmap.releases.find((release) => release.version === '0.23');
+  const ocr = roadmap.releases.find((release) => release.version === '0.24');
+  const hardening = roadmap.releases.find((release) => release.version === '0.25');
+  assert.equal(universe.status, 'next');
+  assert.match(universe.title, /Expanded universe data/i);
+  assert.equal(gameLog.status, 'future');
+  assert.match(gameLog.title, /Game\.log assisted intake/i);
+  assert.equal(ocr.status, 'future');
+  assert.match(ocr.title, /OCR assisted intake/i);
+  assert.match(hardening.title, /Release hardening/i);
 });

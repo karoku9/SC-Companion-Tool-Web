@@ -58,4 +58,12 @@ Official/static universe facts, reviewed community facility records, project-der
 
 The roadmap displayed inside the site is the active product roadmap. Content is stored in `roadmap.js`; detailed current architecture and verification rules are documented in `PROJECT-STATE.md` and `PROJECT-CHECKLIST.md`.
 
-The next release is **v0.22 — Session history**: completed runs, observed timings/incidents and reusable session templates.
+The locked core sequence is:
+
+1. **v0.22 — Expanded universe data**: broader hauling destinations, aliases, hierarchy, provenance and geometry validation.
+2. **v0.23 — Game.log assisted intake**: the primary automated intake path, with incremental event parsing, provenance and review before route replacement.
+3. **v0.24 — OCR assisted intake**: screenshot import as a secondary fallback through the same mission-validation workflow.
+4. **v0.25 — Release hardening**: backup, migrations, recovery, performance, accessibility and browser verification.
+5. **v1.0 — Core companion release**: a stable mission-to-execution workflow.
+
+Session history, companion pairing and commodity trading are intentionally deferred until after v1.0 so they cannot delay location coverage, Game.log intake, OCR fallback or release reliability.

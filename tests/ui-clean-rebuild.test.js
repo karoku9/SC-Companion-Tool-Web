@@ -121,12 +121,12 @@ test('Fleet and Starmap use dedicated visual components', () => {
   assert.doesNotMatch(map, /getContext\('2d'\)|camera\.yaw|pointer\.down/);
 });
 
-test('UX Foundation follows delivered Fleet Loadouts and precedes Session History', () => {
+test('UX Foundation follows Fleet Loadouts and precedes Expanded Universe Data', () => {
   const roadmap = require('../roadmap.js');
   assert.equal(roadmap.currentVersion, '0.21');
   assert.equal(roadmap.releases.find((release) => release.version === '0.18').status, 'done');
   assert.equal(roadmap.releases.find((release) => release.version === '0.19').status, 'done');
   assert.equal(roadmap.releases.find((release) => release.version === '0.20').status, 'done');
   assert.match(roadmap.releases.find((release) => release.version === '0.21').title, /UX foundation/i);
-  assert.equal(roadmap.releases.find((release) => release.version === '0.22').title, 'Session history');
+  assert.equal(roadmap.releases.find((release) => release.version === '0.22').title, 'Expanded universe data');
 });

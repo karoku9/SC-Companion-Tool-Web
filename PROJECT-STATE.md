@@ -90,9 +90,29 @@ The interface does not treat every available datum as equally important. Detaile
 
 ## Next release
 
-**v0.22 — Session history**
+**v0.22 — Expanded universe data**
 
-- Archive completed sessions without mutating the active route.
-- Record planned and observed timings, incidents and corrections.
-- Allow a completed run to become a reusable session template.
-- Keep historical outcomes separate from static universe facts and future estimates.
+- Broaden the destination registry around real hauling mission coverage rather than adding locations arbitrarily.
+- Normalize system, body, orbit, landing-zone, station and facility hierarchy.
+- Keep operational navigation targets separate from display labels and searchable aliases.
+- Attach source authority, game version, review date and freshness to every maintained record.
+- Keep verified coordinates, project-derived anchors and schematic map placement visibly distinct.
+- Reject duplicate locations, orphaned hierarchy nodes and unresolved ambiguous aliases in automated tests.
+
+This release is a prerequisite for automated intake: Game.log and OCR cannot reliably generate routes until the location resolver recognizes the destinations that those sources contain.
+
+## Locked path to v1.0
+
+1. **v0.22 — Expanded universe data.** Build the complete, sourced resolver foundation.
+2. **v0.23 — Game.log assisted intake.** Treat logs as the primary automated source, preserve event provenance and require review before replacing a route.
+3. **v0.24 — OCR assisted intake.** Add screenshots as a secondary fallback through the same validation pipeline.
+4. **v0.25 — Release hardening.** Add backup, migrations, recovery, performance, accessibility and cross-browser verification.
+5. **v1.0 — Core companion release.** Stabilize the full mission-to-execution workflow.
+
+## Deferred until after v1.0
+
+- Session history and reusable completed-run templates.
+- Companion pairing and remote route controls.
+- Commodity trading and route-compatible spare-capacity suggestions.
+
+These features remain valuable, but they must not delay the sourced location model, Game.log intake, OCR fallback or release reliability.

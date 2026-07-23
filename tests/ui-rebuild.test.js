@@ -76,7 +76,7 @@ test('navigation continues using the canonical SVG icon family', () => {
   assert.match(shell, /SCCompanionMfdIcons/);
 });
 
-test('UX Foundation and Starmap 2.0 follow delivered Fleet Loadouts', () => {
+test('UX Foundation and Starmap 2.0 precede Expanded Universe Data', () => {
   const roadmap = require('../roadmap.js');
   const app = read('app.js');
   const map = read('starmap-view.js');
@@ -85,7 +85,7 @@ test('UX Foundation and Starmap 2.0 follow delivered Fleet Loadouts', () => {
   assert.equal(roadmap.releases.find((release) => release.version === '0.19').status, 'done');
   assert.equal(roadmap.releases.find((release) => release.version === '0.20').status, 'done');
   assert.match(roadmap.releases.find((release) => release.version === '0.21').title, /UX foundation/i);
-  assert.match(roadmap.releases.find((release) => release.version === '0.22').title, /Session history/i);
+  assert.match(roadmap.releases.find((release) => release.version === '0.22').title, /Expanded universe data/i);
   assert.match(app, /fleet-estimate-adapter\.js/);
   assert.match(app, /fleet-loadouts-view\.js/);
   assert.match(map, /data-map-mode="route"/);

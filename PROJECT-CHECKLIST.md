@@ -103,11 +103,62 @@
 - [x] Inspect generated desktop, tablet and mobile screenshots before merge.
 - [x] Confirm route selection, network selection and Open system tasks in Chromium before merge.
 
-## Repository cleanup
+## v0.22 expanded universe data
 
-- [ ] Remove legacy CSS and view files in a dedicated reference-cleanup change after confirming no documentation or historical test still links to them.
+- [ ] Define the canonical location record and hierarchy contracts before expanding the dataset.
+- [ ] Inventory hauling destinations currently encountered in real mission text and logs.
+- [ ] Add searchable aliases while keeping the in-game navigation target explicit.
+- [ ] Expand Stanton, Pyro and Nyx destination coverage around hauling use cases.
+- [ ] Attach source authority, game version, review date and freshness state to maintained records.
+- [ ] Keep verified coordinates, derived distance anchors and schematic map placement separate.
+- [ ] Validate duplicate IDs, duplicate aliases, orphaned hierarchy nodes and ambiguous matches.
+- [ ] Exercise representative expanded-location missions through parser, Planner, Operations and Starmap.
+- [ ] Inspect dense-map desktop, tablet and mobile screenshots before merge.
 
-## Later
+## v0.23 Game.log assisted intake
 
+- [ ] Define an opt-in local Game.log import boundary with no silent file access.
+- [ ] Parse mission and contract events independently from UI wording.
+- [ ] Preserve raw event lines, timestamps and source-file identity.
+- [ ] Support incremental imports without duplicating previously processed events.
+- [ ] Reconstruct partial mission state while marking missing fields as unresolved.
+- [ ] Send extracted missions through the existing validation and correction flow.
+- [ ] Require explicit confirmation before replacing the active route.
+- [ ] Add replay fixtures from real and truncated logs.
+
+## v0.24 OCR assisted intake
+
+- [ ] Accept screenshots and cropped mission images as a secondary import path.
+- [ ] Extract mission title, action, location and cargo fields with independent confidence.
+- [ ] Preserve source-image references and extracted text for review.
+- [ ] Reuse the existing ambiguity, custom-location and stale-review safeguards.
+- [ ] Prevent OCR output from bypassing validation or overwriting a route automatically.
+- [ ] Add desktop and mobile correction workflows for low-confidence OCR fields.
+
+## v0.25 release hardening
+
+- [ ] Add versioned full and selective export, backup and restore.
+- [ ] Add explicit, tested migrations for every persisted data model.
+- [ ] Preserve a recovery snapshot before destructive migration or import.
+- [ ] Provide a recoverable error state for corrupt or partially incompatible local data.
+- [ ] Test large location registries, long routes and many saved ships/loadouts.
+- [ ] Verify Chromium, Firefox and WebKit behaviour where supported.
+- [ ] Verify offline/static hosting, refresh during an active session and direct hash navigation.
+- [ ] Complete keyboard, screen-reader, contrast, 200% zoom and reduced-motion coverage.
+- [ ] Remove obsolete runtime files only after dependency and historical-reference checks.
+- [ ] Complete the release checklist and user-facing documentation.
+
+## v1.0 core companion release
+
+- [ ] Confirm manual, Game.log and OCR intake all converge on one validation model.
+- [ ] Confirm sourced location resolution across the supported hauling workflow.
+- [ ] Confirm route, cargo and Operations state survive refresh and supported upgrades.
+- [ ] Document privacy, source, estimate and unsupported-data boundaries.
+- [ ] Publish a stable local-first build with tested backup and recovery.
+
+## Deferred until after v1.0
+
+- [ ] Session history and reusable completed-run templates.
+- [ ] Companion pairing and remote route controls.
+- [ ] Commodity trading and route-compatible spare-capacity suggestions.
 - [ ] Additional manufacturer MFD themes using the same semantic components.
-- [ ] Expanded universe data and assisted intake.
