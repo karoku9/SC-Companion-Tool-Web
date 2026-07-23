@@ -68,12 +68,19 @@ jobs:
           node --test tests/workspace-consolidation.test.js
       - name: Test any additional suites
         run: |
+          mkdir -p ui-smoke-artifacts
+          : > ui-smoke-artifacts/additional-tests.log
+          result=0
           for file in tests/*.test.js; do
             case "$file" in
               tests/checkpoint2.test.js|tests/checkpoint3.test.js|tests/locations.test.js|tests/missions.test.js|tests/roadmap.test.js|tests/starmap.test.js|tests/product-shell.test.js|tests/cargo-state.test.js|tests/cargo-corrections.test.js|tests/route-corrections.test.js|tests/route-planner.test.js|tests/cargo-zone-model.test.js|tests/workspace-consolidation.test.js|tests/ui-clean-rebuild.test.js|tests/ui-rebuild.test.js|tests/design-system.test.js|tests/mission-validation.test.js|tests/location-context.test.js|tests/fleet-loadouts.test.js|tests/interstellar-navigation.test.js|tests/cargo-capacity.test.js|tests/ux-hierarchy.test.js|tests/planner.test.js) ;;
-              *) node --test "$file" ;;
+              *)
+                echo "===== $file =====" | tee -a ui-smoke-artifacts/additional-tests.log
+                node --test "$file" 2>&1 | tee -a ui-smoke-artifacts/additional-tests.log || result=1
+                ;;
             esac
           done
+          exit "$result"
       - name: Test mission parsing
         run: node --test --test-name-pattern="mission text" tests/planner.test.js
       - name: Test route grouping
