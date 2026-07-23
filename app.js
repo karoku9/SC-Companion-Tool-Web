@@ -80,6 +80,7 @@
 (function loadApplicationRuntimes() {
   import('./fleet-loadouts.js')
     .then(() => import('./game-log-intake.js'))
+    .then(() => import('./game-log-intake-correlation.js'))
     .then(() => import('./official-universe-data.js'))
     .then(() => import('./navigation-estimates.js'))
     .then(() => import('./location-context.js'))
