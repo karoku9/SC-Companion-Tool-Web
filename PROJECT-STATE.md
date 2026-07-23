@@ -2,9 +2,9 @@
 
 ## Current release
 
-**v0.22 — Expanded Universe Data**
+**v0.22.1 — Expanded Universe Data with Complete Location Intel**
 
-The application now resolves common hauling destinations through one sourced, versioned location registry before automated Game.log intake is introduced. Mission text, Location Context, navigation estimates and Starmap anchors consume the same operational destination IDs instead of maintaining separate partial lists.
+The application resolves the supported hauling destinations through one sourced, versioned location registry and now provides practical facility and static-risk intelligence for every operational destination in that registry. Mission text, Location Context, navigation estimates and Starmap anchors consume the same destination IDs before Game.log intake is introduced.
 
 ## Active universe registry
 
@@ -18,12 +18,23 @@ The application now resolves common hauling destinations through one sourced, ve
 
 ## Provenance and geometry boundary
 
-- Every maintained record carries source IDs, source authority, game version and review date.
-- Official RSI references and reviewed community game-data records remain distinguishable.
+- Every maintained location record carries source IDs, source authority, game version and review date.
+- Official RSI references, reviewed community location pages and unpacked game-data records remain distinguishable.
 - Physical body mappings, parent-relative offsets, Lagrange anchors and gateway anchors carry explicit geometry statuses.
 - Schematic anchors support route comparison and map layout; they are never presented as verified physical coordinates.
-- Registry presence does not imply live shard, traffic, security, service or market telemetry.
-- Community-backed destinations receive source ledger entries, but facility services remain unavailable until a reviewed service profile exists.
+- Facility profiles and risk guidance are static reviewed records, not current shard telemetry.
+- Registry presence does not imply current traffic, hostile-player activity, market stock or service uptime.
+
+## Complete Location Intel contract
+
+- All 34 operational destinations expose a reviewed profile.
+- Every profile answers hangars or pads, fuel/repair/rearm, food, medical care, habitation, transit, cargo services, refinery, ships or rentals, ground vehicles, commodity trade and unregulated trade.
+- Status is explicit: direct availability, local transfer, limited, unregulated, not available, unverified or unavailable data.
+- Risk is destination-specific and separate from onboard-cargo exposure.
+- Static risk includes jurisdiction, station protection or armistice context, communication coverage and practical factors.
+- City spaceports, planetary orbitals, Lagrange rest stops, gateway chokepoints, Grim HEX, Pyro stations and Levski use distinct profiles.
+- Location Intel begins with an at-a-glance row for risk, fuel/repair, food/drink and medical care.
+- The complete dossier remains responsive and source-labelled on desktop and mobile.
 
 ## Validation contract
 
@@ -32,8 +43,10 @@ The application now resolves common hauling destinations through one sourced, ve
 - Every operational destination must expose a navigation target and finite Starmap/distance coordinates.
 - Exact operational aliases must not resolve ambiguously.
 - Supported aliases must pass through the existing mission parser without becoming custom locations.
-- Browser coverage must exercise expanded destinations in Missions, Planner, Operations and Starmap.
-- Desktop, tablet and mobile screenshots must be inspected before merge.
+- Every supported destination must expose complete service and non-unknown static-risk coverage.
+- Browser coverage exercises Checkmate, ARC-L2, Grim HEX and Teasa as representative service/risk profiles.
+- Desktop and mobile screenshots must be inspected before merge.
+- Additional test-suite output is persisted in the workflow artifact for diagnosis.
 
 ## Active Starmap architecture
 
@@ -49,10 +62,11 @@ The application now resolves common hauling destinations through one sourced, ve
 ## Active Location Context architecture
 
 - `location-context.js` remains the shared context source for Operations, Planner and Location Intel.
-- Official facts, reviewed community facility records, derived cargo guidance and unavailable data remain separate.
+- Official facts, reviewed facility records, static destination risk, derived cargo guidance and unavailable data remain separate.
 - Freshness and source ledgers retain authority, link, kind and review date.
-- Cargo exposure remains categorical rather than pretending to be a universal risk score.
-- New registry locations do not receive invented services or traffic profiles.
+- Cargo exposure remains categorical rather than pretending to be a universal numerical risk score.
+- Cargo placement consumes the selected destination profile privately without exposing a fake precision score.
+- No view claims live piracy, player-density, traffic or security telemetry.
 
 ## Active Fleet and estimate architecture
 
