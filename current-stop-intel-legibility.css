@@ -1,0 +1,9 @@
+/* Current Stop operational text follows the global 12 px visible minimum. */
+.current-stop-intel-header small,
+.current-stop-intel-header > span,
+.current-stop-intel-card small,
+.current-stop-intel-card span,
+.current-stop-intel-boundary {
+  font-size: var(--ds-type-xs);
+  line-height: 1.4;
+}
