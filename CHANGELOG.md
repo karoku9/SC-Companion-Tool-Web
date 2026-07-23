@@ -13,6 +13,30 @@ The project was already under active development before this changelog was intro
 
 ---
 
+## [0.22.1] - 2026-07-23
+
+### Added
+- Complete reviewed Location Intel profiles for all 34 currently supported operational destinations.
+- At-a-glance answers for static risk, fuel/repair, food/drink and medical care.
+- Twelve service categories covering landing support, habitation, cargo, refinery, rentals, vehicles and regulated or unregulated trade.
+- Static per-location risk profiles with jurisdiction, protection or armistice context, communication coverage and practical risk factors.
+- Distinct profiles for controlled city spaceports, planetary orbital hubs, Lagrange rest stops, gateway chokepoints, Grim HEX, Pyro stations and Levski.
+- Reviewed community-location and unpacked game-data provenance in the source ledger.
+- Persistent diagnostic logs for test suites executed through the additional-suite workflow.
+
+### Changed
+- Cargo exposure now consumes the selected destination’s reviewed static risk instead of relying only on its system.
+- Location type and facility class are displayed separately.
+- Arrival modelling now supports Lagrange stations, gateway stations and asteroid stations.
+- Mobile Location Intel puts the four essential operational answers before the full dossier.
+
+### Fixed
+- Supported destinations no longer show generic missing-data cards for food or landing services.
+- Grim HEX and Pyro stations no longer inherit the same generic system-level warning as every other location.
+- Service availability no longer implies safety: facility records and danger guidance remain separate.
+
+---
+
 ## [0.22.0] - 2026-07-23
 
 ### Added
