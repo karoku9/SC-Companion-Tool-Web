@@ -135,6 +135,20 @@
 - [x] Inspect station, outpost, distribution-center and mobile screenshots before merge.
 - [x] Persist additional-suite diagnostics in the workflow artifact.
 
+## v0.22.2 Current Stop operational intel
+
+- [x] Use the empty Current Stop space for destination intelligence without weakening cargo-action hierarchy.
+- [x] Show inbound travel distance, jump count and min/max ETA from the previous active stop.
+- [x] Show a separate final-approach and terminal-access range.
+- [x] Show destination-specific risk, jurisdiction, protection or armistice and communication coverage.
+- [x] Show hangar or pad, fuel/repair, food/drink and medical availability inline.
+- [x] Reuse the canonical Location Context service and risk records rather than duplicating destination data.
+- [x] Support orbital stations, landing zones, gateways, asteroid stations, outposts and distribution centers.
+- [x] Keep custom and unavailable destinations explicit instead of inheriting nearby data.
+- [x] Add static contracts for the seven operational cards and their data boundaries.
+- [x] Inspect Checkmate Current Stop on desktop and mobile before merge.
+- [x] Confirm no horizontal overflow and no regression to Operations completion controls in Chromium.
+
 ## v0.23 Game.log assisted intake
 
 - [ ] Define an opt-in local Game.log import boundary with no silent file access.

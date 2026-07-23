@@ -9,8 +9,9 @@
     const routeCorrections = window.SCCompanionRouteCorrections;
     const routeProgress = window.SCCompanionRouteProgress;
     const navigation = window.SCCompanionNavigationEstimates;
+    const arrival = window.SCCompanionArrivalEstimates;
     const locationContext = window.SCCompanionLocationContext;
-    if (!store || !routeCorrections || !routeProgress || !navigation || !locationContext) return false;
+    if (!store || !routeCorrections || !routeProgress || !navigation || !arrival || !locationContext) return false;
 
     const stopName = document.querySelector('#current-stop-name');
     const operations = document.querySelector('#current-stop-operations');
@@ -21,7 +22,26 @@
     const currentIndex = document.querySelector('#ops-current-index');
     const progressLabel = document.querySelector('#route-progress-label');
     if (!stopName || !operations || !stopList || !complete || !previous) return false;
+
+    let currentStopIntel = document.querySelector('#current-stop-intel');
+    if (!currentStopIntel) {
+      currentStopIntel = document.createElement('section');
+      currentStopIntel.id = 'current-stop-intel';
+      currentStopIntel.className = 'current-stop-intel';
+      currentStopIntel.setAttribute('aria-label', 'Current destination operational information');
+      operations.insertAdjacentElement('afterend', currentStopIntel);
+    }
+
     initialized = true;
+
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
 
     function operationAction(operation) {
       if (operation.type === 'delivery') return 'DROP OFF';
@@ -77,11 +97,16 @@
       return Number(ship?.quantumTimeFactor ?? 1);
     }
 
-    function legSummary(previousStop, stop, state) {
-      if (!previousStop || previousStop.skipped || stop.skipped) return '';
-      const estimate = navigation.estimateLeg(previousStop.locationId, stop.locationId, {
+    function legEstimate(previousStop, stop, state) {
+      if (!previousStop || previousStop.skipped || stop.skipped) return null;
+      return navigation.estimateLeg(previousStop.locationId, stop.locationId, {
         quantumTimeFactor: activeQuantumFactor(state)
       });
+    }
+
+    function legSummary(previousStop, stop, state) {
+      const estimate = legEstimate(previousStop, stop, state);
+      if (!previousStop || previousStop.skipped || stop.skipped) return '';
       if (!estimate) return 'Navigation estimate unavailable';
       const jumps = estimate.jumpCount ? ` · ${estimate.jumpCount} jump${estimate.jumpCount === 1 ? '' : 's'}` : '';
       return `${estimate.distanceLabel} · ${estimate.minMinutes}–${estimate.maxMinutes} min${jumps}`;
@@ -91,6 +116,83 @@
       const context = locationContext.buildContext(stop.locationId, { onboardScu: 0, label: stop.locationLabel });
       const system = context.system?.name ?? 'System unavailable';
       return `${system} · ${context.confidence.label} · ${context.freshness.label}`;
+    }
+
+    function statusLabel(status) {
+      const labels = {
+        available: 'Available',
+        'local-transfer': 'Local transfer',
+        limited: 'Limited',
+        unregulated: 'Unregulated',
+        'not-available': 'Not available',
+        unverified: 'Unverified',
+        'unavailable-data': 'No reviewed data'
+      };
+      return labels[status] ?? String(status ?? 'unknown').replace(/-/g, ' ');
+    }
+
+    function arrivalPreset(location) {
+      if (!location) return null;
+      if (['orbital-station', 'lagrange-station', 'jump-gateway', 'asteroid-station'].includes(location.type)) return 'orbital-station';
+      if (['spaceport', 'landing-zone'].includes(location.type)) return 'landing-zone';
+      if (['outpost', 'distribution-center'].includes(location.type)) return 'outpost';
+      return null;
+    }
+
+    function service(context, id) {
+      return context.services.find((item) => item.id === id) ?? {
+        status: 'unavailable-data',
+        detail: 'No reviewed service record is available for this destination.'
+      };
+    }
+
+    function intelCard(id, label, value, detail, state = 'neutral') {
+      return `<article class="current-stop-intel-card" data-intel="${escapeHtml(id)}" data-state="${escapeHtml(state)}" title="${escapeHtml(detail)}">
+        <small>${escapeHtml(label)}</small>
+        <strong>${escapeHtml(value)}</strong>
+        <span>${escapeHtml(detail)}</span>
+      </article>`;
+    }
+
+    function renderCurrentStopIntel(current, inboundFrom, state) {
+      const context = locationContext.buildContext(current.locationId, { onboardScu: 0, label: current.locationLabel });
+      const travel = inboundFrom ? legEstimate(inboundFrom, current, state) : null;
+      const preset = arrivalPreset(context.location);
+      const traffic = context.profile?.traffic?.level === 'volatile' ? 'high' : (context.profile?.traffic?.level ?? 'normal');
+      const approach = preset ? arrival.estimateArrival(preset, traffic) : null;
+      const hangars = service(context, 'hangars');
+      const fuel = service(context, 'landing-services');
+      const food = service(context, 'food');
+      const medical = service(context, 'medical');
+      const travelValue = inboundFrom
+        ? (travel ? `${travel.minMinutes}–${travel.maxMinutes} min` : 'Unavailable')
+        : 'Start point';
+      const travelDetail = inboundFrom
+        ? (travel ? `${travel.distanceLabel}${travel.jumpCount ? ` · ${travel.jumpCount} jump${travel.jumpCount === 1 ? '' : 's'}` : ''}` : `No route estimate from ${inboundFrom.locationLabel}.`)
+        : 'No inbound leg precedes this stop.';
+      const approachValue = approach ? `${approach.minMinutes}–${approach.maxMinutes} min` : 'Unavailable';
+      const approachDetail = approach
+        ? `Indicative final approach, landing and access time · ${String(traffic).toUpperCase()} traffic model.`
+        : `No reviewed arrival model for ${context.location?.type?.replace(/-/g, ' ') ?? 'this location type'}.`;
+      const riskDetail = `${context.risk.jurisdiction} · Protection: ${context.risk.armistice} · Comms: ${context.risk.commArray}`;
+
+      currentStopIntel.hidden = false;
+      currentStopIntel.dataset.risk = context.risk.level;
+      currentStopIntel.innerHTML = `
+        <header class="current-stop-intel-header">
+          <div><small>ARRIVAL / LOCATION INTEL</small><strong>Before you land</strong></div>
+          <span>${escapeHtml(context.confidence.label)} · ${escapeHtml(context.freshness.label)}</span>
+        </header>
+        <div class="current-stop-intel-grid">
+          ${intelCard('travel', 'TRAVEL ETA', travelValue, travelDetail, travel ? 'derived' : 'unavailable-data')}
+          ${intelCard('approach', 'FINAL APPROACH', approachValue, approachDetail, approach ? 'derived' : 'unavailable-data')}
+          ${intelCard('risk', 'SECURITY / RISK', context.risk.label, riskDetail, context.risk.level)}
+          ${intelCard('hangars', 'HANGAR / PAD', statusLabel(hangars.status), hangars.detail, hangars.status)}
+          ${intelCard('landing-services', 'FUEL / REPAIR', statusLabel(fuel.status), fuel.detail, fuel.status)}
+          ${intelCard('food', 'FOOD / DRINK', statusLabel(food.status), food.detail, food.status)}
+          ${intelCard('medical', 'MEDICAL', statusLabel(medical.status), medical.detail, medical.status)}
+        </div>
+        <p class="current-stop-intel-boundary">Static reviewed facility and security guidance; travel and approach times are derived estimates, not live shard telemetry.</p>`;
     }
 
     function render(state) {
@@ -105,6 +207,8 @@
         complete.disabled = true;
         previous.disabled = true;
         operations.innerHTML = '<div class="tool-empty">No live hauling instructions.</div>';
+        currentStopIntel.hidden = true;
+        currentStopIntel.replaceChildren();
         return;
       }
 
@@ -140,14 +244,19 @@
         stateLabel.textContent = 'COMPLETE';
         complete.disabled = true;
         operations.innerHTML = '<div class="tool-empty">No cargo actions remain on the active route.</div>';
+        currentStopIntel.hidden = true;
+        currentStopIntel.replaceChildren();
         return;
       }
 
       const current = progress.currentStop;
+      const activeRouteIndex = route.stops.findIndex((stop) => String(stop.id) === String(current.id));
+      const inboundFrom = activeRouteIndex > 0 ? route.stops[activeRouteIndex - 1] : null;
       stopName.textContent = current.locationLabel;
       stateLabel.textContent = current.operations.some((operation) => operation.type === 'delivery') ? 'DROP-OFF' : 'PICKUP';
       current.operations.forEach((operation) => operations.append(renderOperation(operation)));
       if (!current.operations.length) operations.innerHTML = '<div class="tool-empty">No cargo movement at this stop.</div>';
+      renderCurrentStopIntel(current, inboundFrom, state);
       complete.disabled = false;
       window.dispatchEvent(new CustomEvent('sc:current-stop-location', { detail: { locationId: current.locationId } }));
     }
