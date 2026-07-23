@@ -105,7 +105,7 @@ test('Replay protection rejects already processed exact log lines', () => {
   assert.equal(replay.events.length, 1);
 });
 
-test('Game.log UI uses explicit file access, incremental offsets and the existing mission review', () => {
+test('Game.log UI uses explicit file access, stable incremental generations and existing mission review', () => {
   const view = readProject('game-log-intake-view.js');
   const store = readProject('session-store.js');
   const css = readProject('game-log-intake.css');
@@ -114,8 +114,11 @@ test('Game.log UI uses explicit file access, incremental offsets and the existin
   assert.match(view, /showOpenFilePicker/);
   assert.match(view, /file\.slice\(startOffset\)/);
   assert.match(view, /previousSource\.offset/);
+  assert.match(view, /HEAD_PROBE_BYTES = 4096/);
+  assert.match(view, /stableHeadComparable/);
+  assert.match(view, /file\.size < previousSource\.offset \|\| headChanged/);
+  assert.match(view, /generationNumber/);
   assert.match(view, /processedIds/);
-  assert.match(view, /rotationCount/);
   assert.match(view, /rawLine/);
   assert.match(view, /form\.requestSubmit\(\)/);
   assert.match(view, /never replaces the active route automatically/);
