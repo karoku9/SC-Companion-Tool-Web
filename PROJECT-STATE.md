@@ -2,9 +2,58 @@
 
 ## Current release
 
-**v0.22.1 — Expanded Universe Data with Complete Location Intel**
+**v0.23 — Game.log Assisted Intake**
 
-The application resolves ordinary hauling stations and surface facilities through one sourced, versioned location model and provides practical facility and static-risk intelligence for every supported operational destination. Mission text, Location Context, navigation estimates and Starmap anchors consume the same destination IDs before Game.log intake is introduced.
+The application can read an explicitly selected local `Game.log`, retain incremental import state, expose complete and partial mission-bearing events with raw provenance, and send supported extracted objectives through the existing mission review before any route can be generated.
+
+## Game.log access boundary
+
+- The static web application never claims silent access to the Star Citizen installation or arbitrary local files.
+- The user selects `Game.log` explicitly through the File System Access API where supported or a standard file input fallback.
+- A granted file handle exists only in page memory; after reload the user must select or authorize the file again.
+- Previously extracted candidate events can remain in local browser state without retaining filesystem permission.
+- The standard file-input fallback requires reselection before reading newer content.
+- Only mission-bearing candidate lines are retained, bounded to the latest 500 events and 4,000 processed event IDs.
+
+## Incremental import contract
+
+- Every source generation stores its filename, stable prefix hash, size, modification time, byte offset, completed-line count, import time and generation number.
+- Reads begin from the last complete byte offset instead of reparsing the whole file.
+- An unfinished final line is not parsed and remains pending until a later refresh completes it.
+- First import scans at most the newest 24 MiB and aligns to a full line before parsing.
+- A fixed 4 KiB prefix avoids treating ordinary appends to a small growing log as a new source.
+- A smaller-than-offset file or changed stable prefix creates an isolated truncation/rotation generation.
+- Event identity includes the source generation and exact raw line.
+- Duplicate or replayed event IDs are rejected before storage and draft reconstruction.
+
+## Event and provenance model
+
+- `game-log-intake.js` parses timestamps, notification envelopes, structured key/value fields, contract identifiers, titles, actions, registered locations, SCU and commodity candidates.
+- `game-log-intake-correlation.js` normalizes multi-word action phrases and may associate a complete objective with the nearest preceding contract/title context from the same source within a bounded line distance.
+- Correlation is marked as derived context and never upgrades a missing action, location, quantity or commodity into a complete event.
+- Every retained event preserves source filename, source generation, line number, byte offset, timestamp, raw line and extracted message.
+- Complete events require action, a registered location, positive SCU and a commodity.
+- Partial events remain visible with unresolved fields and can be copied as raw diagnostic lines.
+- Unrelated tutorial and ordinary log lines are ignored rather than shown as missions.
+
+## Mission review integration
+
+- Supported complete events become compact mission-text drafts grouped by explicit contract ID, title or a clearly labelled unidentified import batch.
+- Duplicate objective candidates inside a draft are collapsed.
+- The user must choose **Load extracted draft into review** before the text enters mission validation.
+- Existing per-field action, location and cargo checks remain authoritative.
+- Ambiguous and unknown locations still require correction or explicit custom-location confirmation.
+- The active route is never replaced by file import, event parsing, correlation or draft loading.
+- Route replacement occurs only after the existing explicit validated-session generation action.
+- Stored Game.log draft metadata retains the event IDs that produced it, linking the review source back to local raw events.
+
+## Empirical format boundary
+
+- The public fixture uses an `UpdateNotificationItem` envelope observed in real `Game.log` output.
+- Hauling payload wording inside the fixture is synthetic because no user-provided Alpha 4.9 mission-bearing log was available during implementation.
+- Structured key/value and natural-language extraction therefore represent supported parser patterns, not a claim that every current contract event uses those exact strings.
+- Unknown real-world variants remain unresolved and source-visible instead of receiving fabricated SCU, commodity, destination or contract information.
+- The **Copy unresolved lines** path exists specifically to improve format coverage from actual logs without weakening review safeguards.
 
 ## Active universe registry
 
@@ -13,120 +62,62 @@ The application resolves ordinary hauling stations and surface facilities throug
 - The combined snapshot contains 130 normalized records and 84 operational destinations: 80 in Stanton, 3 in Pyro and 1 in Nyx.
 - The original 34 operational destinations cover spaceports, planetary orbitals, Grim HEX, Lagrange rest stops, gateways, Pyro stations and Levski.
 - The field extension adds 43 mining, research, agricultural or industrial outposts and 7 distribution centers or logistics complexes.
-- Operational display labels remain separate from in-game navigation targets and searchable aliases.
-- Search normalization accepts punctuation, spacing and compact variants such as `ARC-L2`, `ARC L2`, `NBIS`, `HDMS Bezdek`, `Buds Growery` and `S4LD01`.
-- Parent chains preserve system, planet or moon, landing zone, station, outpost and facility context.
+- Mission validation and Game.log extraction resolve destination text through the same operational IDs, aliases and navigation targets.
 
-## Provenance and geometry boundary
+## Location and Operations context
 
-- Every maintained location record carries source IDs, source authority, game version and review date.
-- Official RSI references, reviewed community location pages and unpacked game-data records remain distinguishable.
-- Physical body mappings, parent-relative offsets, Lagrange anchors, gateway anchors and surface anchors carry explicit geometry statuses.
-- Surface-facility geometry is schematic and grouped by verified parent body; it is not presented as physical longitude or latitude.
-- Facility profiles and risk guidance are static reviewed records, not current shard telemetry.
-- Registry presence does not imply current traffic, hostile-player activity, comm-array status, market stock or service uptime.
-
-## Complete Location Intel contract
-
-- All 84 operational destinations expose a reviewed service and static-risk profile.
+- All 84 operational destinations expose reviewed service and static-risk profiles.
 - Every profile answers hangars or pads, fuel/repair/rearm, food, medical care, habitation, transit, cargo services, refinery, ships or rentals, ground vehicles, commodity trade and unregulated trade.
-- Status is explicit: direct availability, local transfer, limited, unregulated, not available, unverified or unavailable data.
 - Risk is destination-specific and separate from onboard-cargo exposure.
-- Static risk includes jurisdiction, station or pad protection, communication coverage and practical factors.
-- City spaceports, planetary orbitals, Lagrange rest stops, gateway chokepoints, Grim HEX, Pyro stations, Levski, ordinary surface outposts, outlaw field sites and distribution centers use distinct profiles.
-- Location Intel begins with an at-a-glance row for risk, fuel/repair, food/drink and medical care.
-- Ordinary outposts do not masquerade as full stations: landing support, commodity terminals and vehicle pads can coexist with no food, clinic or habitation.
-- Distribution centers emphasize hangars and cargo operations while public amenities remain limited or unavailable.
-- The complete dossier remains responsive and source-labelled on desktop and mobile.
-
-## Current Stop operational-intel contract
-
-- Operations shows destination intelligence directly below the current cargo actions instead of requiring a workspace change.
-- The inbound leg displays derived distance, jump count and travel-time range from the previous active stop.
-- A separate final-approach range covers alignment, ATC, landing and terminal access for stations, landing zones, outposts and distribution centers.
-- Security displays the reviewed destination-specific risk plus jurisdiction, protection or armistice state and communication coverage.
-- Hangar or pad, fuel/repair, food/drink and medical answers reuse the same reviewed service records as full Location Intel.
-- Missing data remains explicit; a custom destination never inherits services or safety from a nearby registered location.
-- Travel and approach times remain derived ranges and the panel never claims live traffic, shard, piracy or service telemetry.
-- Desktop, narrow desktop and mobile layouts keep the operational cards readable without horizontal overflow.
-
-## Validation contract
-
-- Location IDs and source IDs must be unique.
-- Every parent, source and anchor body reference must resolve.
-- Every operational destination must expose a navigation target and finite Starmap/distance coordinates.
-- Exact operational aliases must not resolve ambiguously.
-- Supported aliases must pass through the existing mission parser without becoming custom locations.
-- Every supported destination must expose twelve service answers and non-unknown static-risk coverage.
-- Browser coverage exercises Checkmate, ARC-L2, Grim HEX, Teasa, HDMS-Bezdek, S4LD01 and Bud’s Growery.
-- Current Stop coverage must exercise inbound ETA, final approach, security, hangar/pad, fuel, food and medical cards.
-- Desktop and mobile screenshots must be inspected before merge.
-- Additional test-suite output is persisted in the workflow artifact for diagnosis.
+- Operations shows inbound travel range, final approach, risk, protection/comms, hangar/pad, fuel, food and medical information below current cargo actions.
+- Facility guidance and danger records remain static; they do not claim live shard, player, piracy, traffic, stock or service uptime.
 
 ## Active Starmap architecture
 
 - `starmap-data.js` derives systems, connections and operational anchors from the combined registry.
-- `starmap-view.js` owns the task-oriented Starmap interface and interaction state.
 - Itinerary, System and Network remain explicit navigation layers with separate purposes.
 - Selected stops, bodies and systems remain selected until another object is chosen.
 - Current, next and final route objectives remain visible in the map HUD.
-- Pan, wheel/button zoom, fit and center-current controls operate on the SVG view box.
-- Keyboard users can move with arrow keys, zoom with `+` and `-`, fit with `Home` and activate nodes with Enter or Space.
-- Desktop keeps persistent context; mobile uses a focused details dialog.
+- Pan, wheel/button zoom, fit, center-current and keyboard controls operate on the SVG view box.
 - Surface anchors support route estimates and stop placement but do not claim surveyed map coordinates.
-
-## Active Location Context architecture
-
-- `location-context.js` remains the shared context source for Operations, Planner and Location Intel.
-- `location-profiles.js` defines station and interstellar profiles; `location-field-profiles.js` extends them for surface facilities.
-- Official facts, reviewed facility records, static destination risk, derived cargo guidance and unavailable data remain separate.
-- Freshness and source ledgers retain authority, link, kind and review date.
-- Cargo exposure remains categorical rather than pretending to be a universal numerical risk score.
-- Cargo placement consumes the selected destination profile privately without exposing fake precision.
-- No view claims live piracy, player-density, traffic or security telemetry.
 
 ## Active Fleet and estimate architecture
 
 - `fleet-loadouts.js` remains the domain source for structured components, named loadouts, migration and derived ship performance.
 - Active quantum configuration feeds normal-space and interstellar estimates.
 - Active cargo and handling factors feed capacity and handling estimates.
-- `fleet-estimate-adapter.js` enriches the planner without replacing mission, dependency or capacity rules.
 - Jump tunnels remain separate from normal-space distance and are never converted into invented kilometres.
 
-## Mission validation and provenance
+## Validation contract
 
-- Mission intake remains review-first with independent field confidence.
-- Unknown locations require explicit correction or custom confirmation.
-- Original and reviewed text plus pickup/delivery line provenance remain stored.
-- Station and surface-facility aliases reuse the existing validation path rather than bypassing it.
+- Game.log parser tests cover unrelated notification rejection, exact raw provenance, complete/partial separation, multi-word actions, location resolution, context correlation and replay rejection.
+- Static interface contracts require explicit file selection, incremental offsets, stable source generations, rotation isolation, raw provenance and reuse of the mission review form.
+- Existing location, route, cargo, Fleet, Starmap, responsive and Chromium suites must remain green.
+- Missions desktop and mobile layouts must remain readable without horizontal overflow.
+- An actual Alpha 4.9 hauling `Game.log` remains the required empirical input for expanding known payload signatures beyond the documented parser boundary.
 
 ## Active interface architecture
 
-- One shell stylesheet: `ui-v2.css`, plus shared design-system and feature modules.
-- Six primary workspaces: Operations, Missions, Planner, Starmap, Fleet and Development.
-- Operations keeps the cargo action primary and now fills the remaining Current Stop space with arrival and facility intelligence.
-- Operations tools remain native compact views.
-- Fleet includes ship schematics, cargo-zone editing and structured loadouts.
-- Starmap remains two-dimensional, task-oriented and explicit about schematic geometry.
+- Six primary workspaces remain: Operations, Missions, Planner, Starmap, Fleet and Development.
+- Game.log intake is embedded in Missions instead of becoming a separate workspace.
+- The mission text editor remains available as the universal manual fallback.
+- Complete and partial events, raw provenance and the review handoff are responsive on desktop and mobile.
 - Drake remains a project-derived manufacturer theme, not an official CIG visual package.
 
 ## Next release
 
-**v0.23 — Game.log Assisted Intake**
+**v0.24 — OCR Assisted Intake**
 
-- Provide explicit, opt-in local Game.log selection; the web application must never claim silent filesystem access.
-- Parse mission and contract events incrementally while preserving raw event lines, timestamps and source-file identity.
-- Prevent duplicate and replayed events from creating duplicate missions.
-- Reconstruct partial mission state while marking unavailable fields unresolved.
-- Resolve extracted destinations through the v0.22 registry.
-- Send extracted missions through the existing validation and correction flow.
-- Require explicit confirmation before replacing the active route.
+- Accept screenshots and cropped mission images as a secondary import path.
+- Extract title, action, location and cargo fields with independent confidence.
+- Preserve source-image references and extracted text.
+- Reuse the existing ambiguity, custom-location, stale-review and explicit-generation safeguards.
+- Prevent OCR output from bypassing mission validation or replacing the active route automatically.
 
 ## Locked path to v1.0
 
-1. **v0.23 — Game.log assisted intake.** Primary automated source with event provenance and review.
-2. **v0.24 — OCR assisted intake.** Screenshot fallback through the same validation model.
-3. **v0.25 — Release hardening.** Backup, migrations, recovery, performance, accessibility and cross-browser verification.
-4. **v1.0 — Core companion release.** Stable mission-to-execution workflow.
+1. **v0.24 — OCR assisted intake.** Screenshot fallback through the same review model.
+2. **v0.25 — Release hardening.** Backup, migrations, recovery, performance, accessibility and cross-browser verification.
+3. **v1.0 — Core companion release.** Stable mission-to-execution workflow.
 
 Session history, companion pairing and commodity trading remain deferred until after v1.0.
