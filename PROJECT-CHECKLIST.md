@@ -117,8 +117,8 @@
 - [x] Reuse the existing parser and validation path for expanded destinations.
 - [x] Preserve unavailable facility data instead of inventing services for new locations.
 - [x] Add focused Node contracts for coverage, aliases, hierarchy, provenance and anchors.
-- [ ] Exercise representative expanded-location missions through Planner, Operations and Starmap in Chromium.
-- [ ] Inspect expanded Stanton desktop, tablet and mobile screenshots before merge.
+- [x] Exercise representative expanded-location missions through Planner, Operations and Starmap in Chromium.
+- [x] Inspect expanded Stanton desktop, tablet and mobile screenshots before merge.
 
 ## v0.23 Game.log assisted intake
 
