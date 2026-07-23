@@ -92,22 +92,24 @@ test('Starmap 2.0 keeps orientation, selection and camera controls explicit', ()
   assert.doesNotMatch(view, /if \(mode !== 'route'\).*mode = 'route'/s);
 });
 
-test('v0.23 Game.log intake follows delivered universe data and precedes OCR', () => {
+test('v0.24 OCR intake follows delivered universe and Game.log releases', () => {
   const universe = roadmap.releases.find((release) => release.version === '0.22');
   const gameLog = roadmap.releases.find((release) => release.version === '0.23');
   const ocr = roadmap.releases.find((release) => release.version === '0.24');
+  const hardening = roadmap.releases.find((release) => release.version === '0.25');
   assert.ok(universe);
   assert.equal(universe.status, 'done');
   assert.match(universe.title, /Expanded universe data/i);
   assert.ok(universe.changes.some((change) => /84 operational destinations/i.test(change)));
   assert.ok(universe.changes.some((change) => /surface.*outposts/i.test(change)));
   assert.ok(gameLog);
-  assert.equal(gameLog.status, 'current');
+  assert.equal(gameLog.status, 'done');
   assert.match(gameLog.title, /Game\.log assisted intake/i);
   assert.ok(gameLog.changes.some((change) => /raw line, timestamp, file/i.test(change)));
   assert.ok(gameLog.changes.some((change) => /mission validation/i.test(change)));
   assert.ok(ocr);
-  assert.equal(ocr.status, 'next');
-  assert.ok(ocr.changes.some((change) => /OCR/i.test(change)));
-  assert.ok(ocr.changes.some((change) => /validation pipeline/i.test(change)));
+  assert.equal(ocr.status, 'current');
+  assert.ok(ocr.changes.some((change) => /Tesseract\.js 7/i.test(change)));
+  assert.ok(ocr.changes.some((change) => /mission validation/i.test(change)));
+  assert.equal(hardening.status, 'next');
 });
