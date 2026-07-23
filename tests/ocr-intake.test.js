@@ -88,15 +88,23 @@ test('OCR review serialization accepts explicit corrections without bypassing va
   assert.match(corrected, /deliver Teasa Spaceport 2scu medical-supplies/);
 });
 
+test('derived From and To labels are used only when explicit action headings are absent', () => {
+  const report = intake.inspectOcrText('Contract: Direct labels\nFrom: ARC-L2\n2 SCU Titanium\nTo: Teasa\n2 SCU Titanium', locationModel, { sourceName: 'labels.png' });
+  assert.equal(report.objectives.length, 2);
+  assert.equal(report.objectives[0].action.value, 'pickup');
+  assert.equal(report.objectives[1].action.value, 'deliver');
+});
+
 test('OCR runtime stays local-review-first and pins its browser OCR dependency', () => {
   const view = readProject('ocr-intake-view.js');
   const css = readProject('ocr-intake.css');
   const app = readProject('app.js');
-  assert.match(view, /tesseract\.js@7\.0\.0/);
+  assert.match(view, /TESSERACT_VERSION = '7\.0\.0'/);
+  assert.match(view, /tesseract\.js@\$\{TESSERACT_VERSION\}/);
   assert.match(view, /createWorker\('eng'/);
   assert.match(view, /Load OCR draft into review/);
   assert.match(view, /form\.requestSubmit\(\)/);
-  assert.match(view, /never replaces the active route/i);
+  assert.match(view, /Nothing is sent to route generation until the draft passes the normal mission review/);
   assert.match(css, /\.ocr-intake/);
   assert.match(app, /ocr-intake\.js/);
   assert.match(app, /ocr-intake-view\.js/);
