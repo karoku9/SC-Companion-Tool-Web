@@ -10,11 +10,11 @@ function read(file) {
 }
 
 function cleanCss() {
-  return ['design-system-legibility.css', 'mission-validation.css', 'location-context.css', 'location-context-adapters.css', 'fleet-loadouts.css', 'starmap-v2.css', 'ui-v2-shell.css', 'ui-v2-operations.css', 'ui-v2-workspaces.css', 'ui-v2-responsive.css'].map(read).join('\n');
+  return ['design-system-legibility.css', 'mission-validation.css', 'game-log-intake.css', 'location-context.css', 'location-context-adapters.css', 'fleet-loadouts.css', 'starmap-v2.css', 'ui-v2-shell.css', 'ui-v2-operations.css', 'ui-v2-workspaces.css', 'ui-v2-responsive.css'].map(read).join('\n');
 }
 
 test('clean UI scripts remain valid JavaScript', () => {
-  ['app.js', 'ui-v2.js', 'ui-v2-operations.js', 'ui-v2-shell.js', 'ui-v2-accessibility.js', 'product-shell.js', 'mission-validation.js', 'mission-view.js', 'location-context.js', 'location-context-planner.js', 'location-intel-view.js', 'fleet-loadouts.js', 'fleet-estimate-adapter.js', 'fleet-loadouts-view.js', 'route-view.js', 'hangar-view.js', 'starmap-view.js'].forEach((file) => {
+  ['app.js', 'ui-v2.js', 'ui-v2-operations.js', 'ui-v2-shell.js', 'ui-v2-accessibility.js', 'product-shell.js', 'mission-validation.js', 'mission-view.js', 'game-log-intake.js', 'game-log-intake-correlation.js', 'game-log-intake-view.js', 'location-context.js', 'location-context-planner.js', 'location-intel-view.js', 'fleet-loadouts.js', 'fleet-estimate-adapter.js', 'fleet-loadouts-view.js', 'route-view.js', 'hangar-view.js', 'starmap-view.js'].forEach((file) => {
     assert.doesNotThrow(() => new Function(read(file)), `${file} contains invalid JavaScript`);
   });
 });
@@ -25,6 +25,7 @@ test('the application loads one design system and one page-layout entry', () => 
   assert.match(html, /href="design-system\.css"/);
   assert.match(html, /href="ui-v2\.css"/);
   assert.match(entry, /mission-validation\.css/);
+  assert.match(entry, /game-log-intake\.css/);
   assert.match(entry, /location-context\.css/);
   assert.match(entry, /location-context-adapters\.css/);
   assert.match(entry, /fleet-loadouts\.css/);
@@ -72,10 +73,11 @@ test('visual hardening provides deterministic focus and responsive contracts', (
   assert.match(responsive, /product-navigation \.nav-copy \{ display: none/);
 });
 
-test('Mission Validation adds a review gate without replacing the clean shell', () => {
+test('Mission Validation and Game.log intake share one explicit review gate', () => {
   const view = read('mission-view.js');
   const validator = read('mission-validation.js');
   const css = read('mission-validation.css');
+  const gameLog = read('game-log-intake-view.js');
   assert.match(view, /Review contracts/);
   assert.match(view, /Generate validated session/);
   assert.match(view, /confirmedCustomLocations/);
@@ -83,6 +85,9 @@ test('Mission Validation adds a review gate without replacing the clean shell', 
   assert.match(validator, /unverified-location/);
   assert.match(validator, /unknown-action/);
   assert.match(css, /mission-review-row/);
+  assert.match(gameLog, /Load extracted draft into review/);
+  assert.match(gameLog, /form\.requestSubmit\(\)/);
+  assert.match(gameLog, /never replaces the active route automatically/);
 });
 
 test('Location Context replaces string risk guesses with shared sourced guidance', () => {
@@ -121,12 +126,13 @@ test('Fleet and Starmap use dedicated visual components', () => {
   assert.doesNotMatch(map, /getContext\('2d'\)|camera\.yaw|pointer\.down/);
 });
 
-test('Expanded Universe Data follows the delivered UX foundation', () => {
+test('Game.log assisted intake follows the delivered universe foundation', () => {
   const roadmap = require('../roadmap.js');
-  assert.equal(roadmap.currentVersion, '0.22');
+  assert.equal(roadmap.currentVersion, '0.23');
   assert.equal(roadmap.releases.find((release) => release.version === '0.20').status, 'done');
   assert.equal(roadmap.releases.find((release) => release.version === '0.21').status, 'done');
-  assert.equal(roadmap.releases.find((release) => release.version === '0.22').status, 'current');
+  assert.equal(roadmap.releases.find((release) => release.version === '0.22').status, 'done');
   assert.match(roadmap.releases.find((release) => release.version === '0.22').title, /Expanded universe data/i);
-  assert.equal(roadmap.releases.find((release) => release.version === '0.23').status, 'next');
+  assert.equal(roadmap.releases.find((release) => release.version === '0.23').status, 'current');
+  assert.equal(roadmap.releases.find((release) => release.version === '0.24').status, 'next');
 });
