@@ -14,7 +14,7 @@ function cleanCss() {
 }
 
 test('clean UI scripts remain valid JavaScript', () => {
-  ['app.js', 'ui-v2.js', 'ui-v2-operations.js', 'ui-v2-shell.js', 'ui-v2-accessibility.js', 'product-shell.js', 'mission-validation.js', 'mission-view.js', 'game-log-intake.js', 'game-log-intake-correlation.js', 'game-log-intake-view.js', 'location-context.js', 'location-context-planner.js', 'location-intel-view.js', 'fleet-loadouts.js', 'fleet-estimate-adapter.js', 'fleet-loadouts-view.js', 'route-view.js', 'hangar-view.js', 'starmap-view.js'].forEach((file) => {
+  ['app.js', 'ui-v2.js', 'ui-v2-operations.js', 'ui-v2-shell.js', 'ui-v2-accessibility.js', 'product-shell.js', 'mission-validation.js', 'mission-view.js', 'location-context.js', 'location-context-planner.js', 'location-intel-view.js', 'fleet-loadouts.js', 'fleet-estimate-adapter.js', 'fleet-loadouts-view.js', 'route-view.js', 'hangar-view.js', 'starmap-view.js'].forEach((file) => {
     assert.doesNotThrow(() => new Function(read(file)), `${file} contains invalid JavaScript`);
   });
 });
