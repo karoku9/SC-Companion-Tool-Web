@@ -120,6 +120,21 @@
 - [x] Exercise representative expanded-location missions through Planner, Operations and Starmap in Chromium.
 - [x] Inspect expanded Stanton desktop, tablet and mobile screenshots before merge.
 
+## v0.22.1 complete Location Intel
+
+- [x] Add reviewed twelve-category service profiles for all 34 original operational destinations.
+- [x] Separate destination-specific static risk from onboard-cargo exposure.
+- [x] Add at-a-glance risk, fuel/repair, food/drink and medical answers.
+- [x] Add jurisdiction, protection or armistice, communication coverage and practical risk factors.
+- [x] Expand the operational model with 43 Stanton surface outposts and 7 distribution centers.
+- [x] Preserve outpost, outlaw-site and distribution-center service differences.
+- [x] Keep all surface geometry explicitly schematic and parent-body anchored.
+- [x] Resolve `HDMS Bezdek`, `Rayari Deltana`, `Buds Growery` and `S4LD01` through mission intake and search.
+- [x] Validate 130 records, 84 operational destinations, 84 profiles and 84 finite Starmap anchors.
+- [x] Exercise Checkmate, ARC-L2, Grim HEX, Teasa, HDMS-Bezdek, S4LD01 and Bud’s Growery in Chromium.
+- [x] Inspect station, outpost, distribution-center and mobile screenshots before merge.
+- [x] Persist additional-suite diagnostics in the workflow artifact.
+
 ## v0.23 Game.log assisted intake
 
 - [ ] Define an opt-in local Game.log import boundary with no silent file access.

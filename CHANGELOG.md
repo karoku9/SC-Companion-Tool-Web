@@ -13,6 +13,34 @@ The project was already under active development before this changelog was intro
 
 ---
 
+## [0.22.1] - 2026-07-23
+
+### Added
+- Complete reviewed Location Intel profiles for all 84 supported operational destinations.
+- Fifty Stanton surface destinations: 43 mining, research, agricultural or industrial outposts and 7 distribution centers or logistics complexes.
+- At-a-glance answers for static risk, fuel/repair, food/drink and medical care.
+- Twelve service categories covering landing support, habitation, cargo, refinery, rentals, vehicles and regulated or unregulated trade.
+- Static per-location risk profiles with jurisdiction, protection or armistice context, communication coverage and practical risk factors.
+- Distinct profiles for controlled city spaceports, planetary orbital hubs, Lagrange rest stops, gateway chokepoints, Grim HEX, Pyro stations, Levski, ordinary outposts, outlaw surface sites and distribution centers.
+- Reviewed community-location, field-location and unpacked game-data provenance in the source ledger.
+- Schematic surface anchors tied to the verified parent planet or moon without claiming surveyed coordinates.
+- Persistent diagnostic logs for test suites executed through the additional-suite workflow.
+
+### Changed
+- The operational location model expands from 80 records and 34 destinations to 130 records and 84 destinations.
+- Cargo exposure now consumes the selected destination’s reviewed static risk instead of relying only on its system.
+- Location type and facility class are displayed separately.
+- Mobile Location Intel puts the four essential operational answers before the full dossier.
+- Mission parsing and location search accept field aliases such as `HDMS Bezdek`, `Buds Growery` and `S4LD01`.
+
+### Fixed
+- Supported destinations no longer show generic missing-data cards for food or landing services.
+- Outposts no longer masquerade as full stations: available pad, fuel, vehicle and commodity services remain separate from missing food, medical or habitation.
+- Grim HEX, Pyro stations and outlaw field sites no longer inherit the same generic system-level warning as ordinary locations.
+- Service availability no longer implies safety: facility records and danger guidance remain separate.
+
+---
+
 ## [0.22.0] - 2026-07-23
 
 ### Added
@@ -114,7 +142,7 @@ The project was already under active development before this changelog was intro
 
 ### Added
 - Review-first Mission Validation between raw contract text and route generation.
-- Independent confidence for actions, locations and cargo syntax.
+- Independent confidence for action, location and cargo syntax.
 - Blocking errors, reviewable warnings and known-location suggestions.
 - Inline mission title, action, location and cargo correction.
 - Explicit confirmation before retaining a custom location.

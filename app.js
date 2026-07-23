@@ -28,7 +28,9 @@
       'asteroid-station': 'Asteroid station',
       'lagrange-point': 'Lagrange point',
       'lagrange-station': 'Lagrange station',
-      'jump-gateway': 'Jump gateway'
+      'jump-gateway': 'Jump gateway',
+      outpost: 'Surface outpost',
+      'distribution-center': 'Distribution center'
     };
     return labels[type] ?? String(type ?? '').replace(/-/g, ' ');
   }
