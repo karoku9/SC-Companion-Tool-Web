@@ -21,7 +21,8 @@ test('Operations renders practical destination intel inside the current stop pan
   assert.match(view, /FUEL \/ REPAIR/);
   assert.match(view, /FOOD \/ DRINK/);
   assert.match(view, /MEDICAL/);
-  assert.match(view, /estimateLeg\(inboundFrom, current/);
+  assert.match(view, /legEstimate\(inboundFrom, current, state\)/);
+  assert.match(view, /estimateLeg\(previousStop\.locationId, stop\.locationId/);
   assert.match(view, /estimateArrival\(preset, traffic\)/);
   assert.match(view, /context\.risk\.armistice/);
   assert.match(view, /context\.risk\.commArray/);
