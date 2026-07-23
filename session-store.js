@@ -54,17 +54,131 @@ deliver baijini 2scu etam 1scu neon`;
     };
   }
 
+  function canonicalReference(location) {
+    const registry = root.SCCompanionLocations;
+    return {
+      id: location.id,
+      label: registry.formatOperationalLabel(location)
+    };
+  }
+
+  function candidateValues(location) {
+    const registry = root.SCCompanionLocations;
+    return [
+      location.id,
+      location.name,
+      location.navigationTarget,
+      registry.formatOperationalLabel(location),
+      ...(location.aliases ?? [])
+    ].filter(Boolean).map(registry.normalizeSearchTerm);
+  }
+
+  function resolveLocationReference(id, label) {
+    const registry = root.SCCompanionLocations;
+    const original = {
+      id: String(id ?? ''),
+      label: String(label ?? id ?? '')
+    };
+    if (!registry?.getLocation || !registry?.searchOperationalLocations) return original;
+
+    const direct = original.id ? registry.getLocation(original.id) : null;
+    if (direct?.operational) return canonicalReference(direct);
+
+    const legacyIdQuery = original.id
+      .replace(/^custom-/, '')
+      .replace(/-/g, ' ')
+      .trim();
+    const queries = [...new Set([original.label, legacyIdQuery].map((value) => String(value ?? '').trim()).filter(Boolean))];
+
+    for (const query of queries) {
+      const matches = registry.searchOperationalLocations(query, { limit: 8 });
+      if (!matches.length) continue;
+      const normalizedQuery = registry.normalizeSearchTerm(query);
+      const exact = matches.filter((location) => candidateValues(location).includes(normalizedQuery));
+      if (exact.length === 1) return canonicalReference(exact[0]);
+      if (matches.length === 1) return canonicalReference(matches[0]);
+    }
+    return original;
+  }
+
+  function rebindReferenceFields(value, idField, labelField) {
+    if (!value || typeof value !== 'object' || !(idField in value)) return value;
+    const reference = resolveLocationReference(value[idField], value[labelField]);
+    return { ...value, [idField]: reference.id, [labelField]: reference.label };
+  }
+
+  function rebindOperation(operation) {
+    let rebound = { ...operation };
+    [
+      ['locationId', 'locationLabel'],
+      ['originLocationId', 'originLocationLabel'],
+      ['destinationLocationId', 'destinationLocationLabel'],
+      ['pickupLocationId', 'pickupLocationLabel'],
+      ['deliveryLocationId', 'deliveryLocationLabel']
+    ].forEach(([idField, labelField]) => {
+      rebound = rebindReferenceFields(rebound, idField, labelField);
+    });
+    return rebound;
+  }
+
+  function rebindMission(mission) {
+    if (!mission || typeof mission !== 'object') return mission;
+    return {
+      ...mission,
+      cargoLots: Array.isArray(mission.cargoLots)
+        ? mission.cargoLots.map((lot) => {
+          let rebound = { ...lot };
+          rebound = rebindReferenceFields(rebound, 'pickupLocationId', 'pickupLocationLabel');
+          rebound = rebindReferenceFields(rebound, 'deliveryLocationId', 'deliveryLocationLabel');
+          return rebound;
+        })
+        : mission.cargoLots,
+      objectives: Array.isArray(mission.objectives)
+        ? mission.objectives.map((objective) => rebindReferenceFields(objective, 'locationId', 'locationLabel'))
+        : mission.objectives
+    };
+  }
+
+  function rebindStop(stop) {
+    if (!stop || typeof stop !== 'object') return stop;
+    const rebound = rebindReferenceFields(stop, 'locationId', 'locationLabel');
+    return {
+      ...rebound,
+      operations: Array.isArray(stop.operations) ? stop.operations.map(rebindOperation) : stop.operations
+    };
+  }
+
+  function rebindRoute(route) {
+    if (!route || typeof route !== 'object') return route;
+    return {
+      ...route,
+      missions: Array.isArray(route.missions) ? route.missions.map(rebindMission) : route.missions,
+      stops: Array.isArray(route.stops) ? route.stops.map(rebindStop) : route.stops,
+      allStops: Array.isArray(route.allStops) ? route.allStops.map(rebindStop) : route.allStops
+    };
+  }
+
+  function migrateKnownLocations(nextState) {
+    if (!nextState || typeof nextState !== 'object') return nextState;
+    return {
+      ...nextState,
+      missions: Array.isArray(nextState.missions) ? nextState.missions.map(rebindMission) : nextState.missions,
+      route: rebindRoute(nextState.route)
+    };
+  }
+
   function normalize(nextState) {
     const defaults = initialState();
+    const migrated = migrateKnownLocations(nextState ?? {});
     return {
       ...defaults,
-      ...nextState,
-      missionSourceText: String(nextState?.missionSourceText ?? nextState?.missionValidation?.sourceText ?? nextState?.missionText ?? defaults.missionSourceText),
-      missionText: String(nextState?.missionText ?? defaults.missionText),
-      missionValidation: normalizeValidation(nextState?.missionValidation),
-      cargoCorrections: { ...defaults.cargoCorrections, ...(nextState?.cargoCorrections ?? {}) },
-      cargoZoneOverrides: { ...defaults.cargoZoneOverrides, ...(nextState?.cargoZoneOverrides ?? {}) },
-      routePlannerSettings: { ...defaults.routePlannerSettings, ...(nextState?.routePlannerSettings ?? {}) }
+      ...migrated,
+      missionSourceText: String(migrated?.missionSourceText ?? migrated?.missionValidation?.sourceText ?? migrated?.missionText ?? defaults.missionSourceText),
+      missionText: String(migrated?.missionText ?? defaults.missionText),
+      missionValidation: normalizeValidation(migrated?.missionValidation),
+      cargoCorrections: { ...defaults.cargoCorrections, ...(migrated?.cargoCorrections ?? {}) },
+      cargoZoneOverrides: { ...defaults.cargoZoneOverrides, ...(migrated?.cargoZoneOverrides ?? {}) },
+      routePlannerSettings: { ...defaults.routePlannerSettings, ...(migrated?.routePlannerSettings ?? {}) }
     };
   }
 
@@ -78,6 +192,7 @@ deliver baijini 2scu etam 1scu neon`;
   }
 
   let state = load();
+  try { localStorage.setItem(KEY, JSON.stringify(state)); } catch { /* storage can be unavailable */ }
 
   function getState() { return state; }
 
@@ -95,7 +210,7 @@ deliver baijini 2scu etam 1scu neon`;
     return replace(initialState());
   }
 
-  const api = Object.freeze({ getState, patch, replace, reset, sampleMissionText });
+  const api = Object.freeze({ getState, patch, replace, reset, sampleMissionText, migrateKnownLocations, resolveLocationReference });
   root.SCCompanionSession = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 }(typeof globalThis !== 'undefined' ? globalThis : window));
