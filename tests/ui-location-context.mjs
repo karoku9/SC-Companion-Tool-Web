@@ -131,13 +131,44 @@ try {
   assert.match(await page.locator('#intel-risk-label').textContent(), /Low static location risk/);
   assert.ok(await page.locator('#intel-sources').getByText(/COMMUNITY|GAME-DATA/).count() >= 1);
 
+  step = 'verify surface outpost essentials';
+  await selectLocation('HDMS Bezdek');
+  await page.locator('#intel-location-name').filter({ hasText: /HDMS-Bezdek/ }).waitFor({ state: 'visible' });
+  assert.equal((await page.locator('#location-type').textContent()).trim(), 'Surface outpost');
+  assert.match(await page.locator('#intel-risk-label').textContent(), /Elevated surface-outpost exposure/);
+  assert.equal((await page.locator('#intel-essential-fuel').textContent()).trim(), 'Available');
+  assert.equal((await page.locator('#intel-essential-food').textContent()).trim(), 'Not available');
+  assert.equal((await page.locator('#intel-essential-medical').textContent()).trim(), 'Not available');
+  const bezdekServices = await page.locator('#intel-services').textContent();
+  assert.match(bezdekServices, /Ground vehicles/);
+  assert.match(bezdekServices, /Commodity trade/);
+  await page.screenshot({ path: `${output}/location-intel-hdms-bezdek-desktop.png`, fullPage: true });
+
+  step = 'verify distribution center profile';
+  await selectLocation('S4LD01');
+  await page.locator('#intel-location-name').filter({ hasText: /S4LD01/ }).waitFor({ state: 'visible' });
+  assert.equal((await page.locator('#location-type').textContent()).trim(), 'Distribution center');
+  const depotServices = await page.locator('#intel-services').textContent();
+  assert.match(depotServices, /Cargo servicesAvailable/);
+  assert.match(depotServices, /Food & drinkLimited/);
+  assert.match(await page.locator('#intel-risk-label').textContent(), /Elevated industrial-site exposure/);
+  await page.screenshot({ path: `${output}/location-intel-s4ld01-desktop.png`, fullPage: true });
+
+  step = 'verify unregulated surface site';
+  await selectLocation('Buds Growery');
+  await page.locator('#intel-location-name').filter({ hasText: /Bud's Growery/ }).waitFor({ state: 'visible' });
+  assert.match(await page.locator('#intel-risk-label').textContent(), /High-risk unregulated surface site/);
+  assert.match(await page.locator('#intel-services').textContent(), /Unregulated tradeUnregulated/);
+
   step = 'verify mobile context layout';
   await page.setViewportSize({ width: 390, height: 844 });
+  await selectLocation('HDMS Bezdek');
   await noHorizontalOverflow('Location context mobile');
   const searchButton = page.locator('#location-search button[type="submit"]');
   const searchBox = await searchButton.boundingBox();
   assert.ok(searchBox && searchBox.height >= 43, `Mobile location search target is too small: ${JSON.stringify(searchBox)}`);
-  await page.screenshot({ path: `${output}/location-intel-complete-mobile.png`, fullPage: true });
+  assert.equal(await page.locator('.location-essentials article').count(), 4);
+  await page.screenshot({ path: `${output}/location-intel-field-mobile.png`, fullPage: true });
 
   assert.deepEqual(errors, [], `Browser errors:\n${errors.join('\n')}`);
 } catch (error) {
