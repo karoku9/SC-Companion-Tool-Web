@@ -113,32 +113,32 @@
 
   [
     ['hurston', 'lorville', 'Lorville', 'teasa', 'Teasa Spaceport',
-      ['lorville city', 'lorville landing zone'], ['teasa', 'taesa', 'teasa spaceport', 'lorville', 'lorville spaceport', 'hurston lorville'], 'hurston', [0, 0, 8], [0, 0, 0.08]],
+      ['lorville city', 'lorville landing zone'], ['teasa', 'taesa', 'teasa spaceport', 'lorville', 'lorville spaceport', 'hurston lorville'], 'hurston', [0, 0, 8], [0, 0, 0.08], 'official-current'],
     ['crusader', 'orison', 'Orison', 'august-dunlow', 'August Dunlow Spaceport',
-      ['orison city', 'orison landing zone'], ['orison', 'august dunlow', 'august dunlow spaceport', 'orison spaceport', 'crusader orison'], 'crusader', [0, 0, 10], [0, 0, 0.1]],
+      ['orison city', 'orison landing zone'], ['orison', 'august dunlow', 'august dunlow spaceport', 'orison spaceport', 'crusader orison'], 'crusader', [0, 0, 10], [0, 0, 0.1], 'reviewed-community-current'],
     ['arccorp', 'area18', 'Area18', 'riker', 'Riker Memorial Spaceport',
-      ['area 18', 'area18 city'], ['area18', 'area 18', 'riker', 'riker memorial', 'riker memorial spaceport', 'area18 spaceport'], 'arccorp', [0, 0, 8], [0, 0, 0.08]],
+      ['area 18', 'area18 city'], ['area18', 'area 18', 'riker', 'riker memorial', 'riker memorial spaceport', 'area18 spaceport'], 'arccorp', [0, 0, 8], [0, 0, 0.08], 'official-current'],
     ['microtech', 'new-babbage', 'New Babbage', 'nbis', 'New Babbage Interstellar Spaceport',
-      ['new babbage city', 'new babbage landing zone', 'nb'], ['new babbage', 'new babbage spaceport', 'nbis', 'new babbage interstellar', 'microtech new babbage'], 'microtech', [0, 0, 9], [0, 0, 0.09]]
-  ].forEach(([planet, cityId, cityName, portId, portName, cityAliases, portAliases, bodyId, offset, distanceOffset]) => {
+      ['new babbage city', 'new babbage landing zone', 'nb'], ['new babbage', 'new babbage spaceport', 'nbis', 'new babbage interstellar', 'microtech new babbage'], 'microtech', [0, 0, 9], [0, 0, 0.09], 'reviewed-community-current']
+  ].forEach(([planet, cityId, cityName, portId, portName, cityAliases, portAliases, bodyId, offset, distanceOffset, sourceStatus]) => {
     const cityFullId = `stanton-${planet}-${cityId}`;
     add({ id: cityFullId, type: 'landing-zone', name: cityName, parentId: `stanton-${planet}`, aliases: cityAliases, sourceIds: ['rsi-stanton', 'scwiki-stanton-4-9'] });
     add({
       id: `${cityFullId}-${portId}`, type: 'spaceport', name: portName, contextName: cityName, parentId: cityFullId,
-      operational: true, navigationTarget: cityName, aliases: portAliases, sourceStatus: 'reviewed-community-current',
+      operational: true, navigationTarget: cityName, aliases: portAliases, sourceStatus,
       sourceIds: ['rsi-stanton', 'scwiki-stanton-4-9', 'sctools-stanton-2026'],
       anchor: mapAnchor('stanton', bodyId, offset, distanceOffset, 'parent-verified-schematic-offset')
     });
   });
 
   [
-    ['hurston', 'everus', 'Everus Harbor', ['everus', 'everus harbor', 'hurston orbital', 'hurston station'], 'Hurston', 'hurston', [5, 2, 12], [0.08, 0.03, 0.12]],
-    ['crusader', 'seraphim', 'Seraphim Station', ['seraphim', 'seraphim station', 'crusader orbital', 'orison orbital'], 'Crusader', 'crusader', [-5, 2, 13], [-0.08, 0.03, 0.13]],
-    ['arccorp', 'baijini', 'Baijini Point', ['baijini', 'baijini point', 'arc corp orbital', 'arccorp orbital'], 'ArcCorp', 'arccorp', [5, 2, 12], [0.08, 0.03, 0.12]],
-    ['microtech', 'port-tressler', 'Port Tressler', ['port tressler', 'tressler', 'microtech orbital', 'new babbage orbital'], 'microTech', 'microtech', [-5, 2, 13], [-0.08, 0.03, 0.13]]
-  ].forEach(([planet, id, name, aliases, contextName, bodyId, offset, distanceOffset]) => add({
+    ['hurston', 'everus', 'Everus Harbor', ['everus', 'everus harbor', 'hurston orbital', 'hurston station'], 'Hurston', 'hurston', [5, 2, 12], [0.08, 0.03, 0.12], 'reviewed-community-current'],
+    ['crusader', 'seraphim', 'Seraphim Station', ['seraphim', 'seraphim station', 'crusader orbital', 'orison orbital'], 'Crusader', 'crusader', [-5, 2, 13], [-0.08, 0.03, 0.13], 'reviewed-community-current'],
+    ['arccorp', 'baijini', 'Baijini Point', ['baijini', 'baijini point', 'arc corp orbital', 'arccorp orbital'], 'ArcCorp', 'arccorp', [5, 2, 12], [0.08, 0.03, 0.12], 'official-current'],
+    ['microtech', 'port-tressler', 'Port Tressler', ['port tressler', 'tressler', 'microtech orbital', 'new babbage orbital'], 'microTech', 'microtech', [-5, 2, 13], [-0.08, 0.03, 0.13], 'reviewed-community-current']
+  ].forEach(([planet, id, name, aliases, contextName, bodyId, offset, distanceOffset, sourceStatus]) => add({
     id: `stanton-${planet}-${id}`, type: 'orbital-station', name, contextName, parentId: `stanton-${planet}`,
-    operational: true, navigationTarget: name, aliases, sourceStatus: 'reviewed-community-current',
+    operational: true, navigationTarget: name, aliases, sourceStatus,
     sourceIds: ['scwiki-stanton-4-9', 'sctools-stanton-2026'], gameVersion: COMMUNITY_BUILD,
     anchor: mapAnchor('stanton', bodyId, offset, distanceOffset, 'parent-verified-schematic-offset')
   }));
