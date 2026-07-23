@@ -6,6 +6,20 @@ The project was already under active development before this changelog was intro
 
 ## [Unreleased]
 
+### Added
+- Inline Current Stop operational intelligence with inbound travel ETA, distance and jump count.
+- Final-approach and landing/access ranges for stations, landing zones, outposts and distribution centers.
+- Destination-specific security, jurisdiction, protection or armistice and communication context inside Operations.
+- Hangar or pad, fuel/repair, food/drink and medical answers below the active cargo instructions.
+
+### Changed
+- Operations now uses the previously empty Current Stop area for actionable arrival information while keeping cargo actions primary.
+- Current Stop service and safety answers reuse the canonical reviewed Location Context records instead of maintaining a separate dataset.
+
+### Fixed
+- Players no longer need to leave the active Operations workflow to discover whether the current destination has landing support, refuel, food or medical care.
+- Travel-time information is no longer confined to the route index where it is easy to miss during approach.
+
 ### Planned
 - Opt-in local Game.log selection and incremental import.
 - Mission and contract event extraction with raw-line, timestamp and file provenance.
@@ -142,7 +156,7 @@ The project was already under active development before this changelog was intro
 
 ### Added
 - Review-first Mission Validation between raw contract text and route generation.
-- Independent confidence for action, location and cargo syntax.
+- Independent confidence for actions, locations and cargo syntax.
 - Blocking errors, reviewable warnings and known-location suggestions.
 - Inline mission title, action, location and cargo correction.
 - Explicit confirmation before retaining a custom location.
