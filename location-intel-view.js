@@ -24,6 +24,12 @@
         <div><small>LOCATION CONTEXT</small><h3 id="intel-location-name">—</h3><p id="intel-location-system">—</p></div>
         <div class="location-source-state"><strong id="intel-data-status">—</strong><span id="intel-freshness">—</span></div>
       </header>
+      <section class="location-essentials" aria-label="Essential location answers">
+        <article data-essential="risk"><small>RISK</small><strong id="intel-essential-risk">—</strong></article>
+        <article data-essential="landing-services"><small>FUEL / REPAIR</small><strong id="intel-essential-fuel">—</strong></article>
+        <article data-essential="food"><small>FOOD / DRINK</small><strong id="intel-essential-food">—</strong></article>
+        <article data-essential="medical"><small>MEDICAL</small><strong id="intel-essential-medical">—</strong></article>
+      </section>
       <div class="location-guidance-grid">
         <section class="location-risk" id="intel-risk">
           <div>
@@ -74,6 +80,14 @@
       system: intel.querySelector('#intel-location-system'),
       status: intel.querySelector('#intel-data-status'),
       freshness: intel.querySelector('#intel-freshness'),
+      essentialRisk: intel.querySelector('[data-essential="risk"]'),
+      essentialRiskValue: intel.querySelector('#intel-essential-risk'),
+      essentialFuel: intel.querySelector('[data-essential="landing-services"]'),
+      essentialFuelValue: intel.querySelector('#intel-essential-fuel'),
+      essentialFood: intel.querySelector('[data-essential="food"]'),
+      essentialFoodValue: intel.querySelector('#intel-essential-food'),
+      essentialMedical: intel.querySelector('[data-essential="medical"]'),
+      essentialMedicalValue: intel.querySelector('#intel-essential-medical'),
       risk: intel.querySelector('#intel-risk'),
       riskLabel: intel.querySelector('#intel-risk-label'),
       riskJurisdiction: intel.querySelector('#intel-risk-jurisdiction'),
@@ -126,6 +140,23 @@
       if (['orbital-station', 'lagrange-station', 'jump-gateway', 'asteroid-station'].includes(location.type)) return 'orbital-station';
       if (location.type === 'spaceport' || location.type === 'landing-zone') return 'landing-zone';
       return null;
+    }
+
+    function renderEssentials(context) {
+      const fuel = context.services.find((service) => service.id === 'landing-services');
+      const food = context.services.find((service) => service.id === 'food');
+      const medical = context.services.find((service) => service.id === 'medical');
+      const entries = [
+        [elements.essentialRisk, elements.essentialRiskValue, context.risk.level, context.risk.label, context.risk.note],
+        [elements.essentialFuel, elements.essentialFuelValue, fuel?.status ?? 'unavailable-data', statusLabel(fuel?.status ?? 'unavailable-data'), fuel?.detail],
+        [elements.essentialFood, elements.essentialFoodValue, food?.status ?? 'unavailable-data', statusLabel(food?.status ?? 'unavailable-data'), food?.detail],
+        [elements.essentialMedical, elements.essentialMedicalValue, medical?.status ?? 'unavailable-data', statusLabel(medical?.status ?? 'unavailable-data'), medical?.detail]
+      ];
+      entries.forEach(([card, value, state, label, detail]) => {
+        card.dataset.state = state;
+        value.textContent = label;
+        card.title = detail ?? label;
+      });
     }
 
     function renderFacts(context) {
@@ -225,6 +256,7 @@
       elements.status.dataset.level = context.confidence.level;
       elements.freshness.textContent = context.freshness.label;
       elements.freshness.dataset.state = context.freshness.state;
+      renderEssentials(context);
       renderRisk(context);
       elements.exposure.dataset.level = context.exposure.level;
       elements.exposureLabel.textContent = context.exposure.label;
