@@ -10,11 +10,11 @@ function read(file) {
 }
 
 function cleanCss() {
-  return ['design-system-legibility.css', 'mission-validation.css', 'game-log-intake.css', 'location-context.css', 'location-context-adapters.css', 'fleet-loadouts.css', 'starmap-v2.css', 'ui-v2-shell.css', 'ui-v2-operations.css', 'ui-v2-workspaces.css', 'ui-v2-responsive.css'].map(read).join('\n');
+  return ['design-system-legibility.css', 'mission-validation.css', 'game-log-intake.css', 'ocr-intake.css', 'location-context.css', 'location-context-adapters.css', 'fleet-loadouts.css', 'starmap-v2.css', 'ui-v2-shell.css', 'ui-v2-operations.css', 'ui-v2-workspaces.css', 'ui-v2-responsive.css'].map(read).join('\n');
 }
 
 test('clean interface scripts remain valid JavaScript', () => {
-  ['app.js', 'ui-v2.js', 'ui-v2-operations.js', 'ui-v2-shell.js', 'ui-v2-accessibility.js', 'mfd-icons.js', 'product-shell.js', 'mission-validation.js', 'mission-view.js', 'location-context.js', 'location-context-planner.js', 'location-intel-view.js', 'fleet-loadouts.js', 'fleet-estimate-adapter.js', 'fleet-loadouts-view.js', 'route-view.js', 'hangar-view.js', 'starmap-view.js'].forEach((file) => {
+  ['app.js', 'ui-v2.js', 'ui-v2-operations.js', 'ui-v2-shell.js', 'ui-v2-accessibility.js', 'mfd-icons.js', 'product-shell.js', 'mission-validation.js', 'mission-view.js', 'game-log-intake.js', 'game-log-intake-correlation.js', 'game-log-intake-view.js', 'ocr-intake.js', 'ocr-intake-view.js', 'location-context.js', 'location-context-planner.js', 'location-intel-view.js', 'fleet-loadouts.js', 'fleet-estimate-adapter.js', 'fleet-loadouts-view.js', 'route-view.js', 'hangar-view.js', 'starmap-view.js'].forEach((file) => {
     assert.doesNotThrow(() => new Function(read(file)), `${file} contains invalid JavaScript`);
   });
 });
@@ -27,6 +27,7 @@ test('clean UI replaces accumulated layout layers rather than overriding them', 
   assert.match(html, /href="ui-v2\.css"/);
   assert.match(entry, /mission-validation\.css/);
   assert.match(entry, /game-log-intake\.css/);
+  assert.match(entry, /ocr-intake\.css/);
   assert.match(entry, /location-context\.css/);
   assert.match(entry, /location-context-adapters\.css/);
   assert.match(entry, /fleet-loadouts\.css/);
@@ -77,19 +78,20 @@ test('navigation continues using the canonical SVG icon family', () => {
   assert.match(shell, /SCCompanionMfdIcons/);
 });
 
-test('Game.log assisted intake keeps the delivered universe, Starmap and Fleet runtimes', () => {
+test('OCR assisted intake keeps the delivered universe, Starmap, Fleet and Game.log runtimes', () => {
   const roadmap = require('../roadmap.js');
   const app = read('app.js');
   const map = read('starmap-view.js');
   const locations = read('locations.js');
-  assert.equal(roadmap.currentVersion, '0.23');
-  assert.equal(roadmap.releases.find((release) => release.version === '0.21').status, 'done');
+  assert.equal(roadmap.currentVersion, '0.24');
   assert.equal(roadmap.releases.find((release) => release.version === '0.22').status, 'done');
-  assert.equal(roadmap.releases.find((release) => release.version === '0.23').status, 'current');
-  assert.match(roadmap.releases.find((release) => release.version === '0.23').title, /Game\.log assisted intake/i);
+  assert.equal(roadmap.releases.find((release) => release.version === '0.23').status, 'done');
+  assert.equal(roadmap.releases.find((release) => release.version === '0.24').status, 'current');
+  assert.match(roadmap.releases.find((release) => release.version === '0.24').title, /OCR assisted intake/i);
   assert.match(app, /fleet-estimate-adapter\.js/);
   assert.match(app, /fleet-loadouts-view\.js/);
   assert.match(app, /game-log-intake-view\.js/);
+  assert.match(app, /ocr-intake-view\.js/);
   assert.match(map, /data-map-mode="route"/);
   assert.match(map, /data-map-action="current"/);
   assert.match(locations, /validateCatalog/);

@@ -168,16 +168,30 @@
 - [x] Add fixtures using an observed Game.log notification envelope and synthetic hauling payloads.
 - [x] Add Node contracts for noise rejection, provenance, partial events, correlation and replay protection.
 - [x] Keep the Missions panel readable in the existing Chromium viewport matrix.
+- [x] Normalize whitespace-delimited structured fields so repeated contract IDs group consistently.
 - [ ] Validate current Alpha 4.9 hauling payload signatures against a user-provided real `Game.log`.
 
 ## v0.24 OCR assisted intake
 
-- [ ] Accept screenshots and cropped mission images as a secondary import path.
-- [ ] Extract mission title, action, location and cargo fields with independent confidence.
-- [ ] Preserve source-image references and extracted text for review.
-- [ ] Reuse the existing ambiguity, custom-location and stale-review safeguards.
-- [ ] Prevent OCR output from bypassing validation or overwriting a route automatically.
-- [ ] Add desktop and mobile correction workflows for low-confidence OCR fields.
+- [x] Accept up to six explicitly selected PNG, JPEG, WebP or BMP screenshots or cropped contract images.
+- [x] Load a pinned Tesseract.js 7.0.0 English browser worker only when OCR is requested.
+- [x] Preprocess screenshots with bounded scaling, grayscale, contrast and automatic dark-HUD inversion.
+- [x] Extract mission title, action, destination, SCU and commodity with independent confidence.
+- [x] Prefer explicit action headings and use derived `From:` / `To:` anchors only when headings are absent.
+- [x] Prevent titles containing words such as “delivery” from becoming phantom objectives.
+- [x] Resolve OCR destinations through the canonical 84-destination registry.
+- [x] Preserve source filename, type, size, hash, processed dimensions and OCR-line provenance.
+- [x] Keep incomplete and ambiguous fields unresolved instead of inventing mission data.
+- [x] Provide inline correction for title, action, destination, quantity and commodity.
+- [x] Provide raw OCR text as a manual-editor fallback.
+- [x] Avoid persisting source image bytes and preview object URLs in session state.
+- [x] Reuse the existing ambiguity, custom-location, stale-review and explicit-generation safeguards.
+- [x] Prevent OCR selection, recognition, correction and draft loading from overwriting the active route.
+- [x] Add Node contracts for extraction, unresolved fields, correction serialization and anchor selection.
+- [x] Add a real Chromium file-upload workflow with deterministic mocked OCR recognition.
+- [x] Verify image preprocessing, provenance, review handoff, unchanged route state and mobile targets.
+- [x] Make the additional-suite CI authoritative with `pipefail` instead of allowing `tee` to hide failures.
+- [ ] Tune preprocessing and field-layout coverage against user-provided real Star Citizen contract screenshots.
 
 ## v0.25 release hardening
 

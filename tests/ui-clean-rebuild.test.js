@@ -10,7 +10,7 @@ function read(file) {
 }
 
 test('clean shell scripts remain valid JavaScript', () => {
-  ['app.js', 'ui-v2.js', 'ui-v2-operations.js', 'ui-v2-shell.js', 'ui-v2-accessibility.js', 'product-shell.js'].forEach((file) => {
+  ['app.js', 'ui-v2.js', 'ui-v2-operations.js', 'ui-v2-shell.js', 'ui-v2-accessibility.js', 'product-shell.js', 'ocr-intake.js', 'ocr-intake-view.js'].forEach((file) => {
     assert.doesNotThrow(() => new Function(read(file)), `${file} contains invalid JavaScript`);
   });
 });
@@ -22,6 +22,7 @@ test('the application uses one design system and one clean layout entry', () => 
   assert.match(html, /href="ui-v2\.css"/);
   assert.match(entry, /mission-validation\.css/);
   assert.match(entry, /game-log-intake\.css/);
+  assert.match(entry, /ocr-intake\.css/);
   assert.match(entry, /location-context\.css/);
   assert.match(entry, /fleet-loadouts\.css/);
   assert.match(entry, /design-system-legibility\.css/);
@@ -47,25 +48,32 @@ test('Operations keeps native auxiliary tools below the primary displays', () =>
   assert.match(css, /tool-panel\.is-expanded \{ position: fixed/);
 });
 
-test('Game.log assistance enters the existing mission review without route replacement', () => {
+test('assisted inputs enter the existing mission review without route replacement', () => {
   const app = read('app.js');
-  const view = read('game-log-intake-view.js');
+  const gameLog = read('game-log-intake-view.js');
+  const ocr = read('ocr-intake-view.js');
   const validator = read('mission-validation.js');
   assert.match(app, /game-log-intake\.js/);
   assert.match(app, /game-log-intake-correlation\.js/);
   assert.match(app, /game-log-intake-view\.js/);
-  assert.match(view, /showOpenFilePicker/);
-  assert.match(view, /Load extracted draft into review/);
-  assert.match(view, /form\.requestSubmit\(\)/);
-  assert.match(view, /never replaces the active route automatically/);
+  assert.match(app, /ocr-intake\.js/);
+  assert.match(app, /ocr-intake-view\.js/);
+  assert.match(gameLog, /showOpenFilePicker/);
+  assert.match(gameLog, /Load extracted draft into review/);
+  assert.match(gameLog, /form\.requestSubmit\(\)/);
+  assert.match(gameLog, /never replaces the active route automatically/);
+  assert.match(ocr, /Load OCR draft into review/);
+  assert.match(ocr, /form\.requestSubmit\(\)/);
+  assert.match(ocr, /Nothing is sent to route generation until the draft passes the normal mission review/);
   assert.match(validator, /inspectMissionText/);
   assert.match(validator, /confirmedCustomLocations/);
 });
 
-test('v0.23 is current after the delivered universe foundation', () => {
+test('v0.24 is current after Game.log and the universe foundation', () => {
   const roadmap = require('../roadmap.js');
-  assert.equal(roadmap.currentVersion, '0.23');
+  assert.equal(roadmap.currentVersion, '0.24');
   assert.equal(roadmap.releases.find((release) => release.version === '0.22').status, 'done');
-  assert.equal(roadmap.releases.find((release) => release.version === '0.23').status, 'current');
-  assert.equal(roadmap.releases.find((release) => release.version === '0.24').status, 'next');
+  assert.equal(roadmap.releases.find((release) => release.version === '0.23').status, 'done');
+  assert.equal(roadmap.releases.find((release) => release.version === '0.24').status, 'current');
+  assert.equal(roadmap.releases.find((release) => release.version === '0.25').status, 'next');
 });

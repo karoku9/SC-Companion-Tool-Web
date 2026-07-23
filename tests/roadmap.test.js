@@ -34,7 +34,7 @@ test('current, next and future releases form one linear delivery path', () => {
   assert.ok(roadmap.releases.slice(nextIndex + 1).every((release) => release.status === 'future'));
 });
 
-test('v0.23 delivers reviewable Game.log intake after complete universe data', () => {
+test('v0.24 delivers reviewable OCR intake after Game.log and universe data', () => {
   const context = roadmap.releases.find((item) => item.version === '0.19');
   const loadouts = roadmap.releases.find((item) => item.version === '0.20');
   const ux = roadmap.releases.find((item) => item.version === '0.21');
@@ -54,14 +54,17 @@ test('v0.23 delivers reviewable Game.log intake after complete universe data', (
   assert.ok(universe.changes.some((change) => /43 surface.*outposts/i.test(change)));
   assert.ok(universe.changes.some((change) => /complete fuel, food, medical/i.test(change)));
   assert.ok(universe.changes.some((change) => /Starmap anchors/i.test(change)));
-  assert.equal(gameLog.status, 'current');
+  assert.equal(gameLog.status, 'done');
   assert.match(gameLog.title, /Game\.log assisted intake/i);
   assert.ok(gameLog.changes.some((change) => /raw line, timestamp, file/i.test(change)));
   assert.ok(gameLog.changes.some((change) => /rotation/i.test(change)));
   assert.ok(gameLog.changes.some((change) => /mission validation/i.test(change)));
-  assert.equal(ocr.status, 'next');
+  assert.equal(ocr.status, 'current');
   assert.match(ocr.title, /OCR assisted intake/i);
-  assert.ok(ocr.changes.some((change) => /existing mission validation pipeline/i.test(change)));
+  assert.ok(ocr.changes.some((change) => /Tesseract\.js 7/i.test(change)));
+  assert.ok(ocr.changes.some((change) => /OCR-line provenance/i.test(change)));
+  assert.ok(ocr.changes.some((change) => /mission validation/i.test(change)));
+  assert.equal(hardening.status, 'next');
   assert.match(hardening.title, /Release hardening/i);
   assert.match(release.title, /Core companion release/i);
 });

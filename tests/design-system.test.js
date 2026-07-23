@@ -61,15 +61,18 @@ test('interaction contract includes focus, mobile target, reduced-motion and for
 test('feature layers reuse design-system roles instead of adding raw visual language', () => {
   const validation = read('mission-validation.css');
   const gameLog = read('game-log-intake.css');
+  const ocr = read('ocr-intake.css');
   const context = `${read('location-context.css')}\n${read('location-context-adapters.css')}`;
   const fleet = read('fleet-loadouts.css');
   const starmap = read('starmap-v2.css');
-  [validation, gameLog, context, fleet, starmap].forEach((css) => {
+  [validation, gameLog, ocr, context, fleet, starmap].forEach((css) => {
     assert.match(css, /var\(--ds-/);
     assert.doesNotMatch(css, /#[0-9a-f]{3,8}/i);
   });
   assert.match(validation, /var\(--ds-status-danger\)/);
   assert.match(gameLog, /var\(--ds-status-success\)/);
+  assert.match(ocr, /var\(--ds-status-success\)/);
+  assert.match(ocr, /var\(--ds-status-warning\)/);
   assert.match(context, /var\(--ds-status-info\)/);
   assert.match(fleet, /var\(--ds-status-warning\)/);
   assert.match(fleet, /var\(--ds-action-primary/);
@@ -84,20 +87,23 @@ test('visible UI Kit documents palette, type, buttons, icons and manufacturer co
   assert.match(view, /Manufacturer theme contract/);
 });
 
-test('design foundation remains loaded before feature and Starmap UX layers', () => {
+test('design foundation remains loaded before assisted-intake and Starmap layers', () => {
   const html = read('index.html');
   const app = read('app.js');
   const entry = read('ui-v2.css');
   assert.ok(html.indexOf('src="design-system.js"') < html.indexOf('src="mfd-icons.js"'));
   assert.ok(html.indexOf('href="design-system.css"') < html.indexOf('href="ui-v2.css"'));
   assert.ok(entry.indexOf('mission-validation.css') < entry.indexOf('game-log-intake.css'));
-  assert.ok(entry.indexOf('game-log-intake.css') < entry.indexOf('location-context.css'));
+  assert.ok(entry.indexOf('game-log-intake.css') < entry.indexOf('ocr-intake.css'));
+  assert.ok(entry.indexOf('ocr-intake.css') < entry.indexOf('location-context.css'));
   assert.ok(entry.indexOf('location-context-adapters.css') < entry.indexOf('fleet-loadouts.css'));
   assert.ok(entry.indexOf('fleet-loadouts.css') < entry.indexOf('design-system-legibility.css'));
   assert.ok(entry.indexOf('design-system-legibility.css') < entry.indexOf('starmap-v2.css'));
   assert.match(app, /game-log-intake\.js/);
   assert.match(app, /game-log-intake-correlation\.js/);
   assert.match(app, /game-log-intake-view\.js/);
+  assert.match(app, /ocr-intake\.js/);
+  assert.match(app, /ocr-intake-view\.js/);
   assert.match(app, /official-universe-data\.js/);
   assert.match(app, /navigation-estimates\.js/);
   assert.match(app, /location-context\.js/);
@@ -107,11 +113,11 @@ test('design foundation remains loaded before feature and Starmap UX layers', ()
   assert.match(app, /fleet-loadouts-view\.js/);
   assert.match(app, /ui-v2-accessibility\.js/);
   assert.match(app, /SCCompanionCleanInterfaceReady/);
-  assert.equal(roadmap.currentVersion, '0.23');
-  assert.equal(roadmap.releases.find((item) => item.version === '0.21').status, 'done');
+  assert.equal(roadmap.currentVersion, '0.24');
   assert.equal(roadmap.releases.find((item) => item.version === '0.22').status, 'done');
-  assert.equal(roadmap.releases.find((item) => item.version === '0.23').status, 'current');
-  assert.match(roadmap.releases.find((item) => item.version === '0.23').title, /Game\.log assisted intake/i);
+  assert.equal(roadmap.releases.find((item) => item.version === '0.23').status, 'done');
+  assert.equal(roadmap.releases.find((item) => item.version === '0.24').status, 'current');
+  assert.match(roadmap.releases.find((item) => item.version === '0.24').title, /OCR assisted intake/i);
 });
 
 test('research rules prohibit page-specific invention', () => {

@@ -7,9 +7,44 @@ The project was already under active development before this changelog was intro
 ## [Unreleased]
 
 ### Planned
-- Screenshot and cropped-image import for OCR-assisted mission intake.
-- Per-field OCR confidence, source-image provenance and inline correction.
-- Reuse of the existing mission validation flow before route generation.
+- Versioned export, backup and restore.
+- Explicit local-data migrations with recoverable pre-migration snapshots.
+- Cross-browser, offline/static, performance and accessibility hardening before v1.0.
+
+---
+
+## [0.24.0] - 2026-07-23
+
+### Added
+- Explicit PNG, JPEG, WebP and BMP contract-image selection inside Missions, supporting up to six images per OCR batch.
+- Pinned Tesseract.js 7.0.0 English browser worker loaded only when OCR is requested.
+- Browser-side bounded scaling, grayscale, contrast and automatic dark-HUD inversion preprocessing.
+- Independent mission title, action, destination, SCU and commodity extraction with field-level confidence.
+- Source filename, type, size, hash, processed dimensions and OCR-line provenance.
+- Editable OCR field cards plus a raw-text fallback into the manual mission editor.
+- A real Chromium image-upload workflow with deterministic mocked OCR recognition and desktop/mobile screenshots.
+- Dedicated OCR architecture, privacy, dependency and known-limit documentation.
+
+### Changed
+- Missions now supports manual text, Game.log and screenshot OCR through the same mission-validation and explicit-generation gate.
+- Source image bytes and preview object URLs are no longer candidates for persisted session state; only bounded extracted reports and provenance remain local.
+- The Missions editor grows naturally with assisted-input panels instead of forcing OCR content into the previous fixed-height layout.
+- The quality workflow now checks OCR syntax and runs the OCR browser workflow in the main Chromium matrix.
+- Additional Node suites now use `pipefail`, so test failures cannot be hidden by `tee`.
+- The roadmap advances Release Hardening to v0.25 and the navigation footer identifies build 0.24.
+
+### Fixed
+- Destination rows such as `Destination:` no longer create duplicate OCR objectives when explicit action headings exist.
+- Mission titles containing words such as “delivery” no longer become phantom delivery objectives.
+- Missing OCR action, destination, SCU or commodity fields remain unresolved instead of receiving fabricated data.
+- OCR upload, field correction and draft handoff cannot replace the active route before explicit validated generation.
+- Whitespace-delimited structured Game.log fields are normalized so repeated contract IDs group into the same mission.
+- Previously masked Current Stop and Teasa service-profile contract expectations now match the active implementation.
+
+### Dependency and privacy boundary
+- The pinned OCR JavaScript module, WebAssembly core and English model require network retrieval on first use. Fully offline first-use OCR is not claimed.
+- Selected image pixels are processed by the browser worker; application code does not upload them to an application server.
+- Recognition confidence is evidence for review, not proof that extracted fields match the in-game contract.
 
 ---
 
@@ -170,7 +205,7 @@ The project was already under active development before this changelog was intro
 - Shared Location Context model used by Operations, Route Planner and Location Intel.
 - Official/community source ledger with authority, link, review date and freshness state.
 - Categorical cargo-exposure guidance: clear, controlled, caution, high exposure and unknown.
-- Responsive location detail covering facts, arrival estimates, services, sources and known data gaps.
+- Responsive location detail covering facts, services, sources and known data gaps.
 - Per-stop source context in the active route and proposed Planner routes.
 
 ### Changed

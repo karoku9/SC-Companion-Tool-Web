@@ -81,6 +81,7 @@
   import('./fleet-loadouts.js')
     .then(() => import('./game-log-intake.js'))
     .then(() => import('./game-log-intake-correlation.js'))
+    .then(() => import('./ocr-intake.js'))
     .then(() => import('./official-universe-data.js'))
     .then(() => import('./navigation-estimates.js'))
     .then(() => import('./location-context.js'))
@@ -104,7 +105,8 @@
         import('./design-system-view.js'),
         import('./ui-v2.js').then(() => window.SCCompanionCleanInterfaceReady),
         import('./ui-v2-accessibility.js'),
-        import('./game-log-intake-view.js')
+        import('./game-log-intake-view.js'),
+        import('./ocr-intake-view.js')
       ]);
     })
     .then(() => Promise.all([

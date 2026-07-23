@@ -19,8 +19,13 @@
       .replace(/\bdrop\s+off\b/gi, 'dropoff');
   }
 
+  function normalizeStructuredFields(rawLine) {
+    const line = String(rawLine ?? '');
+    return line.replace(/\s+(?=(?:contractId|contractGuid|contractInstanceId|missionId|missionGuid|missionInstanceId|missionTitle|contractTitle|missionName|contractName|title|action|objectiveAction|task|location|destination|pickupLocation|deliveryLocation|address|scu|quantity|amount|cargoScu|commodity|cargo|item|material)\s*=)/gi, ', ');
+  }
+
   function parseLine(rawLine, options = {}) {
-    const normalizedLine = normalizeActionPhrases(rawLine);
+    const normalizedLine = normalizeStructuredFields(normalizeActionPhrases(rawLine));
     const parsed = base.parseLine(normalizedLine, options);
     if (!parsed) return null;
     const envelope = base.parseEnvelope(rawLine);
@@ -162,6 +167,7 @@
   const api = freeze({
     ...base,
     normalizeActionPhrases,
+    normalizeStructuredFields,
     parseLine,
     parseLines,
     correlatedEvents,
