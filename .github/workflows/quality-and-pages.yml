@@ -70,6 +70,7 @@ jobs:
         run: |
           mkdir -p ui-smoke-artifacts
           : > ui-smoke-artifacts/additional-tests.log
+          set -o pipefail
           result=0
           for file in tests/*.test.js; do
             case "$file" in
@@ -109,6 +110,11 @@ jobs:
           node --check missions.js
           node --check mission-text.js
           node --check mission-validation.js
+          node --check game-log-intake.js
+          node --check game-log-intake-correlation.js
+          node --check game-log-intake-view.js
+          node --check ocr-intake.js
+          node --check ocr-intake-view.js
           node --check route-planner.js
           node --check route-planner-engine.js
           node --check route-corrections.js
@@ -151,6 +157,7 @@ jobs:
           node --check tests/ui-location-context.mjs
           node --check tests/ui-fleet-loadouts.mjs
           node --check tests/ui-starmap-ux.mjs
+          node --check tests/ui-ocr-intake.mjs
       - name: Install browser smoke dependencies
         run: |
           npm install --no-save playwright@1.55.0
@@ -164,6 +171,7 @@ jobs:
           UI_BASE_URL=http://127.0.0.1:4173 node tests/ui-fleet-loadouts.mjs
           UI_BASE_URL=http://127.0.0.1:4173 node tests/ui-browser-hardening.mjs
           UI_BASE_URL=http://127.0.0.1:4173 node tests/ui-starmap-ux.mjs
+          UI_BASE_URL=http://127.0.0.1:4173 node tests/ui-ocr-intake.mjs
       - name: Upload interface screenshots
         if: always()
         uses: actions/upload-artifact@v4
