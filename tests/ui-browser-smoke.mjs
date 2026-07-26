@@ -61,46 +61,48 @@ async function visibleStage() {
 
 let failure = null;
 try {
-  step = 'load focused Missions';
+  step = 'load missions-first intake';
   await page.goto(`${baseUrl}/#missions`, { waitUntil: 'networkidle' });
   await page.locator('.mission-steps').waitFor({ state: 'visible' });
   await page.locator('#mission-text').waitFor({ state: 'visible' });
 
-  step = 'verify reduced navigation and required route context';
+  step = 'verify reduced navigation and deferred route settings';
   assert.equal(await page.locator('.nav-group[data-nav-group="plan"]').count(), 0);
   assert.equal(await page.locator('.nav-group[data-nav-group="manage"]').count(), 0);
-  assert.equal(await page.locator('#mission-start-location').isVisible(), true);
+  assert.equal(await page.locator('#mission-start-location').isVisible(), false);
   assert.equal(await page.locator('#mission-route-mode').inputValue(), 'sessions');
   assert.equal(await page.locator('#mission-session-target').inputValue(), '60');
   assert.deepEqual(await visibleStage(), { input: true, review: false, route: false });
   await noHorizontalOverflow('Missions input desktop');
   await page.screenshot({ path: `${output}/missions-focused-input-desktop.png`, fullPage: true });
 
-  step = 'reject mission analysis without current location';
+  step = 'analyze exact seven-mission sample before route settings';
   await page.locator('#mission-text').fill(realMissionText);
   await page.locator('#mission-form button[type="submit"]').click();
-  assert.deepEqual(await visibleStage(), { input: true, review: false, route: false });
-  assert.equal(await page.locator('#mission-start-location').evaluate((element) => element.matches(':invalid')), true);
+  await page.locator('#focused-review-count').filter({ hasText: '7 missions' }).waitFor({ state: 'visible' });
+  assert.deepEqual(await visibleStage(), { input: false, review: true, route: false });
+  assert.equal(await page.locator('#mission-start-location').isVisible(), true);
+  assert.equal(await page.locator('[data-review-mission]').count(), 7);
+  assert.equal(await page.locator('.mission-location-flag.is-ready').count(), 7);
+  assert.ok(await page.locator('.cargo-chip').count() >= 15);
+  assert.match(await page.locator('[data-review-mission="0"] .mission-location-name').first().textContent(), /Attritus PAF-III/i);
+  assert.match(await page.locator('[data-review-mission="1"] .mission-cargo-chips').first().textContent(), /5×\s*hydrogen/i);
+  assert.match(await page.locator('[data-review-mission="3"] .mission-cargo-chips').first().textContent(), /32×\s*revenant tree pollen/i);
+  assert.equal(await page.locator('.mission-cargo-edit:visible').count(), 0, 'Raw cargo fields must stay hidden in the graphical run sheet');
+  assert.equal(await page.locator('#focused-review-generate').isEnabled(), false, 'Route build remains blocked until current location is selected');
 
-  step = 'select current location and analyze exact seven-mission sample';
+  step = 'select current location and exact travel budget';
   const grimHexValue = await page.locator('#mission-start-location-list option').evaluateAll((options) => options.find((option) => /grim hex/i.test(option.value))?.value ?? '');
   assert.ok(grimHexValue, 'Grim HEX is missing from current-location suggestions');
   await page.locator('#mission-start-location').fill(grimHexValue);
   await page.locator('#mission-start-location').dispatchEvent('change');
   await page.locator('#mission-start-location-status[data-state="ready"]').waitFor({ state: 'visible' });
-  await page.locator('#mission-form button[type="submit"]').click();
-  await page.locator('#focused-review-count').filter({ hasText: '7 missions' }).waitFor({ state: 'visible' });
-  assert.deepEqual(await visibleStage(), { input: false, review: true, route: false });
-  assert.equal(await page.locator('[data-review-mission]').count(), 7);
-  assert.equal(await page.locator('.mission-validation-badge.is-ready').count(), 7);
-  assert.ok(await page.locator('.cargo-chip').count() >= 15);
-  assert.match(await page.locator('[data-review-mission="1"] .mission-cargo-chips').first().textContent(), /5×\s*hydrogen/i);
-  assert.match(await page.locator('[data-review-mission="3"] .mission-cargo-chips').first().textContent(), /32×\s*revenant tree pollen/i);
+  await page.locator('#mission-session-target').fill('60');
   assert.equal(await page.locator('#focused-review-generate').isEnabled(), true);
   await noHorizontalOverflow('Missions review desktop');
   await page.screenshot({ path: `${output}/missions-focused-review-desktop.png`, fullPage: true });
 
-  step = 'build safe one-hour sessions';
+  step = 'build exact sixty-minute travel sessions';
   await page.locator('#focused-review-generate').click();
   await page.locator('[data-stage="route"][aria-current="step"]').waitFor({ state: 'visible' });
   assert.deepEqual(await visibleStage(), { input: false, review: false, route: true });
@@ -108,11 +110,14 @@ try {
   assert.ok(await sessionCards.count() > 1, 'Seven-mission fixture should be split into multiple play sessions');
   const routeSummary = await page.locator('#focused-route-summary').textContent();
   assert.match(routeSummary, /84 SCU total/i);
+  assert.match(routeSummary, /Timing:\s*travel only/i);
   assert.match(routeSummary, /Session 1/i);
   assert.match(routeSummary, /Stanton Gateway/i);
   assert.match(routeSummary, /Pyro Gateway/i);
   const sessionMissionCounts = await sessionCards.evaluateAll((cards) => cards.map((card) => card.querySelectorAll('li').length));
   assert.equal(sessionMissionCounts.reduce((sum, count) => sum + count, 0), 7);
+  const timingLabels = await sessionCards.locator('header > strong').allTextContents();
+  assert.ok(timingLabels.every((label) => /~\d+ min travel/i.test(label)), `Unexpected timing labels: ${timingLabels.join(' | ')}`);
   await noHorizontalOverflow('Missions sessions desktop');
   await page.screenshot({ path: `${output}/missions-focused-sessions-desktop.png`, fullPage: true });
 
@@ -126,6 +131,7 @@ try {
   assert.ok(await page.locator('#ops-live-map .ops-map-leg').count() > 0);
   assert.ok(await page.locator('#ops-live-map .ops-map-gateway').count() >= 2);
   assert.match(await page.locator('#ops-next-leg-strip').textContent(), /Gateway/i);
+  assert.match(await page.locator('#ops-session-summary').textContent(), /max 60 min travel/i);
   assert.equal(await page.locator('.ops-action-bar [data-ops-action]').count(), 5);
   assert.ok(await page.locator('.current-stop-intel-card .intel-icon').count() >= 5);
   await noHorizontalOverflow('Operations live cockpit desktop');
@@ -159,4 +165,4 @@ try {
 }
 
 if (failure) throw failure;
-console.log('v0.25 operational workflow browser smoke passed.');
+console.log('v0.26 mission run sheet and travel-only session smoke passed.');
