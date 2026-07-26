@@ -17,6 +17,10 @@
   grid-template-rows: none !important;
 }
 
+.missions-page .mission-stage > [hidden] {
+  display: none !important;
+}
+
 .missions-page .mission-review-controls,
 .missions-page .mission-route-actions {
   min-height: 68px;
