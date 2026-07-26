@@ -40,14 +40,16 @@ try {
   await page.goto(`${baseUrl}/#missions`, { waitUntil: 'networkidle' });
   await page.evaluate(() => localStorage.removeItem('sc-companion-session-v1'));
   await page.reload({ waitUntil: 'networkidle' });
-  await page.locator('#mission-validation-panel').waitFor({ state: 'visible' });
+  await page.locator('.mission-steps').waitFor({ state: 'visible' });
+  await page.locator('#mission-text').waitFor({ state: 'visible' });
 
   step = 'generate context route';
   await page.locator('#mission-text').fill(missionText);
   await page.locator('#mission-form button[type="submit"]').click();
-  await page.locator('#mission-validation-title').filter({ hasText: /^Ready$/ }).waitFor({ state: 'visible' });
-  await page.locator('#mission-generate-validated').click();
-  await page.locator('#mission-preview-title').filter({ hasText: '1 mission generated' }).waitFor({ state: 'visible' });
+  await page.locator('#focused-review-count').filter({ hasText: '1 / 1' }).waitFor({ state: 'visible' });
+  assert.equal(await page.locator('#focused-review-generate').isEnabled(), true);
+  await page.locator('#focused-review-generate').click();
+  await page.locator('[data-stage="route"][aria-current="step"]').waitFor({ state: 'visible' });
 
   step = 'verify no cargo exposure before first pickup';
   await openWorkspace('route');
