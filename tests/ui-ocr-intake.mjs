@@ -63,10 +63,24 @@ async function noHorizontalOverflow(label) {
   assert.ok(metrics.body <= metrics.viewport + 2, `${label}: body overflow ${metrics.body} > ${metrics.viewport}`);
 }
 
+async function selectCurrentLocation(pattern = /grim hex/i) {
+  const value = await page.locator('#mission-start-location-list option').evaluateAll((options, source) => {
+    const regex = new RegExp(source, 'i');
+    return options.find((option) => regex.test(option.value))?.value ?? '';
+  }, pattern.source);
+  assert.ok(value, `No current-location suggestion matches ${pattern}`);
+  await page.locator('#mission-start-location').fill(value);
+  await page.locator('#mission-start-location').dispatchEvent('change');
+  await page.locator('#mission-start-location-status[data-state="ready"]').waitFor({ state: 'visible' });
+}
+
 try {
   step = 'load Missions screenshot input';
   await page.goto(`${baseUrl}/#missions`, { waitUntil: 'networkidle' });
+  await page.evaluate(() => localStorage.removeItem('sc-companion-session-v1'));
+  await page.reload({ waitUntil: 'networkidle' });
   await page.locator('.mission-steps').waitFor({ state: 'visible' });
+  await selectCurrentLocation();
   await page.locator('[data-input="screenshot"]').click();
   await page.locator('#ocr-intake').waitFor({ state: 'visible' });
   assert.equal(await page.locator('#ocr-use-draft').isDisabled(), true);
@@ -104,14 +118,21 @@ try {
   await page.locator('.ocr-objective').nth(0).locator('[data-ocr-field="commodity"]').fill('Titanium');
   await page.locator('.ocr-objective').nth(1).locator('[data-ocr-field="commodity"]').fill('Titanium');
 
-  step = 'load OCR draft into focused mission review';
+  step = 'load OCR draft into visual mission review';
   await page.locator('#ocr-use-draft').click();
-  await page.locator('#focused-review-count').filter({ hasText: '1 / 1' }).waitFor({ state: 'visible' });
+  await page.locator('#focused-review-count').filter({ hasText: '1 mission' }).waitFor({ state: 'visible' });
+  assert.equal(await page.locator('[data-review-mission]').count(), 1);
+  assert.equal(await page.locator('[data-review-mission] [data-objective]').count(), 2);
+  assert.equal(await page.locator('.location-state.is-ready').count(), 2);
+  assert.equal(await page.locator('.cargo-chip').count(), 2);
+  assert.match(await page.locator('.mission-cargo-chips').first().textContent(), /3×\s*Titanium/i);
   const editorText = await page.locator('#mission-text').inputValue();
-  assert.match(editorText, /collect ARC-L2 Lively Pathway Station 3scu titanium/);
-  assert.match(editorText, /deliver Lorville 3scu titanium/);
+  assert.match(editorText, /collect ARC-L2 Lively Pathway Station 3scu titanium/i);
+  assert.match(editorText, /deliver Lorville 3scu titanium/i);
   assert.equal(await page.locator('#focused-review-generate').isEnabled(), true);
   assert.equal(await page.evaluate(() => window.SCCompanionSession.getState().route), null);
+  await noHorizontalOverflow('OCR visual review mobile');
+  await page.screenshot({ path: `${output}/ocr-visual-review-mobile.png`, fullPage: true });
 
   step = 'check browser errors';
   assert.deepEqual(errors, [], `Browser errors:\n${errors.join('\n')}`);
