@@ -1,0 +1,16 @@
+/* Roadmap labels are operational UI, not decorative microcopy. */
+.release-roadmap-progress > span,
+.release-roadmap-progress > small,
+.release-roadmap-card > header > span,
+.release-roadmap-card > header > em {
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.release-roadmap-card > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
