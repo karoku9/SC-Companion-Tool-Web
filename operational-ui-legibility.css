@@ -1,0 +1,82 @@
+/* v0.25 legibility contract: operational text is never decorative microcopy. */
+.quick-ship-control small,
+.quick-ship-control select,
+.mission-route-context > header small,
+.mission-route-context > header em,
+.mission-context-grid label > span,
+.mission-context-grid small,
+.mission-validation-badge,
+.mission-reward small,
+.mission-reward em,
+.mission-review-card-meta small,
+.location-state,
+.cargo-chip,
+.session-stats span,
+.session-gateways > span,
+.mission-session-card li,
+.session-warning,
+.ops-session-bar > header small,
+.ops-session-tabs button b,
+.ops-session-tabs button small,
+.current-stop-intel-card small,
+.current-stop-intel-card strong,
+.ops-live-nav-header small,
+.ops-nav-chip,
+.ops-map-legend,
+.ops-action-bar strong,
+.ops-action-bar small,
+.ops-manager-mission small,
+.ops-order-row small,
+.ops-editor-message {
+  font-size: 12px !important;
+  line-height: 1.3 !important;
+}
+
+.ops-map-index,
+.ops-map-label,
+.ops-map-gateway text {
+  font-size: 12px !important;
+}
+
+.mission-context-grid input,
+.mission-context-grid select,
+.mission-reward input,
+.mission-review-card-meta input,
+.mission-objective-row > select,
+.mission-location-field > input,
+.mission-cargo-field > input,
+.mission-remove,
+.mission-review-controls .button,
+.mission-route-actions .button,
+#mission-form .button {
+  min-height: 44px;
+}
+
+.mission-remove {
+  width: 44px;
+  height: 44px;
+}
+
+.current-stop-intel-card {
+  min-height: 86px;
+}
+
+.ops-map-legend span::before {
+  width: 10px;
+  height: 10px;
+}
+
+@media (max-width: 560px) {
+  .ops-action-bar small {
+    white-space: normal;
+  }
+
+  .mission-context-grid input,
+  .mission-context-grid select,
+  .mission-review-card-meta input,
+  .mission-objective-row > select,
+  .mission-location-field > input,
+  .mission-cargo-field > input {
+    font-size: 16px !important;
+  }
+}
