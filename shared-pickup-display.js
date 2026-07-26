@@ -2,6 +2,7 @@
 
 (function clarifySharedPickups(root) {
   if (typeof document === 'undefined') return;
+  let queued = false;
 
   function activeContext() {
     const store = root.SCCompanionSession;
@@ -12,6 +13,10 @@
     const route = corrections.deriveRoute(state.route, state.routeCorrections);
     const progress = progressModel.derive(route, state.completedStopIds, state.currentStopIndex);
     return { state, route, progress };
+  }
+
+  function setText(node, value) {
+    if (node && node.textContent !== value) node.textContent = value;
   }
 
   function sharedLabel(operation) {
@@ -33,11 +38,9 @@
       const row = rows[index];
       if (!row) return;
       const label = sharedLabel(operation);
-      const primary = row.querySelector('.operation-primary strong');
-      const detail = row.querySelector('.operation-context');
-      if (primary) primary.textContent = label.primary;
-      if (detail) detail.textContent = label.detail;
-      row.dataset.sharedPickup = 'true';
+      setText(row.querySelector('.operation-primary strong'), label.primary);
+      setText(row.querySelector('.operation-context'), label.detail);
+      if (row.dataset.sharedPickup !== 'true') row.dataset.sharedPickup = 'true';
     });
   }
 
@@ -48,15 +51,15 @@
     stops.forEach((stop, index) => {
       const shared = stop.operations.filter((operation) => operation.sharedPickupTotal && operation.type !== 'delivery');
       if (!shared.length) return;
-      const row = rows[index];
-      const summary = row?.querySelector('div > small');
+      const summary = rows[index]?.querySelector('div > small');
       if (!summary) return;
       const totals = [...new Map(shared.map((operation) => [operation.lotId, operation])).values()];
-      summary.textContent = totals.map((operation) => {
+      const value = totals.map((operation) => {
         const count = Number(operation.pickupLocationCount ?? operation.pickupLocations?.length ?? 1);
         const sequence = Number(operation.pickupSequence ?? 1);
         return `Shared pickup ${sequence}/${count} · ${operation.scu} SCU ${operation.commodity} total`;
       }).join(' · ');
+      setText(summary, value);
     });
   }
 
@@ -71,22 +74,27 @@
       const row = rows[index];
       if (!row) return;
       const label = sharedLabel(operation);
-      const primary = row.querySelector('b, strong');
-      const detail = row.querySelector('span:not(.move-action-icon)');
-      if (primary) primary.textContent = label.primary;
-      if (detail) detail.textContent = label.detail;
-      row.dataset.sharedPickup = 'true';
+      setText(row.querySelector('b, strong'), label.primary);
+      setText(row.querySelector('span:not(.move-action-icon)'), label.detail);
+      if (row.dataset.sharedPickup !== 'true') row.dataset.sharedPickup = 'true';
     });
   }
 
   function update() {
+    queued = false;
     updateCurrentStop();
     updateRouteIndex();
     updateMoveQueue();
   }
 
-  root.addEventListener('sc:session-change', () => queueMicrotask(update));
-  root.addEventListener('sc:route-runtime-ready', () => queueMicrotask(update));
-  new MutationObserver(() => queueMicrotask(update)).observe(document.body, { childList: true, subtree: true });
-  queueMicrotask(update);
+  function schedule() {
+    if (queued) return;
+    queued = true;
+    queueMicrotask(update);
+  }
+
+  root.addEventListener('sc:session-change', schedule);
+  root.addEventListener('sc:route-runtime-ready', schedule);
+  new MutationObserver(schedule).observe(document.body, { childList: true, subtree: true });
+  schedule();
 }(typeof globalThis !== 'undefined' ? globalThis : window));
