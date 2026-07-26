@@ -18,12 +18,6 @@ let step = 'initialization';
 page.on('pageerror', (error) => errors.push(`pageerror: ${error.message}`));
 page.on('console', (message) => { if (message.type() === 'error') errors.push(`console: ${message.text()}`); });
 
-async function openWorkspace(id) {
-  step = `open workspace ${id}`;
-  await page.locator(`[data-view-target="${id}"]`).click();
-  await page.locator(`[data-view="${id}"]`).waitFor({ state: 'visible' });
-}
-
 async function noHorizontalOverflow(label) {
   const metrics = await page.evaluate(() => ({
     viewport: window.innerWidth,
@@ -34,87 +28,95 @@ async function noHorizontalOverflow(label) {
   assert.ok(metrics.body <= metrics.viewport + 2, `${label}: body overflow ${metrics.body} > ${metrics.viewport}`);
 }
 
+async function selectCurrentLocation(pattern = /grim hex/i) {
+  const value = await page.locator('#mission-start-location-list option').evaluateAll((options, source) => {
+    const regex = new RegExp(source, 'i');
+    return options.find((option) => regex.test(option.value))?.value ?? '';
+  }, pattern.source);
+  assert.ok(value, `No current-location suggestion matches ${pattern}`);
+  await page.locator('#mission-start-location').fill(value);
+  await page.locator('#mission-start-location').dispatchEvent('change');
+  await page.locator('#mission-start-location-status[data-state="ready"]').waitFor({ state: 'visible' });
+}
+
 let failure = null;
 try {
   step = 'generate focused interstellar route';
   await page.goto(`${baseUrl}/#missions`, { waitUntil: 'networkidle' });
+  await page.evaluate(() => localStorage.removeItem('sc-companion-session-v1'));
+  await page.reload({ waitUntil: 'networkidle' });
   await page.locator('.mission-steps').waitFor({ state: 'visible' });
+  await selectCurrentLocation();
+  await page.locator('#mission-route-mode').selectOption('fastest');
   await page.locator('#mission-text').fill(missionText);
   await page.locator('#mission-form button[type="submit"]').click();
-  await page.locator('#focused-review-count').filter({ hasText: '1 / 1' }).waitFor({ state: 'visible' });
+  await page.locator('#focused-review-count').filter({ hasText: '1 mission' }).waitFor({ state: 'visible' });
   assert.equal(await page.locator('#focused-review-generate').isEnabled(), true);
   await page.locator('#focused-review-generate').click();
   await page.locator('[data-stage="route"][aria-current="step"]').waitFor({ state: 'visible' });
   await page.locator('#focused-route-summary').filter({ hasText: 'Checkmate' }).waitFor({ state: 'visible' });
+  assert.match(await page.locator('#focused-route-summary').textContent(), /Stanton Gateway/i);
+  assert.match(await page.locator('#focused-route-summary').textContent(), /Pyro Gateway/i);
 
-  step = 'inspect desktop itinerary orientation';
-  await openWorkspace('map');
-  await page.locator('#starmap-canvas .map-route-node').first().waitFor({ state: 'visible' });
-  assert.notEqual((await page.locator('#starmap-hud-current').textContent())?.trim(), 'No active route');
-  assert.notEqual((await page.locator('#starmap-hud-next').textContent())?.trim(), '—');
-  assert.match((await page.locator('#starmap-route-status').textContent()) ?? '', /jump/);
-  assert.doesNotMatch((await page.locator('#starmap-route-status').textContent()) ?? '', /jumps?.*jumps?/i);
-  await noHorizontalOverflow('desktop itinerary');
-  await page.screenshot({ path: `${output}/starmap-ux-itinerary-desktop.png` });
+  step = 'inspect integrated desktop route map';
+  await page.locator('#focused-route-open').click();
+  await page.locator('#ops-live-map .ops-map-node').first().waitFor({ state: 'visible' });
+  assert.equal(await page.locator('[data-view-target="map"]').count(), 0, 'Standalone Starmap must not remain in visible navigation');
+  const nodeCount = await page.locator('#ops-live-map .ops-map-node').count();
+  const legCount = await page.locator('#ops-live-map .ops-map-leg').count();
+  assert.ok(nodeCount >= 3, `Expected at least three route nodes, found ${nodeCount}`);
+  assert.equal(legCount, nodeCount - 1);
+  assert.ok(await page.locator('#ops-live-map .ops-map-gateway').count() >= 4, 'Stanton → Pyro → Nyx must expose both gateway pairs');
+  assert.equal(await page.locator('#ops-live-map .ops-map-node.is-current').count(), 1);
+  assert.ok(await page.locator('#ops-live-map .ops-map-leg.is-active').count() >= 1);
+  assert.match(await page.locator('#ops-next-leg-strip').textContent(), /Gateway|Area18/i);
+  assert.notEqual((await page.locator('#ops-next-leg-title').textContent())?.trim(), 'No active route');
+  await noHorizontalOverflow('integrated desktop map');
+  await page.screenshot({ path: `${output}/integrated-route-map-desktop.png`, fullPage: true });
 
-  step = 'verify selection does not change navigation layer';
-  await page.locator('[data-map-mode="network"]').click();
-  await page.locator('#starmap-canvas [data-map-key="pyro"]').waitFor({ state: 'visible' });
-  await page.locator('#starmap-route-list button').nth(1).click();
-  assert.equal(await page.locator('[data-map-mode="network"]').getAttribute('aria-selected'), 'true');
-  assert.equal((await page.locator('#starmap-mode').textContent())?.trim(), 'System network');
+  step = 'verify map updates with route progress';
+  const firstCurrentId = await page.locator('#ops-live-map .ops-map-node.is-current').getAttribute('data-stop-id');
+  const firstCurrentName = (await page.locator('#current-stop-name').textContent())?.trim();
+  await page.locator('#complete-stop').click();
+  await page.waitForFunction(({ previousId, previousName }) => {
+    const currentNode = document.querySelector('#ops-live-map .ops-map-node.is-current');
+    const currentName = document.querySelector('#current-stop-name')?.textContent?.trim();
+    return currentNode?.getAttribute('data-stop-id') !== previousId && currentName !== previousName;
+  }, { previousId: firstCurrentId, previousName: firstCurrentName });
+  assert.equal(await page.locator('#ops-live-map .ops-map-node.is-complete').count(), 1);
+  assert.equal(await page.locator('#ops-live-map .ops-map-node.is-current').count(), 1);
+  assert.notEqual(await page.locator('#ops-live-map .ops-map-node.is-current').getAttribute('data-stop-id'), firstCurrentId);
+  await page.screenshot({ path: `${output}/integrated-route-map-progress-desktop.png`, fullPage: true });
 
-  step = 'drill down from network to selected system';
-  await page.locator('#starmap-canvas [data-map-key="pyro"]').click();
-  assert.equal((await page.locator('#starmap-selection-title').textContent())?.trim(), 'Pyro');
-  assert.equal(await page.locator('#starmap-open-system').isVisible(), true);
-  await page.locator('#starmap-open-system').click();
-  assert.equal(await page.locator('[data-map-mode="local"]').getAttribute('aria-selected'), 'true');
-  assert.equal(await page.locator('#starmap-system-select').inputValue(), 'pyro');
-  assert.equal(await page.locator('#starmap-open-system').isVisible(), false, 'System layer still offers redundant Open system action');
-  assert.match((await page.locator('#starmap-selection-detail').textContent()) ?? '', /shown on this layer/i);
-  await noHorizontalOverflow('desktop system');
-  await page.screenshot({ path: `${output}/starmap-ux-system-desktop.png` });
-
-  step = 'complete route';
-  await openWorkspace('route');
+  step = 'complete route and verify map orientation';
   let safety = 10;
   while (!(await page.locator('#complete-stop').isDisabled()) && safety > 0) {
     await page.locator('#complete-stop').click();
     safety -= 1;
   }
   assert.ok(safety > 0, 'Route completion exceeded safety limit');
+  await page.locator('#ops-next-leg-title').filter({ hasText: /Session complete/i }).waitFor({ state: 'visible' });
   assert.match((await page.locator('#global-route-status').textContent()) ?? '', /complete/i);
+  assert.equal(await page.locator('#ops-live-map .ops-map-node.is-complete').count(), nodeCount);
+  assert.equal(await page.locator('#ops-live-map .ops-map-node.is-current').count(), 0);
 
-  step = 'verify completed-session orientation at tablet size';
+  step = 'verify completed map at tablet size';
   await page.setViewportSize({ width: 768, height: 1024 });
-  await openWorkspace('map');
-  await page.locator('[data-map-mode="route"]').click();
-  assert.equal((await page.locator('#starmap-hud-current').textContent())?.trim(), 'Session complete');
-  assert.equal((await page.locator('#starmap-hud-current-meta').textContent())?.trim(), 'All active stops completed');
-  assert.equal((await page.locator('#starmap-hud-next').textContent())?.trim(), 'No further stops');
-  assert.equal(await page.locator('[data-hud-stop="current"]').isDisabled(), true);
-  await noHorizontalOverflow('tablet completed itinerary');
-  await page.screenshot({ path: `${output}/starmap-ux-complete-tablet.png` });
+  await page.locator('#ops-live-map').waitFor({ state: 'visible' });
+  assert.match(await page.locator('#ops-next-leg-title').textContent(), /complete/i);
+  await noHorizontalOverflow('tablet completed integrated map');
+  const tabletBox = await page.locator('#ops-live-map').boundingBox();
+  assert.ok(tabletBox && tabletBox.width <= 768 + 2 && tabletBox.height > 300);
+  await page.screenshot({ path: `${output}/integrated-route-map-complete-tablet.png`, fullPage: true });
 
-  step = 'verify mobile details sheet inside the viewport';
+  step = 'verify mobile integrated map and controls';
   await page.setViewportSize({ width: 390, height: 844 });
-  await openWorkspace('map');
-  await page.locator('#starmap-context-toggle').click();
-  const panel = page.locator('#starmap-context-panel');
-  const box = await panel.evaluate((element) => {
-    const rect = element.getBoundingClientRect();
-    return { x: rect.x, y: rect.y, width: rect.width, height: rect.height, viewportWidth: innerWidth, viewportHeight: innerHeight };
-  });
-  assert.ok(box.width > 0 && box.height > 0, 'Mobile details panel has no visible rectangle');
-  assert.ok(box.x >= 0 && box.y >= 0, `Mobile details start outside viewport: ${JSON.stringify(box)}`);
-  assert.ok(box.x + box.width <= box.viewportWidth + 2, `Mobile details escape horizontally: ${JSON.stringify(box)}`);
-  assert.ok(box.y + box.height <= box.viewportHeight + 2, `Mobile details escape vertically: ${JSON.stringify(box)}`);
-  assert.equal(await page.locator('#starmap-context-toggle').getAttribute('aria-expanded'), 'true');
-  await noHorizontalOverflow('mobile details');
-  await page.screenshot({ path: `${output}/starmap-ux-mobile-details.png` });
-  await page.locator('#starmap-context-close').click();
-  assert.equal(await page.locator('#starmap-context-toggle').getAttribute('aria-expanded'), 'false');
+  await page.locator('#ops-live-map').waitFor({ state: 'visible' });
+  await noHorizontalOverflow('mobile integrated map');
+  const mobileBox = await page.locator('#ops-live-map').boundingBox();
+  assert.ok(mobileBox && mobileBox.x >= 0 && mobileBox.x + mobileBox.width <= 392, `Mobile map escapes viewport: ${JSON.stringify(mobileBox)}`);
+  assert.equal(await page.locator('.ops-action-bar [data-ops-action]').count(), 5);
+  await page.screenshot({ path: `${output}/integrated-route-map-mobile.png`, fullPage: true });
 
   step = 'check browser errors';
   assert.deepEqual(errors, [], `Browser errors:\n${errors.join('\n')}`);
