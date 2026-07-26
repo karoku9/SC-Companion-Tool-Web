@@ -45,8 +45,8 @@
     family: 'Lucide-derived SC Companion operational subset',
     license: 'ISC',
     grid: 24,
-    strokeWidth: 1.8,
-    sizes: Object.freeze([16, 18, 20, 24]),
+    strokeWidth: 1.7,
+    sizes: Object.freeze([16, 20, 24]),
     names: Object.freeze(Object.keys(paths))
   });
 
