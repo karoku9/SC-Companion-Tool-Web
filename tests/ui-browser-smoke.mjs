@@ -108,8 +108,8 @@ try {
   step = 'navigate one mission at a time';
   await page.locator('#focused-review-next').click();
   await page.locator('#focused-review-count').filter({ hasText: '2 / 7' }).waitFor({ state: 'visible' });
-  const sharedLocations = await page.locator('[data-focused-mission] [data-field="location"]').allInputValues();
-  const sharedCargo = await page.locator('[data-focused-mission] [data-field="cargo"]').allInputValues();
+  const sharedLocations = await page.locator('[data-focused-mission] [data-field="location"]').evaluateAll((nodes) => nodes.map((node) => node.value));
+  const sharedCargo = await page.locator('[data-focused-mission] [data-field="cargo"]').evaluateAll((nodes) => nodes.map((node) => node.value));
   assert.match(sharedLocations[0], /vivere paf-iii/i);
   assert.match(sharedLocations[0], /attritus paf-ii/i);
   assert.match(sharedCargo[0], /5scu hydrogen totale/i);
