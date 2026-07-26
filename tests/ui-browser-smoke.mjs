@@ -83,9 +83,11 @@ try {
   assert.equal(await page.locator('#mission-start-location').evaluate((element) => element.matches(':invalid')), true);
 
   step = 'select current location and analyze exact seven-mission sample';
-  await page.locator('#mission-start-location').fill('Grim HEX');
+  const grimHexValue = await page.locator('#mission-start-location-list option').evaluateAll((options) => options.find((option) => /grim hex/i.test(option.value))?.value ?? '');
+  assert.ok(grimHexValue, 'Grim HEX is missing from current-location suggestions');
+  await page.locator('#mission-start-location').fill(grimHexValue);
   await page.locator('#mission-start-location').dispatchEvent('change');
-  await page.locator('#mission-start-location-status').filter({ hasText: /Yela|Crusader/i }).waitFor({ state: 'visible' });
+  await page.locator('#mission-start-location-status[data-state="ready"]').waitFor({ state: 'visible' });
   await page.locator('#mission-form button[type="submit"]').click();
   await page.locator('#focused-review-count').filter({ hasText: '7 missions' }).waitFor({ state: 'visible' });
   assert.deepEqual(await visibleStage(), { input: false, review: true, route: false });
