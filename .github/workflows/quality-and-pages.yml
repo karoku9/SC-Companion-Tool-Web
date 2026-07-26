@@ -115,6 +115,7 @@ jobs:
           node --check game-log-intake-view.js
           node --check ocr-intake.js
           node --check ocr-intake-view.js
+          node --check assisted-intake-access.js
           node --check route-planner.js
           node --check route-planner-engine.js
           node --check route-corrections.js
@@ -158,6 +159,7 @@ jobs:
           node --check tests/ui-fleet-loadouts.mjs
           node --check tests/ui-starmap-ux.mjs
           node --check tests/ui-ocr-intake.mjs
+          node --check tests/ui-assisted-intake-access.mjs
       - name: Install browser smoke dependencies
         run: |
           npm install --no-save playwright@1.55.0
@@ -172,6 +174,7 @@ jobs:
           UI_BASE_URL=http://127.0.0.1:4173 node tests/ui-browser-hardening.mjs
           UI_BASE_URL=http://127.0.0.1:4173 node tests/ui-starmap-ux.mjs
           UI_BASE_URL=http://127.0.0.1:4173 node tests/ui-ocr-intake.mjs
+          UI_BASE_URL=http://127.0.0.1:4173 node tests/ui-assisted-intake-access.mjs
       - name: Upload interface screenshots
         if: always()
         uses: actions/upload-artifact@v4
