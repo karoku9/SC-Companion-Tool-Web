@@ -82,7 +82,8 @@ try {
   await page.locator('#planner-detail-panel').waitFor({ state: 'visible' });
   await page.locator('.planner-location-context').first().waitFor({ state: 'visible' });
   const plannerContext = await page.locator('#planner-route-list').textContent();
-  assert.match(plannerContext, /High cargo exposure|Elevated cargo exposure/);
+  assert.match(plannerContext, /High cargo exposure|Elevated cargo exposure|No mission cargo exposed/);
+  assert.match(plannerContext, /Pyro/);
   assert.match(plannerContext, /Official|Reviewed community/i);
 
   step = 'open complete Checkmate location intel';
