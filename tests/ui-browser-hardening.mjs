@@ -121,9 +121,10 @@ async function generateLongSession(target) {
   await target.locator('#mission-text').fill(longMissionText);
   await target.locator('#mission-form button[type="submit"]').click();
   await target.locator('#focused-review-count').filter({ hasText: '1 / 1' }).waitFor({ state: 'visible' });
-  const reviewText = await target.locator('#focused-review-single').textContent();
-  assert.match(reviewText, /Long-range medical consolidation/);
-  assert.match(reviewText, /extremely_long_medical_supplies/);
+  const reviewTitle = await target.locator('#focused-review-single [data-field="title"]').inputValue();
+  const reviewCargo = await target.locator('#focused-review-single [data-field="cargo"]').first().inputValue();
+  assert.match(reviewTitle, /Long-range medical consolidation/);
+  assert.match(reviewCargo, /extremely_long_medical_supplies/);
   assert.equal(await target.locator('#focused-review-generate').isEnabled(), true);
   await target.locator('#focused-review-generate').click();
   await target.locator('[data-stage="route"][aria-current="step"]').waitFor({ state: 'visible' });
