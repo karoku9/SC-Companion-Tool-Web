@@ -99,7 +99,8 @@ try {
   assert.deepEqual(await visibleStage(), { input: false, review: true, route: false });
   assert.equal(await page.locator('[data-focused-mission]').count(), 1);
   assert.equal(await page.locator('.mission-review-card').count(), 0);
-  assert.match(await page.locator('#focused-review-single').textContent(), /Attritus PAF-III/i);
+  const firstLocation = await page.locator('[data-focused-mission] [data-field="location"]').first().inputValue();
+  assert.match(firstLocation, /attritus paf-iii/i);
   assert.equal(await page.locator('#focused-review-generate').isEnabled(), true);
   await noHorizontalOverflow('Missions review desktop');
   await page.screenshot({ path: `${output}/missions-focused-review-desktop.png`, fullPage: true });
@@ -107,10 +108,11 @@ try {
   step = 'navigate one mission at a time';
   await page.locator('#focused-review-next').click();
   await page.locator('#focused-review-count').filter({ hasText: '2 / 7' }).waitFor({ state: 'visible' });
-  const sharedMission = await page.locator('#focused-review-single').textContent();
-  assert.match(sharedMission, /Vivere PAF-III/i);
-  assert.match(sharedMission, /Attritus PAF-II/i);
-  assert.match(sharedMission, /5scu hydrogen totale/i);
+  const sharedLocations = await page.locator('[data-focused-mission] [data-field="location"]').allInputValues();
+  const sharedCargo = await page.locator('[data-focused-mission] [data-field="cargo"]').allInputValues();
+  assert.match(sharedLocations[0], /vivere paf-iii/i);
+  assert.match(sharedLocations[0], /attritus paf-ii/i);
+  assert.match(sharedCargo[0], /5scu hydrogen totale/i);
 
   step = 'generate route';
   await page.locator('#focused-review-generate').click();
