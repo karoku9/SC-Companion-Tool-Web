@@ -6,99 +6,100 @@ const baseUrl = process.env.UI_BASE_URL ?? 'http://127.0.0.1:4173';
 const output = process.env.UI_SCREENSHOT_DIR ?? 'ui-smoke-artifacts';
 await fs.mkdir(output, { recursive: true });
 
+const missionText = `Ship capacity test
+collect grim hex 20scu titanium
+deliver area18 20scu titanium`;
+
 const browser = await chromium.launch({ headless: true });
 const page = await browser.newPage({ viewport: { width: 1664, height: 936 }, deviceScaleFactor: 1 });
 const errors = [];
+let step = 'initialization';
+let failure = null;
 page.on('pageerror', (error) => errors.push(`pageerror: ${error.message}`));
 page.on('console', (message) => { if (message.type() === 'error') errors.push(`console: ${message.text()}`); });
 
+async function noHorizontalOverflow(label) {
+  const metrics = await page.evaluate(() => ({ viewport: innerWidth, document: document.documentElement.scrollWidth, body: document.body.scrollWidth }));
+  assert.ok(metrics.document <= metrics.viewport + 2, `${label}: document overflow ${metrics.document} > ${metrics.viewport}`);
+  assert.ok(metrics.body <= metrics.viewport + 2, `${label}: body overflow ${metrics.body} > ${metrics.viewport}`);
+}
+
+async function selectCurrentLocation(pattern = /grim hex/i) {
+  const value = await page.locator('#mission-start-location-list option').evaluateAll((options, source) => {
+    const regex = new RegExp(source, 'i');
+    return options.find((option) => regex.test(option.value))?.value ?? '';
+  }, pattern.source);
+  assert.ok(value, `No current-location suggestion matches ${pattern}`);
+  await page.locator('#mission-start-location').fill(value);
+  await page.locator('#mission-start-location').dispatchEvent('change');
+  await page.locator('#mission-start-location-status[data-state="ready"]').waitFor({ state: 'visible' });
+}
+
 try {
-  await page.goto(`${baseUrl}/#hangar`, { waitUntil: 'networkidle' });
+  step = 'load simplified ship controls';
+  await page.goto(`${baseUrl}/#missions`, { waitUntil: 'networkidle' });
   await page.evaluate(() => localStorage.removeItem('sc-companion-session-v1'));
   await page.reload({ waitUntil: 'networkidle' });
-  await page.locator('[data-view-target="hangar"]').click();
-  await page.locator('#fleet-loadout-editor').waitFor({ state: 'visible' });
-  await page.waitForFunction(() => window.SCCompanionFleetLoadouts?.activePerformance(window.SCCompanionSession.getState()));
+  await page.locator('.mission-steps').waitFor({ state: 'visible' });
+  await page.locator('#mission-ship-select').waitFor({ state: 'visible' });
 
-  assert.equal(await page.locator('.fleet-loadout-card').count(), 1);
-  assert.match(await page.locator('.fleet-loadout-card').first().textContent(), /Imported configuration/i);
+  step = 'verify model-only menu';
+  const options = await page.locator('#mission-ship-select option').allTextContents();
+  assert.ok(options.length >= 7);
+  assert.ok(options.some((label) => /Drake Corsair · 72 SCU/i.test(label)));
+  assert.ok(options.some((label) => /RSI Constellation Taurus · 168 SCU/i.test(label)));
+  assert.ok(options.some((label) => /Crusader C2 Hercules · 696 SCU/i.test(label)));
+  assert.ok(options.every((label) => !/skin|paint|livery/i.test(label)));
+  assert.equal(await page.locator('[data-view-target="hangar"]').count(), 0, 'Fleet workspace must not remain in visible navigation');
+  assert.equal(await page.locator('#fleet-loadout-editor:visible').count(), 0, 'Advanced loadout editor must stay out of the active workflow');
 
-  await page.locator('#fleet-loadout-new').click();
-  await page.locator('#fleet-loadout-name').fill('Fast Stanton');
-  await page.locator('#fleet-loadout-quantum-factor').fill('0.82');
-  await page.locator('#fleet-loadout-handling-factor').fill('0.75');
-  await page.locator('#fleet-loadout-fuel-factor').fill('0.9');
-  await page.locator('#fleet-loadout-spool').fill('6');
-  await page.locator('#fleet-loadout-cargo-delta').fill('-4');
-  await page.locator('[data-component-field="name"]').first().fill('VK-00 test profile');
-  await page.locator('[data-component-field="source-authority"]').first().fill('Manual test record');
-  await page.locator('#fleet-loadout-form button[type="submit"]').click();
+  step = 'build a route with Corsair';
+  await selectCurrentLocation();
+  await page.locator('#mission-ship-select').selectOption('drake-corsair');
+  await page.locator('#mission-text').fill(missionText);
+  await page.locator('#mission-form button[type="submit"]').click();
+  await page.locator('#focused-review-generate').waitFor({ state: 'visible' });
+  assert.equal(await page.locator('#focused-review-generate').isEnabled(), true);
+  await page.locator('#focused-review-generate').click();
+  await page.locator('[data-stage="route"][aria-current="step"]').waitFor({ state: 'visible' });
+  await page.locator('#focused-route-open').click();
+  await page.locator('#quick-ship-select').waitFor({ state: 'visible' });
+  assert.equal(await page.locator('#quick-ship-select').inputValue(), 'drake-corsair');
+  let state = await page.evaluate(() => window.SCCompanionSession.getState());
+  assert.equal(state.selectedShipModelId, 'drake-corsair');
+  assert.equal(state.hangarShips.find((ship) => ship.id === state.selectedShipId)?.cargoCapacityScu, 72);
+  const previousRoutePlan = JSON.stringify(state.routePlan);
 
-  await page.locator('.fleet-loadout-card.is-active').filter({ hasText: 'Fast Stanton' }).waitFor({ state: 'visible' });
-  const state = await page.evaluate(() => {
-    const current = window.SCCompanionSession.getState();
-    const performance = window.SCCompanionFleetLoadouts.activePerformance(current);
-    const plannerContext = window.SCCompanionRoutePlannerEngine.enrichedContext({});
-    return {
-      selectedShipId: current.selectedShipId,
-      activeLoadoutId: current.activeLoadoutByShip[current.selectedShipId],
-      shadowShip: current.hangarShips.find((ship) => ship.id === current.selectedShipId),
-      performance,
-      plannerContext: {
-        quantumTimeFactor: plannerContext.quantumTimeFactor,
-        handlingTimeFactor: plannerContext.handlingTimeFactor,
-        physicalCapacityScu: plannerContext.physicalCapacityScu,
-        fuelEfficiencyFactor: plannerContext.fuelEfficiencyFactor
-      }
-    };
-  });
-  assert.equal(state.selectedShipId, 'corsair-main');
-  assert.match(state.activeLoadoutId, /loadout/);
-  assert.equal(state.shadowShip.quantumTimeFactor, 0.82);
-  assert.equal(state.performance.operationalCargoCapacityScu, 68);
-  assert.equal(state.performance.handlingTimeFactor, 0.75);
-  assert.equal(state.performance.quantumDriveName, 'VK-00 test profile');
-  assert.deepEqual(state.plannerContext, {
-    quantumTimeFactor: 0.82,
-    handlingTimeFactor: 0.75,
-    physicalCapacityScu: 68,
-    fuelEfficiencyFactor: 0.9
-  });
-  assert.match(await page.locator('#fleet-quantum-factor').textContent(), /0\.82/);
-  assert.match(await page.locator('#fleet-grid-capacity').textContent(), /68 SCU/);
+  step = 'switch model and rebuild the active sessions';
+  await page.locator('#quick-ship-select').selectOption('rsi-constellation-taurus');
+  await page.waitForFunction(() => window.SCCompanionSession.getState().selectedShipModelId === 'rsi-constellation-taurus');
+  state = await page.evaluate(() => window.SCCompanionSession.getState());
+  assert.equal(state.selectedShipModelId, 'rsi-constellation-taurus');
+  assert.equal(state.hangarShips.find((ship) => ship.id === state.selectedShipId)?.cargoCapacityScu, 168);
+  assert.notEqual(JSON.stringify(state.routePlan), previousRoutePlan, 'Changing ship must rebuild the session plan');
+  assert.equal(await page.locator('#quick-ship-select').inputValue(), 'rsi-constellation-taurus');
+  await noHorizontalOverflow('Simplified ship selector desktop');
+  await page.screenshot({ path: `${output}/ship-selector-desktop.png`, fullPage: true });
 
-  const migrated = await page.evaluate(() => {
-    const current = window.SCCompanionSession.getState();
-    return {
-      loadouts: current.fleetLoadouts[current.selectedShipId].length,
-      shipId: current.hangarShips.find((ship) => ship.id === current.selectedShipId).id
-    };
-  });
-  assert.equal(migrated.loadouts, 2);
-  assert.equal(migrated.shipId, 'corsair-main');
-
-  await page.reload({ waitUntil: 'networkidle' });
-  await page.locator('[data-view-target="hangar"]').click();
-  await page.locator('.fleet-loadout-card.is-active').filter({ hasText: 'Fast Stanton' }).waitFor({ state: 'visible' });
-  assert.equal(await page.locator('.fleet-loadout-card').count(), 2);
-
-  const metrics = await page.evaluate(() => ({ viewport: innerWidth, document: document.documentElement.scrollWidth }));
-  assert.ok(metrics.document <= metrics.viewport + 2, `Fleet desktop overflow: ${JSON.stringify(metrics)}`);
-  await page.screenshot({ path: `${output}/fleet-loadouts-desktop.png`, fullPage: true });
-
+  step = 'verify mobile keeps ship selection inside Missions';
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.locator('#fleet-loadout-editor').scrollIntoViewIfNeeded();
-  const mobile = await page.evaluate(() => ({ viewport: innerWidth, document: document.documentElement.scrollWidth }));
-  assert.ok(mobile.document <= mobile.viewport + 2, `Fleet mobile overflow: ${JSON.stringify(mobile)}`);
-  const undersized = await page.evaluate(() => [...document.querySelectorAll('#fleet-loadout-editor button, #fleet-loadout-editor input, #fleet-loadout-editor select')]
-    .filter((element) => {
-      const box = element.getBoundingClientRect();
-      const style = getComputedStyle(element);
-      return box.width > 0 && box.height > 0 && style.visibility !== 'hidden' && !element.disabled && box.height < 43;
-    }).map((element) => ({ text: element.textContent || element.getAttribute('aria-label') || element.id, height: element.getBoundingClientRect().height })));
-  assert.deepEqual(undersized, []);
-  await page.screenshot({ path: `${output}/fleet-loadouts-mobile.png`, fullPage: true });
-  assert.deepEqual(errors, []);
+  assert.equal(await page.locator('.quick-ship-control').isVisible(), false);
+  await page.locator('[data-view-target="missions"]').click();
+  await page.locator('[data-stage="input"]').click();
+  await page.locator('#mission-ship-select').waitFor({ state: 'visible' });
+  assert.equal(await page.locator('#mission-ship-select').inputValue(), 'rsi-constellation-taurus');
+  const box = await page.locator('#mission-ship-select').boundingBox();
+  assert.ok(box && box.height >= 42, `Mobile ship target is too small: ${JSON.stringify(box)}`);
+  await noHorizontalOverflow('Simplified ship selector mobile');
+  await page.screenshot({ path: `${output}/ship-selector-mobile.png`, fullPage: true });
+
+  assert.deepEqual(errors, [], `Browser errors:\n${errors.join('\n')}`);
+} catch (error) {
+  failure = error;
+  await fs.writeFile(`${output}/ship-selector-failure.txt`, `Step: ${step}\n\n${error.stack ?? error.message}\n\nBrowser errors:\n${errors.join('\n')}`);
+  await page.screenshot({ path: `${output}/ship-selector-failure.png`, fullPage: true }).catch(() => {});
 } finally {
   await browser.close();
 }
+
+if (failure) throw failure;
