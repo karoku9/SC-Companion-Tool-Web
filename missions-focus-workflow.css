@@ -1,0 +1,216 @@
+/* Missions is a linear cockpit workflow: input OR review OR summary, never all at once. */
+.missions-page .page-header {
+  max-width: 1180px;
+  margin-inline: auto;
+  padding-bottom: 10px;
+}
+.missions-page .page-header p { max-width: 760px; }
+.missions-page .missions-grid {
+  width: min(1180px, 100%);
+  margin-inline: auto;
+  display: block;
+}
+.mission-focus-toolbar {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.mission-focus-toolbar button {
+  min-height: 58px;
+  display: grid;
+  gap: 3px;
+  align-content: center;
+  padding: 10px 14px;
+  border: 1px solid var(--ds-border-subtle);
+  background: var(--ds-surface-panel);
+  color: var(--ds-content-secondary);
+  text-align: left;
+  cursor: pointer;
+}
+.mission-focus-toolbar button:hover { border-color: var(--ds-border-strong); }
+.mission-focus-toolbar button[aria-pressed="true"] {
+  border-color: var(--ds-action-primary);
+  background: color-mix(in srgb, var(--ds-action-primary) 10%, var(--ds-surface-panel));
+  box-shadow: inset 0 -3px 0 var(--ds-action-primary);
+}
+.mission-focus-toolbar strong { color: var(--ds-content-primary); font-size: 13px; }
+.mission-focus-toolbar small { color: var(--ds-content-muted); font-size: 11px; }
+.mission-focus-stage { min-width: 0; }
+.mission-focus-stage > [hidden],
+.mission-editor > [hidden] { display: none !important; }
+
+.missions-page .mission-editor,
+.missions-page .mission-validation-panel,
+.missions-page .mission-output {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+}
+.missions-page .mission-editor {
+  display: grid;
+  grid-template-rows: auto minmax(360px, 58dvh) auto auto auto;
+  overflow: hidden;
+}
+.missions-page .mission-editor.is-assisted-mode {
+  display: block;
+  min-height: 0;
+}
+.missions-page #mission-text {
+  width: 100%;
+  min-height: 360px;
+  resize: vertical;
+  border-width: 0 0 1px;
+  padding: 18px;
+  font-size: 14px;
+  line-height: 1.55;
+}
+.missions-page .mission-editor .form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 14px;
+}
+.missions-page .mission-editor .field-help,
+.missions-page .mission-editor .form-message {
+  margin: 0;
+  padding: 0 14px 12px;
+}
+
+/* Assisted inputs reuse the one main surface instead of nesting another dashboard. */
+.missions-page #game-log-intake,
+.missions-page #ocr-intake {
+  margin: 0;
+  padding: 14px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.missions-page #game-log-intake > header,
+.missions-page #ocr-intake > header { display: none; }
+.missions-page .game-log-summary,
+.missions-page .ocr-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  border-block: 1px solid var(--ds-border-subtle);
+}
+.missions-page .game-log-summary article,
+.missions-page .ocr-summary article {
+  min-width: 120px;
+  flex: 1;
+  padding: 10px 12px;
+  border: 0;
+  border-right: 1px solid var(--ds-border-subtle);
+  background: transparent;
+}
+.missions-page .game-log-summary article:last-child,
+.missions-page .ocr-summary article:last-child { border-right: 0; }
+.missions-page .game-log-event,
+.missions-page .ocr-review-item,
+.missions-page .ocr-image-card {
+  border-width: 0 0 1px;
+  background: transparent;
+}
+.missions-page .game-log-event-list,
+.missions-page .ocr-review-list { max-height: min(52dvh, 620px); }
+
+/* Review is an accordion: one contract open, the rest compact. */
+.missions-page .mission-validation-panel {
+  max-height: none;
+  overflow: visible;
+}
+.missions-page .mission-validation-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  border-bottom: 1px solid var(--ds-border-subtle);
+}
+.missions-page .mission-validation-summary > div {
+  min-width: 130px;
+  flex: 1;
+  border: 0;
+  border-right: 1px solid var(--ds-border-subtle);
+  background: transparent;
+}
+.missions-page .mission-validation-summary > div:last-child { border-right: 0; }
+.missions-page .mission-validation-issues { max-height: 190px; overflow: auto; }
+.missions-page .mission-review-list { display: grid; gap: 5px; padding: 8px; }
+.missions-page .mission-review-card {
+  margin: 0;
+  border: 1px solid var(--ds-border-subtle);
+  background: var(--ds-surface-panel);
+}
+.missions-page .mission-review-card > header {
+  min-height: 52px;
+  position: relative;
+  cursor: pointer;
+  border-bottom: 1px solid var(--ds-border-subtle);
+}
+.missions-page .mission-review-card > header::after {
+  content: "−";
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  translate: 0 -50%;
+  color: var(--ds-action-primary);
+  font-size: 18px;
+}
+.missions-page .mission-review-card.is-collapsed > header { border-bottom: 0; }
+.missions-page .mission-review-card.is-collapsed > header::after { content: "+"; }
+.missions-page .mission-review-card.is-collapsed > :not(header) { display: none !important; }
+.missions-page .mission-review-row {
+  margin: 0;
+  border: 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--ds-border-subtle) 70%, transparent);
+  background: transparent;
+}
+.missions-page .mission-review-row:last-child { border-bottom: 0; }
+.missions-page .mission-validation-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 3;
+  background: color-mix(in srgb, var(--ds-surface-panel-raised) 96%, transparent);
+  backdrop-filter: blur(8px);
+}
+
+/* Generated result is a compact manifest, not another wall of cards. */
+.missions-page .mission-cards { display: grid; gap: 0; }
+.missions-page .mission-card {
+  margin: 0;
+  padding: 14px 16px;
+  border: 0;
+  border-bottom: 1px solid var(--ds-border-subtle);
+  background: transparent;
+}
+.missions-page .mission-card:last-child { border-bottom: 0; }
+.missions-page .mission-card li {
+  display: grid;
+  grid-template-columns: minmax(140px, .45fr) minmax(220px, 1fr);
+  gap: 8px;
+  padding: 7px 0;
+}
+.missions-page .mission-card li small { grid-column: 2; }
+.mission-output-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 14px;
+  border-top: 1px solid var(--ds-border-subtle);
+}
+
+@media (max-width: 720px) {
+  .mission-focus-toolbar { grid-template-columns: 1fr; }
+  .mission-focus-toolbar button { min-height: 52px; }
+  .missions-page .mission-editor { grid-template-rows: auto minmax(420px, 62dvh) auto auto auto; }
+  .missions-page #mission-text { min-height: 420px; padding: 14px; }
+  .missions-page .mission-validation-summary { display: grid; grid-template-columns: 1fr 1fr; }
+  .missions-page .mission-validation-summary > div { border-bottom: 1px solid var(--ds-border-subtle); }
+  .missions-page .mission-review-card > header { padding-right: 42px; }
+  .missions-page .mission-card li { grid-template-columns: 1fr; }
+  .missions-page .mission-card li small { grid-column: 1; }
+  .mission-output-actions,
+  .missions-page .mission-editor .form-actions { flex-direction: column-reverse; }
+  .mission-output-actions .button,
+  .missions-page .mission-editor .form-actions .button { width: 100%; }
+}
