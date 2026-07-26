@@ -25,6 +25,13 @@
       ?? (matches.length === 1 ? matches[0] : null);
   }
 
+  function setCheckIcon(element) {
+    if (!element || element.dataset.iconState === 'check') return;
+    const check = icons?.render?.('check', 'mission-icon') ?? '';
+    if (check) element.innerHTML = check;
+    element.dataset.iconState = 'check';
+  }
+
   function cleanLocationSuggestions() {
     document.querySelectorAll('#mission-start-location-list option').forEach((option) => {
       if (option.hasAttribute('label')) option.removeAttribute('label');
@@ -52,21 +59,18 @@
         const displayValue = resolved.map((location) => locations.formatOperationalLabel(location)).join(' + ');
         if (input.value !== inputValue) input.value = inputValue;
         if (display.textContent !== displayValue) display.textContent = displayValue;
-        flag.className = 'location-state-v26 is-ready';
-        flag.title = 'Matched to the location database';
-        flag.setAttribute('aria-label', flag.title);
-        const check = icons?.render?.('check', 'mission-icon') ?? '';
-        if (check && !flag.querySelector('svg')) flag.innerHTML = check;
-        else if (check && !/check/i.test(flag.innerHTML)) flag.innerHTML = check;
+        if (flag.className !== 'location-state-v26 is-ready') flag.className = 'location-state-v26 is-ready';
+        if (flag.title !== 'Matched to the location database') flag.title = 'Matched to the location database';
+        if (flag.getAttribute('aria-label') !== flag.title) flag.setAttribute('aria-label', flag.title);
+        setCheckIcon(flag);
       });
 
       const headerFlag = card.querySelector('.mission-location-flag');
       if (headerFlag && ready) {
-        headerFlag.className = 'mission-location-flag is-ready';
-        headerFlag.title = 'All locations matched';
-        headerFlag.setAttribute('aria-label', headerFlag.title);
-        const check = icons?.render?.('check', 'mission-icon') ?? '';
-        if (check && !/check/i.test(headerFlag.innerHTML)) headerFlag.innerHTML = check;
+        if (headerFlag.className !== 'mission-location-flag is-ready') headerFlag.className = 'mission-location-flag is-ready';
+        if (headerFlag.title !== 'All locations matched') headerFlag.title = 'All locations matched';
+        if (headerFlag.getAttribute('aria-label') !== headerFlag.title) headerFlag.setAttribute('aria-label', headerFlag.title);
+        setCheckIcon(headerFlag);
       }
     });
   }
