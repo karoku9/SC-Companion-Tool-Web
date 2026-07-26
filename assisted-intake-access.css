@@ -1,0 +1,60 @@
+/* Reliable local-file, clipboard and drag/drop access for assisted mission intake. */
+.game-log-controls {
+  grid-template-columns: repeat(4, minmax(145px, 1fr));
+}
+
+.ocr-controls {
+  grid-template-columns: repeat(4, minmax(145px, 1fr));
+}
+
+.assisted-intake-dropzone {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border: 1px dashed var(--ds-border-strong);
+  background: color-mix(in srgb, var(--ds-action-primary) 5%, var(--ds-surface-screen));
+  color: var(--ds-content-secondary);
+  cursor: default;
+  outline: none;
+}
+
+.assisted-intake-dropzone strong {
+  color: var(--ds-content-primary);
+  font-size: var(--ds-type-sm);
+}
+
+.assisted-intake-dropzone span {
+  color: var(--ds-content-muted);
+  font-size: var(--ds-type-xs);
+  line-height: 1.45;
+}
+
+.assisted-intake-dropzone:focus-visible,
+.assisted-intake-dropzone.is-dragover {
+  border-color: var(--ds-action-primary);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--ds-action-primary) 30%, transparent);
+  background: color-mix(in srgb, var(--ds-action-primary) 10%, var(--ds-surface-screen));
+}
+
+.ocr-paste-zone strong {
+  color: var(--ds-action-primary-hover);
+}
+
+@media (max-width: 1180px) {
+  .game-log-controls,
+  .ocr-controls {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .game-log-controls,
+  .ocr-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .assisted-intake-dropzone {
+    min-height: 64px;
+  }
+}
