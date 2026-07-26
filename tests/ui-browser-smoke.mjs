@@ -128,7 +128,7 @@ try {
   await page.screenshot({ path: `${output}/missions-focused-route-desktop.png`, fullPage: true });
 
   step = 'open Operations from generated route';
-  await page.locator('[data-shell-link="route"]').click();
+  await page.getByRole('button', { name: 'Open Operations' }).click();
   await page.locator('#current-stop-name').waitFor({ state: 'visible' });
   const operationsText = await page.locator('#route-stop-list').textContent();
   assert.match(operationsText, /Attritus PAF-III/i);
