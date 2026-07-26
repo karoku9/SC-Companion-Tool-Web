@@ -6,6 +6,7 @@
   if (!model) throw new Error('Integrated mission model is unavailable.');
   root.SCCompanionMissions = model;
   if (typeof document !== 'undefined') {
+    import('./focused-route-optimizer.js');
     import('./missions-source-provenance.js');
     import('./shared-pickup-display.js');
     import('./missions-review-accessibility.js');
