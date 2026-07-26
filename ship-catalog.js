@@ -19,7 +19,7 @@
         rows: 1,
         columns: input.capacityScu,
         accessPoints: Object.freeze(input.accessPoints ?? ['rear']),
-        geometryStatus: 'operational-capacity-only',
+        geometryStatus: 'concept',
         zones: zones(input.capacityScu, input.zones)
       }),
       sourceStatus: input.sourceStatus ?? 'official-capacity-reference'
