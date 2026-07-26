@@ -1,10 +1,11 @@
 'use strict';
 
-(function initializeFocusedMissionWorkflow() {
+(function initializeMissionWorkflowV026() {
   let initialized = false;
 
   function initialize() {
     if (initialized) return true;
+
     const page = document.querySelector('.missions-page');
     const grid = page?.querySelector('.missions-grid');
     const form = page?.querySelector('#mission-form');
@@ -21,7 +22,10 @@
     const sessionPlanner = window.SCCompanionRouteSessionPlanner;
     const shipCatalog = window.SCCompanionShipCatalog;
     const icons = window.SCCompanionMfdIcons;
-    if (!page || !grid || !form || !validation || !output || !gameLog || !ocr || !text || !message || !store || !validator || !missionModel || !locationModel || !sessionPlanner || !shipCatalog) return false;
+
+    if (!page || !grid || !form || !validation || !output || !gameLog || !ocr || !text || !message
+      || !store || !validator || !missionModel || !locationModel || !sessionPlanner || !shipCatalog) return false;
+
     initialized = true;
 
     let sourceText = text.value;
@@ -30,18 +34,23 @@
     let routePlan = null;
 
     const icon = (name, className = 'mission-icon') => icons?.render?.(name, className) ?? '';
-    const escapeHtml = (value) => String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+    const escapeHtml = (value) => String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
 
     page.querySelector('.page-header h2').textContent = 'Mission intake';
-    page.querySelector('.page-header p').textContent = 'Tell the tool where you are, paste the contracts, verify the parsed grid, then choose a safe play session.';
+    page.querySelector('.page-header p').textContent = 'Paste the contracts first. Then verify the parsed run sheet and set the route constraints.';
     page.querySelector('.page-header .status-tag')?.remove();
 
     const steps = document.createElement('nav');
     steps.className = 'mission-steps';
     steps.setAttribute('aria-label', 'Mission intake progress');
     steps.innerHTML = `
-      <button type="button" data-stage="input" aria-current="step"><span>1</span><strong>Input</strong></button>
-      <button type="button" data-stage="review" disabled><span>2</span><strong>Review</strong></button>
+      <button type="button" data-stage="input" aria-current="step"><span>1</span><strong>Missions</strong></button>
+      <button type="button" data-stage="review" disabled><span>2</span><strong>Run sheet</strong></button>
       <button type="button" data-stage="route" disabled><span>3</span><strong>Sessions</strong></button>`;
 
     const stage = document.createElement('div');
@@ -53,53 +62,53 @@
     const formActions = form.querySelector('.form-actions');
     const submit = form.querySelector('button[type="submit"]');
     const reset = form.querySelector('#reset-session');
-    submit.textContent = 'Analyze missions';
-
-    const state = store.getState();
-    const context = document.createElement('section');
-    context.className = 'mission-route-context';
-    context.innerHTML = `
-      <header><div>${icon('route')}<span><small>ROUTE CONTEXT</small><strong>Start and play time</strong></span></div><em>Required</em></header>
-      <div class="mission-context-grid">
-        <label class="mission-context-location"><span>${icon('operations')}Current location</span><input id="mission-start-location" list="mission-start-location-list" autocomplete="off" placeholder="Where are you now?" required><input id="mission-start-location-id" type="hidden"><datalist id="mission-start-location-list"></datalist><small id="mission-start-location-status">Select a known station, city or outpost.</small></label>
-        <label><span>${icon('ship')}Ship</span><select id="mission-ship-select"></select><small>Model only; paints and skins are ignored.</small></label>
-        <label><span>${icon('planner')}Route mode</span><select id="mission-route-mode"><option value="sessions">Safe sessions</option><option value="fastest">Fastest full route</option></select><small>Safe sessions finish complete missions before stopping.</small></label>
-        <label id="mission-session-target-label"><span>${icon('development')}Play session</span><select id="mission-session-target"><option value="30">30 minutes</option><option value="45">45 minutes</option><option value="60" selected>1 hour</option><option value="90">1.5 hours</option><option value="120">2 hours</option></select><small>Target, not a hard cutoff when one mission takes longer.</small></label>
-      </div>`;
+    submit.textContent = 'Read missions';
 
     const inputTools = document.createElement('div');
     inputTools.className = 'mission-input-tools';
     inputTools.innerHTML = `
       <button type="button" class="mission-input-choice is-active" data-input="text">${icon('missions')}<span><strong>Text</strong><small>Paste or type contracts</small></span></button>
-      <button type="button" class="mission-input-choice" data-input="screenshot">${icon('starmap')}<span><strong>Screenshot</strong><small>Win+Shift+S, then Ctrl+V</small></span></button>`;
-    form.insertBefore(context, text);
+      <button type="button" class="mission-input-choice" data-input="screenshot">${icon('starmap')}<span><strong>Screenshot</strong><small>Paste a captured contract</small></span></button>`;
     form.insertBefore(inputTools, text);
 
     const experimental = document.createElement('details');
     experimental.className = 'mission-experimental';
-    experimental.innerHTML = `<summary><strong>${icon('development')}Experimental Game.log import</strong><span>Optional · may not contain useful hauling data</span></summary>`;
+    experimental.innerHTML = `<summary><strong>${icon('development')}Experimental Game.log import</strong><span>Optional assisted intake</span></summary>`;
     experimental.append(gameLog);
     form.append(experimental);
     form.insertBefore(ocr, experimental);
 
+    const state = store.getState();
+    const context = document.createElement('section');
+    context.className = 'mission-route-context mission-route-context-v026';
+    context.innerHTML = `
+      <header><div>${icon('route')}<span><small>ROUTE SETTINGS</small><strong>Set these after checking the missions</strong></span></div><em>Before build</em></header>
+      <div class="mission-context-grid">
+        <label class="mission-context-location"><span>${icon('operations')}Current location</span><input id="mission-start-location" list="mission-start-location-list" autocomplete="off" placeholder="Where are you now?"><input id="mission-start-location-id" type="hidden"><datalist id="mission-start-location-list"></datalist><small id="mission-start-location-status">Required only when you build the route.</small></label>
+        <label><span>${icon('ship')}Ship</span><select id="mission-ship-select"></select><small>Model and cargo capacity only.</small></label>
+        <label><span>${icon('planner')}Route mode</span><select id="mission-route-mode"><option value="sessions">Time-boxed sessions</option><option value="fastest">Fastest full route</option></select><small>Sessions always keep a mission whole.</small></label>
+        <label id="mission-session-target-label"><span>${icon('clock')}Maximum travel time</span><div class="mission-minute-input"><input id="mission-session-target" type="number" min="5" max="600" step="1" value="60" inputmode="numeric"><b>MIN</b></div><small>Exact budget for travel only. Loading and unloading are excluded.</small></label>
+      </div>`;
+
     validation.innerHTML = `
       <header class="mission-review-heading">
-        <div><small>PARSED CONTRACTS</small><strong>Verify every mission at a glance</strong></div>
+        <div><small>PARSED CONTRACTS</small><strong>Run sheet</strong></div>
         <span id="focused-review-count">0 missions</span>
       </header>
       <div class="mission-review-alerts" id="focused-review-alerts"></div>
       <div class="mission-review-grid" id="focused-review-grid"></div>
       <footer class="mission-review-controls">
-        <button type="button" class="button button--secondary" id="focused-review-add">${icon('missions')}Add mission</button>
-        <button type="button" class="button button--secondary" id="focused-review-validate">${icon('check')}Validate all</button>
+        <button type="button" class="button button--secondary" id="focused-review-add">${icon('plus')}Add mission</button>
+        <button type="button" class="button button--secondary" id="focused-review-validate">${icon('check')}Validate changes</button>
         <button type="button" class="button button--primary" id="focused-review-generate">${icon('route')}Build sessions</button>
       </footer>`;
+    validation.querySelector('.mission-review-heading').after(context);
 
     output.innerHTML = `
       <header class="mission-route-heading"><div><small>PLAY PLAN</small><strong id="focused-route-title">No route generated</strong></div></header>
       <div class="mission-route-summary" id="focused-route-summary"></div>
       <footer class="mission-route-actions">
-        <button type="button" class="button button--secondary" data-route-edit>${icon('missions')}Edit missions</button>
+        <button type="button" class="button button--secondary" data-route-edit>${icon('missions')}Edit run sheet</button>
         <button type="button" class="button button--primary" id="focused-route-open">${icon('operations')}Start selected session</button>
       </footer>`;
 
@@ -126,7 +135,9 @@
     }
 
     function populateLocations() {
-      const locations = locationModel.locations.filter((location) => location.operational).sort((left, right) => operationalLabel(left).localeCompare(operationalLabel(right)));
+      const locations = locationModel.locations
+        .filter((location) => location.operational)
+        .sort((left, right) => operationalLabel(left).localeCompare(operationalLabel(right)));
       locationList.replaceChildren(...locations.map((location) => {
         const option = document.createElement('option');
         option.value = operationalLabel(location);
@@ -174,7 +185,7 @@
       const query = startInput.value.trim();
       if (!query) {
         startIdInput.value = '';
-        startStatus.textContent = 'Current location is required before route generation.';
+        if (showMessage) startStatus.textContent = 'Choose the current location before building the route.';
         startStatus.dataset.state = 'error';
         return null;
       }
@@ -182,13 +193,13 @@
       const location = candidates.length === 1 ? candidates[0] : null;
       if (!location) {
         startIdInput.value = '';
-        if (showMessage) startStatus.textContent = candidates.length ? 'Choose the exact location from the suggestions.' : 'Location not recognized.';
+        if (showMessage) startStatus.textContent = candidates.length ? 'Choose the exact database location.' : 'Location not recognized.';
         startStatus.dataset.state = 'error';
         return null;
       }
       startIdInput.value = location.id;
       startInput.value = operationalLabel(location);
-      startStatus.textContent = `${location.navigationTarget ?? location.name} · ${locationModel.formatLocationPath(location)}`;
+      startStatus.textContent = operationalLabel(location);
       startStatus.dataset.state = 'ready';
       return location;
     }
@@ -223,11 +234,9 @@
           title: titleEntry.title,
           contractor: parsedMission?.contractor ?? titleEntry.contractor ?? '',
           rewardAuec: parsedMission?.rewardAuec ?? titleEntry.rewardAuec ?? '',
-          objectives: nextReport.entries.filter((entry) => entry.kind === 'action' && entry.missionKey === titleEntry.key).map((entry) => ({
-            action: entry.action,
-            location: entry.rawLocation,
-            cargo: entry.cargoText
-          }))
+          objectives: nextReport.entries
+            .filter((entry) => entry.kind === 'action' && entry.missionKey === titleEntry.key)
+            .map((entry) => ({ action: entry.action, location: entry.rawLocation, cargo: entry.cargoText }))
         };
       });
     }
@@ -256,11 +265,19 @@
 
     function resolveObjectiveLocations(value) {
       const parts = String(value ?? '').split('+').map((part) => part.trim()).filter(Boolean);
-      if (!parts.length) return { state: 'error', label: 'Missing location', locations: [] };
+      if (!parts.length) return { state: 'error', title: 'Missing location', canonicalLabel: 'Missing location', locations: [] };
       const resolved = parts.map((part) => ({ part, matches: locationCandidates(part) }));
-      if (resolved.every((item) => item.matches.length === 1)) return { state: 'ready', label: parts.length > 1 ? `${parts.length} positions OK` : 'Position OK', locations: resolved.map((item) => item.matches[0]) };
-      if (resolved.some((item) => item.matches.length === 0)) return { state: 'error', label: 'Unknown position', locations: [] };
-      return { state: 'warning', label: 'Check position', locations: [] };
+      if (resolved.every((item) => item.matches.length === 1)) {
+        const locations = resolved.map((item) => item.matches[0]);
+        return {
+          state: 'ready',
+          title: 'Matched to the location database',
+          canonicalLabel: locations.map(operationalLabel).join(' + '),
+          locations
+        };
+      }
+      if (resolved.some((item) => item.matches.length === 0)) return { state: 'error', title: 'Unknown location', canonicalLabel: parts.join(' + '), locations: [] };
+      return { state: 'warning', title: 'Ambiguous location', canonicalLabel: parts.join(' + '), locations: [] };
     }
 
     function applyReviewGrid() {
@@ -283,14 +300,21 @@
 
     function renderCargoChips(cargo) {
       const pairs = cargoPairs(cargo);
-      if (!pairs.length) return '<span class="cargo-chip is-empty">No parsed cargo</span>';
-      return pairs.map((pair) => `<span class="cargo-chip"><b>${escapeHtml(pair.quantity)}×</b>${escapeHtml(pair.commodity)}</span>`).join('');
+      if (!pairs.length) return '<span class="cargo-chip is-empty">No cargo parsed</span>';
+      return pairs.map((pair) => `<span class="cargo-chip"><b>${escapeHtml(pair.quantity)}×</b><span>${escapeHtml(pair.commodity)}</span></span>`).join('');
+    }
+
+    function updateGenerateState() {
+      const start = resolveStartLocation(false);
+      generate.disabled = !report?.ready || !start;
+      generate.textContent = routeMode.value === 'sessions' ? 'Build sessions' : 'Build fastest route';
     }
 
     function renderReviewGrid() {
       reviewGrid.replaceChildren();
       reviewAlerts.replaceChildren();
       reviewCount.textContent = `${reviewDrafts.length} mission${reviewDrafts.length === 1 ? '' : 's'}`;
+
       if (!reviewDrafts.length) {
         reviewGrid.innerHTML = '<div class="tool-empty">No mission detected.</div>';
         generate.disabled = true;
@@ -300,33 +324,49 @@
       reviewDrafts.forEach((draft, missionIndex) => {
         const issues = missionIssues(missionIndex);
         const locationStates = draft.objectives.map((objective) => resolveObjectiveLocations(objective.location));
+        locationStates.forEach((locationState, objectiveIndex) => {
+          if (locationState.state === 'ready') draft.objectives[objectiveIndex].location = locationState.canonicalLabel;
+        });
         const allLocationsReady = locationStates.length > 0 && locationStates.every((item) => item.state === 'ready');
+        const hasBlockingIssue = issues.some((item) => item.severity === 'error');
+        const payout = Number(String(draft.rewardAuec).replace(/[^\d.]/g, ''));
+
         const card = document.createElement('article');
-        card.className = 'mission-review-card-v25';
+        card.className = 'mission-review-card-v26';
         card.dataset.reviewMission = String(missionIndex);
         card.innerHTML = `
-          <header class="mission-review-card-header">
-            <span class="mission-drag" title="Mission order">${icon('menu')}</span>
-            <strong>Mission ${missionIndex + 1}</strong>
-            <span class="mission-validation-badge is-${allLocationsReady && !issues.some((item) => item.severity === 'error') ? 'ready' : 'warning'}">${icon(allLocationsReady ? 'check' : 'warning')}${allLocationsReady ? 'Locations OK' : 'Check data'}</span>
-            <label class="mission-reward"><small>Payout</small><input data-field="reward" inputmode="numeric" value="${escapeHtml(draft.rewardAuec)}" placeholder="—"><em>aUEC</em></label>
-            <button type="button" class="mission-remove" data-remove-mission="${missionIndex}" aria-label="Remove mission">${icon('close')}</button>
+          <header class="mission-review-card-header-v26">
+            <span class="mission-index">${String(missionIndex + 1).padStart(2, '0')}</span>
+            <div class="mission-card-identity"><strong>${escapeHtml(draft.title || `Mission ${missionIndex + 1}`)}</strong><small>${escapeHtml(draft.contractor || 'Unknown contractor')}</small></div>
+            <span class="mission-payout-pill">${payout > 0 ? `${payout.toLocaleString('en-US')} aUEC` : 'No payout'}</span>
+            <span class="mission-location-flag is-${allLocationsReady && !hasBlockingIssue ? 'ready' : 'warning'}" title="${allLocationsReady ? 'All locations matched' : 'Check mission data'}" aria-label="${allLocationsReady ? 'All locations matched' : 'Check mission data'}">${icon(allLocationsReady ? 'check' : 'warning')}</span>
+            <button type="button" class="mission-edit" data-edit-mission="${missionIndex}" aria-label="Edit mission" aria-pressed="false">${icon('edit')}</button>
+            <button type="button" class="mission-remove" data-remove-mission="${missionIndex}" aria-label="Remove mission">${icon('trash')}</button>
           </header>
-          <div class="mission-review-card-meta">
-            <label><small>Mission name</small><input data-field="title" value="${escapeHtml(draft.title)}"></label>
-            <label><small>Contractor</small><input data-field="contractor" value="${escapeHtml(draft.contractor)}" placeholder="Optional"></label>
-          </div>
-          <div class="mission-review-objectives"></div>`;
+          <div class="mission-review-objectives"></div>
+          <div class="mission-card-editor" hidden>
+            <label><span>Mission name</span><input data-field="title" value="${escapeHtml(draft.title)}"></label>
+            <label><span>Contractor</span><input data-field="contractor" value="${escapeHtml(draft.contractor)}" placeholder="Optional"></label>
+            <label><span>Payout aUEC</span><input data-field="reward" inputmode="numeric" value="${escapeHtml(draft.rewardAuec)}" placeholder="0"></label>
+          </div>`;
+
         const objectives = card.querySelector('.mission-review-objectives');
         draft.objectives.forEach((objective, objectiveIndex) => {
           const locationState = locationStates[objectiveIndex];
           const row = document.createElement('div');
-          row.className = `mission-objective-row is-${objective.action}`;
+          row.className = `mission-objective-row-v26 is-${objective.action}`;
           row.dataset.objective = String(objectiveIndex);
           row.innerHTML = `
             <select data-field="action" aria-label="Action"><option value="collect">COLLECT</option><option value="pickup">PICKUP</option><option value="deliver">DELIVER</option></select>
-            <label class="mission-location-field"><input data-field="location" aria-label="Location" value="${escapeHtml(objective.location)}"><span class="location-state is-${locationState.state}">${icon(locationState.state === 'ready' ? 'check' : 'warning')}${escapeHtml(locationState.label)}</span></label>
-            <div class="mission-cargo-field"><div class="mission-cargo-chips">${renderCargoChips(objective.cargo)}</div><input data-field="cargo" aria-label="Cargo" value="${escapeHtml(objective.cargo)}"></div>`;
+            <div class="mission-location-summary">
+              <span class="mission-location-name">${escapeHtml(locationState.canonicalLabel)}</span>
+              <span class="location-state-v26 is-${locationState.state}" title="${escapeHtml(locationState.title)}" aria-label="${escapeHtml(locationState.title)}">${icon(locationState.state === 'ready' ? 'check' : 'warning')}</span>
+              <input class="mission-location-edit" data-field="location" aria-label="Location" value="${escapeHtml(draft.objectives[objectiveIndex].location)}">
+            </div>
+            <div class="mission-cargo-summary">
+              <div class="mission-cargo-chips">${renderCargoChips(objective.cargo)}</div>
+              <input class="mission-cargo-edit" data-field="cargo" aria-label="Cargo" value="${escapeHtml(objective.cargo)}">
+            </div>`;
           row.querySelector('[data-field="action"]').value = objective.action;
           objectives.append(row);
         });
@@ -334,10 +374,9 @@
       });
 
       const errors = report?.issues.filter((item) => item.severity === 'error') ?? [];
-      if (errors.length) reviewAlerts.innerHTML = `<p class="is-error">${errors.length} blocking issue${errors.length === 1 ? '' : 's'} remain. Correct the highlighted rows and validate again.</p>`;
-      else reviewAlerts.innerHTML = '<p class="is-ready">All parsed missions are ready for route planning.</p>';
-      generate.disabled = !report?.ready || !resolveStartLocation(false);
-      generate.textContent = routeMode.value === 'sessions' ? 'Build sessions' : 'Build fastest route';
+      if (errors.length) reviewAlerts.innerHTML = `<p class="is-error">${errors.length} blocking issue${errors.length === 1 ? '' : 's'} remain.</p>`;
+      else reviewAlerts.innerHTML = '<p class="is-ready">All parsed missions are ready. Set the route options below, then build.</p>';
+      updateGenerateState();
     }
 
     function analyze(source = text.value) {
@@ -360,8 +399,9 @@
       renderReviewGrid();
     }
 
-    function formatMinutes(estimate) {
-      return `${Math.round(estimate.minMinutes)}–${Math.round(estimate.maxMinutes)} min`;
+    function formatTravel(estimate) {
+      const minutes = Math.max(0, Math.round(estimate?.travelMinutes ?? estimate?.budgetMinutes ?? estimate?.maxMinutes ?? 0));
+      return `~${minutes} min travel`;
     }
 
     function activateSession(index) {
@@ -383,7 +423,7 @@
     function gatewayMarkup(session) {
       const unique = [...new Map((session.gatewaySegments ?? []).map((segment) => [segment.label, segment])).values()];
       if (!unique.length) return '';
-      return `<div class="session-gateways">${unique.map((segment) => `<span>${icon('route')}<b>${escapeHtml(segment.fromGateway)}</b><i>→</i><b>${escapeHtml(segment.toGateway)}</b></span>`).join('')}</div>`;
+      return `<div class="session-gateways">${unique.map((segment) => `<span>${icon('gateway')}<b>${escapeHtml(segment.fromGateway)}</b><i>→</i><b>${escapeHtml(segment.toGateway)}</b></span>`).join('')}</div>`;
     }
 
     function renderRoute() {
@@ -395,13 +435,16 @@
       routeTitle.textContent = routePlan.mode === 'sessions'
         ? `${routePlan.sessions.length} play session${routePlan.sessions.length === 1 ? '' : 's'} ready`
         : 'Fastest full route ready';
+
       const overview = document.createElement('div');
       overview.className = 'mission-route-overview';
       overview.innerHTML = `
         <strong>${routePlan.totalMissionCount} missions</strong>
         <span>${routePlan.totalCargoScu} SCU total</span>
         <span>${routePlan.rewardAuec ? `${routePlan.rewardAuec.toLocaleString('en-US')} aUEC` : 'Reward not provided'}</span>
-        <span>Start: ${escapeHtml(routePlan.startLocationLabel)}</span>`;
+        <span>Start: ${escapeHtml(routePlan.startLocationLabel)}</span>
+        <span>Timing: travel only</span>`;
+
       const sessions = document.createElement('div');
       sessions.className = 'mission-session-grid';
       routePlan.sessions.forEach((session) => {
@@ -409,17 +452,18 @@
         card.className = `mission-session-card${session.index === 0 ? ' is-selected' : ''}${session.overTarget ? ' is-over-target' : ''}`;
         card.dataset.session = String(session.index);
         card.innerHTML = `
-          <header><span>${icon('development')}<b>${escapeHtml(session.title)}</b></span><strong>${formatMinutes(session.estimate)}</strong></header>
+          <header><span>${icon('clock')}<b>${escapeHtml(session.title)}</b></span><strong>${formatTravel(session.estimate)}</strong></header>
           <div class="session-route-line"><span>${escapeHtml(session.startLocationLabel)}</span><i>→</i><span>${escapeHtml(session.endLocationLabel)}</span></div>
           <div class="session-stats"><span>${session.missionCount} mission${session.missionCount === 1 ? '' : 's'}</span><span>${session.totalCargoScu} SCU</span><span>Peak ${session.estimate.peakOnboardScu} SCU</span></div>
           ${gatewayMarkup(session)}
           <ul>${session.missionTitles.map((title) => `<li>${icon('check')}<span>${escapeHtml(title)}</span></li>`).join('')}</ul>
-          ${session.overTarget ? '<p class="session-warning">This session exceeds the target because at least one complete mission takes longer.</p>' : ''}
+          ${session.overTarget ? `<p class="session-warning">This single complete mission needs about ${session.estimate.travelMinutes} minutes of travel, above your ${session.targetMinutes}-minute limit. It was not split.</p>` : ''}
           <button type="button" class="button button--secondary" data-activate-session="${session.index}">Select session</button>`;
         sessions.append(card);
       });
       routeSummary.append(overview, sessions);
-      activateSession(Number(store.getState().activeRouteSessionIndex ?? 0) < routePlan.sessions.length ? Number(store.getState().activeRouteSessionIndex ?? 0) : 0);
+      const selected = Number(store.getState().activeRouteSessionIndex ?? 0);
+      activateSession(selected < routePlan.sessions.length ? selected : 0);
     }
 
     function generatePlan() {
@@ -428,9 +472,11 @@
       if (!report?.ready || !start) return;
       try {
         const ship = ensureSelectedShip();
+        const exactTarget = Math.max(5, Math.min(600, Math.round(Number(sessionTarget.value) || 60)));
+        sessionTarget.value = String(exactTarget);
         routePlan = sessionPlanner.plan(report.missions, missionModel, {
           startLocationId: start.id,
-          targetMinutes: Number(sessionTarget.value),
+          targetMinutes: exactTarget,
           mode: routeMode.value,
           selectedShipId: ship.id
         });
@@ -443,7 +489,7 @@
           routeStartLocationId: start.id,
           routeStartLocationLabel: operationalLabel(start),
           routeMode: routeMode.value,
-          sessionTargetMinutes: Number(sessionTarget.value),
+          sessionTargetMinutes: exactTarget,
           routePlan,
           activeRouteSessionIndex: 0,
           route: firstSession.route,
@@ -474,10 +520,9 @@
     form.addEventListener('submit', (event) => {
       event.preventDefault();
       event.stopImmediatePropagation();
-      if (!resolveStartLocation()) return;
-      ensureSelectedShip();
       analyze(text.value);
     }, true);
+
     reset?.addEventListener('click', (event) => {
       event.preventDefault();
       event.stopImmediatePropagation();
@@ -489,31 +534,58 @@
       setInputMode('text');
       setStage('input');
     }, true);
+
     inputTools.addEventListener('click', (event) => {
       const button = event.target.closest('[data-input]');
       if (button) setInputMode(button.dataset.input);
     });
+
     steps.addEventListener('click', (event) => {
       const button = event.target.closest('[data-stage]');
       if (button && !button.disabled) setStage(button.dataset.stage);
     });
-    startInput.addEventListener('change', () => resolveStartLocation());
+
+    startInput.addEventListener('change', () => { resolveStartLocation(); updateGenerateState(); });
     startInput.addEventListener('input', () => {
       startIdInput.value = '';
-      startStatus.textContent = 'Select a known station, city or outpost.';
+      startStatus.textContent = 'Choose a database location.';
       startStatus.dataset.state = 'neutral';
+      updateGenerateState();
     });
+
     routeMode.addEventListener('change', () => {
       sessionTargetLabel.hidden = routeMode.value === 'fastest';
-      generate.textContent = routeMode.value === 'sessions' ? 'Build sessions' : 'Build fastest route';
+      updateGenerateState();
     });
+    sessionTarget.addEventListener('input', updateGenerateState);
     shipSelect.addEventListener('change', ensureSelectedShip);
+
     addMission.addEventListener('click', () => {
       applyReviewGrid();
-      reviewDrafts.push({ title: `Mission ${reviewDrafts.length + 1}`, contractor: '', rewardAuec: '', objectives: [{ action: 'collect', location: '', cargo: '' }, { action: 'deliver', location: '', cargo: '' }] });
+      reviewDrafts.push({
+        title: `Mission ${reviewDrafts.length + 1}`,
+        contractor: '',
+        rewardAuec: '',
+        objectives: [
+          { action: 'collect', location: '', cargo: '' },
+          { action: 'deliver', location: '', cargo: '' }
+        ]
+      });
       renderReviewGrid();
+      reviewGrid.querySelector('[data-review-mission]:last-child [data-edit-mission]')?.click();
     });
+
     reviewGrid.addEventListener('click', (event) => {
+      const editButton = event.target.closest('[data-edit-mission]');
+      if (editButton) {
+        const card = editButton.closest('[data-review-mission]');
+        const editing = !card.classList.contains('is-editing');
+        card.classList.toggle('is-editing', editing);
+        card.querySelector('.mission-card-editor').hidden = !editing;
+        editButton.setAttribute('aria-pressed', String(editing));
+        return;
+      }
+
       const removeButton = event.target.closest('[data-remove-mission]');
       if (!removeButton) return;
       applyReviewGrid();
@@ -521,6 +593,7 @@
       report = validator.inspectMissionText(serializeDrafts(), locationModel);
       renderReviewGrid();
     });
+
     validate.addEventListener('click', validateChanges);
     generate.addEventListener('click', generatePlan);
     routeSummary.addEventListener('click', (event) => {
