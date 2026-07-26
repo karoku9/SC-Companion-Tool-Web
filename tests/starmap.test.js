@@ -59,7 +59,7 @@ test('base expanded mission locations resolve to stable system and distance anch
   assert.equal(Object.keys(starmap.locationAnchors).length, 34);
 });
 
-test('Starmap 2.0 separates itinerary, system and network navigation layers', () => {
+test('Starmap 2.0 data still separates itinerary, system and network layers', () => {
   const html = read('index.html');
   const view = read('starmap-view.js');
   const css = read('starmap-v2.css');
@@ -92,11 +92,12 @@ test('Starmap 2.0 keeps orientation, selection and camera controls explicit', ()
   assert.doesNotMatch(view, /if \(mode !== 'route'\).*mode = 'route'/s);
 });
 
-test('v0.24 OCR intake follows delivered universe and Game.log releases', () => {
+test('v0.25 integrates route progress and gateways into Operations', () => {
   const universe = roadmap.releases.find((release) => release.version === '0.22');
   const gameLog = roadmap.releases.find((release) => release.version === '0.23');
   const ocr = roadmap.releases.find((release) => release.version === '0.24');
-  const hardening = roadmap.releases.find((release) => release.version === '0.25');
+  const cockpit = roadmap.releases.find((release) => release.version === '0.25');
+  const operationalMap = read('operational-ui-v025.js');
   assert.ok(universe);
   assert.equal(universe.status, 'done');
   assert.match(universe.title, /Expanded universe data/i);
@@ -108,8 +109,15 @@ test('v0.24 OCR intake follows delivered universe and Game.log releases', () => 
   assert.ok(gameLog.changes.some((change) => /raw line, timestamp, file/i.test(change)));
   assert.ok(gameLog.changes.some((change) => /mission validation/i.test(change)));
   assert.ok(ocr);
-  assert.equal(ocr.status, 'current');
+  assert.equal(ocr.status, 'done');
   assert.ok(ocr.changes.some((change) => /Tesseract\.js 7/i.test(change)));
   assert.ok(ocr.changes.some((change) => /mission validation/i.test(change)));
-  assert.equal(hardening.status, 'next');
+  assert.ok(cockpit);
+  assert.equal(cockpit.status, 'current');
+  assert.ok(cockpit.changes.some((change) => /gateway/i.test(change)));
+  assert.ok(cockpit.changes.some((change) => /route map/i.test(change)));
+  assert.match(operationalMap, /ops-live-map/);
+  assert.match(operationalMap, /gatewayNodes/);
+  assert.match(operationalMap, /is-current/);
+  assert.match(operationalMap, /is-complete/);
 });
