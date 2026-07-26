@@ -114,6 +114,7 @@
       import('./starmap-layer-context.js'),
       import('./assisted-intake-access.js')
     ]))
+    .then(() => import('./missions-focus-workflow.js'))
     .then(() => window.dispatchEvent(new Event('sc:dynamic-pages-ready')))
     .catch((error) => console.error('Application runtime failed to load.', error));
 }());
