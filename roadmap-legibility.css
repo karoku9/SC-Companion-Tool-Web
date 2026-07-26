@@ -1,10 +1,70 @@
-/* Roadmap labels are operational UI, not decorative microcopy. */
+/* Roadmap content is operational UI, not decorative microcopy. */
+.roadmap-board {
+  display: block !important;
+  overflow: visible !important;
+  padding-bottom: 0 !important;
+}
+
+.release-roadmap-progress {
+  display: grid;
+  grid-template-columns: auto auto minmax(180px, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  min-height: 0 !important;
+  margin-bottom: 12px;
+  padding: 14px;
+  border: 1px solid var(--ds-border-subtle);
+  background: var(--ds-surface-panel);
+}
+
 .release-roadmap-progress > span,
+.release-roadmap-progress > strong,
+.release-roadmap-progress > small,
+.release-roadmap-card > header > span,
+.release-roadmap-card > header > em,
+.release-roadmap-card h3,
+.release-roadmap-card p,
+.release-roadmap-card li {
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.release-roadmap-progress > span,
+.release-roadmap-progress > strong,
 .release-roadmap-progress > small,
 .release-roadmap-card > header > span,
 .release-roadmap-card > header > em {
-  font-size: 12px;
-  line-height: 1.35;
+  font-family: var(--ds-font-technical, ui-monospace, monospace);
+}
+
+.release-roadmap-progress > div {
+  min-width: 120px;
+  height: 7px;
+  border: 1px solid var(--ds-border-subtle);
+  background: var(--ds-surface-screen);
+}
+
+.release-roadmap-progress > div > i {
+  display: block;
+  height: 100%;
+  background: var(--ds-action-primary);
+}
+
+.release-roadmap-track {
+  display: flex !important;
+  gap: 10px;
+  overflow-x: auto !important;
+  padding-bottom: 10px;
+  scroll-snap-type: inline proximity;
+}
+
+.release-roadmap-card {
+  flex: 0 0 300px;
+  min-height: 0 !important;
+  padding: 14px;
+  border: 1px solid var(--ds-border-subtle);
+  background: var(--ds-surface-panel);
+  scroll-snap-align: start;
 }
 
 .release-roadmap-card > header {
@@ -13,4 +73,41 @@
   justify-content: space-between;
   gap: 10px;
   flex-wrap: wrap;
+}
+
+.release-roadmap-card h3 {
+  margin: 12px 0 6px;
+}
+
+.release-roadmap-card p {
+  margin: 0 0 10px;
+  color: var(--ds-content-secondary);
+}
+
+.release-roadmap-card ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.release-roadmap-card li + li {
+  margin-top: 5px;
+}
+
+@media (max-width: 700px) {
+  .release-roadmap-progress {
+    grid-template-columns: 1fr auto;
+  }
+
+  .release-roadmap-progress > div {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .release-roadmap-progress > small {
+    grid-column: 1 / -1;
+  }
+
+  .release-roadmap-card {
+    flex-basis: min(84vw, 320px);
+  }
 }
