@@ -75,7 +75,8 @@
 (function loadApplicationRuntimes() {
   import('./location-contract-extension.js')
     .then(() => Promise.all([
-      import('./location-field-profiles.js?contract=025'),
+      import('./location-field-profiles.js?contract=025')
+        .then(() => import('./location-contract-profiles.js')),
       import('./starmap-data.js?contract=025')
     ]))
     .then(() => {
