@@ -4,8 +4,9 @@
   function initialize() {
     const input = document.querySelector('#mission-start-location');
     const list = document.querySelector('#mission-start-location-list');
+    const form = document.querySelector('#mission-form');
     const model = root.SCCompanionLocations;
-    if (!input || !list || !model || input.dataset.locationPickerEnhanced === 'true') return false;
+    if (!input || !list || !form || !model || input.dataset.locationPickerEnhanced === 'true') return false;
 
     const normalize = model.normalizeSearchTerm;
     const locationsByLabel = new Map();
@@ -19,10 +20,15 @@
       if (location) option.dataset.locationId = location.id;
     });
 
-    input.addEventListener('change', () => {
+    function normalizeSelection() {
       const option = [...list.options].find((candidate) => normalize(candidate.value) === normalize(input.value));
       const location = option?.dataset.locationId ? model.getLocation(option.dataset.locationId) : null;
       if (location) input.value = location.navigationTarget ?? location.name;
+    }
+
+    input.addEventListener('change', normalizeSelection, true);
+    form.addEventListener('click', (event) => {
+      if (event.target.closest('button[type="submit"]')) normalizeSelection();
     }, true);
 
     input.dataset.locationPickerEnhanced = 'true';
