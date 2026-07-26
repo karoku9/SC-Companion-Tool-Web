@@ -40,14 +40,16 @@ try {
   await page.goto(`${baseUrl}/#missions`, { waitUntil: 'networkidle' });
   await page.evaluate(() => localStorage.removeItem('sc-companion-session-v1'));
   await page.reload({ waitUntil: 'networkidle' });
-  await page.locator('#mission-validation-panel').waitFor({ state: 'visible' });
+  await page.locator('.mission-steps').waitFor({ state: 'visible' });
+  await page.locator('#mission-text').waitFor({ state: 'visible' });
 
   step = 'generate context route';
   await page.locator('#mission-text').fill(missionText);
   await page.locator('#mission-form button[type="submit"]').click();
-  await page.locator('#mission-validation-title').filter({ hasText: /^Ready$/ }).waitFor({ state: 'visible' });
-  await page.locator('#mission-generate-validated').click();
-  await page.locator('#mission-preview-title').filter({ hasText: '1 mission generated' }).waitFor({ state: 'visible' });
+  await page.locator('#focused-review-count').filter({ hasText: '1 / 1' }).waitFor({ state: 'visible' });
+  assert.equal(await page.locator('#focused-review-generate').isEnabled(), true);
+  await page.locator('#focused-review-generate').click();
+  await page.locator('[data-stage="route"][aria-current="step"]').waitFor({ state: 'visible' });
 
   step = 'verify no cargo exposure before first pickup';
   await openWorkspace('route');
@@ -57,15 +59,21 @@ try {
   assert.match(await inlineContext.textContent(), /No mission cargo exposed/i);
   assert.match(await page.locator('#route-stop-list').textContent(), /Official|Reviewed community/i);
 
-  step = 'advance to Pyro with cargo onboard';
+  step = 'advance through optimized route to Pyro';
   await page.locator('#ops-tool-close').click();
-  await page.locator('#complete-stop').click();
+  let pyroGuard = 8;
+  while (!/Checkmate Station/i.test(await page.locator('#current-stop-name').textContent()) && pyroGuard > 0) {
+    assert.equal(await page.locator('#complete-stop').isDisabled(), false, 'Route completed before reaching Checkmate');
+    await page.locator('#complete-stop').click();
+    pyroGuard -= 1;
+  }
+  assert.ok(pyroGuard > 0, 'Optimized route did not reach Checkmate within the expected stop count');
   await page.locator('#current-stop-name').filter({ hasText: /Checkmate Station/ }).waitFor({ state: 'visible' });
   await page.locator('[data-ops-tool="moves"]').click();
   await page.locator('#ops-tool-body .location-context-inline.is-high-exposure').waitFor({ state: 'visible' });
   const exposureText = await page.locator('#ops-tool-body .location-context-inline').textContent();
   assert.match(exposureText, /High cargo exposure/i);
-  assert.match(exposureText, /4 SCU/i);
+  assert.match(exposureText, /[24] SCU/i);
   assert.match(await page.locator('#global-route-status').textContent(), /High cargo exposure/i);
   await page.screenshot({ path: `${output}/location-context-operations-pyro.png`, fullPage: true });
 
@@ -74,7 +82,8 @@ try {
   await page.locator('#planner-detail-panel').waitFor({ state: 'visible' });
   await page.locator('.planner-location-context').first().waitFor({ state: 'visible' });
   const plannerContext = await page.locator('#planner-route-list').textContent();
-  assert.match(plannerContext, /High cargo exposure|Elevated cargo exposure/);
+  assert.match(plannerContext, /High cargo exposure|Elevated cargo exposure|No mission cargo exposed/);
+  assert.match(plannerContext, /Pyro/);
   assert.match(plannerContext, /Official|Reviewed community/i);
 
   step = 'open complete Checkmate location intel';

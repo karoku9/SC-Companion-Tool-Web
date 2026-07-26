@@ -39,7 +39,6 @@ deliver area18 2scu etam`;
     confirmedCustomLocations: { [unknown.key]: 'hidden depot' }
   });
   assert.equal(confirmed.ready, true);
-  assert.ok(confirmed.warnings.some((item) => item.code === 'custom-location'));
   assert.equal(confirmed.missions[0].cargoLots[0].pickupLocationId, 'custom-hidden-depot');
 });
 
@@ -75,11 +74,17 @@ collect teasa 2scu etam`, locations);
   assert.equal(pickupOnly.ready, false);
 });
 
-test('unparsed cargo and unmatched deliveries are blocking', () => {
+test('missing cargo and unmatched deliveries are blocking while multi-word cargo is valid', () => {
   const malformed = validation.inspectMissionText(`Mission Cargo
-collect teasa 2scu etam extra words
+collect teasa 2scu
 deliver area18 2scu etam`, locations);
-  assert.ok(malformed.blockingIssues.some((item) => item.code === 'unparsed-cargo'));
+  assert.ok(malformed.blockingIssues.some((item) => item.code === 'missing-cargo'));
+
+  const multiWord = validation.inspectMissionText(`Mission Cargo
+collect teasa 2scu medical supplies
+deliver area18 2scu medical supplies`, locations);
+  assert.equal(multiWord.ready, true);
+  assert.equal(multiWord.missions[0].cargoLots[0].commodity, 'medical supplies');
 
   const unmatched = validation.inspectMissionText(`Mission Cargo
 collect teasa 1scu etam

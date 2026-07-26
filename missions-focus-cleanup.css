@@ -1,0 +1,43 @@
+/* Focused Missions owns the visible task surface; remove legacy duplicate framing. */
+.missions-page > .page-header,
+.missions-page #mission-message {
+  display: none !important;
+}
+
+.missions-page .missions-grid {
+  padding-top: 10px;
+}
+
+.missions-page .mission-validation-panel,
+.missions-page .mission-output {
+  display: block !important;
+  min-height: 0 !important;
+  height: auto !important;
+  max-height: none !important;
+  grid-template-rows: none !important;
+}
+
+.missions-page .mission-stage > [hidden] {
+  display: none !important;
+}
+
+.missions-page .mission-review-controls,
+.missions-page .mission-route-actions {
+  min-height: 68px;
+  align-items: center;
+}
+
+.missions-page .mission-review-controls .button,
+.missions-page .mission-route-actions .button {
+  min-height: 44px !important;
+  height: 44px !important;
+  align-self: center;
+  flex: 0 0 auto;
+}
+
+@media (max-width: 760px) {
+  .missions-page .mission-review-controls .button,
+  .missions-page .mission-route-actions .button {
+    width: 100%;
+  }
+}

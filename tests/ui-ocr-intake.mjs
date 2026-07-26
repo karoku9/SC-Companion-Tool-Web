@@ -64,8 +64,10 @@ async function noHorizontalOverflow(label) {
 }
 
 try {
-  step = 'load Missions and OCR panel';
+  step = 'load Missions screenshot input';
   await page.goto(`${baseUrl}/#missions`, { waitUntil: 'networkidle' });
+  await page.locator('.mission-steps').waitFor({ state: 'visible' });
+  await page.locator('[data-input="screenshot"]').click();
   await page.locator('#ocr-intake').waitFor({ state: 'visible' });
   assert.equal(await page.locator('#ocr-use-draft').isDisabled(), true);
   assert.equal(await page.evaluate(() => window.SCCompanionSession.getState().route), null);
@@ -92,24 +94,24 @@ try {
   await noHorizontalOverflow('OCR desktop');
   await page.screenshot({ path: `${output}/ocr-intake-desktop.png`, fullPage: true });
 
-  step = 'correct OCR field before handoff';
-  await page.locator('.ocr-objective').nth(0).locator('[data-ocr-field="commodity"]').fill('Titanium');
-  await page.locator('.ocr-objective').nth(1).locator('[data-ocr-field="commodity"]').fill('Titanium');
-
-  step = 'load OCR draft into canonical mission review';
-  await page.locator('#ocr-use-draft').click();
-  await page.locator('#mission-validation-title').filter({ hasText: /^Ready$/ }).waitFor({ state: 'visible' });
-  const editorText = await page.locator('#mission-text').inputValue();
-  assert.match(editorText, /collect ARC-L2 Lively Pathway Station 3scu titanium/);
-  assert.match(editorText, /deliver Lorville 3scu titanium/);
-  assert.equal(await page.locator('#mission-generate-validated').isEnabled(), true);
-  assert.equal(await page.evaluate(() => window.SCCompanionSession.getState().route), null);
-
   step = 'verify mobile OCR review layout';
   await page.setViewportSize({ width: 390, height: 844 });
   await noHorizontalOverflow('OCR mobile');
   assert.ok(await page.locator('#ocr-choose').evaluate((element) => element.getBoundingClientRect().height >= 44));
   await page.screenshot({ path: `${output}/ocr-intake-mobile.png`, fullPage: true });
+
+  step = 'correct OCR fields before handoff';
+  await page.locator('.ocr-objective').nth(0).locator('[data-ocr-field="commodity"]').fill('Titanium');
+  await page.locator('.ocr-objective').nth(1).locator('[data-ocr-field="commodity"]').fill('Titanium');
+
+  step = 'load OCR draft into focused mission review';
+  await page.locator('#ocr-use-draft').click();
+  await page.locator('#focused-review-count').filter({ hasText: '1 / 1' }).waitFor({ state: 'visible' });
+  const editorText = await page.locator('#mission-text').inputValue();
+  assert.match(editorText, /collect ARC-L2 Lively Pathway Station 3scu titanium/);
+  assert.match(editorText, /deliver Lorville 3scu titanium/);
+  assert.equal(await page.locator('#focused-review-generate').isEnabled(), true);
+  assert.equal(await page.evaluate(() => window.SCCompanionSession.getState().route), null);
 
   step = 'check browser errors';
   assert.deepEqual(errors, [], `Browser errors:\n${errors.join('\n')}`);

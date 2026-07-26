@@ -1,10 +1,9 @@
 'use strict';
 
 (function initializeLocationWorkspace() {
-  const model = window.SCCompanionLocations;
   const form = document.querySelector('#location-search');
-  if (!model || !form) return;
-
+  if (!form) return;
+  const currentModel = () => window.SCCompanionLocations;
   const elements = {
     form,
     query: document.querySelector('#location-query'),
@@ -17,27 +16,19 @@
 
   function humanizeType(type) {
     const labels = {
-      system: 'System',
-      planet: 'Planet',
-      moon: 'Moon',
-      planetoid: 'Planetoid',
-      'asteroid-belt': 'Asteroid belt',
-      'landing-zone': 'Landing zone',
-      spaceport: 'Spaceport',
-      'orbital-station': 'Orbital station',
-      'asteroid-station': 'Asteroid station',
-      'lagrange-point': 'Lagrange point',
-      'lagrange-station': 'Lagrange station',
-      'jump-gateway': 'Jump gateway',
-      outpost: 'Surface outpost',
-      'distribution-center': 'Distribution center'
+      system: 'System', planet: 'Planet', moon: 'Moon', planetoid: 'Planetoid', 'gas-giant': 'Gas giant',
+      'asteroid-belt': 'Asteroid belt', 'landing-zone': 'Landing zone', spaceport: 'Spaceport',
+      'orbital-station': 'Orbital station', 'asteroid-station': 'Asteroid station',
+      'lagrange-point': 'Lagrange point', 'lagrange-station': 'Lagrange station', 'jump-gateway': 'Jump gateway',
+      outpost: 'Surface outpost', 'distribution-center': 'Distribution center'
     };
     return labels[type] ?? String(type ?? '').replace(/-/g, ' ');
   }
 
   function renderSearchResults(results) {
+    const model = currentModel();
     elements.results?.replaceChildren();
-    if (!elements.results || !results.length) {
+    if (!elements.results || !results.length || !model) {
       if (elements.results) elements.results.hidden = true;
       return;
     }
@@ -53,7 +44,8 @@
   }
 
   function selectLocation(location) {
-    if (!location) return;
+    const model = currentModel();
+    if (!location || !model) return;
     if (elements.title) elements.title.textContent = model.formatOperationalLabel(location);
     if (elements.navigationTarget) elements.navigationTarget.textContent = location.navigationTarget ?? location.name;
     if (elements.type) elements.type.textContent = humanizeType(location.type);
@@ -64,20 +56,25 @@
   }
 
   function runSearch() {
-    const results = model.searchOperationalLocations(elements.query?.value ?? '');
+    const model = currentModel();
+    const results = model?.searchOperationalLocations(elements.query?.value ?? '') ?? [];
     if (results.length === 1) selectLocation(results[0]);
     else renderSearchResults(results);
   }
 
   elements.form.addEventListener('submit', (event) => { event.preventDefault(); runSearch(); });
   elements.query?.addEventListener('input', () => {
+    const model = currentModel();
     const value = elements.query.value.trim();
-    renderSearchResults(value ? model.searchOperationalLocations(value) : []);
+    renderSearchResults(value ? model?.searchOperationalLocations(value) ?? [] : []);
   });
-  selectLocation(model.getLocation('stanton-hurston-lorville-teasa'));
+  window.addEventListener('sc:location-registry-ready', runSearch);
+  selectLocation(currentModel()?.getLocation('stanton-hurston-lorville-teasa'));
 }());
 
 (function loadApplicationRuntimes() {
+  window.dispatchEvent(new Event('sc:location-registry-ready'));
+
   import('./fleet-loadouts.js')
     .then(() => import('./game-log-intake.js'))
     .then(() => import('./game-log-intake-correlation.js'))
@@ -114,6 +111,8 @@
       import('./starmap-layer-context.js'),
       import('./assisted-intake-access.js')
     ]))
+    .then(() => import('./focused-route-optimizer.js'))
+    .then(() => import('./missions-focus-workflow.js'))
     .then(() => window.dispatchEvent(new Event('sc:dynamic-pages-ready')))
     .catch((error) => console.error('Application runtime failed to load.', error));
 }());

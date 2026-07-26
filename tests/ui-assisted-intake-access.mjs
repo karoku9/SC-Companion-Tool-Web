@@ -80,23 +80,35 @@ async function noHorizontalOverflow(label) {
   assert.ok(metrics.body <= metrics.viewport + 2, `${label}: body overflow ${metrics.body} > ${metrics.viewport}`);
 }
 
+async function assertTargets(selectors) {
+  for (const selector of selectors) {
+    assert.ok(await page.locator(selector).evaluate((element) => element.getBoundingClientRect().height >= 44), `${selector} is below 44px`);
+  }
+}
+
 try {
-  step = 'load enhanced Missions intake controls';
+  step = 'load focused assisted-intake controls';
   await page.goto(`${baseUrl}/#missions`, { waitUntil: 'networkidle' });
+  await page.locator('.mission-steps').waitFor({ state: 'visible' });
+  assert.equal(await page.locator('.mission-experimental').evaluate((element) => element.open), false);
+  await page.locator('.mission-experimental > summary').click();
   await page.locator('#game-log-intake[data-access-enhanced="true"]').waitFor({ state: 'visible' });
-  await page.locator('#ocr-intake[data-access-enhanced="true"]').waitFor({ state: 'visible' });
   assert.equal(await page.locator('#game-log-choose').textContent(), 'Import Game.log');
-  assert.equal(await page.locator('#ocr-paste').textContent(), 'Paste screenshot');
 
   step = 'import Game.log without invoking protected file-system access';
   const fileChooserPromise = page.waitForEvent('filechooser');
   await page.locator('#game-log-choose').click();
   const chooser = await fileChooserPromise;
   await chooser.setFiles({ name: 'Game.log', mimeType: 'text/plain', buffer: Buffer.from(gameLog) });
-  await page.locator('#game-log-file-state').filter({ hasText: 'Game.log' }).waitFor({ state: 'visible' });
-  await page.locator('#game-log-summary article').nth(1).locator('strong').filter({ hasText: '2' }).waitFor({ state: 'visible' });
+  await page.waitForFunction(() => document.querySelector('#game-log-file-state')?.textContent?.includes('Game.log'));
+  await page.waitForFunction(() => [...document.querySelectorAll('#game-log-summary article strong')].some((element) => element.textContent?.trim() === '2'));
   assert.equal(await page.evaluate(() => window.__powerPickerCalls), 0);
   assert.equal(await page.locator('#game-log-refresh').textContent(), 'Reselect and read new lines');
+
+  step = 'open screenshot input';
+  await page.locator('[data-input="screenshot"]').click();
+  await page.locator('#ocr-intake[data-access-enhanced="true"]').waitFor({ state: 'visible' });
+  assert.equal(await page.locator('#ocr-paste').textContent(), 'Paste screenshot');
 
   step = 'paste Win Shift S image into OCR intake';
   await page.locator('#ocr-paste-zone').focus();
@@ -117,12 +129,16 @@ try {
   await noHorizontalOverflow('Assisted intake desktop');
   await page.screenshot({ path: `${output}/assisted-intake-access-desktop.png`, fullPage: true });
 
-  step = 'verify mobile access controls';
+  step = 'verify mobile OCR controls';
   await page.setViewportSize({ width: 390, height: 844 });
-  await noHorizontalOverflow('Assisted intake mobile');
-  for (const selector of ['#game-log-choose', '#game-log-live', '#ocr-paste', '#ocr-choose']) {
-    assert.ok(await page.locator(selector).evaluate((element) => element.getBoundingClientRect().height >= 44));
-  }
+  await noHorizontalOverflow('Assisted intake mobile OCR');
+  await assertTargets(['#ocr-paste', '#ocr-choose']);
+
+  step = 'verify mobile experimental Game.log controls';
+  await page.locator('[data-input="text"]').click();
+  await page.locator('#game-log-intake').waitFor({ state: 'visible' });
+  await noHorizontalOverflow('Assisted intake mobile Game.log');
+  await assertTargets(['#game-log-choose', '#game-log-live']);
   await page.screenshot({ path: `${output}/assisted-intake-access-mobile.png`, fullPage: true });
 
   step = 'check browser errors';
