@@ -97,7 +97,7 @@ deliver fallow field 16scu revenant tree pollen 4scu slam 4scu e'tam`, locations
   assert.equal(report.missions[0].title, 'DEAD SAINTS - Rookie Rank - Medium Cargo Haul');
   assert.equal(report.missions[0].contractor, 'Dead Saints');
   assert.equal(report.missions[0].rewardAuec, 525500);
-  assert.equal(report.missions[0].cargoLots.length, 4);
+  assert.equal(report.missions[0].cargoLots.length, 5);
   assert.equal(report.entries.filter((entry) => entry.kind === 'metadata').length, 2);
 });
 
