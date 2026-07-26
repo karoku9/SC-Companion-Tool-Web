@@ -116,13 +116,17 @@ async function minimumTouchTargets(target, label) {
 
 async function generateLongSession(target) {
   await openWorkspace(target, 'missions');
-  await target.locator('#mission-validation-panel').waitFor({ state: 'visible' });
+  await target.locator('.mission-steps').waitFor({ state: 'visible' });
+  await target.locator('[data-stage="input"]').click();
   await target.locator('#mission-text').fill(longMissionText);
   await target.locator('#mission-form button[type="submit"]').click();
-  await target.locator('#mission-validation-title').filter({ hasText: /^Ready$/ }).waitFor({ state: 'visible' });
-  assert.equal(await target.locator('#mission-generate-validated').isEnabled(), true);
-  await target.locator('#mission-generate-validated').click();
-  await target.locator('#mission-preview-title').filter({ hasText: '1 mission generated' }).waitFor({ state: 'visible' });
+  await target.locator('#focused-review-count').filter({ hasText: '1 / 1' }).waitFor({ state: 'visible' });
+  const reviewText = await target.locator('#focused-review-single').textContent();
+  assert.match(reviewText, /Long-range medical consolidation/);
+  assert.match(reviewText, /extremely_long_medical_supplies/);
+  assert.equal(await target.locator('#focused-review-generate').isEnabled(), true);
+  await target.locator('#focused-review-generate').click();
+  await target.locator('[data-stage="route"][aria-current="step"]').waitFor({ state: 'visible' });
 }
 
 async function inspectAllWorkspaces(target, label) {
@@ -246,10 +250,9 @@ try {
 
   step = 'generate long-content session';
   await generateLongSession(page);
-  const missionText = await page.locator('#mission-cards').textContent();
-  assert.match(missionText, /Long-range medical consolidation/);
-  assert.match(missionText, /extremely_long_medical_supplies/);
-  assert.match(missionText, /Source lines/);
+  const storedLongMission = await page.evaluate(() => window.SCCompanionSession.getState().missions[0]);
+  assert.match(storedLongMission.title, /Long-range medical consolidation/);
+  assert.equal(storedLongMission.cargoLots[0].commodity, 'extremely_long_medical_supplies');
   await noHorizontalOverflow(page, 'Long Missions desktop');
   await page.screenshot({ path: `${output}/hardening-long-missions-1664.png`, fullPage: true });
 
@@ -260,8 +263,6 @@ try {
 
   await exerciseStarmapUx(page);
 
-  step = 'verify completed route state';
-  await openWorkspace(page, 'route');
   let guard = 20;
   while (!(await page.locator('#complete-stop').isDisabled()) && guard > 0) {
     await page.locator('#complete-stop').click();
