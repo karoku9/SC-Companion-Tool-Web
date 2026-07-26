@@ -1,10 +1,6 @@
 'use strict';
 
-(async function initializeFocusedMissionWorkflow() {
-  await import('./location-contract-extension.js');
-  await import('./mission-validation-rich.js');
-  await import('./missions-rich.js');
-
+(function initializeFocusedMissionWorkflow() {
   let initialized = false;
 
   function initialize() {
@@ -20,13 +16,13 @@
     const message = page?.querySelector('#mission-message');
     const store = window.SCCompanionSession;
     const routePlanner = window.SCCompanionRoutePlanner;
-    if (!page || !grid || !form || !validation || !output || !gameLog || !ocr || !text || !message || !store || !routePlanner) return false;
-    initialized = true;
-
     const validator = window.SCCompanionMissionValidation;
     const missionModel = window.SCCompanionMissions;
     const locationModel = window.SCCompanionLocations;
-    const originalSource = text.value;
+    if (!page || !grid || !form || !validation || !output || !gameLog || !ocr || !text || !message || !store || !routePlanner || !validator || !missionModel || !locationModel) return false;
+    initialized = true;
+
+    let sourceText = text.value;
     let report = null;
     let reviewDrafts = [];
     let activeMission = 0;
@@ -127,16 +123,19 @@
     }
 
     function draftsFromReport(nextReport) {
-      return nextReport.entries.filter((entry) => entry.kind === 'title').map((titleEntry) => ({
-        title: titleEntry.title,
-        contractor: titleEntry.contractor ?? '',
-        rewardAuec: titleEntry.rewardAuec ?? '',
-        objectives: nextReport.entries.filter((entry) => entry.kind === 'action' && entry.missionKey === titleEntry.key).map((entry) => ({
-          action: entry.action,
-          location: entry.rawLocations?.join(' + ') ?? entry.rawLocation,
-          cargo: entry.cargoText
-        }))
-      }));
+      return nextReport.entries.filter((entry) => entry.kind === 'title').map((titleEntry) => {
+        const parsedMission = nextReport.missions[titleEntry.missionIndex] ?? null;
+        return {
+          title: titleEntry.title,
+          contractor: parsedMission?.contractor ?? titleEntry.contractor ?? '',
+          rewardAuec: parsedMission?.rewardAuec ?? titleEntry.rewardAuec ?? '',
+          objectives: nextReport.entries.filter((entry) => entry.kind === 'action' && entry.missionKey === titleEntry.key).map((entry) => ({
+            action: entry.action,
+            location: entry.rawLocation,
+            cargo: entry.cargoText
+          }))
+        };
+      });
     }
 
     function serializeDrafts() {
@@ -151,6 +150,7 @@
     }
 
     function analyze(source = text.value, preserveDrafts = false) {
+      sourceText = source;
       report = validator.inspectMissionText(source, locationModel);
       text.value = source;
       if (!preserveDrafts) reviewDrafts = draftsFromReport(report);
@@ -234,7 +234,7 @@
       report = validator.inspectMissionText(source, locationModel);
       text.value = source;
       reviewDrafts = draftsFromReport(report);
-      activeMission = Math.min(activeMission, reviewDrafts.length - 1);
+      activeMission = Math.min(activeMission, Math.max(0, reviewDrafts.length - 1));
       renderActiveMission();
     }
 
@@ -244,9 +244,9 @@
       try {
         generatedRoute = routePlanner.buildRoute(report.missions, missionModel);
         store.patch({
-          missionSourceText: originalSource,
+          missionSourceText: sourceText,
           missionText: text.value,
-          missionValidation: validator.snapshot(report, originalSource, text.value),
+          missionValidation: validator.snapshot(report, sourceText, text.value),
           missions: report.missions,
           route: generatedRoute,
           currentStopIndex: 0,
@@ -267,12 +267,12 @@
         routeTitle.textContent = 'No route generated';
         return;
       }
-      const missions = report.missions;
-      const reward = missions.reduce((sum, mission) => sum + Number(mission.rewardAuec ?? 0), 0);
+      const parsedMissions = report.missions;
+      const reward = parsedMissions.reduce((sum, mission) => sum + Number(mission.rewardAuec ?? 0), 0);
       routeTitle.textContent = `${generatedRoute.stops.length} stops ready`;
       const overview = document.createElement('div');
       overview.className = 'mission-route-overview';
-      overview.innerHTML = `<strong>${missions.length} missions</strong><span>${generatedRoute.totalCargoScu} SCU total</span><span>${reward ? `${reward.toLocaleString('en-US')} aUEC` : 'Reward not provided'}</span>`;
+      overview.innerHTML = `<strong>${parsedMissions.length} missions</strong><span>${generatedRoute.totalCargoScu} SCU total</span><span>${reward ? `${reward.toLocaleString('en-US')} aUEC` : 'Reward not provided'}</span>`;
       const list = document.createElement('ol');
       generatedRoute.stops.forEach((stop) => {
         const item = document.createElement('li');
@@ -295,6 +295,7 @@
       event.preventDefault();
       event.stopImmediatePropagation();
       text.value = '';
+      sourceText = '';
       report = null;
       reviewDrafts = [];
       generatedRoute = null;
@@ -328,4 +329,4 @@
     if (initialize()) observer.disconnect();
   });
   if (!initialize()) observer.observe(document.documentElement, { childList: true, subtree: true });
-}().catch((error) => console.error('Focused mission workflow failed to initialize.', error)));
+}());
