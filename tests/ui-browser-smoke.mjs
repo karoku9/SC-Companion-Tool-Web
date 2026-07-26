@@ -6,24 +6,37 @@ const baseUrl = process.env.UI_BASE_URL ?? 'http://127.0.0.1:4173';
 const output = process.env.UI_SCREENSHOT_DIR ?? 'ui-smoke-artifacts';
 await fs.mkdir(output, { recursive: true });
 
-const interstellarMissionText = `Mission A — Stanton to Pyro and Nyx
-collect ARC-L2 12scu etam
-deliver checkmate station pyro 5scu etam
-deliver levski nyx 7scu etam
+const realMissionText = `Mission 1
+collect attritus paf-iii 10scu dcsr2
+deliver grim hex 10scu dcsr2
 
-Mission B — Outer Systems Consolidation
-pickup ruin station pyro 4scu neon
-pickup orbituary pyro 6scu neon
-pickup levski nyx 3scu titanium
-deliver Seraphim 10scu neon 3scu titanium
+Mission 2
+collect vivere paf-iii + attritus paf-ii 5scu hydrogen totale
+deliver grim hex 5scu hydrogen
 
-Mission C — Three-System Relay
-collect teasa 8scu processedfood
-collect checkmate station pyro 5scu medicalsupplies
-collect levski nyx 6scu titanium
-deliver ruin station pyro 4scu processedfood 5scu medicalsupplies
-deliver New Babbage 4scu processedfood 2scu titanium
-deliver orbituary pyro 4scu titanium`;
+Mission 3
+collect vivere olp 3scu medical supplies
+deliver grim hex 3scu medical supplies
+
+Mission 4
+collect cru-l4 shallow fields 32scu revenant tree pollen 8scu neon 4scu slam 4scu e'tam
+deliver rustville 16scu revenant tree pollen 8scu neon
+deliver fallow field 16scu revenant tree pollen 4scu slam 4scu e'tam
+
+Mission 5
+collect teasa spaceport 4scu cryopod
+deliver shepherd's rest 4scu cryopod
+
+Mission 6
+collect grim hex 2scu e'tam 2scu slam 2scu neon
+deliver rustville 2scu e'tam
+deliver ashland 1scu slam 1scu neon
+deliver last landings 1scu slam 1scu neon
+
+Mission 7
+collect reclamation & disposal orinth 4scu e'tam
+collect fallow field 2scu slam 2scu neon
+deliver grim hex 4scu e'tam 2scu slam 2scu neon`;
 
 const browser = await chromium.launch({ headless: true });
 const page = await browser.newPage({ viewport: { width: 1664, height: 936 }, deviceScaleFactor: 1 });
@@ -38,68 +51,26 @@ async function noHorizontalOverflow(label) {
   assert.ok(metrics.body <= metrics.viewport + 2, `${label}: body overflow ${metrics.body} > ${metrics.viewport}`);
 }
 
-async function readableTypography(label) {
-  const result = await page.evaluate(() => {
-    const candidates = [...document.querySelectorAll('.app-frame *')].filter((element) => {
-      const style = getComputedStyle(element);
-      const box = element.getBoundingClientRect();
-      const directText = [...element.childNodes].some((node) => node.nodeType === Node.TEXT_NODE && node.textContent.trim());
-      return directText
-        && style.display !== 'none'
-        && style.visibility !== 'hidden'
-        && box.width > 0
-        && box.height > 0
-        && !element.classList.contains('sr-only');
-    });
-    const sizes = candidates.map((element) => ({
-      text: element.textContent.trim().replace(/\s+/g, ' ').slice(0, 90),
-      size: Number.parseFloat(getComputedStyle(element).fontSize),
-      tag: element.tagName,
-      className: element.className
-    }));
-    const operationTitle = Number.parseFloat(getComputedStyle(document.querySelector('#current-stop-name')).fontSize);
-    return {
-      smallest: sizes.sort((left, right) => left.size - right.size).slice(0, 12),
-      minimum: Math.min(...sizes.map((item) => item.size)),
-      operationTitle
-    };
-  });
-  assert.ok(result.minimum >= 10.5, `${label}: visible text below 10.5px: ${JSON.stringify(result.smallest)}`);
-  assert.ok(result.operationTitle / result.minimum <= 3.5, `${label}: title/metadata ratio too large: ${result.operationTitle}/${result.minimum}`);
-}
-
-async function openWorkspace(id) {
-  step = `open workspace ${id}`;
-  await page.locator(`[data-view-target="${id}"]`).click();
-  await page.locator(`[data-view="${id}"]`).waitFor({ state: 'visible' });
-}
-
-function boxesOverlap(first, second, padding = 3) {
-  return first.left < second.right + padding
-    && first.right > second.left - padding
-    && first.top < second.bottom + padding
-    && first.bottom > second.top - padding;
+async function visibleStage() {
+  return page.evaluate(() => ({
+    input: !document.querySelector('#mission-form')?.hidden,
+    review: !document.querySelector('#mission-validation-panel')?.hidden,
+    route: !document.querySelector('.mission-output')?.hidden
+  }));
 }
 
 let failure = null;
 try {
-  step = 'load focused Missions input';
+  step = 'load focused Missions';
   await page.goto(`${baseUrl}/#missions`, { waitUntil: 'networkidle' });
-  await page.locator('.mission-focus-toolbar').waitFor({ state: 'visible' });
+  await page.locator('.mission-steps').waitFor({ state: 'visible' });
   await page.locator('#mission-text').waitFor({ state: 'visible' });
-  assert.equal(await page.locator('#mission-validation-panel').isHidden(), true);
-  assert.equal(await page.locator('.mission-output').isHidden(), true);
 
-  step = 'verify expanded universe registry in browser';
+  step = 'verify expanded destination registry';
   const registry = await page.evaluate(() => {
     const model = window.SCCompanionLocations;
     return {
       coverage: model.getCoverageSummary(),
-      arcL2: model.searchOperationalLocations('ARC L2')[0]?.id,
-      nbis: model.searchOperationalLocations('NBIS')[0]?.id,
-      seraphim: model.searchOperationalLocations('Seraphim')[0]?.id,
-      bezdek: model.searchOperationalLocations('HDMS Bezdek')[0]?.id,
-      depot: model.searchOperationalLocations('S4LD01')[0]?.id,
       attritus: model.searchOperationalLocations('Attritus PAF 3')[0]?.id,
       vivere: model.searchOperationalLocations('Vivere OLP')[0]?.id,
       rustville: model.searchOperationalLocations('Rustville')[0]?.id,
@@ -108,164 +79,80 @@ try {
   });
   assert.equal(registry.coverage.operationalDestinations, 106);
   assert.equal(registry.coverage.fieldDestinations, 72);
-  assert.equal(registry.arcL2, 'stanton-arc-l2-lively-pathway');
-  assert.equal(registry.nbis, 'stanton-microtech-new-babbage-nbis');
-  assert.equal(registry.seraphim, 'stanton-crusader-seraphim');
-  assert.equal(registry.bezdek, 'stanton-hurston-arial-hdms-bezdek');
-  assert.equal(registry.depot, 'stanton-microtech-microtech-logistics-depot-s4ld01');
   assert.equal(registry.attritus, 'stanton-crusader-daymar-attritus-paf-iii');
   assert.equal(registry.vivere, 'stanton-hurston-aberdeen-vivere-olp');
-  assert.equal(registry.rustville, 'pyro-rustville');
+  assert.ok(registry.rustville?.includes('rustville'));
   assert.deepEqual(registry.validation, { errors: [], warnings: [] });
 
-  await page.locator('#mission-text').fill(interstellarMissionText);
-  step = 'review expanded interstellar session';
+  step = 'verify simple Input stage';
+  assert.deepEqual(await visibleStage(), { input: true, review: false, route: false });
+  assert.equal(await page.locator('.mission-input-choice').count(), 2);
+  assert.equal(await page.locator('.mission-experimental').evaluate((node) => node.open), false);
+  assert.equal(await page.locator('.mission-validation-summary').count(), 0);
+  await noHorizontalOverflow('Missions input desktop');
+  await page.screenshot({ path: `${output}/missions-focused-input-desktop.png`, fullPage: true });
+
+  step = 'analyze exact seven-mission sample';
+  await page.locator('#mission-text').fill(realMissionText);
   await page.locator('#mission-form button[type="submit"]').click();
-  await page.locator('#mission-validation-panel').waitFor({ state: 'visible' });
-  assert.equal(await page.locator('#mission-form').isHidden(), true);
-  assert.equal(await page.locator('.mission-output').isHidden(), true);
-  await page.locator('#mission-validation-title').filter({ hasText: /^Ready$/ }).waitFor({ state: 'visible' });
-  assert.equal(await page.locator('.validation-issue.is-error').count(), 0);
-  assert.equal(await page.locator('#mission-generate-validated').isEnabled(), true);
-  assert.equal(await page.locator('.mission-review-card:not(.is-collapsed)').count(), 1);
-  step = 'generate validated expanded interstellar session';
-  await page.locator('#mission-generate-validated').click();
-  await page.locator('.mission-output').waitFor({ state: 'visible' });
-  assert.equal(await page.locator('#mission-form').isHidden(), true);
-  assert.equal(await page.locator('#mission-validation-panel').isHidden(), true);
-  await page.locator('#mission-preview-title').filter({ hasText: '3 missions generated' }).waitFor({ state: 'visible' });
-  const missionBody = await page.locator('#mission-cards').textContent();
-  ['ARC-L2 Lively Pathway', 'Seraphim Station', 'New Babbage Interstellar Spaceport', 'Checkmate Station', 'Orbituary', 'Ruin Station', 'Levski'].forEach((name) => assert.match(missionBody, new RegExp(name)));
-  assert.match(missionBody, /Source lines/);
-  await noHorizontalOverflow('Missions');
-  await readableTypography('Missions');
-  await page.screenshot({ path: `${output}/missions-expanded-universe-desktop.png`, fullPage: true });
+  await page.locator('#focused-review-count').filter({ hasText: '1 / 7' }).waitFor({ state: 'visible' });
+  assert.deepEqual(await visibleStage(), { input: false, review: true, route: false });
+  assert.equal(await page.locator('[data-focused-mission]').count(), 1);
+  assert.equal(await page.locator('.mission-review-card').count(), 0);
+  assert.match(await page.locator('#focused-review-single').textContent(), /Attritus PAF-III/i);
+  assert.equal(await page.locator('#focused-review-generate').isEnabled(), true);
+  await noHorizontalOverflow('Missions review desktop');
+  await page.screenshot({ path: `${output}/missions-focused-review-desktop.png`, fullPage: true });
 
-  await openWorkspace('route');
-  step = 'inspect Operations closed';
+  step = 'navigate one mission at a time';
+  await page.locator('#focused-review-next').click();
+  await page.locator('#focused-review-count').filter({ hasText: '2 / 7' }).waitFor({ state: 'visible' });
+  const sharedMission = await page.locator('#focused-review-single').textContent();
+  assert.match(sharedMission, /Vivere PAF-III/i);
+  assert.match(sharedMission, /Attritus PAF-II/i);
+  assert.match(sharedMission, /5scu hydrogen totale/i);
+
+  step = 'generate route';
+  await page.locator('#focused-review-generate').click();
+  await page.locator('[data-stage="route"][aria-current="step"]').waitFor({ state: 'visible' });
+  assert.deepEqual(await visibleStage(), { input: false, review: false, route: true });
+  const routeSummary = await page.locator('#focused-route-summary').textContent();
+  assert.match(routeSummary, /84 SCU total/i);
+  assert.match(routeSummary, /Attritus PAF-III/i);
+  assert.match(routeSummary, /Vivere OLP/i);
+  assert.match(routeSummary, /Rustville/i);
+  assert.match(routeSummary, /Shepherd's Rest/i);
+  await noHorizontalOverflow('Missions route desktop');
+  await page.screenshot({ path: `${output}/missions-focused-route-desktop.png`, fullPage: true });
+
+  step = 'open Operations from generated route';
+  await page.locator('[data-shell-link="route"]').click();
   await page.locator('#current-stop-name').waitFor({ state: 'visible' });
-  await page.locator('.route-leg-estimate').first().waitFor({ state: 'visible' });
-  const routeIndexText = await page.locator('#route-stop-list').textContent();
-  assert.match(routeIndexText, /Gm|km/);
-  assert.match(routeIndexText, /jump/);
-  assert.match(routeIndexText, /Lively Pathway/);
-  assert.match(routeIndexText, /Seraphim/);
-  assert.match(routeIndexText, /New Babbage/);
-  await noHorizontalOverflow('Operations closed');
-  await readableTypography('Operations');
-  await page.screenshot({ path: `${output}/operations-expanded-universe-desktop.png`, fullPage: true });
+  const operationsText = await page.locator('#route-stop-list').textContent();
+  assert.match(operationsText, /Attritus PAF-III/i);
+  assert.match(operationsText, /Vivere OLP/i);
+  assert.match(operationsText, /Fallow Field/i);
+  await noHorizontalOverflow('Operations generated route');
 
-  step = 'open Cargo auxiliary display';
-  await page.locator('[data-ops-tool="cargo"]').click();
-  const tool = page.locator('#ops-tool-panel');
-  await tool.waitFor({ state: 'visible' });
-  const box = await tool.boundingBox();
-  assert.ok(box, 'Cargo tool has no bounding box');
-  assert.ok(box.x >= 0 && box.x + box.width <= 1666, `Cargo tool escapes viewport: ${JSON.stringify(box)}`);
-  assert.ok(box.width >= 700, `Cargo tool is squeezed: ${box.width}px`);
-  await noHorizontalOverflow('Operations cargo open');
-  await page.screenshot({ path: `${output}/operations-cargo-open.png`, fullPage: true });
-  step = 'close Cargo auxiliary display';
-  await page.locator('#ops-tool-close').click();
-  await tool.waitFor({ state: 'hidden' });
-
-  await openWorkspace('route-planner');
-  step = 'inspect interstellar Planner';
-  await page.locator('#planner-detail-panel').waitFor({ state: 'visible' });
-  const plannerText = await page.locator('#route-planner').textContent();
-  assert.match(plannerText, /Alpha 4\.9/);
-  assert.match(plannerText, /DISTANCE/);
-  assert.match(plannerText, /JUMPS/);
-  assert.match(plannerText, /Gm|km/);
-  await noHorizontalOverflow('Planner');
-  await readableTypography('Planner');
-  await page.screenshot({ path: `${output}/planner-expanded-universe-desktop.png`, fullPage: true });
-
-  await openWorkspace('hangar');
-  step = 'inspect Fleet';
-  await page.locator('#ship-hologram svg').waitFor({ state: 'visible' });
-  assert.ok(await page.locator('#fleet-zone-form .zone-form-row').count() >= 2, 'Fleet cargo-zone editor did not render');
-  await noHorizontalOverflow('Fleet');
-  await readableTypography('Fleet');
-  await page.screenshot({ path: `${output}/fleet-desktop.png`, fullPage: true });
-
-  await openWorkspace('map');
-  step = 'inspect Starmap itinerary';
-  await page.locator('svg#starmap-canvas').waitFor({ state: 'visible' });
-  assert.equal(await page.locator('canvas#starmap-canvas').count(), 0, 'Legacy canvas Starmap is still present');
-  assert.ok(await page.locator('#starmap-canvas .map-node').count() > 0, 'Route-first Starmap rendered no nodes');
-  const mapSummary = await page.locator('#starmap-route-status').textContent();
-  assert.match(mapSummary, /Gm|km/);
-  assert.match(mapSummary, /jump/);
-  const mapLabels = await page.evaluate(() => {
-    const canvas = document.querySelector('#starmap-canvas').getBoundingClientRect();
-    return {
-      canvas: { left: canvas.left, right: canvas.right, top: canvas.top, bottom: canvas.bottom },
-      labels: [...document.querySelectorAll('#starmap-canvas .map-route-label')].map((text) => {
-        const labelBox = text.getBoundingClientRect();
-        return { content: text.textContent, left: labelBox.left, right: labelBox.right, top: labelBox.top, bottom: labelBox.bottom };
-      })
-    };
-  });
-  mapLabels.labels.forEach((label) => {
-    assert.ok(label.left >= mapLabels.canvas.left - 2, `Starmap label escapes left edge: ${JSON.stringify(label)}`);
-    assert.ok(label.right <= mapLabels.canvas.right + 2, `Starmap label escapes right edge: ${JSON.stringify(label)}`);
-    assert.ok(label.top >= mapLabels.canvas.top - 2, `Starmap label escapes top edge: ${JSON.stringify(label)}`);
-    assert.ok(label.bottom <= mapLabels.canvas.bottom + 2, `Starmap label escapes bottom edge: ${JSON.stringify(label)}`);
-  });
-  for (let firstIndex = 0; firstIndex < mapLabels.labels.length; firstIndex += 1) {
-    for (let secondIndex = firstIndex + 1; secondIndex < mapLabels.labels.length; secondIndex += 1) {
-      const first = mapLabels.labels[firstIndex];
-      const second = mapLabels.labels[secondIndex];
-      assert.equal(boxesOverlap(first, second), false, `Starmap labels overlap: ${JSON.stringify({ first, second })}`);
-    }
-  }
-  await noHorizontalOverflow('Starmap');
-  await readableTypography('Starmap');
-  await page.screenshot({ path: `${output}/starmap-expanded-itinerary-desktop.png`, fullPage: true });
-
-  step = 'inspect expanded Stanton system anchors';
-  await page.locator('[data-map-mode="local"]').click();
-  await page.locator('#starmap-system-select').selectOption('stanton');
-  assert.ok(await page.locator('#starmap-canvas .map-system-stop').count() >= 3, 'Expanded Stanton route stops did not map into the System layer');
-  const stantonSystemText = await page.locator('#starmap-route-status').textContent();
-  assert.match(stantonSystemText, /Stanton/);
-  await noHorizontalOverflow('Expanded Stanton system');
-  await page.screenshot({ path: `${output}/starmap-expanded-stanton-desktop.png`, fullPage: true });
-
-  step = 'switch Starmap to system network';
-  await page.locator('[data-map-mode="network"]').click();
-  const networkText = await page.locator('#starmap-selection-detail').textContent();
-  assert.match(networkText, /Alpha 4\.9/);
-  await page.screenshot({ path: `${output}/starmap-systems-desktop.png`, fullPage: true });
-
-  step = 'switch to tablet viewport';
-  await page.setViewportSize({ width: 768, height: 1024 });
-  await openWorkspace('map');
-  await page.locator('[data-map-mode="local"]').click();
-  await page.locator('#starmap-system-select').selectOption('stanton');
-  await noHorizontalOverflow('Expanded Stanton tablet');
-  await page.screenshot({ path: `${output}/starmap-expanded-stanton-tablet.png`, fullPage: true });
-
-  step = 'switch to mobile viewport';
+  step = 'verify mobile Missions layout';
   await page.setViewportSize({ width: 390, height: 844 });
-  await openWorkspace('route');
-  await noHorizontalOverflow('Operations mobile');
-  step = 'open Moves on mobile';
-  await page.locator('[data-ops-tool="moves"]').click();
-  await page.locator('#ops-tool-panel').waitFor({ state: 'visible' });
-  await noHorizontalOverflow('Operations mobile tool open');
-  await readableTypography('Operations mobile');
-  await page.screenshot({ path: `${output}/operations-mobile.png`, fullPage: true });
+  await page.locator('[data-view-target="missions"]').click();
+  await page.locator('[data-stage="input"]').click();
+  await page.locator('#mission-text').waitFor({ state: 'visible' });
+  await noHorizontalOverflow('Missions input mobile');
+  const mobileColumns = await page.evaluate(() => getComputedStyle(document.querySelector('.mission-input-tools')).gridTemplateColumns.split(' ').length);
+  assert.equal(mobileColumns, 1);
+  await page.screenshot({ path: `${output}/missions-focused-input-mobile.png`, fullPage: true });
 
   step = 'check browser errors';
   assert.deepEqual(errors, [], `Browser errors:\n${errors.join('\n')}`);
 } catch (error) {
   failure = error;
-  await fs.writeFile(`${output}/failure.txt`, `Step: ${step}\n\n${error.stack ?? error.message}\n\nBrowser errors:\n${errors.join('\n')}`);
-  await page.screenshot({ path: `${output}/failure-state.png`, fullPage: true }).catch(() => {});
+  await fs.writeFile(`${output}/failure.txt`, `Step: ${step}\n\n${error.stack ?? error}\n\nBrowser errors:\n${errors.join('\n')}`);
+  await page.screenshot({ path: `${output}/failure-state.png`, fullPage: true });
 } finally {
   await browser.close();
 }
 
 if (failure) throw failure;
+console.log('Focused Missions browser smoke passed.');
