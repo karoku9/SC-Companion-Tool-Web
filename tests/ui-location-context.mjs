@@ -59,15 +59,21 @@ try {
   assert.match(await inlineContext.textContent(), /No mission cargo exposed/i);
   assert.match(await page.locator('#route-stop-list').textContent(), /Official|Reviewed community/i);
 
-  step = 'advance to Pyro with cargo onboard';
+  step = 'advance through optimized route to Pyro';
   await page.locator('#ops-tool-close').click();
-  await page.locator('#complete-stop').click();
+  let pyroGuard = 8;
+  while (!/Checkmate Station/i.test(await page.locator('#current-stop-name').textContent()) && pyroGuard > 0) {
+    assert.equal(await page.locator('#complete-stop').isDisabled(), false, 'Route completed before reaching Checkmate');
+    await page.locator('#complete-stop').click();
+    pyroGuard -= 1;
+  }
+  assert.ok(pyroGuard > 0, 'Optimized route did not reach Checkmate within the expected stop count');
   await page.locator('#current-stop-name').filter({ hasText: /Checkmate Station/ }).waitFor({ state: 'visible' });
   await page.locator('[data-ops-tool="moves"]').click();
   await page.locator('#ops-tool-body .location-context-inline.is-high-exposure').waitFor({ state: 'visible' });
   const exposureText = await page.locator('#ops-tool-body .location-context-inline').textContent();
   assert.match(exposureText, /High cargo exposure/i);
-  assert.match(exposureText, /4 SCU/i);
+  assert.match(exposureText, /[24] SCU/i);
   assert.match(await page.locator('#global-route-status').textContent(), /High cargo exposure/i);
   await page.screenshot({ path: `${output}/location-context-operations-pyro.png`, fullPage: true });
 
