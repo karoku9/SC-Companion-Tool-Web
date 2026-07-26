@@ -20,6 +20,16 @@
       if (location) option.dataset.locationId = location.id;
     });
 
+    const nativeValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
+    Object.defineProperty(input, 'value', {
+      configurable: true,
+      get() { return nativeValue.get.call(this); },
+      set(nextValue) {
+        const location = locationsByLabel.get(normalize(nextValue));
+        nativeValue.set.call(this, location ? location.navigationTarget ?? location.name : nextValue);
+      }
+    });
+
     function normalizeSelection() {
       const option = [...list.options].find((candidate) => normalize(candidate.value) === normalize(input.value));
       const location = option?.dataset.locationId ? model.getLocation(option.dataset.locationId) : null;
