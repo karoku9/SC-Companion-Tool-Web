@@ -116,8 +116,9 @@ try {
   await page.locator('#mission-text').fill(longMissionText);
   await page.locator('#mission-form button[type="submit"]').click();
   await page.locator('#focused-review-count').filter({ hasText: '1 / 1' }).waitFor({ state: 'visible' });
-  assert.match(await page.locator('#focused-review-single').textContent(), /Long-range medical consolidation/);
-  assert.match(await page.locator('#focused-review-single').textContent(), /extremely_long_medical_supplies/);
+  assert.match(await page.locator('[data-focused-mission] [data-field="title"]').inputValue(), /Long-range medical consolidation/);
+  const reviewedCargo = await page.locator('[data-focused-mission] [data-field="cargo"]').allInputValues();
+  assert.ok(reviewedCargo.some((value) => /extremely_long_medical_supplies/.test(value)));
   assert.equal(await page.locator('#focused-review-generate').isEnabled(), true);
   await noHorizontalOverflow('Long mission Review desktop');
   await page.locator('#focused-review-generate').click();
