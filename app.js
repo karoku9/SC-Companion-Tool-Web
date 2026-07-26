@@ -111,7 +111,8 @@
     })
     .then(() => Promise.all([
       import('./fleet-loadouts-view.js'),
-      import('./starmap-layer-context.js')
+      import('./starmap-layer-context.js'),
+      import('./assisted-intake-access.js')
     ]))
     .then(() => window.dispatchEvent(new Event('sc:dynamic-pages-ready')))
     .catch((error) => console.error('Application runtime failed to load.', error));
