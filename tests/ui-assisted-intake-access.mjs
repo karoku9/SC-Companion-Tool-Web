@@ -81,11 +81,16 @@ async function noHorizontalOverflow(label) {
 }
 
 try {
-  step = 'load enhanced Missions intake controls';
+  step = 'load focused assisted-intake controls';
   await page.goto(`${baseUrl}/#missions`, { waitUntil: 'networkidle' });
+  await page.locator('.mission-steps').waitFor({ state: 'visible' });
+  assert.equal(await page.locator('.mission-experimental').evaluate((element) => element.open), false);
+  await page.locator('.mission-experimental > summary').click();
   await page.locator('#game-log-intake[data-access-enhanced="true"]').waitFor({ state: 'visible' });
-  await page.locator('#ocr-intake[data-access-enhanced="true"]').waitFor({ state: 'visible' });
   assert.equal(await page.locator('#game-log-choose').textContent(), 'Import Game.log');
+
+  await page.locator('[data-input="screenshot"]').click();
+  await page.locator('#ocr-intake[data-access-enhanced="true"]').waitFor({ state: 'visible' });
   assert.equal(await page.locator('#ocr-paste').textContent(), 'Paste screenshot');
 
   step = 'import Game.log without invoking protected file-system access';
