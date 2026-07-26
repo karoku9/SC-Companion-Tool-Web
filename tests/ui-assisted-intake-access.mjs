@@ -100,7 +100,7 @@ try {
   await page.locator('#game-log-choose').click();
   const chooser = await fileChooserPromise;
   await chooser.setFiles({ name: 'Game.log', mimeType: 'text/plain', buffer: Buffer.from(gameLog) });
-  assert.match((await page.locator('#game-log-file-state').textContent()) ?? '', /Game\.log/);
+  await page.waitForFunction(() => document.querySelector('#game-log-file-state')?.textContent?.includes('Game.log'));
   await page.locator('#game-log-summary article').nth(1).locator('strong').filter({ hasText: '2' }).waitFor({ state: 'visible' });
   assert.equal(await page.evaluate(() => window.__powerPickerCalls), 0);
   assert.equal(await page.locator('#game-log-refresh').textContent(), 'Reselect and read new lines');
