@@ -66,85 +66,85 @@ try {
   await page.locator('.mission-steps').waitFor({ state: 'visible' });
   await page.locator('#mission-text').waitFor({ state: 'visible' });
 
-  step = 'verify expanded destination registry';
-  const registry = await page.evaluate(() => {
-    const model = window.SCCompanionLocations;
-    return {
-      coverage: model.getCoverageSummary(),
-      attritus: model.searchOperationalLocations('Attritus PAF 3')[0]?.id,
-      vivere: model.searchOperationalLocations('Vivere OLP')[0]?.id,
-      rustville: model.searchOperationalLocations('Rustville')[0]?.id,
-      validation: model.validation
-    };
-  });
-  assert.equal(registry.coverage.operationalDestinations, 106);
-  assert.equal(registry.coverage.fieldDestinations, 72);
-  assert.equal(registry.attritus, 'stanton-crusader-daymar-attritus-paf-iii');
-  assert.equal(registry.vivere, 'stanton-hurston-aberdeen-vivere-olp');
-  assert.ok(registry.rustville?.includes('rustville'));
-  assert.deepEqual(registry.validation, { errors: [], warnings: [] });
-
-  step = 'verify simple Input stage';
+  step = 'verify reduced navigation and required route context';
+  assert.equal(await page.locator('.nav-group[data-nav-group="plan"]').count(), 0);
+  assert.equal(await page.locator('.nav-group[data-nav-group="manage"]').count(), 0);
+  assert.equal(await page.locator('#mission-start-location').isVisible(), true);
+  assert.equal(await page.locator('#mission-route-mode').inputValue(), 'sessions');
+  assert.equal(await page.locator('#mission-session-target').inputValue(), '60');
   assert.deepEqual(await visibleStage(), { input: true, review: false, route: false });
-  assert.equal(await page.locator('.mission-input-choice').count(), 2);
-  assert.equal(await page.locator('.mission-experimental').evaluate((node) => node.open), false);
-  assert.equal(await page.locator('.mission-validation-summary').count(), 0);
   await noHorizontalOverflow('Missions input desktop');
   await page.screenshot({ path: `${output}/missions-focused-input-desktop.png`, fullPage: true });
 
-  step = 'analyze exact seven-mission sample';
+  step = 'reject mission analysis without current location';
   await page.locator('#mission-text').fill(realMissionText);
   await page.locator('#mission-form button[type="submit"]').click();
-  await page.locator('#focused-review-count').filter({ hasText: '1 / 7' }).waitFor({ state: 'visible' });
+  assert.deepEqual(await visibleStage(), { input: true, review: false, route: false });
+  assert.match(await page.locator('#mission-start-location-status').textContent(), /required/i);
+
+  step = 'select current location and analyze exact seven-mission sample';
+  await page.locator('#mission-start-location').fill('Grim HEX');
+  await page.locator('#mission-start-location').dispatchEvent('change');
+  await page.locator('#mission-start-location-status').filter({ hasText: /Yela|Crusader/i }).waitFor({ state: 'visible' });
+  await page.locator('#mission-form button[type="submit"]').click();
+  await page.locator('#focused-review-count').filter({ hasText: '7 missions' }).waitFor({ state: 'visible' });
   assert.deepEqual(await visibleStage(), { input: false, review: true, route: false });
-  assert.equal(await page.locator('[data-focused-mission]').count(), 1);
-  assert.equal(await page.locator('.mission-review-card').count(), 0);
-  const firstLocation = await page.locator('[data-focused-mission] [data-field="location"]').first().inputValue();
-  assert.match(firstLocation, /attritus paf-iii/i);
+  assert.equal(await page.locator('[data-review-mission]').count(), 7);
+  assert.equal(await page.locator('.mission-validation-badge.is-ready').count(), 7);
+  assert.ok(await page.locator('.cargo-chip').count() >= 15);
+  assert.match(await page.locator('[data-review-mission="1"] .mission-cargo-chips').first().textContent(), /5×\s*hydrogen/i);
+  assert.match(await page.locator('[data-review-mission="3"] .mission-cargo-chips').first().textContent(), /32×\s*revenant tree pollen/i);
   assert.equal(await page.locator('#focused-review-generate').isEnabled(), true);
   await noHorizontalOverflow('Missions review desktop');
   await page.screenshot({ path: `${output}/missions-focused-review-desktop.png`, fullPage: true });
 
-  step = 'navigate one mission at a time';
-  await page.locator('#focused-review-next').click();
-  await page.locator('#focused-review-count').filter({ hasText: '2 / 7' }).waitFor({ state: 'visible' });
-  const sharedLocations = await page.locator('[data-focused-mission] [data-field="location"]').evaluateAll((nodes) => nodes.map((node) => node.value));
-  const sharedCargo = await page.locator('[data-focused-mission] [data-field="cargo"]').evaluateAll((nodes) => nodes.map((node) => node.value));
-  assert.match(sharedLocations[0], /vivere paf-iii/i);
-  assert.match(sharedLocations[0], /attritus paf-ii/i);
-  assert.match(sharedCargo[0], /5scu hydrogen totale/i);
-
-  step = 'generate route';
+  step = 'build safe one-hour sessions';
   await page.locator('#focused-review-generate').click();
   await page.locator('[data-stage="route"][aria-current="step"]').waitFor({ state: 'visible' });
   assert.deepEqual(await visibleStage(), { input: false, review: false, route: true });
+  const sessionCards = page.locator('.mission-session-card');
+  assert.ok(await sessionCards.count() > 1, 'Seven-mission fixture should be split into multiple play sessions');
   const routeSummary = await page.locator('#focused-route-summary').textContent();
   assert.match(routeSummary, /84 SCU total/i);
-  assert.match(routeSummary, /Attritus PAF-III/i);
-  assert.match(routeSummary, /Vivere OLP/i);
-  assert.match(routeSummary, /Rustville/i);
-  assert.match(routeSummary, /Shepherd's Rest/i);
-  await noHorizontalOverflow('Missions route desktop');
-  await page.screenshot({ path: `${output}/missions-focused-route-desktop.png`, fullPage: true });
+  assert.match(routeSummary, /Session 1/i);
+  assert.match(routeSummary, /Stanton Gateway/i);
+  assert.match(routeSummary, /Pyro Gateway/i);
+  const sessionMissionCounts = await sessionCards.evaluateAll((cards) => cards.map((card) => card.querySelectorAll('li').length));
+  assert.equal(sessionMissionCounts.reduce((sum, count) => sum + count, 0), 7);
+  await noHorizontalOverflow('Missions sessions desktop');
+  await page.screenshot({ path: `${output}/missions-focused-sessions-desktop.png`, fullPage: true });
 
-  step = 'open Operations from generated route';
-  await page.getByRole('button', { name: 'Open Operations' }).click();
+  step = 'open an inter-system session in Operations';
+  const gatewaySession = page.locator('.mission-session-card').filter({ has: page.locator('.session-gateways') }).first();
+  assert.equal(await gatewaySession.isVisible(), true);
+  await gatewaySession.getByRole('button', { name: 'Select session' }).click();
+  await page.locator('#focused-route-open').click();
   await page.locator('#current-stop-name').waitFor({ state: 'visible' });
-  const operationsText = await page.locator('#route-stop-list').textContent();
-  assert.match(operationsText, /Attritus PAF-III/i);
-  assert.match(operationsText, /Vivere OLP/i);
-  assert.match(operationsText, /Fallow Field/i);
-  await noHorizontalOverflow('Operations generated route');
+  await page.locator('#ops-live-map .ops-map-node').first().waitFor({ state: 'visible' });
+  assert.ok(await page.locator('#ops-live-map .ops-map-leg').count() > 0);
+  assert.ok(await page.locator('#ops-live-map .ops-map-gateway').count() >= 2);
+  assert.match(await page.locator('#ops-next-leg-strip').textContent(), /Gateway/i);
+  assert.equal(await page.locator('.ops-action-bar [data-ops-action]').count(), 5);
+  assert.ok(await page.locator('.current-stop-intel-card .intel-icon').count() >= 5);
+  await noHorizontalOverflow('Operations live cockpit desktop');
+  await page.screenshot({ path: `${output}/operations-live-cockpit-desktop.png`, fullPage: true });
 
-  step = 'verify mobile Missions layout';
+  step = 'verify route order editor opens';
+  await page.locator('[data-ops-action="order"]').click();
+  await page.locator('.ops-editor-drawer').waitFor({ state: 'visible' });
+  assert.ok(await page.locator('.ops-order-row').count() > 0);
+
+  step = 'verify mobile visual review and cockpit';
   await page.setViewportSize({ width: 390, height: 844 });
   await page.locator('[data-view-target="missions"]').click();
-  await page.locator('[data-stage="input"]').click();
-  await page.locator('#mission-text').waitFor({ state: 'visible' });
-  await noHorizontalOverflow('Missions input mobile');
-  const mobileColumns = await page.evaluate(() => getComputedStyle(document.querySelector('.mission-input-tools')).gridTemplateColumns.split(' ').length);
-  assert.equal(mobileColumns, 1);
-  await page.screenshot({ path: `${output}/missions-focused-input-mobile.png`, fullPage: true });
+  await page.locator('[data-stage="review"]').click();
+  await page.locator('[data-review-mission]').first().waitFor({ state: 'visible' });
+  await noHorizontalOverflow('Missions review mobile');
+  await page.screenshot({ path: `${output}/missions-focused-review-mobile.png`, fullPage: true });
+  await page.locator('[data-view-target="route"]').click();
+  await page.locator('#ops-live-map').waitFor({ state: 'visible' });
+  await noHorizontalOverflow('Operations live cockpit mobile');
+  await page.screenshot({ path: `${output}/operations-live-cockpit-mobile.png`, fullPage: true });
 
   step = 'check browser errors';
   assert.deepEqual(errors, [], `Browser errors:\n${errors.join('\n')}`);
@@ -157,4 +157,4 @@ try {
 }
 
 if (failure) throw failure;
-console.log('Focused Missions browser smoke passed.');
+console.log('v0.25 operational workflow browser smoke passed.');
