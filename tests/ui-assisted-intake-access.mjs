@@ -101,7 +101,7 @@ try {
   const chooser = await fileChooserPromise;
   await chooser.setFiles({ name: 'Game.log', mimeType: 'text/plain', buffer: Buffer.from(gameLog) });
   await page.waitForFunction(() => document.querySelector('#game-log-file-state')?.textContent?.includes('Game.log'));
-  await page.locator('#game-log-summary article').nth(1).locator('strong').filter({ hasText: '2' }).waitFor({ state: 'visible' });
+  await page.waitForFunction(() => [...document.querySelectorAll('#game-log-summary article strong')].some((element) => element.textContent?.trim() === '2'));
   assert.equal(await page.evaluate(() => window.__powerPickerCalls), 0);
   assert.equal(await page.locator('#game-log-refresh').textContent(), 'Reselect and read new lines');
 
