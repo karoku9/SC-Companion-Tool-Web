@@ -1,0 +1,9 @@
+/* Focused Missions owns the visible task surface; remove legacy duplicate framing. */
+.missions-page > .page-header,
+.missions-page #mission-message {
+  display: none !important;
+}
+
+.missions-page .missions-grid {
+  padding-top: 10px;
+}
