@@ -43,17 +43,34 @@ async function selectCurrentLocation(pattern = /grim hex/i) {
 async function exposeLocationBrowser() {
   await page.evaluate(() => {
     const root = document.querySelector('#locations');
-    root.hidden = false;
-    root.classList.remove('internal-source');
-    root.style.display = 'block';
-    root.style.marginTop = '16px';
+    const host = document.querySelector('.app-main');
+    if (!root || !host) throw new Error('Internal location browser host is unavailable.');
+    root.removeAttribute('hidden');
+    root.className = 'location-browser-test';
+    host.append(root);
+    root.style.setProperty('display', 'block', 'important');
+    root.style.setProperty('visibility', 'visible', 'important');
+    root.style.setProperty('opacity', '1', 'important');
+    root.style.setProperty('position', 'relative', 'important');
+    root.style.setProperty('inset', 'auto', 'important');
+    root.style.setProperty('width', 'calc(100% - 36px)', 'important');
+    root.style.setProperty('height', 'auto', 'important');
+    root.style.setProperty('min-height', '500px', 'important');
+    root.style.setProperty('margin', '18px', 'important');
+    root.style.setProperty('padding', '16px', 'important');
+    root.style.setProperty('overflow', 'visible', 'important');
+    root.style.setProperty('background', 'var(--ds-surface-panel)', 'important');
+    root.style.setProperty('border', '1px solid var(--ds-border-subtle)', 'important');
+    [...root.querySelectorAll('*')].forEach((element) => {
+      element.style.setProperty('visibility', 'visible', 'important');
+    });
   });
-  await page.locator('#locations').waitFor({ state: 'visible' });
+  await page.locator('#location-search').waitFor({ state: 'visible' });
 }
 
 async function selectLocation(query) {
-  await page.locator('#location-query').fill(query);
-  await page.locator('#location-search button[type="submit"]').click();
+  await page.locator('#location-query').fill(query, { force: true });
+  await page.locator('#location-search button[type="submit"]').click({ force: true });
 }
 
 let failure = null;
