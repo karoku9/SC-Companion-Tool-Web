@@ -5,6 +5,9 @@
     ?? (typeof require !== 'undefined' ? require('./missions.js') : null);
   if (!model) throw new Error('Integrated mission model is unavailable.');
   root.SCCompanionMissions = model;
-  if (typeof document !== 'undefined') import('./missions-source-provenance.js');
+  if (typeof document !== 'undefined') {
+    import('./missions-source-provenance.js');
+    import('./shared-pickup-display.js');
+  }
   if (typeof module !== 'undefined' && module.exports) module.exports = model;
 }(typeof globalThis !== 'undefined' ? globalThis : window));
