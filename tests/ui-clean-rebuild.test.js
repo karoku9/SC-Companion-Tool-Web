@@ -27,6 +27,8 @@ test('the application uses one design system and one clean layout entry', () => 
   assert.match(entry, /fleet-loadouts\.css/);
   assert.match(entry, /design-system-legibility\.css/);
   assert.match(entry, /starmap-v2\.css/);
+  assert.match(entry, /operational-ui-v025\.css/);
+  assert.match(entry, /operational-ui-legibility\.css/);
   ['styles.css', 'sections.css', 'planner.css', 'starmap.css', 'product-shell.css', 'workspace-consolidation.css', 'ui-rebuild.css', 'drake-mfd.css', 'mfd-layout-v2.css'].forEach((legacy) => {
     assert.doesNotMatch(html, new RegExp(`href="${legacy.replace('.', '\\.')}"`));
   });
@@ -69,11 +71,11 @@ test('assisted inputs enter the existing mission review without route replacemen
   assert.match(validator, /confirmedCustomLocations/);
 });
 
-test('v0.24 is current after Game.log and the universe foundation', () => {
+test('v0.25 operational hauling cockpit is current', () => {
   const roadmap = require('../roadmap.js');
-  assert.equal(roadmap.currentVersion, '0.24');
+  assert.equal(roadmap.currentVersion, '0.25');
   assert.equal(roadmap.releases.find((release) => release.version === '0.22').status, 'done');
   assert.equal(roadmap.releases.find((release) => release.version === '0.23').status, 'done');
-  assert.equal(roadmap.releases.find((release) => release.version === '0.24').status, 'current');
-  assert.equal(roadmap.releases.find((release) => release.version === '0.25').status, 'next');
+  assert.equal(roadmap.releases.find((release) => release.version === '0.24').status, 'done');
+  assert.equal(roadmap.releases.find((release) => release.version === '0.25').status, 'current');
 });

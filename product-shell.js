@@ -40,8 +40,8 @@
     if (!navFooter) return;
     const build = navFooter.querySelector('span');
     const privacy = navFooter.querySelector('small');
-    if (build) build.textContent = 'BUILD 0.24.2';
-    if (privacy) privacy.textContent = 'Focused text + local image review';
+    if (build) build.textContent = 'BUILD 0.25.0';
+    if (privacy) privacy.textContent = 'Private session · local review and routing';
   }
 
   function setContext(requestedId) {

@@ -24,6 +24,17 @@ async function openWorkspace(id) {
   await page.locator(`[data-view="${id}"]`).waitFor({ state: 'visible' });
 }
 
+async function selectCurrentLocation(pattern = /grim hex/i) {
+  const value = await page.locator('#mission-start-location-list option').evaluateAll((options, source) => {
+    const regex = new RegExp(source, 'i');
+    return options.find((option) => regex.test(option.value))?.value ?? '';
+  }, pattern.source);
+  assert.ok(value, `No current-location suggestion matches ${pattern}`);
+  await page.locator('#mission-start-location').fill(value);
+  await page.locator('#mission-start-location').dispatchEvent('change');
+  await page.locator('#mission-start-location-status[data-state="ready"]').waitFor({ state: 'visible' });
+}
+
 async function noHorizontalOverflow(label) {
   const metrics = await page.evaluate(() => ({
     viewport: innerWidth,
@@ -44,7 +55,7 @@ async function readableTypography(label) {
     })
     .map((element) => ({ text: element.textContent.trim().replace(/\s+/g, ' ').slice(0, 80), size: Number.parseFloat(getComputedStyle(element).fontSize) }))
     .sort((left, right) => left.size - right.size)
-    .slice(0, 10));
+    .slice(0, 12));
   assert.ok(result.every((item) => item.size >= 11.5), `${label}: text below 11.5px ${JSON.stringify(result)}`);
 }
 
@@ -60,25 +71,8 @@ async function minimumTouchTargets(label) {
   assert.deepEqual(undersized, [], `${label}: undersized controls ${JSON.stringify(undersized)}`);
 }
 
-async function exerciseTool(toolId) {
-  step = `exercise ${toolId} tool`;
-  const trigger = page.locator(`[data-ops-tool="${toolId}"]`);
-  await trigger.click();
-  const panel = page.locator('#ops-tool-panel');
-  await panel.waitFor({ state: 'visible' });
-  await noHorizontalOverflow(`${toolId} open`);
-  await page.locator('#ops-tool-expand').click();
-  assert.equal(await panel.evaluate((element) => element.classList.contains('is-expanded')), true);
-  assert.equal(await panel.getAttribute('role'), 'dialog');
-  const box = await panel.boundingBox();
-  const viewport = page.viewportSize();
-  assert.ok(box && box.x >= 0 && box.y >= 0 && box.x + box.width <= viewport.width + 2 && box.y + box.height <= viewport.height + 2, `${toolId}: expanded panel escapes viewport`);
-  await page.keyboard.press('Escape');
-  await panel.waitFor({ state: 'hidden' });
-}
-
-async function inspectWorkspaces(label) {
-  for (const id of ['route', 'missions', 'route-planner', 'map', 'hangar', 'roadmap']) {
+async function inspectActiveWorkspaces(label) {
+  for (const id of ['route', 'missions']) {
     await openWorkspace(id);
     await noHorizontalOverflow(`${label} ${id}`);
     await readableTypography(`${label} ${id}`);
@@ -96,59 +90,68 @@ try {
   await page.reload({ waitUntil: 'networkidle' });
   await page.locator('#sidebar-toggle').waitFor({ state: 'visible' });
 
-  step = 'verify empty Operations';
+  step = 'verify empty Operations cockpit';
   assert.match(await page.locator('#current-stop-name').textContent(), /Generate a session/i);
   assert.equal(await page.locator('#complete-stop').isDisabled(), true);
+  assert.equal(await page.locator('.tool-keys:not([hidden])').count(), 0);
+  assert.equal(await page.locator('.ops-action-bar [data-ops-action]').count(), 5);
+  assert.equal(await page.locator('[data-view-target="route-planner"]').count(), 0);
+  assert.equal(await page.locator('[data-view-target="map"]').count(), 0);
+  assert.equal(await page.locator('[data-view-target="hangar"]').count(), 0);
+  assert.equal(await page.locator('[data-view-target="roadmap"]').count(), 0);
   await noHorizontalOverflow('Empty Operations desktop');
   await readableTypography('Empty Operations desktop');
   await page.screenshot({ path: `${output}/hardening-no-route-1664.png`, fullPage: true });
 
-  step = 'verify keyboard tool opening';
-  await page.keyboard.press('F1');
-  await page.locator('#ops-tool-panel').waitFor({ state: 'visible' });
-  await page.keyboard.press('Escape');
-  await page.locator('#ops-tool-panel').waitFor({ state: 'hidden' });
-
-  step = 'generate long mission through focused flow';
+  step = 'generate long mission through visual review';
   await openWorkspace('missions');
   await page.locator('.mission-steps').waitFor({ state: 'visible' });
   await page.locator('[data-stage="input"]').click();
+  await selectCurrentLocation();
   await page.locator('#mission-text').fill(longMissionText);
   await page.locator('#mission-form button[type="submit"]').click();
-  await page.locator('#focused-review-count').filter({ hasText: '1 / 1' }).waitFor({ state: 'visible' });
-  assert.match(await page.locator('[data-focused-mission] [data-field="title"]').inputValue(), /Long-range medical consolidation/);
-  const reviewedCargo = await page.locator('[data-focused-mission] [data-field="cargo"]').evaluateAll((controls) => controls.map((control) => control.value));
+  await page.locator('#focused-review-count').filter({ hasText: '1 mission' }).waitFor({ state: 'visible' });
+  assert.match(await page.locator('[data-review-mission] [data-field="title"]').inputValue(), /Long-range medical consolidation/);
+  const reviewedCargo = await page.locator('[data-review-mission] [data-field="cargo"]').evaluateAll((controls) => controls.map((control) => control.value));
   assert.ok(reviewedCargo.some((value) => /extremely_long_medical_supplies/.test(value)));
+  assert.ok(await page.locator('.cargo-chip').count() >= 3);
   assert.equal(await page.locator('#focused-review-generate').isEnabled(), true);
   await noHorizontalOverflow('Long mission Review desktop');
+  await readableTypography('Long mission Review desktop');
   await page.locator('#focused-review-generate').click();
   await page.locator('[data-stage="route"][aria-current="step"]').waitFor({ state: 'visible' });
   const stored = await page.evaluate(() => window.SCCompanionSession.getState());
   assert.match(stored.missions[0].title, /Long-range medical consolidation/);
   assert.equal(stored.missions[0].cargoLots[0].commodity, 'extremely_long_medical_supplies');
+  assert.equal(stored.routePlan.sessions.length, 1, 'A single mission must never be split across play sessions');
   await page.screenshot({ path: `${output}/hardening-long-missions-1664.png`, fullPage: true });
 
-  step = 'verify Operations tools';
-  await openWorkspace('route');
+  step = 'verify integrated Operations tools';
+  await page.locator('#focused-route-open').click();
+  await page.locator('#ops-live-map .ops-map-node').first().waitFor({ state: 'visible' });
   assert.match(await page.locator('#route-stop-list').textContent(), /Checkmate Station|Levski/);
-  for (const toolId of ['moves', 'cargo', 'adjust', 'route']) await exerciseTool(toolId);
+  assert.ok(await page.locator('#ops-live-map .ops-map-leg').count() >= 1);
+  assert.ok(await page.locator('#ops-live-map .ops-map-gateway').count() >= 2);
+  await page.locator('[data-ops-action="missions"]').click();
+  await page.locator('.ops-editor-drawer').waitFor({ state: 'visible' });
+  assert.equal(await page.locator('.ops-manager-mission').count(), 1);
+  await page.locator('#ops-editor-close').click();
+  await page.locator('.ops-editor-drawer').waitFor({ state: 'hidden' });
+  await page.locator('[data-ops-action="order"]').click();
+  await page.locator('.ops-order-row').first().waitFor({ state: 'visible' });
+  await page.locator('#ops-editor-close').click();
+  await page.locator('[data-ops-action="cargo"]').click();
+  await page.locator('#ops-tool-panel').waitFor({ state: 'visible' });
+  assert.match(await page.locator('#ops-tool-title').textContent(), /Cargo/i);
+  await page.locator('#ops-tool-expand').click();
+  assert.equal(await page.locator('#ops-tool-panel').evaluate((element) => element.classList.contains('is-expanded')), true);
+  await page.keyboard.press('Escape');
+  await page.locator('#ops-tool-panel').waitFor({ state: 'hidden' });
+  await noHorizontalOverflow('Integrated Operations desktop');
+  await readableTypography('Integrated Operations desktop');
   await page.screenshot({ path: `${output}/hardening-operations-long-1664.png`, fullPage: true });
 
-  step = 'verify Starmap interaction';
-  await openWorkspace('map');
-  await page.locator('#starmap-canvas .map-node').first().waitFor({ state: 'visible' });
-  const initialViewBox = await page.locator('#starmap-canvas').getAttribute('viewBox');
-  await page.locator('[data-map-action="zoom-in"]').click();
-  assert.notEqual(await page.locator('#starmap-canvas').getAttribute('viewBox'), initialViewBox);
-  await page.locator('[data-map-mode="network"]').click();
-  await page.locator('#starmap-canvas [data-map-key="pyro"]').click();
-  await page.locator('#starmap-open-system').click();
-  assert.equal(await page.locator('#starmap-system-select').inputValue(), 'pyro');
-  await noHorizontalOverflow('Starmap desktop');
-  await page.screenshot({ path: `${output}/hardening-starmap-v2-active-1664.png`, fullPage: true });
-
   step = 'complete route in Operations';
-  await openWorkspace('route');
   let guard = 20;
   while (!(await page.locator('#complete-stop').isDisabled()) && guard > 0) {
     await page.locator('#complete-stop').click();
@@ -156,25 +159,19 @@ try {
   }
   assert.ok(guard > 0, 'Route completion exceeded safety limit');
   assert.match(await page.locator('#current-stop-name').textContent(), /complete/i);
+  assert.match(await page.locator('#ops-next-leg-title').textContent(), /complete/i);
   await page.screenshot({ path: `${output}/hardening-route-complete-1664.png`, fullPage: true });
 
-  step = 'verify Fleet editing';
-  await openWorkspace('hangar');
-  await page.locator('#hangar-model').selectOption('drake-cutlass-black');
-  await page.locator('#hangar-nickname').fill('Cutlass Black — Long-range recovery and hauling configuration');
-  await page.locator('#hangar-quantum').fill('XL-1 test configuration');
-  await page.locator('#hangar-factor').fill('0.82');
-  await page.locator('#hangar-form button[type="submit"]').click();
-  await page.locator('#fleet-count').filter({ hasText: '2' }).waitFor({ state: 'visible' });
-  assert.match(await page.locator('#fleet-selected-name').textContent(), /Cutlass Black/);
-  await noHorizontalOverflow('Fleet desktop');
-  await page.screenshot({ path: `${output}/hardening-fleet-multiple-1664.png`, fullPage: true });
+  step = 'verify simplified ship selector';
+  assert.equal(await page.locator('#quick-ship-select').isVisible(), true);
+  assert.ok(await page.locator('#quick-ship-select option').count() >= 7);
+  assert.equal(await page.locator('#fleet-loadout-editor:visible').count(), 0);
 
-  step = 'verify responsive layouts';
+  step = 'verify responsive active layouts';
   await page.setViewportSize({ width: 1366, height: 768 });
-  await inspectWorkspaces('1366x768');
+  await inspectActiveWorkspaces('1366x768');
   await page.setViewportSize({ width: 390, height: 844 });
-  await inspectWorkspaces('390x844');
+  await inspectActiveWorkspaces('390x844');
   await openWorkspace('missions');
   await page.locator('[data-stage="input"]').click();
   await minimumTouchTargets('390x844 Missions');

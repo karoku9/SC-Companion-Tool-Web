@@ -14,7 +14,7 @@ function read(file) {
   return fs.readFileSync(path.join(__dirname, '..', file), 'utf8');
 }
 
-test('primary navigation contains only six focused workspaces', () => {
+test('page registry preserves compatible workspace targets', () => {
   const ids = pages.pages.map((page) => page.id);
   assert.deepEqual(ids, visiblePages);
   assert.equal(new Set(ids).size, ids.length);
@@ -26,7 +26,7 @@ test('primary navigation contains only six focused workspaces', () => {
   });
 });
 
-test('secondary links resolve into their parent workspace', () => {
+test('secondary links still resolve into their compatibility workspace', () => {
   assert.equal(pages.resolveView('cargo'), 'route');
   assert.equal(pages.resolveView('load-operations'), 'route');
   assert.equal(pages.resolveView('locations'), 'route-planner');
@@ -48,7 +48,7 @@ test('ship cargo zones remain separable, layered and capacity-safe', () => {
   });
 });
 
-test('design system, icons and clean shell load before page routing', () => {
+test('design system, icons and v0.25 shell load before page routing', () => {
   const html = read('index.html');
   const shell = read('product-shell.js');
   assert.match(html, /id="product-navigation"/);
@@ -60,11 +60,11 @@ test('design system, icons and clean shell load before page routing', () => {
   assert.doesNotMatch(shell, /id="load-operations"/);
   assert.match(shell, /nav-glyph/);
   assert.match(shell, /SCCompanionMfdIcons/);
-  assert.match(shell, /BUILD 0\.24/);
-  assert.match(shell, /local image review/);
+  assert.match(shell, /BUILD 0\.25\.0/);
+  assert.match(shell, /local review and routing/);
 });
 
-test('v0.24 keeps delivered runtimes and adds assisted OCR intake', () => {
+test('v0.25 keeps assisted intake and adds the operational cockpit runtimes', () => {
   const app = read('app.js');
   const clean = read('ui-v2.js');
   const accessibility = read('ui-v2-accessibility.js');
@@ -84,7 +84,7 @@ test('v0.24 keeps delivered runtimes and adds assisted OCR intake', () => {
   const gameLogView = read('game-log-intake-view.js');
   const ocr = read('ocr-intake.js');
   const ocrView = read('ocr-intake-view.js');
-  assert.equal(roadmap.currentVersion, '0.24');
+  assert.equal(roadmap.currentVersion, '0.25');
   assert.match(app, /fleet-loadouts\.js/);
   assert.match(app, /fleet-estimate-adapter\.js/);
   assert.match(app, /fleet-loadouts-view\.js/);
@@ -99,6 +99,11 @@ test('v0.24 keeps delivered runtimes and adds assisted OCR intake', () => {
   assert.match(app, /game-log-intake-view\.js/);
   assert.match(app, /ocr-intake\.js/);
   assert.match(app, /ocr-intake-view\.js/);
+  assert.match(app, /route-session-planner\.js/);
+  assert.match(app, /missions-focus-workflow\.js/);
+  assert.match(app, /operational-ui-v025\.js/);
+  assert.match(app, /operations-exposure-intel\.js/);
+  assert.match(app, /ship-selector-sync\.js/);
   assert.match(app, /SCCompanionCleanInterfaceReady/);
   assert.match(clean, /SCCompanionCleanInterfaceReady/);
   assert.match(accessibility, /activateDevelopmentTab/);
@@ -117,7 +122,8 @@ test('v0.24 keeps delivered runtimes and adds assisted OCR intake', () => {
   assert.match(mapData, /registry\.locations/);
   assert.match(entry, /game-log-intake\.css/);
   assert.match(entry, /ocr-intake\.css/);
-  assert.match(entry, /starmap-v2\.css/);
+  assert.match(entry, /operational-ui-v025\.css/);
+  assert.match(entry, /operational-ui-legibility\.css/);
   assert.match(gameLog, /mergeImportedEvents/);
   assert.match(gameLogCorrelation, /nearest-preceding-contract-context/);
   assert.match(gameLogCorrelation, /normalizeStructuredFields/);
@@ -131,17 +137,20 @@ test('v0.24 keeps delivered runtimes and adds assisted OCR intake', () => {
   assert.match(read('design-system.js'), /manufacturer: 'Drake Interplanetary'/);
 });
 
-test('OCR and hardening form the remaining pre-1.0 sequence', () => {
+test('v0.25 follows OCR with the operational hauling cockpit', () => {
   const universe = roadmap.releases.find((release) => release.version === '0.22');
   const gameLog = roadmap.releases.find((release) => release.version === '0.23');
   const ocr = roadmap.releases.find((release) => release.version === '0.24');
-  const hardening = roadmap.releases.find((release) => release.version === '0.25');
+  const cockpit = roadmap.releases.find((release) => release.version === '0.25');
   assert.equal(universe.status, 'done');
   assert.match(universe.title, /Expanded universe data/i);
   assert.equal(gameLog.status, 'done');
   assert.match(gameLog.title, /Game\.log assisted intake/i);
-  assert.equal(ocr.status, 'current');
+  assert.equal(ocr.status, 'done');
   assert.match(ocr.title, /OCR assisted intake/i);
-  assert.equal(hardening.status, 'next');
-  assert.match(hardening.title, /Release hardening/i);
+  assert.equal(cockpit.status, 'current');
+  assert.match(cockpit.title, /Operational hauling cockpit/i);
+  assert.ok(cockpit.changes.some((change) => /safe sessions/i.test(change)));
+  assert.ok(cockpit.changes.some((change) => /gateway/i.test(change)));
+  assert.ok(cockpit.changes.some((change) => /route map/i.test(change)));
 });

@@ -112,7 +112,13 @@
       import('./assisted-intake-access.js')
     ]))
     .then(() => import('./focused-route-optimizer.js'))
+    .then(() => import('./route-session-planner.js'))
     .then(() => import('./missions-focus-workflow.js'))
+    .then(() => import('./mission-location-picker.js'))
+    .then(() => import('./operational-ui-v025.js'))
+    .then(() => import('./operations-exposure-intel.js'))
+    .then(() => import('./ship-selector-sync.js'))
+    .then(() => import('./missions-operations-bridge.js'))
     .then(() => window.dispatchEvent(new Event('sc:dynamic-pages-ready')))
     .catch((error) => console.error('Application runtime failed to load.', error));
 }());

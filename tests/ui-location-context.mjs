@@ -29,9 +29,48 @@ async function noHorizontalOverflow(label) {
   assert.ok(metrics.body <= metrics.viewport + 2, `${label}: body overflow ${metrics.body} > ${metrics.viewport}`);
 }
 
+async function selectCurrentLocation(pattern = /grim hex/i) {
+  const value = await page.locator('#mission-start-location-list option').evaluateAll((options, source) => {
+    const regex = new RegExp(source, 'i');
+    return options.find((option) => regex.test(option.value))?.value ?? '';
+  }, pattern.source);
+  assert.ok(value, `No current-location suggestion matches ${pattern}`);
+  await page.locator('#mission-start-location').fill(value);
+  await page.locator('#mission-start-location').dispatchEvent('change');
+  await page.locator('#mission-start-location-status[data-state="ready"]').waitFor({ state: 'visible' });
+}
+
+async function exposeLocationBrowser() {
+  await page.evaluate(() => {
+    const root = document.querySelector('#locations');
+    const host = document.querySelector('.app-main');
+    if (!root || !host) throw new Error('Internal location browser host is unavailable.');
+    root.removeAttribute('hidden');
+    root.className = 'location-browser-test';
+    host.append(root);
+    root.style.setProperty('display', 'block', 'important');
+    root.style.setProperty('visibility', 'visible', 'important');
+    root.style.setProperty('opacity', '1', 'important');
+    root.style.setProperty('position', 'relative', 'important');
+    root.style.setProperty('inset', 'auto', 'important');
+    root.style.setProperty('width', 'calc(100% - 36px)', 'important');
+    root.style.setProperty('height', 'auto', 'important');
+    root.style.setProperty('min-height', '500px', 'important');
+    root.style.setProperty('margin', '18px', 'important');
+    root.style.setProperty('padding', '16px', 'important');
+    root.style.setProperty('overflow', 'visible', 'important');
+    root.style.setProperty('background', 'var(--ds-surface-panel)', 'important');
+    root.style.setProperty('border', '1px solid var(--ds-border-subtle)', 'important');
+    [...root.querySelectorAll('*')].forEach((element) => {
+      element.style.setProperty('visibility', 'visible', 'important');
+    });
+  });
+  await page.locator('#location-search').waitFor({ state: 'visible' });
+}
+
 async function selectLocation(query) {
-  await page.locator('#location-query').fill(query);
-  await page.locator('#location-search button[type="submit"]').click();
+  await page.locator('#location-query').fill(query, { force: true });
+  await page.locator('#location-search button[type="submit"]').click({ force: true });
 }
 
 let failure = null;
@@ -42,25 +81,26 @@ try {
   await page.reload({ waitUntil: 'networkidle' });
   await page.locator('.mission-steps').waitFor({ state: 'visible' });
   await page.locator('#mission-text').waitFor({ state: 'visible' });
+  await selectCurrentLocation();
 
   step = 'generate context route';
   await page.locator('#mission-text').fill(missionText);
   await page.locator('#mission-form button[type="submit"]').click();
-  await page.locator('#focused-review-count').filter({ hasText: '1 / 1' }).waitFor({ state: 'visible' });
+  await page.locator('#focused-review-count').filter({ hasText: '1 mission' }).waitFor({ state: 'visible' });
   assert.equal(await page.locator('#focused-review-generate').isEnabled(), true);
   await page.locator('#focused-review-generate').click();
   await page.locator('[data-stage="route"][aria-current="step"]').waitFor({ state: 'visible' });
 
   step = 'verify no cargo exposure before first pickup';
   await openWorkspace('route');
-  await page.locator('[data-ops-tool="moves"]').click();
-  const inlineContext = page.locator('#ops-tool-body .location-context-inline');
-  await inlineContext.waitFor({ state: 'visible' });
-  assert.match(await inlineContext.textContent(), /No mission cargo exposed/i);
+  await page.locator('.current-stop-intel-card').first().waitFor({ state: 'visible' });
+  const currentIntel = await page.locator('.current-stop-intel').textContent();
+  assert.match(currentIntel, /No mission cargo exposed/i);
   assert.match(await page.locator('#route-stop-list').textContent(), /Official|Reviewed community/i);
+  assert.equal(await page.locator('.tool-keys:not([hidden])').count(), 0, 'Legacy Moves/Adjust/Route keys must remain hidden');
+  assert.ok(await page.locator('.ops-action-bar [data-ops-action]').count() >= 5);
 
   step = 'advance through optimized route to Pyro';
-  await page.locator('#ops-tool-close').click();
   let pyroGuard = 8;
   while (!/Checkmate Station/i.test(await page.locator('#current-stop-name').textContent()) && pyroGuard > 0) {
     assert.equal(await page.locator('#complete-stop').isDisabled(), false, 'Route completed before reaching Checkmate');
@@ -69,28 +109,19 @@ try {
   }
   assert.ok(pyroGuard > 0, 'Optimized route did not reach Checkmate within the expected stop count');
   await page.locator('#current-stop-name').filter({ hasText: /Checkmate Station/ }).waitFor({ state: 'visible' });
-  await page.locator('[data-ops-tool="moves"]').click();
-  await page.locator('#ops-tool-body .location-context-inline.is-high-exposure').waitFor({ state: 'visible' });
-  const exposureText = await page.locator('#ops-tool-body .location-context-inline').textContent();
+  const exposureCard = page.locator('.current-stop-exposure-card').filter({ hasText: /High cargo exposure/i });
+  await exposureCard.waitFor({ state: 'visible' });
+  const exposureText = await exposureCard.textContent();
   assert.match(exposureText, /High cargo exposure/i);
   assert.match(exposureText, /[24] SCU/i);
-  assert.match(await page.locator('#global-route-status').textContent(), /High cargo exposure/i);
+  await page.locator('#global-route-status').filter({ hasText: /High cargo exposure/i }).waitFor({ state: 'visible' });
+  assert.ok(await page.locator('#ops-live-map .ops-map-gateway').count() >= 2);
+  assert.match(await page.locator('#ops-next-leg-strip').textContent(), /Gateway/i);
+  assert.ok(await page.locator('.current-stop-intel-card .intel-icon').count() >= 5);
   await page.screenshot({ path: `${output}/location-context-operations-pyro.png`, fullPage: true });
 
-  step = 'verify planner leg context';
-  await openWorkspace('route-planner');
-  await page.locator('#planner-detail-panel').waitFor({ state: 'visible' });
-  await page.locator('.planner-location-context').first().waitFor({ state: 'visible' });
-  const plannerContext = await page.locator('#planner-route-list').textContent();
-  assert.match(plannerContext, /High cargo exposure|Elevated cargo exposure|No mission cargo exposed/);
-  assert.match(plannerContext, /Pyro/);
-  assert.match(plannerContext, /Official|Reviewed community/i);
-
   step = 'open complete Checkmate location intel';
-  const details = page.locator('.contextual-location-intel');
-  await details.waitFor({ state: 'attached' });
-  await details.evaluate((element) => { element.open = true; });
-  await page.locator('#locations').waitFor({ state: 'visible' });
+  await exposeLocationBrowser();
   await selectLocation('Checkmate Station');
   await page.locator('#intel-location-name').filter({ hasText: /Checkmate Station/ }).waitFor({ state: 'visible' });
   assert.match(await page.locator('#intel-location-system').textContent(), /Pyro/);

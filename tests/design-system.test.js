@@ -87,7 +87,7 @@ test('visible UI Kit documents palette, type, buttons, icons and manufacturer co
   assert.match(view, /Manufacturer theme contract/);
 });
 
-test('design foundation remains loaded before assisted-intake and Starmap layers', () => {
+test('design foundation remains loaded before assisted-intake and operational layers', () => {
   const html = read('index.html');
   const app = read('app.js');
   const entry = read('ui-v2.css');
@@ -99,6 +99,8 @@ test('design foundation remains loaded before assisted-intake and Starmap layers
   assert.ok(entry.indexOf('location-context-adapters.css') < entry.indexOf('fleet-loadouts.css'));
   assert.ok(entry.indexOf('fleet-loadouts.css') < entry.indexOf('design-system-legibility.css'));
   assert.ok(entry.indexOf('design-system-legibility.css') < entry.indexOf('starmap-v2.css'));
+  assert.ok(entry.indexOf('starmap-v2.css') < entry.indexOf('operational-ui-v025.css'));
+  assert.ok(entry.indexOf('operational-ui-v025.css') < entry.indexOf('operational-ui-legibility.css'));
   assert.match(app, /game-log-intake\.js/);
   assert.match(app, /game-log-intake-correlation\.js/);
   assert.match(app, /game-log-intake-view\.js/);
@@ -112,12 +114,16 @@ test('design foundation remains loaded before assisted-intake and Starmap layers
   assert.match(app, /fleet-estimate-adapter\.js/);
   assert.match(app, /fleet-loadouts-view\.js/);
   assert.match(app, /ui-v2-accessibility\.js/);
+  assert.match(app, /route-session-planner\.js/);
+  assert.match(app, /operational-ui-v025\.js/);
+  assert.match(app, /operations-exposure-intel\.js/);
   assert.match(app, /SCCompanionCleanInterfaceReady/);
-  assert.equal(roadmap.currentVersion, '0.24');
+  assert.equal(roadmap.currentVersion, '0.25');
   assert.equal(roadmap.releases.find((item) => item.version === '0.22').status, 'done');
   assert.equal(roadmap.releases.find((item) => item.version === '0.23').status, 'done');
-  assert.equal(roadmap.releases.find((item) => item.version === '0.24').status, 'current');
-  assert.match(roadmap.releases.find((item) => item.version === '0.24').title, /OCR assisted intake/i);
+  assert.equal(roadmap.releases.find((item) => item.version === '0.24').status, 'done');
+  assert.equal(roadmap.releases.find((item) => item.version === '0.25').status, 'current');
+  assert.match(roadmap.releases.find((item) => item.version === '0.25').title, /Operational hauling cockpit/i);
 });
 
 test('research rules prohibit page-specific invention', () => {

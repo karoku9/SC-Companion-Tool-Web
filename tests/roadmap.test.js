@@ -25,23 +25,23 @@ test('roadmap is a unique left-to-right release sequence', () => {
   });
 });
 
-test('current, next and future releases form one linear delivery path', () => {
+test('current and future releases form one linear delivery path', () => {
   const currentIndex = roadmap.releases.findIndex((release) => release.status === 'current');
-  const nextIndex = roadmap.releases.findIndex((release) => release.status === 'next');
   assert.equal(roadmap.releases[currentIndex].version, roadmap.currentVersion);
-  assert.equal(nextIndex, currentIndex + 1);
   assert.ok(roadmap.releases.slice(0, currentIndex).every((release) => release.status === 'done'));
-  assert.ok(roadmap.releases.slice(nextIndex + 1).every((release) => release.status === 'future'));
+  assert.ok(roadmap.releases.slice(currentIndex + 1).every((release) => ['next', 'future'].includes(release.status)));
+  const firstFutureIndex = roadmap.releases.findIndex((release, index) => index > currentIndex && release.status === 'future');
+  if (firstFutureIndex >= 0) assert.ok(roadmap.releases.slice(firstFutureIndex).every((release) => release.status === 'future'));
 });
 
-test('v0.24 delivers reviewable OCR intake after Game.log and universe data', () => {
+test('v0.25 delivers the operational hauling cockpit after OCR', () => {
   const context = roadmap.releases.find((item) => item.version === '0.19');
   const loadouts = roadmap.releases.find((item) => item.version === '0.20');
   const ux = roadmap.releases.find((item) => item.version === '0.21');
   const universe = roadmap.releases.find((item) => item.version === '0.22');
   const gameLog = roadmap.releases.find((item) => item.version === '0.23');
   const ocr = roadmap.releases.find((item) => item.version === '0.24');
-  const hardening = roadmap.releases.find((item) => item.version === '0.25');
+  const cockpit = roadmap.releases.find((item) => item.version === '0.25');
   const release = roadmap.releases.find((item) => item.version === '1.0');
 
   assert.equal(context.status, 'done');
@@ -59,13 +59,17 @@ test('v0.24 delivers reviewable OCR intake after Game.log and universe data', ()
   assert.ok(gameLog.changes.some((change) => /raw line, timestamp, file/i.test(change)));
   assert.ok(gameLog.changes.some((change) => /rotation/i.test(change)));
   assert.ok(gameLog.changes.some((change) => /mission validation/i.test(change)));
-  assert.equal(ocr.status, 'current');
+  assert.equal(ocr.status, 'done');
   assert.match(ocr.title, /OCR assisted intake/i);
   assert.ok(ocr.changes.some((change) => /Tesseract\.js 7/i.test(change)));
   assert.ok(ocr.changes.some((change) => /OCR-line provenance/i.test(change)));
   assert.ok(ocr.changes.some((change) => /mission validation/i.test(change)));
-  assert.equal(hardening.status, 'next');
-  assert.match(hardening.title, /Release hardening/i);
+  assert.equal(cockpit.status, 'current');
+  assert.match(cockpit.title, /Operational hauling cockpit/i);
+  assert.ok(cockpit.changes.some((change) => /current-location/i.test(change)));
+  assert.ok(cockpit.changes.some((change) => /safe sessions/i.test(change)));
+  assert.ok(cockpit.changes.some((change) => /gateway/i.test(change)));
+  assert.ok(cockpit.changes.some((change) => /route map/i.test(change)));
   assert.match(release.title, /Core companion release/i);
 });
 
