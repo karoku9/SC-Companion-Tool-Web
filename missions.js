@@ -11,9 +11,7 @@
 
   function positiveNumber(value, fieldName) {
     const number = Number(value);
-    if (!Number.isFinite(number) || number <= 0) {
-      throw new Error(`${fieldName} must be greater than zero`);
-    }
+    if (!Number.isFinite(number) || number <= 0) throw new Error(`${fieldName} must be greater than zero`);
     return number;
   }
 
@@ -27,18 +25,36 @@
     return Number.isFinite(number) ? Math.max(0, Math.min(100, number <= 1 ? number * 100 : number)) : null;
   }
 
+  function normalizePickupLocations(lot) {
+    const raw = Array.isArray(lot.pickupLocations) && lot.pickupLocations.length
+      ? lot.pickupLocations
+      : [{ id: lot.pickupLocationId, label: lot.pickupLocationLabel ?? lot.pickupLocationId }];
+    const seen = new Set();
+    return Object.freeze(raw.map((location, index) => {
+      const id = requiredText(location?.id ?? location?.locationId, `Pickup location ${index + 1}`);
+      if (seen.has(id)) return null;
+      seen.add(id);
+      return Object.freeze({ id, label: String(location?.label ?? location?.locationLabel ?? id) });
+    }).filter(Boolean));
+  }
+
   function normalizeCargoLot(lot, missionId) {
     const id = requiredText(lot.id, 'Cargo lot id');
-    const pickupLocationId = requiredText(lot.pickupLocationId, 'Pickup location');
+    const pickupLocations = normalizePickupLocations(lot);
+    const firstPickup = pickupLocations[0];
     const deliveryLocationId = requiredText(lot.deliveryLocationId, 'Delivery location');
+    const sharedPickupTotal = Boolean(lot.sharedPickupTotal || pickupLocations.length > 1);
+    const combinedPickupLabel = pickupLocations.map((location) => location.label).join(' + ');
 
     return Object.freeze({
       id,
       missionId,
       commodity: requiredText(lot.commodity, 'Commodity'),
       scu: positiveNumber(lot.scu, 'SCU'),
-      pickupLocationId,
-      pickupLocationLabel: String(lot.pickupLocationLabel ?? pickupLocationId),
+      pickupLocationId: firstPickup.id,
+      pickupLocationLabel: combinedPickupLabel,
+      pickupLocations,
+      sharedPickupTotal,
       pickupType: CARGO_PICKUP_TYPES.includes(lot.pickupType) ? lot.pickupType : 'pickup',
       deliveryLocationId,
       deliveryLocationLabel: String(lot.deliveryLocationLabel ?? deliveryLocationId),
@@ -68,13 +84,14 @@
     if (!cargoLots.length && !objectives.length) throw new Error(`Mission ${id} has no operations`);
 
     const itemIds = [...cargoLots, ...objectives].map((item) => item.id);
-    if (new Set(itemIds).size !== itemIds.length) {
-      throw new Error(`Mission ${id} contains duplicate lot or objective ids`);
-    }
+    if (new Set(itemIds).size !== itemIds.length) throw new Error(`Mission ${id} contains duplicate lot or objective ids`);
 
+    const reward = Number(input.rewardAuec ?? input.source?.rewardAuec);
     return Object.freeze({
       id,
       title: requiredText(input.title, 'Mission title'),
+      contractor: String(input.contractor ?? input.source?.contractor ?? '').trim() || null,
+      rewardAuec: Number.isFinite(reward) && reward >= 0 ? reward : null,
       category: String(input.category ?? (cargoLots.length ? 'cargo' : 'general')),
       confidence: optionalConfidence(input.confidence),
       source: optionalSource(input.source),
@@ -84,11 +101,13 @@
   }
 
   function cargoLotOperations(mission, lot) {
-    const pickupId = `${mission.id}:${lot.id}:${lot.pickupType}`;
+    const pickupIds = lot.pickupLocations.map((location, index) => `${mission.id}:${lot.id}:${lot.pickupType}:${index + 1}`);
     const deliveryId = `${mission.id}:${lot.id}:delivery`;
     const common = {
       missionId: mission.id,
       missionTitle: mission.title,
+      contractor: mission.contractor,
+      rewardAuec: mission.rewardAuec,
       missionConfidence: mission.confidence,
       missionSource: mission.source,
       lotId: lot.id,
@@ -98,34 +117,39 @@
       source: lot.source,
       originLocationId: lot.pickupLocationId,
       originLocationLabel: lot.pickupLocationLabel,
+      pickupLocations: lot.pickupLocations,
+      sharedPickupTotal: lot.sharedPickupTotal,
       destinationLocationId: lot.deliveryLocationId,
       destinationLocationLabel: lot.deliveryLocationLabel
     };
 
-    return [
-      Object.freeze({
-        ...common,
-        id: pickupId,
-        type: lot.pickupType,
-        locationId: lot.pickupLocationId,
-        locationLabel: lot.pickupLocationLabel,
-        pickupLocationLabel: lot.pickupLocationLabel,
-        sourceLine: lot.source?.pickupLine ?? null,
-        sourceText: lot.source?.pickupText ?? null,
-        dependsOn: Object.freeze([])
-      }),
-      Object.freeze({
-        ...common,
-        id: deliveryId,
-        type: 'delivery',
-        locationId: lot.deliveryLocationId,
-        locationLabel: lot.deliveryLocationLabel,
-        pickupLocationLabel: lot.pickupLocationLabel,
-        sourceLine: lot.source?.deliveryLine ?? null,
-        sourceText: lot.source?.deliveryText ?? null,
-        dependsOn: Object.freeze([pickupId])
-      })
-    ];
+    const pickupOperations = lot.pickupLocations.map((location, index) => Object.freeze({
+      ...common,
+      id: pickupIds[index],
+      type: lot.pickupType,
+      locationId: location.id,
+      locationLabel: location.label,
+      pickupLocationLabel: location.label,
+      pickupSequence: index + 1,
+      pickupLocationCount: lot.pickupLocations.length,
+      sourceLine: lot.source?.pickupLine ?? null,
+      sourceText: lot.source?.pickupText ?? null,
+      dependsOn: Object.freeze([])
+    }));
+
+    const deliveryOperation = Object.freeze({
+      ...common,
+      id: deliveryId,
+      type: 'delivery',
+      locationId: lot.deliveryLocationId,
+      locationLabel: lot.deliveryLocationLabel,
+      pickupLocationLabel: lot.pickupLocationLabel,
+      sourceLine: lot.source?.deliveryLine ?? null,
+      sourceText: lot.source?.deliveryText ?? null,
+      dependsOn: Object.freeze(pickupIds)
+    });
+
+    return [...pickupOperations, deliveryOperation];
   }
 
   function objectiveOperation(mission, objective) {
@@ -133,6 +157,8 @@
       id: `${mission.id}:${objective.id}`,
       missionId: mission.id,
       missionTitle: mission.title,
+      contractor: mission.contractor,
+      rewardAuec: mission.rewardAuec,
       missionConfidence: mission.confidence,
       missionSource: mission.source,
       objectiveId: objective.id,
@@ -152,29 +178,17 @@
     const missions = missionInputs.map(normalizeMission);
     const missionIds = missions.map((mission) => mission.id);
     if (new Set(missionIds).size !== missionIds.length) throw new Error('Mission ids must be unique');
-
-    return missions.flatMap((mission) => [
-      ...mission.cargoLots.flatMap((lot) => cargoLotOperations(mission, lot)),
-      ...mission.objectives.map((objective) => objectiveOperation(mission, objective))
-    ]);
+    return missions.flatMap((mission) => [...mission.cargoLots.flatMap((lot) => cargoLotOperations(mission, lot)), ...mission.objectives.map((objective) => objectiveOperation(mission, objective))]);
   }
 
   function groupOperationsByLocation(operations) {
     const stops = new Map();
     operations.forEach((operation) => {
-      const existing = stops.get(operation.locationId) ?? {
-        locationId: operation.locationId,
-        locationLabel: operation.locationLabel ?? operation.locationId,
-        operations: []
-      };
+      const existing = stops.get(operation.locationId) ?? { locationId: operation.locationId, locationLabel: operation.locationLabel ?? operation.locationId, operations: [] };
       existing.operations.push(operation);
       stops.set(operation.locationId, existing);
     });
-    return [...stops.values()].map((stop) => Object.freeze({
-      locationId: stop.locationId,
-      locationLabel: stop.locationLabel,
-      operations: Object.freeze([...stop.operations])
-    }));
+    return [...stops.values()].map((stop) => Object.freeze({ locationId: stop.locationId, locationLabel: stop.locationLabel, operations: Object.freeze([...stop.operations]) }));
   }
 
   const api = Object.freeze({ normalizeMission, buildOperations, groupOperationsByLocation });
