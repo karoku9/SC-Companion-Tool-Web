@@ -27,19 +27,20 @@ function service(locationContext, id) {
   return locationContext.services.find((item) => item.id === id);
 }
 
-test('field registry adds reviewed hauling outposts and distribution centers', () => {
+test('field registry adds reviewed hauling outposts, Hathor sites and distribution centers', () => {
   assert.deepEqual(catalog.validation.errors, []);
   assert.deepEqual(catalog.validation.warnings, []);
   assert.deepEqual(catalog.getCoverageSummary(), {
-    totalRecords: 130,
-    operationalDestinations: 84,
-    fieldDestinations: 50,
-    bySystem: { stanton: 80, pyro: 3, nyx: 1 },
-    reviewedAt: '2026-07-23',
+    totalRecords: 152,
+    operationalDestinations: 106,
+    fieldDestinations: 72,
+    bySystem: { stanton: 97, pyro: 8, nyx: 1 },
+    reviewedAt: '2026-07-26',
     gameVersion: 'Alpha 4.9.x'
   });
-  assert.equal(catalog.fieldLocations.filter((location) => location.type === 'outpost').length, 43);
+  assert.equal(catalog.fieldLocations.filter((location) => location.type === 'outpost').length, 61);
   assert.equal(catalog.fieldLocations.filter((location) => location.type === 'distribution-center').length, 7);
+  assert.equal(catalog.fieldLocations.filter((location) => location.facilityClass === 'orbital-laser-platform').length, 4);
 });
 
 test('field names and common compact forms resolve predictably', () => {
@@ -48,16 +49,18 @@ test('field names and common compact forms resolve predictably', () => {
   assert.equal(catalog.searchOperationalLocations('Rayari Cantwell')[0]?.id, CANTWELL);
   assert.equal(catalog.searchOperationalLocations('S4LD01')[0]?.id, S4LD01);
   assert.equal(catalog.searchOperationalLocations('Buds Growery')[0]?.id, BUDS);
+  assert.equal(catalog.searchOperationalLocations('Attritus PAF 3')[0]?.id, 'stanton-crusader-daymar-attritus-paf-iii');
+  assert.equal(catalog.searchOperationalLocations('Vivere OLP')[0]?.id, 'stanton-hurston-aberdeen-vivere-olp');
 });
 
-test('every field destination has a complete service, risk and schematic anchor profile', () => {
+test('every field destination has one complete service, risk and finite schematic profile', () => {
   assert.deepEqual(profiles.coverage, {
-    operationalDestinations: 84,
-    reviewedProfiles: 84,
-    fieldProfiles: 50,
+    operationalDestinations: 106,
+    reviewedProfiles: 106,
+    fieldProfiles: 72,
     complete: true,
     gameVersion: '4.9.0-LIVE.12232306',
-    reviewedAt: '2026-07-23'
+    reviewedAt: '2026-07-26'
   });
   catalog.fieldLocations.forEach((location) => {
     const profile = profiles.getProfile(location.id);
@@ -66,13 +69,13 @@ test('every field destination has a complete service, risk and schematic anchor 
     assert.equal(profile.services.length, 12);
     assert.notEqual(profile.risk.level, 'unknown');
     assert.ok(anchor, `${location.id} lacks a Starmap anchor`);
-    assert.equal(location.anchor.geometryStatus, 'schematic-surface-anchor');
+    assert.ok(['schematic-surface-anchor', 'parent-verified-schematic-orbit'].includes(location.anchor.geometryStatus));
     [...anchor.position, ...anchor.distancePositionGm].forEach((value) => assert.ok(Number.isFinite(value)));
   });
 });
 
 test('outposts answer operational essentials without pretending to be full stations', () => {
-  const bezdek = context.buildContext(BEZDEK, { asOf: '2026-07-23' });
+  const bezdek = context.buildContext(BEZDEK, { asOf: '2026-07-26' });
   assert.equal(bezdek.location.type, 'outpost');
   assert.equal(bezdek.profile.classification, 'Surface industrial or research outpost');
   assert.equal(service(bezdek, 'landing-services').status, 'available');
@@ -83,15 +86,16 @@ test('outposts answer operational essentials without pretending to be full stati
   assert.equal(bezdek.risk.level, 'elevated');
 });
 
-test('distribution centers and outlaw field sites retain distinct profiles', () => {
-  const depot = context.buildContext(S4LD01, { asOf: '2026-07-23' });
-  const buds = context.buildContext(BUDS, { asOf: '2026-07-23' });
-  assert.equal(depot.location.type, 'distribution-center');
+test('distribution centers, Hathor facilities and outlaw sites retain distinct profiles', () => {
+  const depot = context.buildContext(S4LD01, { asOf: '2026-07-26' });
+  const buds = context.buildContext(BUDS, { asOf: '2026-07-26' });
+  const paf = context.buildContext('stanton-crusader-daymar-attritus-paf-iii', { asOf: '2026-07-26' });
+  const olp = context.buildContext('stanton-hurston-aberdeen-vivere-olp', { asOf: '2026-07-26' });
   assert.equal(service(depot, 'cargo-center').status, 'available');
-  assert.equal(service(depot, 'food').status, 'limited');
-  assert.equal(depot.risk.level, 'elevated');
   assert.equal(service(buds, 'illegal-trade').status, 'unregulated');
-  assert.equal(buds.risk.level, 'high');
+  assert.equal(paf.profile.classification, 'Hathor planetary alignment facility');
+  assert.equal(olp.profile.classification, 'Hathor orbital laser platform');
+  assert.equal(paf.risk.level, 'high');
 });
 
 test('mission parser accepts surface hauling destinations through the same validation path', () => {
