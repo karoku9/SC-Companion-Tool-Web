@@ -109,11 +109,12 @@ try {
   }
   assert.ok(pyroGuard > 0, 'Optimized route did not reach Checkmate within the expected stop count');
   await page.locator('#current-stop-name').filter({ hasText: /Checkmate Station/ }).waitFor({ state: 'visible' });
-  await page.locator('.current-stop-intel-card').first().waitFor({ state: 'visible' });
-  const exposureText = await page.locator('.current-stop-intel').textContent();
+  const exposureCard = page.locator('.current-stop-exposure-card').filter({ hasText: /High cargo exposure/i });
+  await exposureCard.waitFor({ state: 'visible' });
+  const exposureText = await exposureCard.textContent();
   assert.match(exposureText, /High cargo exposure/i);
   assert.match(exposureText, /[24] SCU/i);
-  assert.match(await page.locator('#global-route-status').textContent(), /High cargo exposure/i);
+  await page.locator('#global-route-status').filter({ hasText: /High cargo exposure/i }).waitFor({ state: 'visible' });
   assert.ok(await page.locator('#ops-live-map .ops-map-gateway').count() >= 2);
   assert.match(await page.locator('#ops-next-leg-strip').textContent(), /Gateway/i);
   assert.ok(await page.locator('.current-stop-intel-card .intel-icon').count() >= 5);
