@@ -15,21 +15,25 @@
     const text = page?.querySelector('#mission-text');
     const message = page?.querySelector('#mission-message');
     const store = window.SCCompanionSession;
-    const routePlanner = window.SCCompanionRoutePlanner;
     const validator = window.SCCompanionMissionValidation;
     const missionModel = window.SCCompanionMissions;
     const locationModel = window.SCCompanionLocations;
-    if (!page || !grid || !form || !validation || !output || !gameLog || !ocr || !text || !message || !store || !routePlanner || !validator || !missionModel || !locationModel) return false;
+    const sessionPlanner = window.SCCompanionRouteSessionPlanner;
+    const shipCatalog = window.SCCompanionShipCatalog;
+    const icons = window.SCCompanionMfdIcons;
+    if (!page || !grid || !form || !validation || !output || !gameLog || !ocr || !text || !message || !store || !validator || !missionModel || !locationModel || !sessionPlanner || !shipCatalog) return false;
     initialized = true;
 
     let sourceText = text.value;
     let report = null;
     let reviewDrafts = [];
-    let activeMission = 0;
-    let generatedRoute = null;
+    let routePlan = null;
+
+    const icon = (name, className = 'mission-icon') => icons?.render?.(name, className) ?? '';
+    const escapeHtml = (value) => String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
 
     page.querySelector('.page-header h2').textContent = 'Mission intake';
-    page.querySelector('.page-header p').textContent = 'Paste contracts or paste a screenshot, verify one mission at a time, then build the route.';
+    page.querySelector('.page-header p').textContent = 'Tell the tool where you are, paste the contracts, verify the parsed grid, then choose a safe play session.';
     page.querySelector('.page-header .status-tag')?.remove();
 
     const steps = document.createElement('nav');
@@ -38,66 +42,156 @@
     steps.innerHTML = `
       <button type="button" data-stage="input" aria-current="step"><span>1</span><strong>Input</strong></button>
       <button type="button" data-stage="review" disabled><span>2</span><strong>Review</strong></button>
-      <button type="button" data-stage="route" disabled><span>3</span><strong>Route</strong></button>`;
+      <button type="button" data-stage="route" disabled><span>3</span><strong>Sessions</strong></button>`;
 
     const stage = document.createElement('div');
     stage.className = 'mission-stage';
     grid.replaceChildren(steps, stage);
     stage.append(form, validation, output);
 
-    const formHeader = form.querySelector(':scope > .mfd-header');
-    if (formHeader) formHeader.remove();
+    form.querySelector(':scope > .mfd-header')?.remove();
     const formActions = form.querySelector('.form-actions');
     const submit = form.querySelector('button[type="submit"]');
     const reset = form.querySelector('#reset-session');
     submit.textContent = 'Analyze missions';
 
+    const state = store.getState();
+    const context = document.createElement('section');
+    context.className = 'mission-route-context';
+    context.innerHTML = `
+      <header><div>${icon('route')}<span><small>ROUTE CONTEXT</small><strong>Start and play time</strong></span></div><em>Required</em></header>
+      <div class="mission-context-grid">
+        <label class="mission-context-location"><span>${icon('operations')}Current location</span><input id="mission-start-location" list="mission-start-location-list" autocomplete="off" placeholder="Where are you now?" required><input id="mission-start-location-id" type="hidden"><datalist id="mission-start-location-list"></datalist><small id="mission-start-location-status">Select a known station, city or outpost.</small></label>
+        <label><span>${icon('ship')}Ship</span><select id="mission-ship-select"></select><small>Model only; paints and skins are ignored.</small></label>
+        <label><span>${icon('planner')}Route mode</span><select id="mission-route-mode"><option value="sessions">Safe sessions</option><option value="fastest">Fastest full route</option></select><small>Safe sessions finish complete missions before stopping.</small></label>
+        <label id="mission-session-target-label"><span>${icon('development')}Play session</span><select id="mission-session-target"><option value="30">30 minutes</option><option value="45">45 minutes</option><option value="60" selected>1 hour</option><option value="90">1.5 hours</option><option value="120">2 hours</option></select><small>Target, not a hard cutoff when one mission takes longer.</small></label>
+      </div>`;
+
     const inputTools = document.createElement('div');
     inputTools.className = 'mission-input-tools';
     inputTools.innerHTML = `
-      <button type="button" class="mission-input-choice is-active" data-input="text"><strong>Text</strong><small>Paste or type contracts</small></button>
-      <button type="button" class="mission-input-choice" data-input="screenshot"><strong>Screenshot</strong><small>Win+Shift+S, then Ctrl+V</small></button>`;
+      <button type="button" class="mission-input-choice is-active" data-input="text">${icon('missions')}<span><strong>Text</strong><small>Paste or type contracts</small></span></button>
+      <button type="button" class="mission-input-choice" data-input="screenshot">${icon('starmap')}<span><strong>Screenshot</strong><small>Win+Shift+S, then Ctrl+V</small></span></button>`;
+    form.insertBefore(context, text);
     form.insertBefore(inputTools, text);
 
     const experimental = document.createElement('details');
     experimental.className = 'mission-experimental';
-    experimental.innerHTML = '<summary><strong>Experimental Game.log import</strong><span>Optional · may not contain useful hauling data</span></summary>';
+    experimental.innerHTML = `<summary><strong>${icon('development')}Experimental Game.log import</strong><span>Optional · may not contain useful hauling data</span></summary>`;
     experimental.append(gameLog);
     form.append(experimental);
     form.insertBefore(ocr, experimental);
 
     validation.innerHTML = `
       <header class="mission-review-heading">
-        <div><small>REVIEW</small><strong id="focused-review-title">Mission</strong></div>
-        <span id="focused-review-count">0 / 0</span>
+        <div><small>PARSED CONTRACTS</small><strong>Verify every mission at a glance</strong></div>
+        <span id="focused-review-count">0 missions</span>
       </header>
       <div class="mission-review-alerts" id="focused-review-alerts"></div>
-      <div class="mission-review-single" id="focused-review-single"></div>
+      <div class="mission-review-grid" id="focused-review-grid"></div>
       <footer class="mission-review-controls">
-        <button type="button" class="button button--secondary" id="focused-review-prev">Previous</button>
-        <button type="button" class="button button--secondary" id="focused-review-validate">Validate changes</button>
-        <button type="button" class="button button--secondary" id="focused-review-next">Next</button>
-        <button type="button" class="button button--primary" id="focused-review-generate">Generate route</button>
+        <button type="button" class="button button--secondary" id="focused-review-add">${icon('missions')}Add mission</button>
+        <button type="button" class="button button--secondary" id="focused-review-validate">${icon('check')}Validate all</button>
+        <button type="button" class="button button--primary" id="focused-review-generate">${icon('route')}Build sessions</button>
       </footer>`;
 
     output.innerHTML = `
-      <header class="mission-route-heading"><div><small>ROUTE</small><strong id="focused-route-title">No route generated</strong></div></header>
+      <header class="mission-route-heading"><div><small>PLAY PLAN</small><strong id="focused-route-title">No route generated</strong></div></header>
       <div class="mission-route-summary" id="focused-route-summary"></div>
       <footer class="mission-route-actions">
-        <button type="button" class="button button--secondary" data-route-edit>Edit missions</button>
-        <button type="button" class="button button--primary" data-shell-link="route">Open Operations</button>
+        <button type="button" class="button button--secondary" data-route-edit>${icon('missions')}Edit missions</button>
+        <button type="button" class="button button--primary" id="focused-route-open">${icon('operations')}Start selected session</button>
       </footer>`;
 
-    const reviewTitle = validation.querySelector('#focused-review-title');
+    const startInput = context.querySelector('#mission-start-location');
+    const startIdInput = context.querySelector('#mission-start-location-id');
+    const startStatus = context.querySelector('#mission-start-location-status');
+    const locationList = context.querySelector('#mission-start-location-list');
+    const shipSelect = context.querySelector('#mission-ship-select');
+    const routeMode = context.querySelector('#mission-route-mode');
+    const sessionTarget = context.querySelector('#mission-session-target');
+    const sessionTargetLabel = context.querySelector('#mission-session-target-label');
     const reviewCount = validation.querySelector('#focused-review-count');
     const reviewAlerts = validation.querySelector('#focused-review-alerts');
-    const reviewSingle = validation.querySelector('#focused-review-single');
-    const prev = validation.querySelector('#focused-review-prev');
-    const next = validation.querySelector('#focused-review-next');
+    const reviewGrid = validation.querySelector('#focused-review-grid');
+    const addMission = validation.querySelector('#focused-review-add');
     const validate = validation.querySelector('#focused-review-validate');
     const generate = validation.querySelector('#focused-review-generate');
     const routeTitle = output.querySelector('#focused-route-title');
     const routeSummary = output.querySelector('#focused-route-summary');
+    const openRoute = output.querySelector('#focused-route-open');
+
+    function operationalLabel(location) {
+      return locationModel.formatOperationalLabel(location);
+    }
+
+    function populateLocations() {
+      const locations = locationModel.locations.filter((location) => location.operational).sort((left, right) => operationalLabel(left).localeCompare(operationalLabel(right)));
+      locationList.replaceChildren(...locations.map((location) => {
+        const option = document.createElement('option');
+        option.value = operationalLabel(location);
+        option.label = location.navigationTarget ?? location.name;
+        return option;
+      }));
+    }
+
+    function populateShips(selectedModelId = store.getState().selectedShipModelId) {
+      shipSelect.replaceChildren(...shipCatalog.models.map((model) => {
+        const option = document.createElement('option');
+        option.value = model.id;
+        option.textContent = `${model.manufacturer} ${model.model} · ${model.capacityScu} SCU`;
+        return option;
+      }));
+      if (shipCatalog.getModel(selectedModelId)) shipSelect.value = selectedModelId;
+    }
+
+    function ensureSelectedShip() {
+      const modelId = shipSelect.value;
+      const current = store.getState();
+      let ship = (current.hangarShips ?? []).find((item) => item.modelId === modelId);
+      let hangarShips = current.hangarShips ?? [];
+      if (!ship) {
+        ship = shipCatalog.createHangarShip({ id: `quick-${modelId}`, modelId, quantumDrive: 'Stock', quantumTimeFactor: 1 });
+        hangarShips = [...hangarShips, ship];
+      }
+      store.patch({ hangarShips, selectedShipId: ship.id, selectedShipModelId: modelId });
+      return ship;
+    }
+
+    function locationCandidates(query) {
+      const normalized = locationModel.normalizeSearchTerm(query);
+      const matches = locationModel.searchOperationalLocations(query, { limit: 12 });
+      const exact = matches.filter((location) => [
+        location.name,
+        location.navigationTarget,
+        operationalLabel(location),
+        ...(location.aliases ?? [])
+      ].filter(Boolean).map(locationModel.normalizeSearchTerm).includes(normalized));
+      return exact.length ? exact : matches;
+    }
+
+    function resolveStartLocation(showMessage = true) {
+      const query = startInput.value.trim();
+      if (!query) {
+        startIdInput.value = '';
+        startStatus.textContent = 'Current location is required before route generation.';
+        startStatus.dataset.state = 'error';
+        return null;
+      }
+      const candidates = locationCandidates(query);
+      const location = candidates.length === 1 ? candidates[0] : null;
+      if (!location) {
+        startIdInput.value = '';
+        if (showMessage) startStatus.textContent = candidates.length ? 'Choose the exact location from the suggestions.' : 'Location not recognized.';
+        startStatus.dataset.state = 'error';
+        return null;
+      }
+      startIdInput.value = location.id;
+      startInput.value = operationalLabel(location);
+      startStatus.textContent = `${location.navigationTarget ?? location.name} · ${locationModel.formatLocationPath(location)}`;
+      startStatus.dataset.state = 'ready';
+      return location;
+    }
 
     function setInputMode(mode) {
       const screenshot = mode === 'screenshot';
@@ -117,7 +211,7 @@
       validation.hidden = name !== 'review';
       output.hidden = name !== 'route';
       steps.querySelectorAll('[data-stage]').forEach((button) => button.setAttribute('aria-current', button.dataset.stage === name ? 'step' : 'false'));
-      if (name === 'review') renderActiveMission();
+      if (name === 'review') renderReviewGrid();
       if (name === 'route') renderRoute();
       window.scrollTo({ top: 0, behavior: 'instant' });
     }
@@ -139,8 +233,8 @@
     }
 
     function serializeDrafts() {
-      return reviewDrafts.map((mission) => {
-        const lines = [mission.title.trim()];
+      return reviewDrafts.map((mission, index) => {
+        const lines = [mission.title.trim() || `Mission ${index + 1}`];
         if (mission.contractor.trim()) lines.push(`contractor ${mission.contractor.trim()}`);
         const reward = Number(String(mission.rewardAuec).replace(/[^\d.]/g, ''));
         if (reward > 0) lines.push(`paga ${reward.toLocaleString('en-US')} aUEC`);
@@ -149,106 +243,210 @@
       }).join('\n\n');
     }
 
-    function analyze(source = text.value, preserveDrafts = false) {
-      sourceText = source;
-      report = validator.inspectMissionText(source, locationModel);
-      text.value = source;
-      if (!preserveDrafts) reviewDrafts = draftsFromReport(report);
-      activeMission = Math.min(activeMission, Math.max(0, reviewDrafts.length - 1));
-      steps.querySelector('[data-stage="review"]').disabled = reviewDrafts.length === 0;
-      steps.querySelector('[data-stage="route"]').disabled = true;
-      generatedRoute = null;
-      setStage('review');
+    function cargoPairs(value) {
+      const pairs = [];
+      const pattern = /(\d+(?:\.\d+)?)\s*scu\s+(.+?)(?=(?:\s+\d+(?:\.\d+)?\s*scu\b)|$)/gi;
+      let match;
+      while ((match = pattern.exec(String(value ?? '')))) {
+        const commodity = match[2].replace(/\b(?:totale|total)\b/gi, '').trim();
+        if (commodity) pairs.push({ quantity: Number(match[1]), commodity });
+      }
+      return pairs;
     }
 
-    function applyVisibleMission() {
-      const card = reviewSingle.querySelector('[data-focused-mission]');
-      const draft = reviewDrafts[activeMission];
-      if (!card || !draft) return;
-      draft.title = card.querySelector('[data-field="title"]')?.value ?? draft.title;
-      draft.contractor = card.querySelector('[data-field="contractor"]')?.value ?? draft.contractor;
-      draft.rewardAuec = card.querySelector('[data-field="reward"]')?.value ?? draft.rewardAuec;
-      draft.objectives = [...card.querySelectorAll('[data-objective]')].map((row) => ({
-        action: row.querySelector('[data-field="action"]')?.value ?? '',
-        location: row.querySelector('[data-field="location"]')?.value ?? '',
-        cargo: row.querySelector('[data-field="cargo"]')?.value ?? ''
+    function resolveObjectiveLocations(value) {
+      const parts = String(value ?? '').split('+').map((part) => part.trim()).filter(Boolean);
+      if (!parts.length) return { state: 'error', label: 'Missing location', locations: [] };
+      const resolved = parts.map((part) => ({ part, matches: locationCandidates(part) }));
+      if (resolved.every((item) => item.matches.length === 1)) return { state: 'ready', label: parts.length > 1 ? `${parts.length} positions OK` : 'Position OK', locations: resolved.map((item) => item.matches[0]) };
+      if (resolved.some((item) => item.matches.length === 0)) return { state: 'error', label: 'Unknown position', locations: [] };
+      return { state: 'warning', label: 'Check position', locations: [] };
+    }
+
+    function applyReviewGrid() {
+      reviewDrafts = [...reviewGrid.querySelectorAll('[data-review-mission]')].map((card) => ({
+        title: card.querySelector('[data-field="title"]')?.value ?? '',
+        contractor: card.querySelector('[data-field="contractor"]')?.value ?? '',
+        rewardAuec: card.querySelector('[data-field="reward"]')?.value ?? '',
+        objectives: [...card.querySelectorAll('[data-objective]')].map((row) => ({
+          action: row.querySelector('[data-field="action"]')?.value ?? 'collect',
+          location: row.querySelector('[data-field="location"]')?.value ?? '',
+          cargo: row.querySelector('[data-field="cargo"]')?.value ?? ''
+        }))
       }));
     }
 
     function missionIssues(index) {
-      const missionKey = `mission-${index}`;
-      return report?.issues.filter((item) => item.entryKey?.startsWith(missionKey) || item.message?.includes(reviewDrafts[index]?.title)) ?? [];
+      const mission = reviewDrafts[index];
+      return report?.issues.filter((item) => item.entryKey?.startsWith(`mission-${index}`) || item.message?.includes(mission?.title)) ?? [];
     }
 
-    function renderActiveMission() {
-      const draft = reviewDrafts[activeMission];
-      reviewSingle.replaceChildren();
+    function renderCargoChips(cargo) {
+      const pairs = cargoPairs(cargo);
+      if (!pairs.length) return '<span class="cargo-chip is-empty">No parsed cargo</span>';
+      return pairs.map((pair) => `<span class="cargo-chip"><b>${escapeHtml(pair.quantity)}×</b>${escapeHtml(pair.commodity)}</span>`).join('');
+    }
+
+    function renderReviewGrid() {
+      reviewGrid.replaceChildren();
       reviewAlerts.replaceChildren();
-      if (!draft) {
-        reviewTitle.textContent = 'No mission detected';
-        reviewCount.textContent = '0 / 0';
+      reviewCount.textContent = `${reviewDrafts.length} mission${reviewDrafts.length === 1 ? '' : 's'}`;
+      if (!reviewDrafts.length) {
+        reviewGrid.innerHTML = '<div class="tool-empty">No mission detected.</div>';
         generate.disabled = true;
         return;
       }
-      reviewTitle.textContent = draft.title || `Mission ${activeMission + 1}`;
-      reviewCount.textContent = `${activeMission + 1} / ${reviewDrafts.length}`;
-      const issues = missionIssues(activeMission);
-      issues.forEach((item) => {
-        const alert = document.createElement('p');
-        alert.className = `is-${item.severity}`;
-        alert.textContent = item.message;
-        reviewAlerts.append(alert);
-      });
-      if (!issues.length) reviewAlerts.innerHTML = '<p class="is-ready">This mission is ready.</p>';
 
-      const card = document.createElement('article');
-      card.dataset.focusedMission = 'true';
-      card.innerHTML = `
-        <div class="mission-meta-fields">
-          <label>Mission name<input data-field="title" value="${escapeHtml(draft.title)}"></label>
-          <label>Contractor<input data-field="contractor" value="${escapeHtml(draft.contractor)}" placeholder="Optional"></label>
-          <label>Reward aUEC<input data-field="reward" inputmode="numeric" value="${escapeHtml(draft.rewardAuec)}" placeholder="Optional"></label>
-        </div>
-        <div class="mission-objective-lines"></div>`;
-      const lines = card.querySelector('.mission-objective-lines');
-      draft.objectives.forEach((objective, index) => {
-        const row = document.createElement('div');
-        row.dataset.objective = String(index);
-        row.innerHTML = `
-          <select data-field="action" aria-label="Action"><option value="collect">COLLECT</option><option value="pickup">PICKUP</option><option value="deliver">DELIVER</option></select>
-          <input data-field="location" aria-label="Location" value="${escapeHtml(objective.location)}">
-          <input data-field="cargo" aria-label="Cargo" value="${escapeHtml(objective.cargo)}">`;
-        row.querySelector('[data-field="action"]').value = objective.action;
-        lines.append(row);
+      reviewDrafts.forEach((draft, missionIndex) => {
+        const issues = missionIssues(missionIndex);
+        const locationStates = draft.objectives.map((objective) => resolveObjectiveLocations(objective.location));
+        const allLocationsReady = locationStates.length > 0 && locationStates.every((item) => item.state === 'ready');
+        const card = document.createElement('article');
+        card.className = 'mission-review-card-v25';
+        card.dataset.reviewMission = String(missionIndex);
+        card.innerHTML = `
+          <header class="mission-review-card-header">
+            <span class="mission-drag" title="Mission order">${icon('menu')}</span>
+            <strong>Mission ${missionIndex + 1}</strong>
+            <span class="mission-validation-badge is-${allLocationsReady && !issues.some((item) => item.severity === 'error') ? 'ready' : 'warning'}">${icon(allLocationsReady ? 'check' : 'warning')}${allLocationsReady ? 'Locations OK' : 'Check data'}</span>
+            <label class="mission-reward"><small>Payout</small><input data-field="reward" inputmode="numeric" value="${escapeHtml(draft.rewardAuec)}" placeholder="—"><em>aUEC</em></label>
+            <button type="button" class="mission-remove" data-remove-mission="${missionIndex}" aria-label="Remove mission">${icon('close')}</button>
+          </header>
+          <div class="mission-review-card-meta">
+            <label><small>Mission name</small><input data-field="title" value="${escapeHtml(draft.title)}"></label>
+            <label><small>Contractor</small><input data-field="contractor" value="${escapeHtml(draft.contractor)}" placeholder="Optional"></label>
+          </div>
+          <div class="mission-review-objectives"></div>`;
+        const objectives = card.querySelector('.mission-review-objectives');
+        draft.objectives.forEach((objective, objectiveIndex) => {
+          const locationState = locationStates[objectiveIndex];
+          const row = document.createElement('div');
+          row.className = `mission-objective-row is-${objective.action}`;
+          row.dataset.objective = String(objectiveIndex);
+          row.innerHTML = `
+            <select data-field="action" aria-label="Action"><option value="collect">COLLECT</option><option value="pickup">PICKUP</option><option value="deliver">DELIVER</option></select>
+            <label class="mission-location-field"><input data-field="location" aria-label="Location" value="${escapeHtml(objective.location)}"><span class="location-state is-${locationState.state}">${icon(locationState.state === 'ready' ? 'check' : 'warning')}${escapeHtml(locationState.label)}</span></label>
+            <div class="mission-cargo-field"><div class="mission-cargo-chips">${renderCargoChips(objective.cargo)}</div><input data-field="cargo" aria-label="Cargo" value="${escapeHtml(objective.cargo)}"></div>`;
+          row.querySelector('[data-field="action"]').value = objective.action;
+          objectives.append(row);
+        });
+        reviewGrid.append(card);
       });
-      reviewSingle.append(card);
-      prev.disabled = activeMission === 0;
-      next.disabled = activeMission >= reviewDrafts.length - 1;
-      generate.disabled = !report?.ready;
-      generate.textContent = report?.ready ? 'Generate route' : 'Resolve errors first';
+
+      const errors = report?.issues.filter((item) => item.severity === 'error') ?? [];
+      if (errors.length) reviewAlerts.innerHTML = `<p class="is-error">${errors.length} blocking issue${errors.length === 1 ? '' : 's'} remain. Correct the highlighted rows and validate again.</p>`;
+      else reviewAlerts.innerHTML = '<p class="is-ready">All parsed missions are ready for route planning.</p>';
+      generate.disabled = !report?.ready || !resolveStartLocation(false);
+      generate.textContent = routeMode.value === 'sessions' ? 'Build sessions' : 'Build fastest route';
+    }
+
+    function analyze(source = text.value) {
+      sourceText = source;
+      report = validator.inspectMissionText(source, locationModel);
+      text.value = source;
+      reviewDrafts = draftsFromReport(report);
+      routePlan = null;
+      steps.querySelector('[data-stage="review"]').disabled = reviewDrafts.length === 0;
+      steps.querySelector('[data-stage="route"]').disabled = true;
+      setStage('review');
     }
 
     function validateChanges() {
-      applyVisibleMission();
+      applyReviewGrid();
       const source = serializeDrafts();
       report = validator.inspectMissionText(source, locationModel);
       text.value = source;
       reviewDrafts = draftsFromReport(report);
-      activeMission = Math.min(activeMission, Math.max(0, reviewDrafts.length - 1));
-      renderActiveMission();
+      renderReviewGrid();
     }
 
-    function generateRoute() {
+    function formatMinutes(estimate) {
+      return `${Math.round(estimate.minMinutes)}–${Math.round(estimate.maxMinutes)} min`;
+    }
+
+    function activateSession(index) {
+      const session = routePlan?.sessions[index];
+      if (!session) return;
+      store.patch({
+        route: session.route,
+        activeRouteSessionIndex: index,
+        currentStopIndex: 0,
+        completedStopIds: [],
+        routeCorrections: null,
+        cargoCorrections: {}
+      });
+      routeSummary.querySelectorAll('[data-session]').forEach((card) => card.classList.toggle('is-selected', Number(card.dataset.session) === index));
+      openRoute.dataset.sessionIndex = String(index);
+      openRoute.textContent = `${index === 0 ? 'Start' : 'Open'} session ${index + 1}`;
+    }
+
+    function gatewayMarkup(session) {
+      const unique = [...new Map((session.gatewaySegments ?? []).map((segment) => [segment.label, segment])).values()];
+      if (!unique.length) return '';
+      return `<div class="session-gateways">${unique.map((segment) => `<span>${icon('route')}<b>${escapeHtml(segment.fromGateway)}</b><i>→</i><b>${escapeHtml(segment.toGateway)}</b></span>`).join('')}</div>`;
+    }
+
+    function renderRoute() {
+      routeSummary.replaceChildren();
+      if (!routePlan) {
+        routeTitle.textContent = 'No route generated';
+        return;
+      }
+      routeTitle.textContent = routePlan.mode === 'sessions'
+        ? `${routePlan.sessions.length} play session${routePlan.sessions.length === 1 ? '' : 's'} ready`
+        : 'Fastest full route ready';
+      const overview = document.createElement('div');
+      overview.className = 'mission-route-overview';
+      overview.innerHTML = `
+        <strong>${routePlan.totalMissionCount} missions</strong>
+        <span>${routePlan.totalCargoScu} SCU total</span>
+        <span>${routePlan.rewardAuec ? `${routePlan.rewardAuec.toLocaleString('en-US')} aUEC` : 'Reward not provided'}</span>
+        <span>Start: ${escapeHtml(routePlan.startLocationLabel)}</span>`;
+      const sessions = document.createElement('div');
+      sessions.className = 'mission-session-grid';
+      routePlan.sessions.forEach((session) => {
+        const card = document.createElement('article');
+        card.className = `mission-session-card${session.index === 0 ? ' is-selected' : ''}${session.overTarget ? ' is-over-target' : ''}`;
+        card.dataset.session = String(session.index);
+        card.innerHTML = `
+          <header><span>${icon('development')}<b>${escapeHtml(session.title)}</b></span><strong>${formatMinutes(session.estimate)}</strong></header>
+          <div class="session-route-line"><span>${escapeHtml(session.startLocationLabel)}</span><i>→</i><span>${escapeHtml(session.endLocationLabel)}</span></div>
+          <div class="session-stats"><span>${session.missionCount} mission${session.missionCount === 1 ? '' : 's'}</span><span>${session.totalCargoScu} SCU</span><span>Peak ${session.estimate.peakOnboardScu} SCU</span></div>
+          ${gatewayMarkup(session)}
+          <ul>${session.missionTitles.map((title) => `<li>${icon('check')}<span>${escapeHtml(title)}</span></li>`).join('')}</ul>
+          ${session.overTarget ? '<p class="session-warning">This session exceeds the target because at least one complete mission takes longer.</p>' : ''}
+          <button type="button" class="button button--secondary" data-activate-session="${session.index}">Select session</button>`;
+        sessions.append(card);
+      });
+      routeSummary.append(overview, sessions);
+      activateSession(Number(store.getState().activeRouteSessionIndex ?? 0) < routePlan.sessions.length ? Number(store.getState().activeRouteSessionIndex ?? 0) : 0);
+    }
+
+    function generatePlan() {
       validateChanges();
-      if (!report?.ready) return;
+      const start = resolveStartLocation();
+      if (!report?.ready || !start) return;
       try {
-        generatedRoute = routePlanner.buildRoute(report.missions, missionModel);
+        const ship = ensureSelectedShip();
+        routePlan = sessionPlanner.plan(report.missions, missionModel, {
+          startLocationId: start.id,
+          targetMinutes: Number(sessionTarget.value),
+          mode: routeMode.value,
+          selectedShipId: ship.id
+        });
+        const firstSession = routePlan.sessions[0];
         store.patch({
           missionSourceText: sourceText,
           missionText: text.value,
           missionValidation: validator.snapshot(report, sourceText, text.value),
           missions: report.missions,
-          route: generatedRoute,
+          routeStartLocationId: start.id,
+          routeStartLocationLabel: operationalLabel(start),
+          routeMode: routeMode.value,
+          sessionTargetMinutes: Number(sessionTarget.value),
+          routePlan,
+          activeRouteSessionIndex: 0,
+          route: firstSession.route,
           currentStopIndex: 0,
           completedStopIds: [],
           routeCorrections: null,
@@ -261,34 +459,23 @@
       }
     }
 
-    function renderRoute() {
-      routeSummary.replaceChildren();
-      if (!generatedRoute) {
-        routeTitle.textContent = 'No route generated';
-        return;
+    populateLocations();
+    populateShips();
+    routeMode.value = state.routeMode === 'fastest' ? 'fastest' : 'sessions';
+    sessionTarget.value = String(state.sessionTargetMinutes ?? 60);
+    if (state.routeStartLocationId) {
+      const saved = locationModel.getLocation(state.routeStartLocationId);
+      if (saved) {
+        startInput.value = operationalLabel(saved);
+        resolveStartLocation(false);
       }
-      const parsedMissions = report.missions;
-      const reward = parsedMissions.reduce((sum, mission) => sum + Number(mission.rewardAuec ?? 0), 0);
-      routeTitle.textContent = `${generatedRoute.stops.length} stops ready`;
-      const overview = document.createElement('div');
-      overview.className = 'mission-route-overview';
-      overview.innerHTML = `<strong>${parsedMissions.length} missions</strong><span>${generatedRoute.totalCargoScu} SCU total</span><span>${reward ? `${reward.toLocaleString('en-US')} aUEC` : 'Reward not provided'}</span>`;
-      const list = document.createElement('ol');
-      generatedRoute.stops.forEach((stop) => {
-        const item = document.createElement('li');
-        item.innerHTML = `<strong>${escapeHtml(stop.locationLabel)}</strong><span>${stop.operations.length} operation${stop.operations.length === 1 ? '' : 's'}</span>`;
-        list.append(item);
-      });
-      routeSummary.append(overview, list);
-    }
-
-    function escapeHtml(value) {
-      return String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
     }
 
     form.addEventListener('submit', (event) => {
       event.preventDefault();
       event.stopImmediatePropagation();
+      if (!resolveStartLocation()) return;
+      ensureSelectedShip();
       analyze(text.value);
     }, true);
     reset?.addEventListener('click', (event) => {
@@ -298,7 +485,7 @@
       sourceText = '';
       report = null;
       reviewDrafts = [];
-      generatedRoute = null;
+      routePlan = null;
       setInputMode('text');
       setStage('input');
     }, true);
@@ -310,16 +497,47 @@
       const button = event.target.closest('[data-stage]');
       if (button && !button.disabled) setStage(button.dataset.stage);
     });
-    prev.addEventListener('click', () => { applyVisibleMission(); activeMission -= 1; renderActiveMission(); });
-    next.addEventListener('click', () => { applyVisibleMission(); activeMission += 1; renderActiveMission(); });
+    startInput.addEventListener('change', () => resolveStartLocation());
+    startInput.addEventListener('input', () => {
+      startIdInput.value = '';
+      startStatus.textContent = 'Select a known station, city or outpost.';
+      startStatus.dataset.state = 'neutral';
+    });
+    routeMode.addEventListener('change', () => {
+      sessionTargetLabel.hidden = routeMode.value === 'fastest';
+      generate.textContent = routeMode.value === 'sessions' ? 'Build sessions' : 'Build fastest route';
+    });
+    shipSelect.addEventListener('change', ensureSelectedShip);
+    addMission.addEventListener('click', () => {
+      applyReviewGrid();
+      reviewDrafts.push({ title: `Mission ${reviewDrafts.length + 1}`, contractor: '', rewardAuec: '', objectives: [{ action: 'collect', location: '', cargo: '' }, { action: 'deliver', location: '', cargo: '' }] });
+      renderReviewGrid();
+    });
+    reviewGrid.addEventListener('click', (event) => {
+      const removeButton = event.target.closest('[data-remove-mission]');
+      if (!removeButton) return;
+      applyReviewGrid();
+      reviewDrafts.splice(Number(removeButton.dataset.removeMission), 1);
+      report = validator.inspectMissionText(serializeDrafts(), locationModel);
+      renderReviewGrid();
+    });
     validate.addEventListener('click', validateChanges);
-    generate.addEventListener('click', generateRoute);
+    generate.addEventListener('click', generatePlan);
+    routeSummary.addEventListener('click', (event) => {
+      const button = event.target.closest('[data-activate-session]');
+      if (button) activateSession(Number(button.dataset.activateSession));
+    });
     output.querySelector('[data-route-edit]').addEventListener('click', () => setStage('review'));
+    openRoute.addEventListener('click', () => {
+      activateSession(Number(openRoute.dataset.sessionIndex ?? 0));
+      document.querySelector('[data-view-target="route"]')?.click();
+    });
     form.addEventListener('click', (event) => {
       if (event.target.closest('#ocr-use-draft')) setTimeout(() => analyze(text.value), 20);
       if (event.target.closest('#game-log-use-draft')) setTimeout(() => analyze(text.value), 20);
     });
 
+    sessionTargetLabel.hidden = routeMode.value === 'fastest';
     setInputMode('text');
     setStage('input');
     return true;
