@@ -8,6 +8,7 @@
   if (typeof document !== 'undefined') {
     import('./missions-source-provenance.js');
     import('./shared-pickup-display.js');
+    import('./missions-review-accessibility.js');
   }
   if (typeof module !== 'undefined' && module.exports) module.exports = model;
 }(typeof globalThis !== 'undefined' ? globalThis : window));
