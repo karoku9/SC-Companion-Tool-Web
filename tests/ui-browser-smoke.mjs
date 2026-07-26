@@ -83,10 +83,12 @@ function boxesOverlap(first, second, padding = 3) {
 
 let failure = null;
 try {
-  step = 'load Missions';
+  step = 'load focused Missions input';
   await page.goto(`${baseUrl}/#missions`, { waitUntil: 'networkidle' });
+  await page.locator('.mission-focus-toolbar').waitFor({ state: 'visible' });
   await page.locator('#mission-text').waitFor({ state: 'visible' });
-  await page.locator('#mission-validation-panel').waitFor({ state: 'visible' });
+  assert.equal(await page.locator('#mission-validation-panel').isHidden(), true);
+  assert.equal(await page.locator('.mission-output').isHidden(), true);
 
   step = 'verify expanded universe registry in browser';
   const registry = await page.evaluate(() => {
@@ -98,26 +100,39 @@ try {
       seraphim: model.searchOperationalLocations('Seraphim')[0]?.id,
       bezdek: model.searchOperationalLocations('HDMS Bezdek')[0]?.id,
       depot: model.searchOperationalLocations('S4LD01')[0]?.id,
+      attritus: model.searchOperationalLocations('Attritus PAF 3')[0]?.id,
+      vivere: model.searchOperationalLocations('Vivere OLP')[0]?.id,
+      rustville: model.searchOperationalLocations('Rustville')[0]?.id,
       validation: model.validation
     };
   });
-  assert.equal(registry.coverage.operationalDestinations, 84);
-  assert.equal(registry.coverage.fieldDestinations, 50);
+  assert.equal(registry.coverage.operationalDestinations, 106);
+  assert.equal(registry.coverage.fieldDestinations, 72);
   assert.equal(registry.arcL2, 'stanton-arc-l2-lively-pathway');
   assert.equal(registry.nbis, 'stanton-microtech-new-babbage-nbis');
   assert.equal(registry.seraphim, 'stanton-crusader-seraphim');
   assert.equal(registry.bezdek, 'stanton-hurston-arial-hdms-bezdek');
   assert.equal(registry.depot, 'stanton-microtech-microtech-logistics-depot-s4ld01');
+  assert.equal(registry.attritus, 'stanton-crusader-daymar-attritus-paf-iii');
+  assert.equal(registry.vivere, 'stanton-hurston-aberdeen-vivere-olp');
+  assert.equal(registry.rustville, 'pyro-rustville');
   assert.deepEqual(registry.validation, { errors: [], warnings: [] });
 
   await page.locator('#mission-text').fill(interstellarMissionText);
   step = 'review expanded interstellar session';
   await page.locator('#mission-form button[type="submit"]').click();
+  await page.locator('#mission-validation-panel').waitFor({ state: 'visible' });
+  assert.equal(await page.locator('#mission-form').isHidden(), true);
+  assert.equal(await page.locator('.mission-output').isHidden(), true);
   await page.locator('#mission-validation-title').filter({ hasText: /^Ready$/ }).waitFor({ state: 'visible' });
   assert.equal(await page.locator('.validation-issue.is-error').count(), 0);
   assert.equal(await page.locator('#mission-generate-validated').isEnabled(), true);
+  assert.equal(await page.locator('.mission-review-card:not(.is-collapsed)').count(), 1);
   step = 'generate validated expanded interstellar session';
   await page.locator('#mission-generate-validated').click();
+  await page.locator('.mission-output').waitFor({ state: 'visible' });
+  assert.equal(await page.locator('#mission-form').isHidden(), true);
+  assert.equal(await page.locator('#mission-validation-panel').isHidden(), true);
   await page.locator('#mission-preview-title').filter({ hasText: '3 missions generated' }).waitFor({ state: 'visible' });
   const missionBody = await page.locator('#mission-cards').textContent();
   ['ARC-L2 Lively Pathway', 'Seraphim Station', 'New Babbage Interstellar Spaceport', 'Checkmate Station', 'Orbituary', 'Ruin Station', 'Levski'].forEach((name) => assert.match(missionBody, new RegExp(name)));
