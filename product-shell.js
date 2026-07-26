@@ -41,7 +41,7 @@
     const build = navFooter.querySelector('span');
     const privacy = navFooter.querySelector('small');
     if (build) build.textContent = 'BUILD 0.24.1';
-    if (privacy) privacy.textContent = 'Protected-file + clipboard intake';
+    if (privacy) privacy.textContent = 'Protected-file + clipboard · local image review';
   }
 
   function setContext(requestedId) {
