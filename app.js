@@ -68,27 +68,20 @@
     const value = elements.query.value.trim();
     renderSearchResults(value ? model?.searchOperationalLocations(value) ?? [] : []);
   });
-  window.addEventListener('sc:location-registry-ready', () => runSearch());
+  window.addEventListener('sc:location-registry-ready', runSearch);
   selectLocation(currentModel()?.getLocation('stanton-hurston-lorville-teasa'));
 }());
 
 (function loadApplicationRuntimes() {
-  import('./location-contract-extension.js')
-    .then(() => Promise.all([
-      import('./location-field-profiles.js?contract=025')
-        .then(() => import('./location-contract-profiles.js')),
-      import('./starmap-data.js?contract=025')
-    ]))
-    .then(() => {
-      window.dispatchEvent(new Event('sc:location-registry-ready'));
-      return import('./fleet-loadouts.js');
-    })
+  window.dispatchEvent(new Event('sc:location-registry-ready'));
+
+  import('./fleet-loadouts.js')
     .then(() => import('./game-log-intake.js'))
     .then(() => import('./game-log-intake-correlation.js'))
     .then(() => import('./ocr-intake.js'))
     .then(() => import('./official-universe-data.js'))
-    .then(() => import('./navigation-estimates.js?contract=025'))
-    .then(() => import('./location-context.js?contract=025'))
+    .then(() => import('./navigation-estimates.js'))
+    .then(() => import('./location-context.js'))
     .then(() => Promise.all([
       import('./route-corrections.js'),
       import('./route-progress.js'),
