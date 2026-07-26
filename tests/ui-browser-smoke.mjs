@@ -80,7 +80,7 @@ try {
   await page.locator('#mission-text').fill(realMissionText);
   await page.locator('#mission-form button[type="submit"]').click();
   assert.deepEqual(await visibleStage(), { input: true, review: false, route: false });
-  assert.match(await page.locator('#mission-start-location-status').textContent(), /required/i);
+  assert.equal(await page.locator('#mission-start-location').evaluate((element) => element.matches(':invalid')), true);
 
   step = 'select current location and analyze exact seven-mission sample';
   await page.locator('#mission-start-location').fill('Grim HEX');
