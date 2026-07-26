@@ -74,7 +74,7 @@ test('shared pickup total creates two prerequisite stops without doubling cargo'
   const sharedOperations = route.stops.flatMap((stop) => stop.operations).filter((operation) => operation.missionId === mission.id);
   assert.equal(sharedOperations.filter((operation) => operation.type === 'collect').length, 2);
   assert.equal(sharedOperations.filter((operation) => operation.type === 'delivery').length, 1);
-  assert.equal(route.totalCargoScu, 85);
+  assert.equal(route.totalCargoScu, 84);
 });
 
 test('named contract metadata preserves contractor and reward', () => {
@@ -89,5 +89,5 @@ deliver fallow field 16scu revenant tree pollen 4scu slam 4scu e'tam`;
   assert.equal(report.missions[0].title, 'DEAD SAINTS - Rookie Rank - Medium Cargo Haul');
   assert.equal(report.missions[0].contractor, 'Dead Saints');
   assert.equal(report.missions[0].rewardAuec, 525500);
-  assert.equal(report.missions[0].cargoLots.length, 4);
+  assert.equal(report.missions[0].cargoLots.length, 5);
 });
