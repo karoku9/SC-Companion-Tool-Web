@@ -2,9 +2,8 @@
 
 (function exposeCargoState(root) {
   const CORRECTION_STATUSES = Object.freeze(['auto', 'pending', 'onboard', 'delivered', 'lost']);
-
-  function cargoKey(missionId, lotId) { return `${missionId}::${lotId}`; }
-  function allStops(route) { return route?.allStops ?? route?.stops ?? []; }
+  const cargoKey = (missionId, lotId) => `${missionId}::${lotId}`;
+  const allStops = (route) => route?.allStops ?? route?.stops ?? [];
 
   function normalizeCompletedStopIds(route, progress = 0) {
     const activeStops = route?.stops ?? [];
@@ -21,7 +20,8 @@
   }
 
   function findOperationStops(route, missionId, lotId, type) {
-    return Object.freeze(allStops(route).map((stop, index) => ({ id: String(stop.id), index, stop })).filter(({ stop }) => stop.operations.some((operation) => operation.missionId === missionId && operation.lotId === lotId && operation.type === type)).map((item) => Object.freeze(item)));
+    return allStops(route).map((stop, index) => ({ id: String(stop.id), index, stop }))
+      .filter((entry) => entry.stop.operations.some((operation) => operation.missionId === missionId && operation.lotId === lotId && operation.type === type));
   }
 
   function findOperationStop(route, missionId, lotId, type) {
@@ -51,23 +51,20 @@
     return route.missions.flatMap((mission) => mission.cargoLots.map((lot) => {
       const pickupStops = findOperationStops(route, mission.id, lot.id, lot.pickupType);
       const deliveryStop = findOperationStop(route, mission.id, lot.id, 'delivery');
-      const completedPickupStops = pickupStops.filter((stop) => completed.has(stop.id));
-      const pickupStarted = completedPickupStops.length > 0;
-      const pickupCompleted = pickupStops.length > 0 && completedPickupStops.length === pickupStops.length;
+      const pickupCompleted = pickupStops.length > 0 && pickupStops.every((stop) => completed.has(stop.id));
       const deliveryCompleted = Boolean(deliveryStop && completed.has(deliveryStop.id));
       const automaticStatus = deliveryCompleted ? 'delivered' : pickupCompleted ? 'onboard' : 'pending';
+      const pickupLocations = lot.pickupLocations?.length ? lot.pickupLocations : [{ id: lot.pickupLocationId, label: lot.pickupLocationLabel }];
       return {
         key: cargoKey(mission.id, lot.id), missionId: mission.id, missionTitle: mission.title, lotId: lot.id,
         commodity: lot.commodity, plannedScu: lot.scu, scu: lot.scu, pickupType: lot.pickupType,
-        sharedPickupTotal: Boolean(lot.sharedPickupTotal || pickupStops.length > 1),
-        pickupLocationCount: pickupStops.length,
-        originLocationId: lot.pickupLocationId, originLocationLabel: lot.pickupLocationLabel,
+        sharedPickup: pickupLocations.length > 1 || Boolean(lot.sharedPickup), pickupLocations,
+        originLocationId: lot.pickupLocationId, originLocationLabel: pickupLocations.map((location) => location.label).join(' + '),
         deliveryLocationId: lot.deliveryLocationId, deliveryLocationLabel: lot.deliveryLocationLabel,
-        pickupStopId: pickupStops[0]?.id ?? null, pickupStopIds: Object.freeze(pickupStops.map((stop) => stop.id)),
-        deliveryStopId: deliveryStop?.id ?? null,
-        pickupStopIndex: pickupStops[0]?.index ?? -1, pickupStopIndexes: Object.freeze(pickupStops.map((stop) => stop.index)),
-        deliveryStopIndex: deliveryStop?.index ?? -1,
-        pickupStarted, pickupCompleted, completedPickupCount: completedPickupStops.length, deliveryCompleted, automaticStatus
+        pickupStopIds: pickupStops.map((stop) => stop.id), pickupStopIndexes: pickupStops.map((stop) => stop.index),
+        pickupStopId: pickupStops[0]?.id ?? null, pickupStopIndex: pickupStops[0]?.index ?? -1,
+        deliveryStopId: deliveryStop?.id ?? null, deliveryStopIndex: deliveryStop?.index ?? -1,
+        pickupCompleted, deliveryCompleted, automaticStatus
       };
     }));
   }
@@ -86,7 +83,6 @@
     if (!route?.stops?.length && !route?.allStops?.length) {
       return Object.freeze({ currentStopIndex: 0, currentStop: null, complete: false, completedStopIds: Object.freeze([]), lots: Object.freeze([]), pendingLots: Object.freeze([]), onboardLots: Object.freeze([]), deliveredLots: Object.freeze([]), lostLots: Object.freeze([]), currentMoves: Object.freeze([]), totals: Object.freeze({ pendingScu: 0, onboardScu: 0, deliveredScu: 0, lostScu: 0 }), correctionCount: 0, correctionIssues: Object.freeze([]) });
     }
-
     const completedStopIds = normalizeCompletedStopIds(route, progress);
     const completedSet = new Set(completedStopIds);
     const currentStop = (route.stops ?? []).find((stop) => !completedSet.has(String(stop.id))) ?? null;
@@ -94,7 +90,6 @@
     const complete = Boolean(route.stops?.length) && !currentStop;
     const activeCorrections = corrections ?? root.SCCompanionSession?.getState?.().cargoCorrections ?? {};
     const issues = [];
-
     const lots = baseLots(route, completedStopIds).map((base) => {
       let correction = null;
       try { correction = normalizeCorrection(base, activeCorrections?.[base.key]); }
@@ -104,7 +99,6 @@
       const scu = correction?.actualScu ?? base.plannedScu;
       return Object.freeze({ ...base, scu, status, corrected: Boolean(correction && (scu !== base.plannedScu || correction.requestedStatus !== 'auto')), correction });
     });
-
     const lotsByKey = new Map(lots.map((lot) => [lot.key, lot]));
     const currentMoves = (currentStop?.operations ?? []).filter((operation) => operation.lotId).map((operation) => Object.freeze({ action: operation.type === 'delivery' ? 'unload' : 'load', operation, lot: lotsByKey.get(cargoKey(operation.missionId, operation.lotId)) ?? null }));
     const byStatus = (status) => lots.filter((lot) => lot.status === status);
@@ -113,16 +107,15 @@
     const deliveredLots = byStatus('delivered');
     const lostLots = byStatus('lost');
     const sumScu = (items) => items.reduce((total, item) => total + item.scu, 0);
-
     return Object.freeze({
       currentStopIndex, currentStop, complete, completedStopIds, lots: Object.freeze(lots),
-      pendingLots: Object.freeze(pendingLots), onboardLots: Object.freeze(onboardLots), deliveredLots: Object.freeze(deliveredLots), lostLots: Object.freeze(lostLots), currentMoves: Object.freeze(currentMoves),
-      totals: Object.freeze({ pendingScu: sumScu(pendingLots), onboardScu: sumScu(onboardLots), deliveredScu: sumScu(deliveredLots), lostScu: sumScu(lostLots) }),
+      pendingLots: Object.freeze(pendingLots), onboardLots: Object.freeze(onboardLots), deliveredLots: Object.freeze(deliveredLots), lostLots: Object.freeze(lostLots),
+      currentMoves: Object.freeze(currentMoves), totals: Object.freeze({ pendingScu: sumScu(pendingLots), onboardScu: sumScu(onboardLots), deliveredScu: sumScu(deliveredLots), lostScu: sumScu(lostLots) }),
       correctionCount: lots.filter((lot) => lot.corrected).length, correctionIssues: Object.freeze(issues)
     });
   }
 
-  const api = Object.freeze({ cargoKey, allStops, normalizeCompletedStopIds, clampStopIndex, findOperationStop, findOperationStops, allowedStatuses, validateCorrection, deriveCargoState, CORRECTION_STATUSES });
+  const api = Object.freeze({ cargoKey, allStops, normalizeCompletedStopIds, clampStopIndex, findOperationStops, findOperationStop, allowedStatuses, validateCorrection, deriveCargoState, CORRECTION_STATUSES });
   root.SCCompanionCargoState = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 }(typeof globalThis !== 'undefined' ? globalThis : window));
