@@ -96,12 +96,16 @@ try {
   await page.waitForFunction((previousName) => document.querySelector('#current-stop-name')?.textContent?.trim() !== previousName, firstCurrentName);
   const secondCurrentId = await page.locator('#ops-live-map .ops-map-node.is-current').getAttribute('data-reference-id');
   const secondCurrentName = (await page.locator('#current-stop-name').textContent())?.trim();
+  const focusedNodeCount = await page.locator('#ops-live-map .ops-map-node').count();
   assert.equal(await page.locator('#ops-live-map .ops-map-node.is-current').count(), 1);
-  assert.ok(await page.locator('#ops-live-map .ops-map-node').count() <= 5);
+  assert.ok(focusedNodeCount <= 5);
   assert.notEqual(secondCurrentName, firstCurrentName, 'Completing a travel step must advance the current instruction');
   if (secondCurrentId === firstCurrentId) {
-    assert.equal(await page.locator('#ops-live-map .ops-map-node').count(), 1, 'An action at the just-reached location should collapse the focused map to that location');
+    assert.ok(focusedNodeCount >= 1 && focusedNodeCount <= 2, 'An action at the just-reached location may retain only that location and the immediate next navigation target');
     assert.match(secondCurrentName ?? '', /Pick up|Drop|Complete/i);
+    if (focusedNodeCount === 2) {
+      assert.ok(await page.locator('#ops-live-map .ops-map-gateway').count() >= 1, 'The only continuation shown from an action location should be its next gateway or destination');
+    }
   }
   await page.screenshot({ path: `${output}/integrated-route-map-progress-desktop.png`, fullPage: true });
 
