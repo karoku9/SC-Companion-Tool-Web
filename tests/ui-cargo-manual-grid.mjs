@@ -121,7 +121,7 @@ try {
   await page.locator('.operations-page.operations-v028').waitFor({ state: 'visible' });
   await page.locator('.ops-v030-edit-grid').click();
   await page.locator('#ops-v030-cargo-editor').waitFor({ state: 'visible' });
-  await page.locator(`[data-v030-cell="${targetId}"].is-manual`).waitFor({ state: 'visible' });
+  await page.locator(`[data-v030-cell="${clickTargetId}"].is-manual`).waitFor({ state: 'visible' });
   await page.locator(`[data-v030-cell="${reserveId}"].is-reserved`).waitFor({ state: 'visible' });
 
   assert.deepEqual(errors, [], `Browser errors:\n${errors.join('\n')}`);
