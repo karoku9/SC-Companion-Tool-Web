@@ -3,7 +3,10 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const locations = require('../locations.js');
+const baseLocations = require('../locations.js');
+global.SCCompanionLocations = baseLocations;
+const locations = require('../location-field-registry.js');
+global.SCCompanionLocations = locations;
 require('../starmap-data.js');
 require('../official-universe-data.js');
 require('../navigation-estimates.js');
