@@ -45,6 +45,48 @@ async function noHorizontalOverflow(label) {
   assert.ok(metrics.bodyWidth <= metrics.viewport + 2, `${label}: body overflow ${JSON.stringify(metrics)}`);
 }
 
+async function singleScreenOperationsFit(label) {
+  const metrics = await page.evaluate(() => {
+    const root = document.querySelector('.operations-page.operations-v028');
+    const grid = root?.querySelector('.operations-grid');
+    const selectors = {
+      command: '.ops-v027-command-deck',
+      primary: '.ops-v027-primary-grid',
+      timeline: '.ops-v027-timeline-panel',
+      cargo: '.ops-v028-cargo-panel',
+      tools: '.operations-tools'
+    };
+    const boxes = Object.fromEntries(Object.entries(selectors).map(([key, selector]) => {
+      const box = root?.querySelector(selector)?.getBoundingClientRect();
+      return [key, box ? { top: box.top, bottom: box.bottom, left: box.left, right: box.right, width: box.width, height: box.height } : null];
+    }));
+    const rootBox = root?.getBoundingClientRect();
+    const gridBox = grid?.getBoundingClientRect();
+    return {
+      viewport: { width: innerWidth, height: innerHeight },
+      compactMedia: matchMedia('(min-width: 1450px) and (min-height: 820px)').matches,
+      documentHeight: document.documentElement.scrollHeight,
+      bodyHeight: document.body.scrollHeight,
+      root: rootBox ? { top: rootBox.top, bottom: rootBox.bottom, height: rootBox.height } : null,
+      grid: gridBox ? { top: gridBox.top, bottom: gridBox.bottom, height: gridBox.height } : null,
+      boxes
+    };
+  });
+
+  assert.equal(metrics.compactMedia, true, `${label}: compact desktop media query is inactive`);
+  assert.ok(metrics.root && metrics.grid, `${label}: Operations root or grid is missing`);
+  assert.ok(metrics.root.bottom <= metrics.viewport.height + 1, `${label}: Operations root leaves the viewport ${JSON.stringify(metrics)}`);
+  assert.ok(metrics.grid.bottom <= metrics.viewport.height - 6, `${label}: Operations grid leaves the viewport ${JSON.stringify(metrics)}`);
+  Object.entries(metrics.boxes).forEach(([key, box]) => {
+    assert.ok(box, `${label}: missing ${key} panel`);
+    assert.ok(box.top >= metrics.grid.top - 1, `${label}: ${key} starts above the grid`);
+    assert.ok(box.bottom <= metrics.grid.bottom + 1, `${label}: ${key} extends below the grid: ${JSON.stringify(box)}`);
+  });
+  assert.ok(Math.abs(metrics.boxes.timeline.top - metrics.boxes.cargo.top) <= 2, `${label}: timeline and cargo are not aligned in the same row`);
+  assert.ok(Math.abs(metrics.boxes.timeline.bottom - metrics.boxes.cargo.bottom) <= 2, `${label}: lower panels have mismatched heights`);
+  assert.ok(metrics.boxes.tools.bottom <= metrics.viewport.height - 6, `${label}: action bar is not visible without page scrolling`);
+}
+
 async function readableTypography(label) {
   const result = await page.evaluate(() => [...document.querySelectorAll('.app-frame *')]
     .filter((element) => {
@@ -159,7 +201,13 @@ try {
   await page.locator('#ops-tool-panel').waitFor({ state: 'hidden' });
   await noHorizontalOverflow('Integrated Operations desktop');
   await readableTypography('Integrated Operations desktop');
-  await page.screenshot({ path: `${output}/hardening-operations-long-1664.png`, fullPage: true });
+
+  step = 'verify single-screen Operations at 1700x900';
+  await page.setViewportSize({ width: 1700, height: 900 });
+  await page.locator('.ops-v028-cargo-panel').waitFor({ state: 'visible' });
+  await singleScreenOperationsFit('1700x900 Operations');
+  await noHorizontalOverflow('1700x900 Operations');
+  await page.screenshot({ path: `${output}/operations-single-screen-1700x900.png`, fullPage: false });
 
   step = 'complete route in Operations';
   let guard = 20;
