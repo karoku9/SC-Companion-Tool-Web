@@ -1,0 +1,116 @@
+/* v0.27 proprietary theme bridge.
+   Existing pages consume the same semantic roles while they migrate to the
+   new component library. */
+
+[data-theme="industrial"] {
+  --ds-ink-950: #070706;
+  --ds-ink-900: #0b0b09;
+  --ds-ink-850: #10100d;
+  --ds-ink-800: #1a1812;
+  --ds-metal-700: #39352a;
+  --ds-metal-500: #858176;
+  --ds-metal-300: #a7a296;
+  --ds-paper-100: #f0eee6;
+  --ds-amber-900: #754013;
+  --ds-amber-700: #98571c;
+  --ds-amber-500: #c7772b;
+  --ds-amber-400: #e89a42;
+  --ds-amber-300: #ffc06b;
+  --ds-amber-200: #ffd295;
+  --ds-red-500: #d87a68;
+  --ds-green-500: #8db37d;
+  --ds-blue-500: #78a8b8;
+
+  --ds-surface-canvas: #070706;
+  --ds-surface-panel: #10100d;
+  --ds-surface-panel-raised: #15140f;
+  --ds-surface-screen: #0b0b09;
+  --ds-surface-interactive: #1a1812;
+  --ds-content-primary: #f0eee6;
+  --ds-content-secondary: #d9d5ca;
+  --ds-content-muted: #858176;
+  --ds-content-inverse: #0b0a08;
+  --ds-border-subtle: rgba(167, 162, 150, .2);
+  --ds-border-strong: rgba(232, 154, 66, .38);
+  --ds-border-focus: #ffc06b;
+  --ds-action-primary: #e89a42;
+  --ds-action-primary-hover: #ffc06b;
+  --ds-action-secondary: #98571c;
+  --ds-action-danger: #d87a68;
+  --ds-cargo-pickup: #78a8b8;
+  --ds-cargo-dropoff: #8db37d;
+  --ds-cargo-mixed: #a796c2;
+  --ds-cargo-offgrid: #a796c2;
+  --ds-status-ready: #8db37d;
+  --ds-status-warning: #ffc06b;
+  --ds-status-danger: #d87a68;
+  --ds-status-info: #78a8b8;
+
+  --ds-font-ui: "IBM Plex Sans Condensed", "Arial Narrow", Arial, sans-serif;
+  --ds-font-technical: "Saira Condensed", "Roboto Condensed", ui-monospace, monospace;
+  --ds-type-xs: .75rem;
+  --ds-type-sm: .8125rem;
+  --ds-type-md: .875rem;
+  --ds-type-lg: 1rem;
+  --ds-type-xl: 1.25rem;
+  --ds-type-2xl: 1.75rem;
+  --ds-type-3xl: 2.25rem;
+  --ds-space-1: 4px;
+  --ds-space-2: 8px;
+  --ds-space-3: 12px;
+  --ds-space-4: 16px;
+  --ds-space-5: 20px;
+  --ds-space-6: 24px;
+  --ds-space-7: 32px;
+  --ds-space-8: 40px;
+  --ds-control-sm: 32px;
+  --ds-control-md: 40px;
+  --ds-control-lg: 48px;
+  --ds-motion-fast: 120ms;
+  --ds-motion-normal: 170ms;
+
+  --bg: var(--ds-surface-canvas);
+  --bg-soft: var(--ds-surface-panel);
+  --surface: var(--ds-surface-panel);
+  --surface-raised: var(--ds-surface-panel-raised);
+  --surface-hover: var(--ds-surface-interactive);
+  --line: var(--ds-border-subtle);
+  --line-strong: var(--ds-border-strong);
+  --text: var(--ds-content-primary);
+  --text-muted: var(--ds-content-secondary);
+  --text-faint: var(--ds-content-muted);
+  --accent: var(--ds-action-primary);
+  --accent-hover: var(--ds-action-primary-hover);
+  --accent-soft: color-mix(in srgb, var(--ds-action-primary) 10%, transparent);
+  --success: var(--ds-status-ready);
+  --danger: var(--ds-status-danger);
+  --warning: var(--ds-status-warning);
+  --mfd-mono: var(--ds-font-technical);
+}
+
+[data-theme="industrial"] body {
+  background: var(--ds-surface-canvas);
+}
+
+[data-theme="industrial"] .brand-emblem {
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--ds-action-primary) 10%, var(--ds-surface-screen));
+  box-shadow: inset 0 0 0 1px var(--ds-border-strong);
+}
+
+[data-theme="industrial"] .brand-emblem span {
+  color: var(--ds-action-primary-hover);
+}
+
+[data-theme="industrial"] .app-nav,
+[data-theme="industrial"] .app-topbar {
+  background: var(--ds-surface-panel);
+  box-shadow: none;
+}
+
+[data-theme="industrial"] .mfd-panel,
+[data-theme="industrial"] .page-header,
+[data-theme="industrial"] .session-chip {
+  border-radius: 0;
+  box-shadow: none;
+}
