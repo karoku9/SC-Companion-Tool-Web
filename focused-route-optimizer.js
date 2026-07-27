@@ -40,6 +40,39 @@
     return Object.freeze({ ...route, stops: Object.freeze(stops), allStops: Object.freeze(stops) });
   }
 
+  function mergeAdjacentStops(stops) {
+    const groups = [];
+    (stops ?? []).forEach((stop) => {
+      const previous = groups.at(-1);
+      if (previous && previous.locationId === stop.locationId) {
+        previous.operations.push(...stop.operations);
+        return;
+      }
+      groups.push({
+        locationId: stop.locationId,
+        locationLabel: stop.locationLabel,
+        operations: [...stop.operations]
+      });
+    });
+
+    return Object.freeze(groups.map((group, index) => {
+      const internalOperationIds = new Set(group.operations.map((operation) => String(operation.id)));
+      const operations = group.operations.map((operation) => Object.freeze({
+        ...operation,
+        dependsOn: Object.freeze((operation.dependsOn ?? []).filter((dependencyId) => !internalOperationIds.has(String(dependencyId))))
+      }));
+      return Object.freeze({
+        id: `phase-stop-${index}-${group.locationId}`,
+        index,
+        baseIndex: index,
+        orderIndex: index,
+        locationId: group.locationId,
+        locationLabel: group.locationLabel,
+        operations: Object.freeze(operations)
+      });
+    }));
+  }
+
   function activeShipContext(options = {}) {
     const state = root.SCCompanionSession?.getState?.() ?? {};
     const selectedShipId = options.selectedShipId ?? state.selectedShipId;
@@ -82,6 +115,207 @@
     };
   }
 
+  function resultSignature(result) {
+    return result.stops.map((stop) => String(stop.id)).join('|');
+  }
+
+  function fastestSort(left, right) {
+    return left.midpoint - right.midpoint
+      || left.missionCompletionScore - right.missionCompletionScore
+      || left.exposureScuMinutes - right.exposureScuMinutes
+      || resultSignature(left).localeCompare(resultSignature(right));
+  }
+
+  function cargoKey(operation) {
+    return `${operation.missionId}::${operation.lotId}`;
+  }
+
+  function quantityFor(operation, context) {
+    const lot = context.cargoLotsByKey instanceof Map
+      ? context.cargoLotsByKey.get(cargoKey(operation))
+      : context.cargoLotsByKey?.[cargoKey(operation)];
+    return Math.max(0, Number(lot?.scu ?? operation.scu ?? 0));
+  }
+
+  function onboardScu(onboard) {
+    return [...onboard.values()].reduce((sum, amount) => sum + Number(amount ?? 0), 0);
+  }
+
+  function applyStopCargo(stop, onboard, context) {
+    const next = new Map(onboard);
+    stop.operations
+      .filter((operation) => operation.type === 'delivery' && operation.lotId)
+      .forEach((operation) => next.delete(cargoKey(operation)));
+    stop.operations
+      .filter((operation) => operation.type !== 'delivery' && operation.lotId)
+      .forEach((operation) => next.set(cargoKey(operation), quantityFor(operation, context)));
+    return next;
+  }
+
+  function stopCargoTotals(stop, context) {
+    return stop.operations.reduce((totals, operation) => {
+      const scu = operation.lotId ? quantityFor(operation, context) : 0;
+      if (operation.type === 'delivery') totals.delivery += scu;
+      else totals.pickup += scu;
+      return totals;
+    }, { pickup: 0, delivery: 0 });
+  }
+
+  function stopSystemId(stop, context) {
+    return context.locations?.getSystemForLocation(stop?.locationId)?.id ?? null;
+  }
+
+  function dependencyMap(route) {
+    const operationStop = new Map();
+    (route.allStops ?? route.stops ?? []).forEach((stop) => {
+      stop.operations.forEach((operation) => operationStop.set(String(operation.id), String(stop.id)));
+    });
+    return new Map((route.stops ?? []).map((stop) => [
+      String(stop.id),
+      new Set(stop.operations
+        .flatMap((operation) => operation.dependsOn ?? [])
+        .map((dependencyId) => operationStop.get(String(dependencyId)))
+        .filter((dependencyId) => dependencyId && dependencyId !== String(stop.id)))
+    ]));
+  }
+
+  function systemStickyOrder(route, context) {
+    const remaining = new Map(route.stops.map((stop) => [String(stop.id), stop]));
+    const dependencies = dependencyMap(route);
+    const completed = new Set();
+    const order = [];
+    const effectiveCapacity = Math.max(0, Number(context.physicalCapacityScu ?? Infinity))
+      + Math.max(0, Number(context.offGridAllowanceScu ?? 0));
+    let onboard = new Map((context.initialOnboardLots ?? []).map((lot) => [
+      String(lot.key ?? `${lot.missionId}::${lot.lotId}`),
+      Number(lot.scu ?? 0)
+    ]));
+    let currentStop = context.startStop ?? null;
+    let currentSystem = stopSystemId(currentStop, context);
+
+    while (remaining.size) {
+      const available = [...remaining.values()].filter((stop) => [...(dependencies.get(String(stop.id)) ?? [])]
+        .every((dependencyId) => completed.has(String(dependencyId))));
+      if (!available.length) return null;
+
+      const evaluated = available.map((stop) => {
+        const nextOnboard = applyStopCargo(stop, onboard, context);
+        const afterScu = onboardScu(nextOnboard);
+        const totals = stopCargoTotals(stop, context);
+        const systemId = stopSystemId(stop, context);
+        const travel = engine.travelEstimate(currentStop, stop, context);
+        const completedWithCandidate = new Set([...completed, String(stop.id)]);
+        const unlockCount = [...remaining.values()].filter((candidate) => String(candidate.id) !== String(stop.id)
+          && stopSystemId(candidate, context) === systemId
+          && [...(dependencies.get(String(candidate.id)) ?? [])].every((dependencyId) => completedWithCandidate.has(String(dependencyId)))).length;
+        return {
+          stop,
+          nextOnboard,
+          afterScu,
+          totals,
+          systemId,
+          travel,
+          unlockCount,
+          feasible: afterScu <= effectiveCapacity
+        };
+      });
+
+      const feasible = evaluated.filter((candidate) => candidate.feasible);
+      if (!feasible.length) return null;
+      const sameSystem = currentSystem ? feasible.filter((candidate) => candidate.systemId === currentSystem) : [];
+      const pool = sameSystem.length ? sameSystem : feasible;
+      pool.sort((left, right) => {
+        const score = (candidate) => {
+          const travelMidpoint = (Number(candidate.travel?.minMinutes ?? 0) + Number(candidate.travel?.maxMinutes ?? 0)) / 2;
+          const capacityPressure = Number.isFinite(effectiveCapacity) && effectiveCapacity > 0
+            ? candidate.afterScu / effectiveCapacity * 150
+            : 0;
+          const systemSwitch = currentSystem && candidate.systemId !== currentSystem ? 100000 : 0;
+          const jumpPenalty = Number(candidate.travel?.jumpCount ?? 0) * 50000;
+          const deliveryReward = candidate.totals.delivery * -22;
+          const pickupPenalty = candidate.totals.pickup * 2.5;
+          const unlockReward = candidate.unlockCount * -45;
+          const originalOrder = Number(candidate.stop.orderIndex ?? candidate.stop.baseIndex ?? 0) * 0.05;
+          return systemSwitch + jumpPenalty + capacityPressure + deliveryReward + pickupPenalty + unlockReward + travelMidpoint + originalOrder;
+        };
+        return score(left) - score(right)
+          || Number(left.stop.orderIndex ?? left.stop.baseIndex ?? 0) - Number(right.stop.orderIndex ?? right.stop.baseIndex ?? 0)
+          || String(left.stop.id).localeCompare(String(right.stop.id));
+      });
+
+      const selected = pool[0];
+      order.push(selected.stop);
+      remaining.delete(String(selected.stop.id));
+      completed.add(String(selected.stop.id));
+      onboard = selected.nextOnboard;
+      currentStop = selected.stop;
+      currentSystem = selected.systemId;
+    }
+
+    return order;
+  }
+
+  function chooseGatewayEfficient(route, context) {
+    const enumeratedOrders = engine.enumerateOrders(route, route.stops);
+    const candidateOrders = [...enumeratedOrders];
+    const stickyOrder = systemStickyOrder(route, context);
+    if (stickyOrder) candidateOrders.push(stickyOrder);
+
+    const evaluatedBySignature = new Map();
+    candidateOrders.forEach((order) => {
+      const result = engine.evaluateOrder(order, context);
+      evaluatedBySignature.set(resultSignature(result), result);
+    });
+    const evaluated = [...evaluatedBySignature.values()];
+    const feasible = evaluated.filter((candidate) => candidate.capacityFeasible);
+    const minimumRequiredCapacityScu = evaluated.length
+      ? Math.min(...evaluated.map((candidate) => candidate.peakOnboardScu))
+      : 0;
+    if (!feasible.length) {
+      return Object.freeze({
+        result: null,
+        candidateCount: evaluated.length,
+        enumeratedCandidateCount: enumeratedOrders.length,
+        feasibleCandidateCount: 0,
+        capacityRejectedCount: evaluated.length,
+        minimumRequiredCapacityScu,
+        minimumJumpCount: null,
+        safetyAdjusted: false,
+        systemStickyCandidateAdded: Boolean(stickyOrder),
+        systemStickySelected: false
+      });
+    }
+
+    const minimumJumpCount = Math.min(...feasible.map((candidate) => candidate.totalJumpCount));
+    const gatewayEfficient = feasible.filter((candidate) => candidate.totalJumpCount === minimumJumpCount);
+    const pureFastest = [...gatewayEfficient].sort(fastestSort)[0];
+    let result = pureFastest;
+    if (context.cargoSafetyEnabled) {
+      const margin = Math.max(0, Number(context.safetyMarginMinutes ?? 15));
+      const eligible = gatewayEfficient.filter((candidate) => candidate.midpoint <= pureFastest.midpoint + margin);
+      result = [...eligible].sort((left, right) => (
+        left.missionCompletionScore - right.missionCompletionScore
+        || left.exposureScuMinutes - right.exposureScuMinutes
+        || left.midpoint - right.midpoint
+        || resultSignature(left).localeCompare(resultSignature(right))
+      ))[0] ?? pureFastest;
+    }
+    const stickySignature = stickyOrder ? resultSignature(engine.evaluateOrder(stickyOrder, context)) : null;
+
+    return Object.freeze({
+      result,
+      candidateCount: evaluated.length,
+      enumeratedCandidateCount: enumeratedOrders.length,
+      feasibleCandidateCount: feasible.length,
+      capacityRejectedCount: evaluated.length - feasible.length,
+      minimumRequiredCapacityScu,
+      minimumJumpCount,
+      safetyAdjusted: resultSignature(result) !== resultSignature(pureFastest),
+      systemStickyCandidateAdded: Boolean(stickyOrder),
+      systemStickySelected: Boolean(stickySignature && resultSignature(result) === stickySignature)
+    });
+  }
+
   function gatewaySegments(estimate) {
     const systems = new Map((root.SCCompanionStarmapData?.systems ?? []).map((system) => [system.id, system]));
     const segments = [];
@@ -99,9 +333,9 @@
           connectionId: leg.travel.pathConnections?.[index - 1] ?? `${fromSystemId}-${toSystemId}`,
           fromSystemId,
           toSystemId,
-          fromGateway: `${fromName} Gateway`,
-          toGateway: `${toName} Gateway`,
-          label: `${fromName} Gateway → ${toName} Gateway`
+          fromGateway: `${toName} Gateway`,
+          toGateway: `${fromName} Gateway`,
+          label: `${toName} Gateway → ${fromName} Gateway`
         }));
       }
     });
@@ -129,45 +363,69 @@
         startLocationLabel: context.startStop?.locationLabel ?? null,
         totalMinMinutes: estimate.totalMin,
         totalMaxMinutes: estimate.totalMax,
-        midpointMinutes: estimate.midpoint
+        midpointMinutes: estimate.midpoint,
+        totalJumpCount: estimate.totalJumpCount
       })
     });
   }
 
   function buildRoute(missions, missionModel, options = {}) {
     const base = originalBuildRoute(missions, missionModel);
-    const consolidated = consolidate(base);
-    const context = comparisonContext(consolidated, options);
-    const comparison = engine.compare(consolidated, { completedSet: new Set() }, context);
-    const fastest = comparison.profiles.find((profile) => profile.id === 'fastest' && !profile.duplicate)?.result
-      ?? comparison.profiles[0]?.result
-      ?? null;
+    const context = comparisonContext(base, options);
+    const comparison = chooseGatewayEfficient(base, context);
+    const fastest = comparison.result;
 
     if (fastest?.capacityFeasible) {
-      return indexedRoute(consolidated, fastest.stops, {
-        strategy: 'consolidated-fastest',
+      const phaseSafeStops = mergeAdjacentStops(fastest.stops);
+      return indexedRoute(base, phaseSafeStops, {
+        strategy: 'phase-safe-fastest',
         originalStopCount: base.stops.length,
-        consolidatedStopCount: fastest.stops.length,
+        consolidatedStopCount: phaseSafeStops.length,
         candidateCount: comparison.candidateCount,
+        enumeratedCandidateCount: comparison.enumeratedCandidateCount,
+        feasibleCandidateCount: comparison.feasibleCandidateCount,
         physicalCapacityScu: context.physicalCapacityScu,
         peakOnboardScu: fastest.peakOnboardScu,
-        capacityFeasible: true
-      }, context);
+        capacityFeasible: true,
+        repeatedLocationsAllowed: true,
+        minimumJumpCount: comparison.minimumJumpCount,
+        gatewayEfficient: true,
+        systemStickyCandidateAdded: comparison.systemStickyCandidateAdded,
+        systemStickySelected: comparison.systemStickySelected,
+        safetyAdjusted: comparison.safetyAdjusted
+      }, comparisonContext({ ...base, stops: phaseSafeStops, allStops: phaseSafeStops }, options));
     }
 
-    const fallbackContext = comparisonContext(base, options);
-    return indexedRoute(base, base.stops, {
-      strategy: 'dependency-safe-fallback',
+    const fallbackStops = mergeAdjacentStops(base.stops);
+    const fallbackRoute = { ...base, stops: fallbackStops, allStops: fallbackStops };
+    const fallbackContext = comparisonContext(fallbackRoute, options);
+    return indexedRoute(fallbackRoute, fallbackStops, {
+      strategy: 'phase-safe-dependency-fallback',
       originalStopCount: base.stops.length,
-      consolidatedStopCount: consolidated.stops.length,
+      consolidatedStopCount: fallbackStops.length,
       candidateCount: comparison.candidateCount,
+      enumeratedCandidateCount: comparison.enumeratedCandidateCount,
       physicalCapacityScu: context.physicalCapacityScu,
       minimumRequiredCapacityScu: comparison.minimumRequiredCapacityScu,
-      capacityFeasible: false
+      capacityFeasible: false,
+      repeatedLocationsAllowed: true,
+      minimumJumpCount: comparison.minimumJumpCount,
+      gatewayEfficient: true,
+      systemStickyCandidateAdded: comparison.systemStickyCandidateAdded,
+      systemStickySelected: false
     }, fallbackContext);
   }
 
-  const api = Object.freeze({ ...planner, buildRoute, focusedOptimization: true, consolidate, comparisonContext });
+  const api = Object.freeze({
+    ...planner,
+    buildRoute,
+    focusedOptimization: true,
+    consolidate,
+    mergeAdjacentStops,
+    comparisonContext,
+    chooseGatewayEfficient,
+    systemStickyOrder
+  });
   root.SCCompanionRoutePlanner = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 }(typeof globalThis !== 'undefined' ? globalThis : window));

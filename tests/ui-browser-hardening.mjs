@@ -133,7 +133,15 @@ try {
   await page.locator('#ops-live-map .ops-map-node').first().waitFor({ state: 'visible' });
   assert.match(await page.locator('#route-stop-list').textContent(), /Checkmate Station|Levski/);
   assert.ok(await page.locator('#ops-live-map .ops-map-leg').count() >= 1);
-  assert.ok(await page.locator('#ops-live-map .ops-map-gateway').count() >= 2);
+  const routeKinds = await page.evaluate(() => {
+    const state = window.SCCompanionSession.getState();
+    const route = window.SCCompanionRouteCorrections.deriveRoute(state.route, state.routeCorrections);
+    return window.SCCompanionOperationalSteps.derive(route, state).steps.map((item) => item.kind);
+  });
+  assert.ok(routeKinds.includes('gateway-approach'));
+  assert.ok(routeKinds.includes('jump'));
+  assert.ok(routeKinds.includes('travel'));
+  assert.ok(routeKinds.includes('action'));
   await page.locator('[data-ops-action="missions"]').click();
   await page.locator('.ops-editor-drawer').waitFor({ state: 'visible' });
   assert.equal(await page.locator('.ops-manager-mission').count(), 1);

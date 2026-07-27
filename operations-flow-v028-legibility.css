@@ -1,0 +1,20 @@
+/* v0.28 cargo-layout legibility guard. */
+
+.ops-v028-cargo-cell small {
+  top: 4px;
+  left: 5px;
+  font: 700 12px/1 var(--scx-font-data);
+  opacity: .8;
+}
+
+.ops-v028-access-edge {
+  font-size: 12px;
+}
+
+@media (max-width: 600px) {
+  .ops-v028-cargo-cell small {
+    top: 3px;
+    left: 4px;
+    font-size: 12px;
+  }
+}

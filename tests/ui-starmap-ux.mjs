@@ -59,38 +59,58 @@ try {
   assert.match(await page.locator('#focused-route-summary').textContent(), /Stanton Gateway/i);
   assert.match(await page.locator('#focused-route-summary').textContent(), /Pyro Gateway/i);
 
-  step = 'inspect integrated desktop route map';
+  step = 'inspect focused desktop route map';
   await page.locator('#focused-route-open').click();
   await page.locator('#ops-live-map .ops-map-node').first().waitFor({ state: 'visible' });
   assert.equal(await page.locator('[data-view-target="map"]').count(), 0, 'Standalone Starmap must not remain in visible navigation');
   const nodeCount = await page.locator('#ops-live-map .ops-map-node').count();
   const legCount = await page.locator('#ops-live-map .ops-map-leg').count();
-  assert.ok(nodeCount >= 3, `Expected at least three route nodes, found ${nodeCount}`);
-  assert.equal(legCount, nodeCount - 1);
-  assert.ok(await page.locator('#ops-live-map .ops-map-gateway').count() >= 4, 'Stanton → Pyro → Nyx must expose both gateway pairs');
+  assert.ok(nodeCount >= 1 && nodeCount <= 5, `Focused map should display only the active segment and immediate continuation, found ${nodeCount} nodes`);
+  assert.equal(legCount, Math.max(0, nodeCount - 1));
   assert.equal(await page.locator('#ops-live-map .ops-map-node.is-current').count(), 1);
-  assert.ok(await page.locator('#ops-live-map .ops-map-leg.is-active').count() >= 1);
-  assert.match(await page.locator('#ops-next-leg-strip').textContent(), /Gateway|Area18|Riker Memorial Spaceport/i);
+  assert.ok(await page.locator('#ops-live-map .ops-v028-map-leg.is-current').count() >= 1);
+  assert.match(await page.locator('#ops-next-leg-strip').textContent(), /Area18|Riker Memorial Spaceport|Gateway/i);
   assert.notEqual((await page.locator('#ops-next-leg-title').textContent())?.trim(), 'No active route');
-  await noHorizontalOverflow('integrated desktop map');
+
+  const routeFlow = await page.evaluate(() => {
+    const state = window.SCCompanionSession.getState();
+    const route = window.SCCompanionRouteCorrections.deriveRoute(state.route, state.routeCorrections);
+    const flow = window.SCCompanionOperationalSteps.derive(route, state);
+    return {
+      kinds: flow.steps.map((item) => item.kind),
+      jumpTitles: flow.steps.filter((item) => item.kind === 'jump').map((item) => item.title),
+      gatewayApproaches: flow.steps.filter((item) => item.kind === 'gateway-approach').map((item) => item.title)
+    };
+  });
+  assert.equal(routeFlow.jumpTitles.length, 2, `Stanton → Pyro → Nyx should use exactly two jumps: ${JSON.stringify(routeFlow)}`);
+  assert.equal(routeFlow.gatewayApproaches.length, 2);
+  assert.ok(routeFlow.kinds.includes('travel'));
+  assert.ok(routeFlow.kinds.includes('action'));
+  await noHorizontalOverflow('focused desktop map');
   await page.screenshot({ path: `${output}/integrated-route-map-desktop.png`, fullPage: true });
 
-  step = 'verify map updates with route progress';
-  const firstCurrentId = await page.locator('#ops-live-map .ops-map-node.is-current').getAttribute('data-stop-id');
+  step = 'verify map updates with operational progress';
+  const firstCurrentId = await page.locator('#ops-live-map .ops-map-node.is-current').getAttribute('data-reference-id');
   const firstCurrentName = (await page.locator('#current-stop-name').textContent())?.trim();
   await page.locator('#complete-stop').click();
-  await page.waitForFunction(({ previousId, previousName }) => {
-    const currentNode = document.querySelector('#ops-live-map .ops-map-node.is-current');
-    const currentName = document.querySelector('#current-stop-name')?.textContent?.trim();
-    return currentNode?.getAttribute('data-stop-id') !== previousId && currentName !== previousName;
-  }, { previousId: firstCurrentId, previousName: firstCurrentName });
-  assert.equal(await page.locator('#ops-live-map .ops-map-node.is-complete').count(), 1);
+  await page.waitForFunction((previousName) => document.querySelector('#current-stop-name')?.textContent?.trim() !== previousName, firstCurrentName);
+  const secondCurrentId = await page.locator('#ops-live-map .ops-map-node.is-current').getAttribute('data-reference-id');
+  const secondCurrentName = (await page.locator('#current-stop-name').textContent())?.trim();
+  const focusedNodeCount = await page.locator('#ops-live-map .ops-map-node').count();
   assert.equal(await page.locator('#ops-live-map .ops-map-node.is-current').count(), 1);
-  assert.notEqual(await page.locator('#ops-live-map .ops-map-node.is-current').getAttribute('data-stop-id'), firstCurrentId);
+  assert.ok(focusedNodeCount <= 5);
+  assert.notEqual(secondCurrentName, firstCurrentName, 'Completing a travel step must advance the current instruction');
+  if (secondCurrentId === firstCurrentId) {
+    assert.ok(focusedNodeCount >= 1 && focusedNodeCount <= 2, 'An action at the just-reached location may retain only that location and the immediate next navigation target');
+    assert.match(secondCurrentName ?? '', /Pick up|Drop|Complete/i);
+    if (focusedNodeCount === 2) {
+      assert.ok(await page.locator('#ops-live-map .ops-map-gateway').count() >= 1, 'The only continuation shown from an action location should be its next gateway or destination');
+    }
+  }
   await page.screenshot({ path: `${output}/integrated-route-map-progress-desktop.png`, fullPage: true });
 
-  step = 'complete route and verify map orientation';
-  let safety = 10;
+  step = 'complete route and verify focused map completion';
+  let safety = 24;
   while (!(await page.locator('#complete-stop').isDisabled()) && safety > 0) {
     await page.locator('#complete-stop').click();
     safety -= 1;
@@ -98,7 +118,7 @@ try {
   assert.ok(safety > 0, 'Route completion exceeded safety limit');
   await page.locator('#ops-next-leg-title').filter({ hasText: /Session complete/i }).waitFor({ state: 'visible' });
   assert.match((await page.locator('#global-route-status').textContent()) ?? '', /complete/i);
-  assert.equal(await page.locator('#ops-live-map .ops-map-node.is-complete').count(), nodeCount);
+  assert.equal(await page.locator('#ops-live-map .ops-map-node').count(), 0);
   assert.equal(await page.locator('#ops-live-map .ops-map-node.is-current').count(), 0);
 
   step = 'verify completed map at tablet size';

@@ -120,6 +120,24 @@ try {
   assert.equal(sessionMissionCounts.reduce((sum, count) => sum + count, 0), 7);
   const timingLabels = await sessionCards.locator('header > strong').allTextContents();
   assert.ok(timingLabels.every((label) => /~\d+ min travel/i.test(label)), `Unexpected timing labels: ${timingLabels.join(' | ')}`);
+
+  const fullRouteAudit = await page.evaluate(() => {
+    const state = window.SCCompanionSession.getState();
+    const route = state.routePlan.fullRoute;
+    const systems = route.stops.map((stop) => window.SCCompanionLocations.getSystemForLocation(stop.locationId)?.id ?? 'unknown');
+    const collapsedSystems = systems.filter((system, index) => index === 0 || system !== systems[index - 1]);
+    return {
+      systemTransitions: Math.max(0, collapsedSystems.length - 1),
+      collapsedSystems,
+      jumpCount: route.estimate?.totalJumpCount ?? null,
+      grimVisits: route.stops.filter((stop) => /grim-hex/.test(stop.locationId)).length,
+      strategy: route.optimization?.strategy
+    };
+  });
+  assert.equal(fullRouteAudit.strategy, 'phase-safe-fastest');
+  assert.ok(fullRouteAudit.systemTransitions <= 2, `Unexpected system backtracking: ${JSON.stringify(fullRouteAudit)}`);
+  assert.ok(fullRouteAudit.jumpCount === null || fullRouteAudit.jumpCount <= 2, `Unexpected jump count: ${JSON.stringify(fullRouteAudit)}`);
+  assert.ok(fullRouteAudit.grimVisits >= 2, 'The late Fallow-dependent Grim HEX delivery must remain a separate route phase');
   await noHorizontalOverflow('Missions sessions desktop');
   await page.screenshot({ path: `${output}/missions-focused-sessions-desktop.png`, fullPage: true });
 
@@ -128,22 +146,42 @@ try {
   assert.equal(await gatewaySession.isVisible(), true);
   await gatewaySession.getByRole('button', { name: 'Select session' }).click();
   await page.locator('#focused-route-open').click();
+  await page.locator('.operations-page.operations-v028').waitFor({ state: 'visible' });
   await page.locator('#current-stop-name').waitFor({ state: 'visible' });
   await page.locator('#ops-live-map .ops-map-node').first().waitFor({ state: 'visible' });
   await page.locator('.ops-v027-command-deck').waitFor({ state: 'visible' });
   assert.equal(await page.locator('.operations-page').evaluate((element) => element.classList.contains('operations-v027')), true);
+  assert.equal(await page.locator('.operations-page').evaluate((element) => element.classList.contains('operations-v028')), true);
   assert.ok(await page.locator('#ops-live-map .ops-map-leg').count() > 0);
-  assert.ok(await page.locator('#ops-live-map .ops-map-gateway').count() >= 2);
-  assert.match(await page.locator('#ops-next-leg-strip').textContent(), /Gateway/i);
   assert.match(await page.locator('#ops-session-summary').textContent(), /max 60 min travel/i);
   assert.match(await page.locator('#ops-v027-budget').textContent(), /60 min travel/i);
   assert.match(await page.locator('#ops-v027-gateway').textContent(), /Gateway/i);
-  assert.ok(await page.locator('.ops-v027-route-step').count() > 0);
-  assert.equal(await page.locator('.ops-v027-route-step.is-current').count(), 1);
-  assert.ok(await page.locator('.ops-v027-action-chips > span').count() >= 2);
+  assert.ok(await page.locator('.ops-v028-stop-card').count() > 0);
+  assert.equal(await page.locator('.ops-v028-stop-system').count(), await page.locator('.ops-v028-stop-card').count());
+  assert.equal(await page.locator('.ops-v028-stop-cargo').count(), await page.locator('.ops-v028-stop-card').count());
+  assert.ok((await page.locator('.ops-v028-stop-cargo').allTextContents()).every((text) => /SCU.*free/i.test(text)));
   assert.equal(await page.locator('.ops-v027-legacy-sequence').isVisible(), false);
   assert.equal(await page.locator('.ops-action-bar [data-ops-action]').count(), 5);
-  assert.ok(await page.locator('.current-stop-intel-card .intel-icon').count() >= 5);
+  assert.equal(await page.locator('.ops-v028-cargo-panel').isVisible(), true);
+  assert.ok(await page.locator('.ops-v028-cargo-cell').count() > 0);
+  assert.doesNotMatch(await page.locator('.current-operation-panel').textContent(), /CURRENT DESTINATION/i);
+
+  const flowAudit = await page.evaluate(() => {
+    const state = window.SCCompanionSession.getState();
+    const route = window.SCCompanionRouteCorrections.deriveRoute(state.route, state.routeCorrections);
+    const flow = window.SCCompanionOperationalSteps.derive(route, state);
+    return {
+      kinds: flow.steps.map((item) => item.kind),
+      titles: flow.steps.map((item) => item.title),
+      currentKind: flow.currentStep?.kind,
+      currentTitle: flow.currentStep?.title
+    };
+  });
+  assert.ok(flowAudit.kinds.includes('gateway-approach'), `Missing gateway approach: ${JSON.stringify(flowAudit)}`);
+  assert.ok(flowAudit.kinds.includes('jump'), `Missing gateway jump: ${JSON.stringify(flowAudit)}`);
+  assert.ok(flowAudit.kinds.includes('travel'), `Missing post-jump travel: ${JSON.stringify(flowAudit)}`);
+  assert.ok(flowAudit.kinds.includes('action'), `Missing stop action: ${JSON.stringify(flowAudit)}`);
+
   const layout = await page.evaluate(() => {
     const box = (selector) => {
       const rect = document.querySelector(selector)?.getBoundingClientRect();
@@ -155,17 +193,58 @@ try {
       map: box('.ops-live-navigation'),
       current: box('.current-operation-panel'),
       timeline: box('.ops-v027-timeline-panel'),
+      cargo: box('.ops-v028-cargo-panel'),
       tools: box('.operations-tools')
     };
   });
-  assert.ok(layout.command && layout.primary && layout.map && layout.current && layout.timeline && layout.tools, `Missing Operations layout regions: ${JSON.stringify(layout)}`);
+  assert.ok(layout.command && layout.primary && layout.map && layout.current && layout.timeline && layout.cargo && layout.tools, `Missing Operations layout regions: ${JSON.stringify(layout)}`);
   assert.ok(layout.command.bottom <= layout.primary.top + 2, `Command deck must precede the primary workspace: ${JSON.stringify(layout)}`);
-  assert.ok(Math.abs(layout.map.top - layout.current.top) <= 2, `Map and current stop must share a row: ${JSON.stringify(layout)}`);
+  assert.ok(Math.abs(layout.map.top - layout.current.top) <= 2, `Map and current step must share a row: ${JSON.stringify(layout)}`);
   assert.ok(layout.map.width > layout.current.width, `Map must remain the primary visual surface: ${JSON.stringify(layout)}`);
   assert.ok(layout.primary.bottom <= layout.timeline.top + 2, `Timeline must follow the primary workspace: ${JSON.stringify(layout)}`);
-  assert.ok(layout.timeline.bottom <= layout.tools.top + 2, `Operational editing tools must follow the timeline: ${JSON.stringify(layout)}`);
+  assert.ok(layout.timeline.bottom <= layout.cargo.top + 2, `Cargo layout must follow the stop timeline: ${JSON.stringify(layout)}`);
+  assert.ok(layout.cargo.bottom <= layout.tools.top + 2, `Operational editing tools must follow the cargo layout: ${JSON.stringify(layout)}`);
   await noHorizontalOverflow('Operations live cockpit desktop');
   await page.screenshot({ path: `${output}/operations-live-cockpit-desktop.png`, fullPage: true });
+
+  step = 'advance through the explicit gateway sequence';
+  const gatewaySetup = await page.evaluate(() => {
+    const state = window.SCCompanionSession.getState();
+    const route = window.SCCompanionRouteCorrections.deriveRoute(state.route, state.routeCorrections);
+    const flow = window.SCCompanionOperationalSteps.derive(route, state);
+    const index = flow.steps.findIndex((item) => item.kind === 'gateway-approach');
+    if (index < 0) return null;
+    const prior = flow.steps.slice(0, index);
+    const completedStopIds = prior.filter((item) => item.kind === 'action').map((item) => String(item.stopId));
+    window.SCCompanionSession.patch({
+      operationalRouteKey: flow.routeKey,
+      completedOperationalStepIds: prior.map((item) => item.id),
+      completedStopIds,
+      currentStopIndex: completedStopIds.length
+    });
+    return { completedStopCount: completedStopIds.length };
+  });
+  assert.ok(gatewaySetup, 'Selected inter-system session did not expose a gateway approach');
+  await page.locator('#current-stop-name').filter({ hasText: /Travel to .*Gateway/i }).waitFor({ state: 'visible' });
+  assert.ok(await page.locator('#ops-live-map .ops-map-gateway').count() >= 2);
+  const gatewayY = await page.locator('#ops-live-map .ops-map-gateway').evaluateAll((nodes) => nodes.map((node) => Number(/translate\([^ ]+ ([^)]+)\)/.exec(node.getAttribute('transform') ?? '')?.[1])).filter(Number.isFinite));
+  assert.equal(new Set(gatewayY).size, 1, `Gateway nodes are vertically misaligned: ${gatewayY.join(', ')}`);
+  const stopsBeforeTravel = await page.evaluate(() => window.SCCompanionSession.getState().completedStopIds.length);
+  await page.locator('#complete-stop').click();
+  await page.locator('#current-stop-name').filter({ hasText: /Jump to .*Gateway/i }).waitFor({ state: 'visible' });
+  assert.equal(await page.evaluate(() => window.SCCompanionSession.getState().completedStopIds.length), stopsBeforeTravel, 'Reaching a gateway must not complete a cargo stop');
+  await page.locator('#complete-stop').click();
+  await page.locator('#current-stop-name').filter({ hasText: /Fly to /i }).waitFor({ state: 'visible' });
+  assert.equal(await page.evaluate(() => window.SCCompanionSession.getState().completedStopIds.length), stopsBeforeTravel, 'Completing a jump must not complete a cargo stop');
+  await page.screenshot({ path: `${output}/operations-explicit-gateway-desktop.png`, fullPage: true });
+
+  step = 'verify destination and mission cargo grouping';
+  assert.equal(await page.locator('#ops-v028-cargo-mode').inputValue(), 'destination');
+  await page.locator('#ops-v028-cargo-mode').selectOption('mission');
+  await page.waitForFunction(() => window.SCCompanionSession.getState().cargoLayoutGroupingMode === 'mission');
+  assert.equal(await page.locator('#ops-v028-cargo-mode').inputValue(), 'mission');
+  await page.locator('#ops-v028-cargo-mode').selectOption('destination');
+  await page.waitForFunction(() => window.SCCompanionSession.getState().cargoLayoutGroupingMode === 'destination');
 
   step = 'verify route order editor opens';
   await page.locator('[data-ops-action="order"]').click();
@@ -183,8 +262,9 @@ try {
   await page.screenshot({ path: `${output}/missions-focused-review-mobile.png`, fullPage: true });
   await page.locator('[data-view-target="route"]').click();
   await page.locator('#ops-live-map').waitFor({ state: 'visible' });
-  await page.locator('.ops-v027-command-deck').waitFor({ state: 'visible' });
-  assert.ok(await page.locator('.ops-v027-route-step').count() > 0);
+  await page.locator('.operations-page.operations-v028').waitFor({ state: 'visible' });
+  assert.ok(await page.locator('.ops-v028-stop-card').count() > 0);
+  assert.equal(await page.locator('.ops-v028-cargo-panel').isVisible(), true);
   assert.equal(await page.locator('.ops-editor-drawer').isVisible(), false);
   await noHorizontalOverflow('Operations live cockpit mobile');
   await page.screenshot({ path: `${output}/operations-live-cockpit-mobile.png`, fullPage: true });
@@ -200,4 +280,4 @@ try {
 }
 
 if (failure) throw failure;
-console.log('v0.27 industrial mission workflow and Operations cockpit smoke passed.');
+console.log('v0.28 explicit route flow and destination-aware cargo layout smoke passed.');
