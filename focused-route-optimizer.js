@@ -40,6 +40,39 @@
     return Object.freeze({ ...route, stops: Object.freeze(stops), allStops: Object.freeze(stops) });
   }
 
+  function mergeAdjacentStops(stops) {
+    const groups = [];
+    (stops ?? []).forEach((stop) => {
+      const previous = groups.at(-1);
+      if (previous && previous.locationId === stop.locationId) {
+        previous.operations.push(...stop.operations);
+        return;
+      }
+      groups.push({
+        locationId: stop.locationId,
+        locationLabel: stop.locationLabel,
+        operations: [...stop.operations]
+      });
+    });
+
+    return Object.freeze(groups.map((group, index) => {
+      const internalOperationIds = new Set(group.operations.map((operation) => String(operation.id)));
+      const operations = group.operations.map((operation) => Object.freeze({
+        ...operation,
+        dependsOn: Object.freeze((operation.dependsOn ?? []).filter((dependencyId) => !internalOperationIds.has(String(dependencyId))))
+      }));
+      return Object.freeze({
+        id: `phase-stop-${index}-${group.locationId}`,
+        index,
+        baseIndex: index,
+        orderIndex: index,
+        locationId: group.locationId,
+        locationLabel: group.locationLabel,
+        operations: Object.freeze(operations)
+      });
+    }));
+  }
+
   function activeShipContext(options = {}) {
     const state = root.SCCompanionSession?.getState?.() ?? {};
     const selectedShipId = options.selectedShipId ?? state.selectedShipId;
@@ -99,9 +132,9 @@
           connectionId: leg.travel.pathConnections?.[index - 1] ?? `${fromSystemId}-${toSystemId}`,
           fromSystemId,
           toSystemId,
-          fromGateway: `${fromName} Gateway`,
-          toGateway: `${toName} Gateway`,
-          label: `${fromName} Gateway → ${toName} Gateway`
+          fromGateway: `${toName} Gateway`,
+          toGateway: `${fromName} Gateway`,
+          label: `${toName} Gateway → ${fromName} Gateway`
         }));
       }
     });
@@ -136,38 +169,42 @@
 
   function buildRoute(missions, missionModel, options = {}) {
     const base = originalBuildRoute(missions, missionModel);
-    const consolidated = consolidate(base);
-    const context = comparisonContext(consolidated, options);
-    const comparison = engine.compare(consolidated, { completedSet: new Set() }, context);
+    const context = comparisonContext(base, options);
+    const comparison = engine.compare(base, { completedSet: new Set() }, context);
     const fastest = comparison.profiles.find((profile) => profile.id === 'fastest' && !profile.duplicate)?.result
       ?? comparison.profiles[0]?.result
       ?? null;
 
     if (fastest?.capacityFeasible) {
-      return indexedRoute(consolidated, fastest.stops, {
-        strategy: 'consolidated-fastest',
+      const phaseSafeStops = mergeAdjacentStops(fastest.stops);
+      return indexedRoute(base, phaseSafeStops, {
+        strategy: 'phase-safe-fastest',
         originalStopCount: base.stops.length,
-        consolidatedStopCount: fastest.stops.length,
+        consolidatedStopCount: phaseSafeStops.length,
         candidateCount: comparison.candidateCount,
         physicalCapacityScu: context.physicalCapacityScu,
         peakOnboardScu: fastest.peakOnboardScu,
-        capacityFeasible: true
-      }, context);
+        capacityFeasible: true,
+        repeatedLocationsAllowed: true
+      }, comparisonContext({ ...base, stops: phaseSafeStops, allStops: phaseSafeStops }, options));
     }
 
-    const fallbackContext = comparisonContext(base, options);
-    return indexedRoute(base, base.stops, {
-      strategy: 'dependency-safe-fallback',
+    const fallbackStops = mergeAdjacentStops(base.stops);
+    const fallbackRoute = { ...base, stops: fallbackStops, allStops: fallbackStops };
+    const fallbackContext = comparisonContext(fallbackRoute, options);
+    return indexedRoute(fallbackRoute, fallbackStops, {
+      strategy: 'phase-safe-dependency-fallback',
       originalStopCount: base.stops.length,
-      consolidatedStopCount: consolidated.stops.length,
+      consolidatedStopCount: fallbackStops.length,
       candidateCount: comparison.candidateCount,
       physicalCapacityScu: context.physicalCapacityScu,
       minimumRequiredCapacityScu: comparison.minimumRequiredCapacityScu,
-      capacityFeasible: false
+      capacityFeasible: false,
+      repeatedLocationsAllowed: true
     }, fallbackContext);
   }
 
-  const api = Object.freeze({ ...planner, buildRoute, focusedOptimization: true, consolidate, comparisonContext });
+  const api = Object.freeze({ ...planner, buildRoute, focusedOptimization: true, consolidate, mergeAdjacentStops, comparisonContext });
   root.SCCompanionRoutePlanner = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 }(typeof globalThis !== 'undefined' ? globalThis : window));
