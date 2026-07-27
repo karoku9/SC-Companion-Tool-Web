@@ -110,6 +110,7 @@
         .then(() => import('./cargo-ship-grid-profile-v030.js'))
         .then(() => import('./cargo-auto-layout-v0292.js'))
         .then(() => import('./cargo-manual-layout-v030.js'))
+        .then(() => import('./cargo-manual-version-compat-v030.js'))
     ]))
     .then(() => import('./fleet-estimate-adapter.js'))
     .then(() => {
