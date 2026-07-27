@@ -44,7 +44,15 @@ test('ship cargo zones remain separable, layered and capacity-safe', () => {
       assert.ok(zone.columns > 0);
       assert.equal(zone.separable, true);
     });
-    assert.equal(model.layout.geometryStatus, 'concept');
+    if (model.id === 'drake-corsair') {
+      assert.equal(model.layout.geometryStatus, 'configured-corsair-72-scu-grid');
+      assert.equal(model.snapGrid.rows, 6);
+      assert.equal(model.snapGrid.columns, 4);
+      assert.equal(model.snapGrid.layers, 3);
+      assert.equal(model.snapGrid.rows * model.snapGrid.columns * model.snapGrid.layers, 72);
+    } else {
+      assert.equal(model.layout.geometryStatus, 'concept');
+    }
   });
 });
 
@@ -96,7 +104,10 @@ test('v0.25 keeps assisted intake and adds the operational cockpit runtimes', ()
   assert.match(app, /location-context\.js/);
   assert.match(app, /location-context-planner\.js/);
   assert.match(app, /cargo-zone-model\.js/);
+  assert.match(app, /cargo-ship-grid-profile-v030\.js/);
   assert.match(app, /cargo-auto-layout-v0292\.js/);
+  assert.match(app, /cargo-manual-layout-v030\.js/);
+  assert.match(app, /cargo-manual-grid-view-v0301\.js/);
   assert.match(app, /operations-cargo-guidance-v0292\.js/);
   assert.match(app, /ui-v2-accessibility\.js/);
   assert.match(app, /game-log-intake\.js/);
