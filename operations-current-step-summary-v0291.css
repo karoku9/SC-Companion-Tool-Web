@@ -1,0 +1,56 @@
+/* UI 0.29.1 — compact action detail only in short desktop Operations. */
+
+.ops-v0291-operation-compact {
+  display: none;
+}
+
+@media (min-width: 1180px) and (min-height: 650px) and (max-height: 850px) {
+  html[data-active-view="route"] .operations-v028 .ops-v028-operation-list {
+    display: none;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v0291-operation-compact {
+    min-height: 42px;
+    display: grid;
+    grid-template-columns: 24px minmax(0, 1fr);
+    align-items: center;
+    gap: 7px;
+    padding: 6px 8px;
+    border: 1px solid var(--ds-border-subtle);
+    background: var(--ds-surface-screen);
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v0291-operation-compact > span {
+    display: grid;
+    place-items: center;
+    color: var(--ds-action-primary);
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v0291-operation-compact svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v0291-operation-compact > div {
+    min-width: 0;
+    display: grid;
+    gap: 2px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v0291-operation-compact strong,
+  html[data-active-view="route"] .operations-v028 .ops-v0291-operation-compact small {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v0291-operation-compact strong {
+    font-size: 12px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v0291-operation-compact small {
+    color: var(--ds-content-muted);
+    font-size: 12px;
+  }
+}
