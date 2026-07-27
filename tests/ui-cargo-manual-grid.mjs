@@ -30,6 +30,21 @@ async function selectCurrentLocation(pattern) {
   await page.locator('#mission-start-location-status[data-state="ready"]').waitFor({ state: 'visible' });
 }
 
+async function findCellId(kind, excluded = []) {
+  return page.locator('[data-v030-cell]').evaluateAll((cells, { kind, excluded }) => {
+    const blocked = new Set(excluded);
+    const match = [...cells].find((cell) => {
+      const id = cell.dataset.v030Cell;
+      if (!id || blocked.has(id)) return false;
+      const label = cell.querySelector('strong')?.textContent?.trim() ?? '';
+      if (kind === 'occupied') return !['Empty', 'Reserved', 'Keep empty'].includes(label);
+      if (kind === 'empty') return label === 'Empty';
+      return false;
+    });
+    return match?.dataset.v030Cell ?? '';
+  }, { kind, excluded });
+}
+
 try {
   step = 'build one Corsair cargo route';
   await page.goto(`${baseUrl}/#missions`, { waitUntil: 'networkidle' });
@@ -53,30 +68,27 @@ try {
   assert.match(await page.locator('.ops-v030-editor-title').textContent(), /Drake Corsair · 72 SCU official grid/i);
 
   step = 'drag cargo to an exact coordinate';
-  const occupied = page.locator('[data-v030-cell]').filter({ has: page.locator('strong:not(:text("Empty"))') });
-  const source = occupied.first();
-  const sourceId = await source.getAttribute('data-v030-cell');
-  const empty = page.locator('[data-v030-cell]').filter({ hasText: /^.*Empty.*$/ }).first();
-  const targetId = await empty.getAttribute('data-v030-cell');
+  const sourceId = await findCellId('occupied');
+  const targetId = await findCellId('empty', [sourceId]);
   assert.ok(sourceId && targetId && sourceId !== targetId);
-  await source.dragTo(empty);
+  await page.locator(`[data-v030-cell="${sourceId}"]`).dragTo(page.locator(`[data-v030-cell="${targetId}"]`));
   await page.waitForFunction(({ sourceId, targetId }) => {
     const state = window.SCCompanionSession.getState();
     const record = state.cargoManualLayouts?.[state.selectedShipId];
     return record?.enabled && record?.emptyCells?.includes(sourceId) && Boolean(record?.placements?.[targetId]);
   }, { sourceId, targetId });
-  await page.locator(`[data-v030-cell="${targetId}"]`).waitFor({ state: 'visible' });
-  assert.equal(await page.locator(`[data-v030-cell="${targetId}"]`).evaluate((element) => element.classList.contains('is-manual')), true);
+  await page.locator(`[data-v030-cell="${targetId}"].is-manual`).waitFor({ state: 'visible' });
 
   step = 'reserve unrelated occupied space';
   await page.locator('[data-v030-mode="reserve"]').click();
-  const reserveTarget = page.locator('[data-v030-cell]').filter({ hasText: /^.*Empty.*$/ }).first();
-  const reserveId = await reserveTarget.getAttribute('data-v030-cell');
-  await reserveTarget.click();
+  const reserveId = await findCellId('empty', [sourceId, targetId]);
+  assert.ok(reserveId);
+  await page.locator(`[data-v030-cell="${reserveId}"]`).click();
   await page.waitForFunction((cellId) => {
     const state = window.SCCompanionSession.getState();
     return state.cargoManualLayouts?.[state.selectedShipId]?.reservedCells?.includes(cellId);
   }, reserveId);
+  await page.locator(`[data-v030-cell="${reserveId}"].is-reserved`).waitFor({ state: 'visible' });
   assert.match(await page.locator('.ops-v030-editor-stats').textContent(), /Reserved\s*3 SCU/i);
   await page.screenshot({ path: `${output}/cargo-manual-grid-desktop.png`, fullPage: true });
 
@@ -92,8 +104,8 @@ try {
   await page.locator('.operations-page.operations-v028').waitFor({ state: 'visible' });
   await page.locator('.ops-v030-edit-grid').click();
   await page.locator('#ops-v030-cargo-editor').waitFor({ state: 'visible' });
-  assert.equal(await page.locator(`[data-v030-cell="${targetId}"]`).evaluate((element) => element.classList.contains('is-manual')), true);
-  assert.equal(await page.locator(`[data-v030-cell="${reserveId}"]`).evaluate((element) => element.classList.contains('is-reserved')), true);
+  await page.locator(`[data-v030-cell="${targetId}"].is-manual`).waitFor({ state: 'visible' });
+  await page.locator(`[data-v030-cell="${reserveId}"].is-reserved`).waitFor({ state: 'visible' });
 
   assert.deepEqual(errors, [], `Browser errors:\n${errors.join('\n')}`);
 } catch (error) {
