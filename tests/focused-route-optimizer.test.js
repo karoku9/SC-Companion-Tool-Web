@@ -62,8 +62,17 @@ test('focused route preserves dependency phases without exceeding Corsair capaci
   assert.equal(route.optimization.strategy, 'phase-safe-fastest');
   assert.equal(route.optimization.capacityFeasible, true);
   assert.equal(route.optimization.repeatedLocationsAllowed, true);
+  assert.equal(route.optimization.gatewayEfficient, true);
+  assert.equal(route.optimization.minimumJumpCount, 2);
+  assert.equal(route.optimization.totalJumpCount, 2);
+  assert.equal(route.optimization.systemStickyCandidateAdded, true);
   assert.ok(route.optimization.peakOnboardScu <= 72);
   assert.ok(route.stops.length <= route.optimization.originalStopCount);
+
+  const collapsedSystems = route.stops
+    .map((stop) => locations.getSystemForLocation(stop.locationId)?.id ?? 'unknown')
+    .filter((systemId, index, systems) => index === 0 || systemId !== systems[index - 1]);
+  assert.deepEqual(collapsedSystems, ['stanton', 'pyro', 'stanton']);
 
   const grimStops = route.stops.filter((stop) => /grim-hex/.test(stop.locationId));
   assert.ok(grimStops.length >= 2, 'Grim HEX must remain in separate phases because the final delivery depends on the later Fallow Field pickup');
