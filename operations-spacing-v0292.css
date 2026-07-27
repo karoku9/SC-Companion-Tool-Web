@@ -1,6 +1,10 @@
 /* UI 0.29.2 — rebalance the one-page flight deck instead of scaling it down. */
 
 @media (min-width: 1180px) and (min-height: 650px) and (max-height: 900px) {
+  html[data-active-view="route"] .nav-footer::before {
+    content: "UI 0.29.2";
+  }
+
   html[data-active-view="route"] .app-topbar {
     display: none;
   }
