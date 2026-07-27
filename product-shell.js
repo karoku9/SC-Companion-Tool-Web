@@ -105,7 +105,7 @@
   mobileSelect?.addEventListener('change', () => openTarget(mobileSelect.value));
   document.addEventListener('click', (event) => {
     const shortcut = event.target.closest('[data-shell-link]');
-    if (shortcut) openTarget(shortcut.datasetShellLink);
+    if (shortcut) openTarget(shortcut.dataset.shellLink);
   });
   window.addEventListener('hashchange', () => setContext(location.hash.slice(1) || registry.defaultPageId));
   setContext(location.hash.slice(1) || registry.defaultPageId);
