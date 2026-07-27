@@ -4,6 +4,13 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 
 const locations = require('../location-field-registry.js');
+global.SCCompanionLocations = locations;
+global.SCCompanionStarmapData = require('../starmap-data.js');
+global.SCCompanionOfficialUniverseData = require('../official-universe-data.js');
+global.SCCompanionNavigationEstimates = require('../navigation-estimates.js');
+global.SCCompanionLocationProfiles = require('../location-profiles.js');
+global.SCCompanionArrivalEstimates = require('../arrival-estimates.js');
+
 const validator = require('../mission-validation.js');
 const missions = require('../missions.js');
 
@@ -18,7 +25,6 @@ global.SCCompanionSession = {
   })
 };
 global.SCCompanionShipCatalog = require('../ship-catalog.js');
-global.SCCompanionLocations = locations;
 
 const optimizer = require('../focused-route-optimizer.js');
 
