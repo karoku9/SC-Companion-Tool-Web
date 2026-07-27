@@ -36,14 +36,19 @@ async function selectCurrentLocation(pattern = /grim hex/i) {
 }
 
 try {
-  step = 'load simplified ship controls';
+  step = 'load mission input before ship controls';
   await page.goto(`${baseUrl}/#missions`, { waitUntil: 'networkidle' });
   await page.evaluate(() => localStorage.removeItem('sc-companion-session-v1'));
   await page.reload({ waitUntil: 'networkidle' });
   await page.locator('.mission-steps').waitFor({ state: 'visible' });
-  await page.locator('#mission-ship-select').waitFor({ state: 'visible' });
+  await page.locator('#mission-text').waitFor({ state: 'visible' });
+  assert.equal(await page.locator('#mission-ship-select').isVisible(), false);
 
-  step = 'verify model-only menu';
+  step = 'parse mission and expose model-only menu';
+  await page.locator('#mission-text').fill(missionText);
+  await page.locator('#mission-form button[type="submit"]').click();
+  await page.locator('#focused-review-count').filter({ hasText: '1 mission' }).waitFor({ state: 'visible' });
+  await page.locator('#mission-ship-select').waitFor({ state: 'visible' });
   const options = await page.locator('#mission-ship-select option').allTextContents();
   assert.ok(options.length >= 7);
   assert.ok(options.some((label) => /Drake Corsair · 72 SCU/i.test(label)));
@@ -56,9 +61,6 @@ try {
   step = 'build a route with Corsair';
   await selectCurrentLocation();
   await page.locator('#mission-ship-select').selectOption('drake-corsair');
-  await page.locator('#mission-text').fill(missionText);
-  await page.locator('#mission-form button[type="submit"]').click();
-  await page.locator('#focused-review-generate').waitFor({ state: 'visible' });
   assert.equal(await page.locator('#focused-review-generate').isEnabled(), true);
   await page.locator('#focused-review-generate').click();
   await page.locator('[data-stage="route"][aria-current="step"]').waitFor({ state: 'visible' });
@@ -81,11 +83,11 @@ try {
   await noHorizontalOverflow('Simplified ship selector desktop');
   await page.screenshot({ path: `${output}/ship-selector-desktop.png`, fullPage: true });
 
-  step = 'verify mobile keeps ship selection inside Missions';
+  step = 'verify mobile keeps ship selection inside the review run sheet';
   await page.setViewportSize({ width: 390, height: 844 });
   assert.equal(await page.locator('.quick-ship-control').isVisible(), false);
   await page.locator('[data-view-target="missions"]').click();
-  await page.locator('[data-stage="input"]').click();
+  await page.locator('[data-stage="review"]').click();
   await page.locator('#mission-ship-select').waitFor({ state: 'visible' });
   assert.equal(await page.locator('#mission-ship-select').inputValue(), 'rsi-constellation-taurus');
   const box = await page.locator('#mission-ship-select').boundingBox();
