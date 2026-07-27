@@ -126,9 +126,147 @@
       || resultSignature(left).localeCompare(resultSignature(right));
   }
 
+  function cargoKey(operation) {
+    return `${operation.missionId}::${operation.lotId}`;
+  }
+
+  function quantityFor(operation, context) {
+    const lot = context.cargoLotsByKey instanceof Map
+      ? context.cargoLotsByKey.get(cargoKey(operation))
+      : context.cargoLotsByKey?.[cargoKey(operation)];
+    return Math.max(0, Number(lot?.scu ?? operation.scu ?? 0));
+  }
+
+  function onboardScu(onboard) {
+    return [...onboard.values()].reduce((sum, amount) => sum + Number(amount ?? 0), 0);
+  }
+
+  function applyStopCargo(stop, onboard, context) {
+    const next = new Map(onboard);
+    stop.operations
+      .filter((operation) => operation.type === 'delivery' && operation.lotId)
+      .forEach((operation) => next.delete(cargoKey(operation)));
+    stop.operations
+      .filter((operation) => operation.type !== 'delivery' && operation.lotId)
+      .forEach((operation) => next.set(cargoKey(operation), quantityFor(operation, context)));
+    return next;
+  }
+
+  function stopCargoTotals(stop, context) {
+    return stop.operations.reduce((totals, operation) => {
+      const scu = operation.lotId ? quantityFor(operation, context) : 0;
+      if (operation.type === 'delivery') totals.delivery += scu;
+      else totals.pickup += scu;
+      return totals;
+    }, { pickup: 0, delivery: 0 });
+  }
+
+  function stopSystemId(stop, context) {
+    return context.locations?.getSystemForLocation(stop?.locationId)?.id ?? null;
+  }
+
+  function dependencyMap(route) {
+    const operationStop = new Map();
+    (route.allStops ?? route.stops ?? []).forEach((stop) => {
+      stop.operations.forEach((operation) => operationStop.set(String(operation.id), String(stop.id)));
+    });
+    return new Map((route.stops ?? []).map((stop) => [
+      String(stop.id),
+      new Set(stop.operations
+        .flatMap((operation) => operation.dependsOn ?? [])
+        .map((dependencyId) => operationStop.get(String(dependencyId)))
+        .filter((dependencyId) => dependencyId && dependencyId !== String(stop.id)))
+    ]));
+  }
+
+  function systemStickyOrder(route, context) {
+    const remaining = new Map(route.stops.map((stop) => [String(stop.id), stop]));
+    const dependencies = dependencyMap(route);
+    const completed = new Set();
+    const order = [];
+    const effectiveCapacity = Math.max(0, Number(context.physicalCapacityScu ?? Infinity))
+      + Math.max(0, Number(context.offGridAllowanceScu ?? 0));
+    let onboard = new Map((context.initialOnboardLots ?? []).map((lot) => [
+      String(lot.key ?? `${lot.missionId}::${lot.lotId}`),
+      Number(lot.scu ?? 0)
+    ]));
+    let currentStop = context.startStop ?? null;
+    let currentSystem = stopSystemId(currentStop, context);
+
+    while (remaining.size) {
+      const available = [...remaining.values()].filter((stop) => [...(dependencies.get(String(stop.id)) ?? [])]
+        .every((dependencyId) => completed.has(String(dependencyId))));
+      if (!available.length) return null;
+
+      const evaluated = available.map((stop) => {
+        const nextOnboard = applyStopCargo(stop, onboard, context);
+        const afterScu = onboardScu(nextOnboard);
+        const totals = stopCargoTotals(stop, context);
+        const systemId = stopSystemId(stop, context);
+        const travel = engine.travelEstimate(currentStop, stop, context);
+        const completedWithCandidate = new Set([...completed, String(stop.id)]);
+        const unlockCount = [...remaining.values()].filter((candidate) => String(candidate.id) !== String(stop.id)
+          && stopSystemId(candidate, context) === systemId
+          && [...(dependencies.get(String(candidate.id)) ?? [])].every((dependencyId) => completedWithCandidate.has(String(dependencyId)))).length;
+        return {
+          stop,
+          nextOnboard,
+          afterScu,
+          totals,
+          systemId,
+          travel,
+          unlockCount,
+          feasible: afterScu <= effectiveCapacity
+        };
+      });
+
+      const feasible = evaluated.filter((candidate) => candidate.feasible);
+      if (!feasible.length) return null;
+      const sameSystem = currentSystem ? feasible.filter((candidate) => candidate.systemId === currentSystem) : [];
+      const pool = sameSystem.length ? sameSystem : feasible;
+      pool.sort((left, right) => {
+        const score = (candidate) => {
+          const travelMidpoint = (Number(candidate.travel?.minMinutes ?? 0) + Number(candidate.travel?.maxMinutes ?? 0)) / 2;
+          const capacityPressure = Number.isFinite(effectiveCapacity) && effectiveCapacity > 0
+            ? candidate.afterScu / effectiveCapacity * 150
+            : 0;
+          const systemSwitch = currentSystem && candidate.systemId !== currentSystem ? 100000 : 0;
+          const jumpPenalty = Number(candidate.travel?.jumpCount ?? 0) * 50000;
+          const deliveryReward = candidate.totals.delivery * -22;
+          const pickupPenalty = candidate.totals.pickup * 2.5;
+          const unlockReward = candidate.unlockCount * -45;
+          const originalOrder = Number(candidate.stop.orderIndex ?? candidate.stop.baseIndex ?? 0) * 0.05;
+          return systemSwitch + jumpPenalty + capacityPressure + deliveryReward + pickupPenalty + unlockReward + travelMidpoint + originalOrder;
+        };
+        return score(left) - score(right)
+          || Number(left.stop.orderIndex ?? left.stop.baseIndex ?? 0) - Number(right.stop.orderIndex ?? right.stop.baseIndex ?? 0)
+          || String(left.stop.id).localeCompare(String(right.stop.id));
+      });
+
+      const selected = pool[0];
+      order.push(selected.stop);
+      remaining.delete(String(selected.stop.id));
+      completed.add(String(selected.stop.id));
+      onboard = selected.nextOnboard;
+      currentStop = selected.stop;
+      currentSystem = selected.systemId;
+    }
+
+    return order;
+  }
+
   function chooseGatewayEfficient(route, context) {
-    const orders = engine.enumerateOrders(route, route.stops);
-    const evaluated = orders.map((order) => engine.evaluateOrder(order, context));
+    const enumeratedOrders = engine.enumerateOrders(route, route.stops);
+    const candidateOrders = [...enumeratedOrders];
+    const stickyOrder = systemStickyOrder(route, context);
+    if (stickyOrder) candidateOrders.push(stickyOrder);
+
+    const evaluatedBySignature = new Map();
+    candidateOrders.forEach((order) => {
+      const result = engine.evaluateOrder(order, context);
+      evaluatedBySignature.set(resultSignature(result), result);
+    });
+    const evaluated = [...evaluatedBySignature.values()];
     const feasible = evaluated.filter((candidate) => candidate.capacityFeasible);
     const minimumRequiredCapacityScu = evaluated.length
       ? Math.min(...evaluated.map((candidate) => candidate.peakOnboardScu))
@@ -136,12 +274,15 @@
     if (!feasible.length) {
       return Object.freeze({
         result: null,
-        candidateCount: orders.length,
+        candidateCount: evaluated.length,
+        enumeratedCandidateCount: enumeratedOrders.length,
         feasibleCandidateCount: 0,
         capacityRejectedCount: evaluated.length,
         minimumRequiredCapacityScu,
         minimumJumpCount: null,
-        safetyAdjusted: false
+        safetyAdjusted: false,
+        systemStickyCandidateAdded: Boolean(stickyOrder),
+        systemStickySelected: false
       });
     }
 
@@ -159,15 +300,19 @@
         || resultSignature(left).localeCompare(resultSignature(right))
       ))[0] ?? pureFastest;
     }
+    const stickySignature = stickyOrder ? resultSignature(engine.evaluateOrder(stickyOrder, context)) : null;
 
     return Object.freeze({
       result,
-      candidateCount: orders.length,
+      candidateCount: evaluated.length,
+      enumeratedCandidateCount: enumeratedOrders.length,
       feasibleCandidateCount: feasible.length,
       capacityRejectedCount: evaluated.length - feasible.length,
       minimumRequiredCapacityScu,
       minimumJumpCount,
-      safetyAdjusted: resultSignature(result) !== resultSignature(pureFastest)
+      safetyAdjusted: resultSignature(result) !== resultSignature(pureFastest),
+      systemStickyCandidateAdded: Boolean(stickyOrder),
+      systemStickySelected: Boolean(stickySignature && resultSignature(result) === stickySignature)
     });
   }
 
@@ -237,6 +382,7 @@
         originalStopCount: base.stops.length,
         consolidatedStopCount: phaseSafeStops.length,
         candidateCount: comparison.candidateCount,
+        enumeratedCandidateCount: comparison.enumeratedCandidateCount,
         feasibleCandidateCount: comparison.feasibleCandidateCount,
         physicalCapacityScu: context.physicalCapacityScu,
         peakOnboardScu: fastest.peakOnboardScu,
@@ -244,6 +390,8 @@
         repeatedLocationsAllowed: true,
         minimumJumpCount: comparison.minimumJumpCount,
         gatewayEfficient: true,
+        systemStickyCandidateAdded: comparison.systemStickyCandidateAdded,
+        systemStickySelected: comparison.systemStickySelected,
         safetyAdjusted: comparison.safetyAdjusted
       }, comparisonContext({ ...base, stops: phaseSafeStops, allStops: phaseSafeStops }, options));
     }
@@ -256,12 +404,15 @@
       originalStopCount: base.stops.length,
       consolidatedStopCount: fallbackStops.length,
       candidateCount: comparison.candidateCount,
+      enumeratedCandidateCount: comparison.enumeratedCandidateCount,
       physicalCapacityScu: context.physicalCapacityScu,
       minimumRequiredCapacityScu: comparison.minimumRequiredCapacityScu,
       capacityFeasible: false,
       repeatedLocationsAllowed: true,
       minimumJumpCount: comparison.minimumJumpCount,
-      gatewayEfficient: true
+      gatewayEfficient: true,
+      systemStickyCandidateAdded: comparison.systemStickyCandidateAdded,
+      systemStickySelected: false
     }, fallbackContext);
   }
 
@@ -272,7 +423,8 @@
     consolidate,
     mergeAdjacentStops,
     comparisonContext,
-    chooseGatewayEfficient
+    chooseGatewayEfficient,
+    systemStickyOrder
   });
   root.SCCompanionRoutePlanner = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
