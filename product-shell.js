@@ -18,15 +18,17 @@
   function renderBrandIdentity() {
     const emblem = document.querySelector('.brand-emblem span');
     const brand = document.querySelector('.brand-text');
+    const legal = document.querySelector('.app-footer');
     if (emblem) emblem.textContent = 'SC';
     if (brand) {
       const owner = brand.querySelector('small');
       const product = brand.querySelector('strong');
       const qualifier = brand.querySelector('em');
       if (owner) owner.textContent = 'SC Companion';
-      if (product) product.textContent = 'Hauling Operations';
-      if (qualifier) qualifier.textContent = 'Unofficial local companion';
+      if (product) product.textContent = 'Hauling Ops';
+      if (qualifier) qualifier.textContent = 'Local companion';
     }
+    if (legal) legal.textContent = 'Unofficial community tool. Star Citizen and related marks belong to Cloud Imperium Games.';
   }
 
   function renderNavigation() {
