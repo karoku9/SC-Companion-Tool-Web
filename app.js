@@ -82,6 +82,7 @@
     .then(() => import('./official-universe-data.js'))
     .then(() => import('./navigation-estimates.js'))
     .then(() => import('./location-context.js'))
+    .then(() => import('./location-exposure-v028.js'))
     .then(() => Promise.all([
       import('./route-corrections.js'),
       import('./route-progress.js'),
@@ -89,6 +90,10 @@
       import('./cargo-state.js'),
       import('./cargo-layout.js'),
       import('./cargo-zone-model.js')
+    ]))
+    .then(() => Promise.all([
+      import('./route-operational-steps-v028.js'),
+      import('./cargo-auto-layout-v028.js')
     ]))
     .then(() => import('./fleet-estimate-adapter.js'))
     .then(() => {
@@ -119,6 +124,7 @@
     .then(() => import('./operational-polish-v026.js'))
     .then(() => import('./operations-exposure-intel.js'))
     .then(() => import('./operations-design-v027.js'))
+    .then(() => import('./operations-flow-v028.js'))
     .then(() => import('./ship-selector-sync.js'))
     .then(() => import('./missions-operations-bridge.js'))
     .then(() => window.dispatchEvent(new Event('sc:dynamic-pages-ready')))
