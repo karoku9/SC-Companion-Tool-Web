@@ -92,7 +92,7 @@ test('design foundation remains loaded before assisted-intake and operational la
   const app = read('app.js');
   const entry = read('ui-v2.css');
   assert.ok(html.indexOf('src="design-system.js"') < html.indexOf('src="mfd-icons.js"'));
-  assert.ok(html.indexOf('href="design-system.css?v=0.29.1"') < html.indexOf('href="ui-v2.css?v=0.29.1"'));
+  assert.ok(html.indexOf('href="design-system.css?v=0.29.2"') < html.indexOf('href="ui-v2.css?v=0.29.2"'));
   assert.ok(entry.indexOf('mission-validation.css') < entry.indexOf('game-log-intake.css'));
   assert.ok(entry.indexOf('game-log-intake.css') < entry.indexOf('ocr-intake.css'));
   assert.ok(entry.indexOf('ocr-intake.css') < entry.indexOf('location-context.css'));
@@ -102,6 +102,7 @@ test('design foundation remains loaded before assisted-intake and operational la
   assert.ok(entry.indexOf('starmap-v2.css') < entry.indexOf('operational-ui-v025.css'));
   assert.ok(entry.indexOf('operational-ui-v025.css') < entry.indexOf('operational-ui-legibility.css'));
   assert.ok(entry.indexOf('operational-ui-legibility.css') < entry.indexOf('operations-readable-short-desktop-v0291.css'));
+  assert.ok(entry.indexOf('operations-readable-short-desktop-v0291.css') < entry.indexOf('operations-spacing-v0292.css'));
   assert.match(app, /game-log-intake\.js/);
   assert.match(app, /game-log-intake-correlation\.js/);
   assert.match(app, /game-log-intake-view\.js/);
@@ -118,6 +119,7 @@ test('design foundation remains loaded before assisted-intake and operational la
   assert.match(app, /route-session-planner\.js/);
   assert.match(app, /operational-ui-v025\.js/);
   assert.match(app, /operations-exposure-intel\.js/);
+  assert.match(app, /cargo-auto-layout-v0292\.js/);
   assert.match(app, /SCCompanionCleanInterfaceReady/);
   assert.equal(roadmap.currentVersion, '0.25');
   assert.equal(roadmap.releases.find((item) => item.version === '0.22').status, 'done');

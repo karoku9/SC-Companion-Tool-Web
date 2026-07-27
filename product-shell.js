@@ -5,7 +5,7 @@
   const icons = window.SCCompanionMfdIcons;
   if (!registry) return;
 
-  const releaseLabel = 'CORE 0.25 · UI 0.29.1';
+  const releaseLabel = 'CORE 0.25 · UI 0.29.2';
   document.documentElement.dataset.theme = 'industrial';
 
   const navigation = document.querySelector('#product-navigation');

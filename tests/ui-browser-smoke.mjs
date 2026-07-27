@@ -75,7 +75,7 @@ try {
   await page.reload({ waitUntil: 'networkidle' });
   await page.locator('#mission-text').waitFor({ state: 'visible' });
   assert.equal(await page.locator('html').getAttribute('data-theme'), 'industrial');
-  assert.match(await page.locator('.nav-footer span').textContent(), /CORE 0\.25.*UI 0\.29\.1/i);
+  assert.match(await page.locator('.nav-footer span').textContent(), /CORE 0\.25.*UI 0\.29\.2/i);
   assert.equal(await page.locator('#mission-start-location').isVisible(), false);
 
   step = 'parse exact seven-mission sample';
@@ -106,6 +106,7 @@ try {
   assert.ok(await page.locator('.ops-v028-stop-card').count() > 0);
   assert.ok(await page.locator('.ops-v028-cargo-cell').count() > 0);
   assert.doesNotMatch(await page.locator('.current-operation-panel').textContent(), /CURRENT DESTINATION/i);
+  assert.equal(await page.evaluate(() => window.SCCompanionAutoCargoLayout?.version), '0.29.2');
 
   step = 'verify single-screen flight deck at 1600x900';
   const layout = await page.evaluate(() => {
@@ -162,17 +163,19 @@ try {
       currentClientHeight: currentBody?.clientHeight ?? 0,
       currentScrollHeight: currentBody?.scrollHeight ?? 0,
       upcomingDisplay: getComputedStyle(document.querySelector('.ops-v028-upcoming')).display,
-      releaseText: document.querySelector('.nav-footer')?.textContent ?? ''
+      releaseText: document.querySelector('.nav-footer')?.textContent ?? '',
+      cargoGuidance: document.querySelector('.ops-v028-cargo-guidance')?.textContent ?? ''
     };
   });
   assert.ok(compact.navWidth <= 70, `Operations sidebar is not icon-only: ${JSON.stringify(compact)}`);
-  assert.ok(compact.topbarHeight <= 36, `Topbar still wastes vertical space: ${JSON.stringify(compact)}`);
-  assert.ok(compact.mapHeight >= 300, `Focused map is too short: ${JSON.stringify(compact)}`);
-  assert.ok(compact.currentHeight >= 300, `Current Step is too short: ${JSON.stringify(compact)}`);
-  assert.ok(compact.timelineCardWidth >= 190, `Timeline cards are too compressed: ${JSON.stringify(compact)}`);
+  assert.ok(compact.topbarHeight <= 1, `Operations topbar should be removed: ${JSON.stringify(compact)}`);
+  assert.ok(compact.mapHeight >= 320, `Focused map is too short: ${JSON.stringify(compact)}`);
+  assert.ok(compact.currentHeight >= 320, `Current Step is too short: ${JSON.stringify(compact)}`);
+  assert.ok(compact.timelineCardWidth >= 200, `Timeline cards are too compressed: ${JSON.stringify(compact)}`);
   assert.ok(compact.currentScrollHeight <= compact.currentClientHeight + 2, `Current Step still scrolls internally: ${JSON.stringify(compact)}`);
   assert.equal(compact.upcomingDisplay, 'none');
-  assert.match(compact.releaseText, /UI 0\.29\.1/i);
+  assert.match(compact.releaseText, /UI 0\.29\.2/i);
+  assert.match(compact.cargoGuidance, /Left \/ right zones first/i);
   assert.ok(compact.documentHeight <= compact.viewportHeight + 2, `Short desktop document scrolls: ${JSON.stringify(compact)}`);
   assert.ok(compact.bodyHeight <= compact.viewportHeight + 2, `Short desktop body scrolls: ${JSON.stringify(compact)}`);
   await noHorizontalOverflow('Operations readable 1664x800');
@@ -226,4 +229,4 @@ try {
 }
 
 if (failure) throw failure;
-console.log('UI 0.29.1 readable one-page Operations smoke passed.');
+console.log('UI 0.29.2 spacing and left-right cargo smoke passed.');

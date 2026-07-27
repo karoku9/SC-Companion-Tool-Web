@@ -10,11 +10,11 @@ function read(file) {
 }
 
 function cleanCss() {
-  return ['design-system-legibility.css', 'mission-validation.css', 'game-log-intake.css', 'ocr-intake.css', 'location-context.css', 'location-context-adapters.css', 'fleet-loadouts.css', 'starmap-v2.css', 'ui-v2-shell.css', 'ui-v2-operations.css', 'ui-v2-workspaces.css', 'ui-v2-responsive.css', 'operational-ui-v025.css', 'operational-ui-legibility.css', 'operations-readable-short-desktop-v0291.css'].map(read).join('\n');
+  return ['design-system-legibility.css', 'mission-validation.css', 'game-log-intake.css', 'ocr-intake.css', 'location-context.css', 'location-context-adapters.css', 'fleet-loadouts.css', 'starmap-v2.css', 'ui-v2-shell.css', 'ui-v2-operations.css', 'ui-v2-workspaces.css', 'ui-v2-responsive.css', 'operational-ui-v025.css', 'operational-ui-legibility.css', 'operations-readable-short-desktop-v0291.css', 'operations-spacing-v0292.css'].map(read).join('\n');
 }
 
 test('clean interface scripts remain valid JavaScript', () => {
-  ['app.js', 'ui-v2.js', 'ui-v2-operations.js', 'ui-v2-shell.js', 'ui-v2-accessibility.js', 'mfd-icons.js', 'product-shell.js', 'mission-validation.js', 'mission-view.js', 'game-log-intake.js', 'game-log-intake-correlation.js', 'game-log-intake-view.js', 'ocr-intake.js', 'ocr-intake-view.js', 'location-context.js', 'location-context-planner.js', 'location-intel-view.js', 'fleet-loadouts.js', 'fleet-estimate-adapter.js', 'fleet-loadouts-view.js', 'route-view.js', 'hangar-view.js', 'starmap-view.js', 'focused-route-optimizer.js', 'route-session-planner.js', 'missions-focus-workflow.js', 'operational-ui-v025.js'].forEach((file) => {
+  ['app.js', 'ui-v2.js', 'ui-v2-operations.js', 'ui-v2-shell.js', 'ui-v2-accessibility.js', 'mfd-icons.js', 'product-shell.js', 'mission-validation.js', 'mission-view.js', 'game-log-intake.js', 'game-log-intake-correlation.js', 'game-log-intake-view.js', 'ocr-intake.js', 'ocr-intake-view.js', 'location-context.js', 'location-context-planner.js', 'location-intel-view.js', 'fleet-loadouts.js', 'fleet-estimate-adapter.js', 'fleet-loadouts-view.js', 'route-view.js', 'hangar-view.js', 'starmap-view.js', 'focused-route-optimizer.js', 'route-session-planner.js', 'missions-focus-workflow.js', 'operational-ui-v025.js', 'cargo-auto-layout-v0292.js', 'operations-cargo-guidance-v0292.js'].forEach((file) => {
     assert.doesNotThrow(() => new Function(read(file)), `${file} contains invalid JavaScript`);
   });
 });
@@ -23,8 +23,8 @@ test('clean UI replaces accumulated layout layers rather than overriding them', 
   const html = read('index.html');
   const app = read('app.js');
   const entry = read('ui-v2.css');
-  assert.match(html, /href="design-system\.css\?v=0\.29\.1"/);
-  assert.match(html, /href="ui-v2\.css\?v=0\.29\.1"/);
+  assert.match(html, /href="design-system\.css\?v=0\.29\.2"/);
+  assert.match(html, /href="ui-v2\.css\?v=0\.29\.2"/);
   assert.match(entry, /mission-validation\.css/);
   assert.match(entry, /game-log-intake\.css/);
   assert.match(entry, /ocr-intake\.css/);
@@ -36,6 +36,7 @@ test('clean UI replaces accumulated layout layers rather than overriding them', 
   assert.match(entry, /operational-ui-v025\.css/);
   assert.match(entry, /operational-ui-legibility\.css/);
   assert.match(entry, /operations-readable-short-desktop-v0291\.css/);
+  assert.match(entry, /operations-spacing-v0292\.css/);
   assert.doesNotMatch(html, /styles\.css|workspace-consolidation\.css|ui-rebuild\.css|drake-mfd\.css|mfd-layout-v2\.css/);
   assert.doesNotMatch(app, /workspace-shell\.js|ui-rebuild\.js|mfd-layout-v2\.js|ux-shell\.js/);
 });
@@ -100,6 +101,7 @@ test('v0.25 keeps assisted intake and integrates live route execution', () => {
   assert.match(app, /ocr-intake-view\.js/);
   assert.match(app, /route-session-planner\.js/);
   assert.match(app, /operational-ui-v025\.js/);
+  assert.match(app, /cargo-auto-layout-v0292\.js/);
   assert.match(map, /ops-live-map/);
   assert.match(map, /gatewayNodes/);
   assert.match(map, /data-ops-action="missions"/);
