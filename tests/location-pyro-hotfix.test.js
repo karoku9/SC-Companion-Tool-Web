@@ -24,6 +24,7 @@ test('mission parser accepts a route between both Pyro outposts', () => {
 collect Seer's Canyon 2scu etam
 deliver Chawla's Beach 2scu etam`, locations);
   assert.equal(parsed.missions.length, 1);
-  assert.equal(parsed.missions[0].objectives[0].locationId, 'pyro-vatra-seers-canyon');
-  assert.equal(parsed.missions[0].objectives[1].locationId, 'pyro-pyro-iv-chawlas-beach');
+  assert.equal(parsed.missions[0].cargoLots.length, 1);
+  assert.equal(parsed.missions[0].cargoLots[0].pickupLocationId, 'pyro-vatra-seers-canyon');
+  assert.equal(parsed.missions[0].cargoLots[0].deliveryLocationId, 'pyro-pyro-iv-chawlas-beach');
 });
