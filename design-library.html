@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>SC Companion Design Library v0.27</title>
+  <link rel="stylesheet" href="./design-library-v027.css">
+</head>
+<body class="scx-lab">
+  <main class="scx-page">
+    <header class="scx-masthead">
+      <div class="scx-brand">
+        <span class="scx-eyebrow">SC Companion · Interface Laboratory</span>
+        <strong>Industrial Hauling Design Library</strong>
+      </div>
+      <span class="scx-build">FOUNDATION 0.27</span>
+    </header>
+
+    <div class="scx-grid">
+      <section class="scx-panel scx-panel--primary scx-span-12">
+        <header class="scx-panel-header">
+          <div><span class="scx-label">Run context</span><strong>Build a safe hauling session</strong></div>
+          <span class="scx-status scx-status--ready">Mission data ready</span>
+        </header>
+        <div class="scx-panel-body">
+          <div class="scx-fields">
+            <label class="scx-field"><span><i data-icon="pin"></i>Current location</span><input value="Grim HEX · Yela / Crusader"><small>Canonical operational location</small></label>
+            <label class="scx-field"><span><i data-icon="ship"></i>Ship</span><select><option>Drake Corsair · 72 SCU</option></select><small>Model and usable capacity</small></label>
+            <label class="scx-field"><span><i data-icon="route"></i>Route mode</span><select><option>Time-boxed sessions</option></select><small>Complete missions only</small></label>
+            <label class="scx-field"><span><i data-icon="clock"></i>Maximum travel time</span><input type="number" value="60"><small>Travel estimate only</small></label>
+          </div>
+        </div>
+      </section>
+
+      <section class="scx-panel scx-span-12">
+        <div class="scx-tabs" role="tablist" aria-label="Mission workflow">
+          <button class="scx-tab" role="tab" aria-selected="false"><i data-icon="missions"></i>Input</button>
+          <button class="scx-tab" role="tab" aria-selected="true"><i data-icon="check"></i>Run sheet</button>
+          <button class="scx-tab" role="tab" aria-selected="false"><i data-icon="route"></i>Sessions</button>
+        </div>
+        <header class="scx-section-title">
+          <div><span class="scx-label">Parsed contracts</span><strong>7 missions · 84 SCU</strong></div>
+          <div class="scx-toolbar">
+            <button class="scx-button"><i data-icon="plus"></i>Add mission</button>
+            <button class="scx-button scx-button--primary"><i data-icon="route"></i>Build sessions</button>
+          </div>
+        </header>
+        <div class="scx-panel-body">
+          <div class="scx-mission-list">
+            <article class="scx-mission-card">
+              <header class="scx-mission-card__header">
+                <span class="scx-sequence">01</span>
+                <div class="scx-mission-title"><strong>Interstellar freight transfer</strong><small>Covalex Shipping</small></div>
+                <span class="scx-payout">98,500 aUEC</span>
+                <div class="scx-toolbar">
+                  <span class="scx-status scx-status--ready">Validated</span>
+                  <button class="scx-icon-button" aria-label="Edit mission" title="Edit mission"><i data-icon="edit"></i></button>
+                  <button class="scx-icon-button scx-button--danger" aria-label="Remove mission" title="Remove mission"><i data-icon="trash"></i></button>
+                </div>
+              </header>
+              <div class="scx-objective-row">
+                <span class="scx-action scx-action--pickup"><i data-icon="load"></i>Collect</span>
+                <div class="scx-location"><i data-icon="pin"></i><span>Attritus PAF-III <small>· Daymar</small></span><span class="scx-status scx-status--ready">Matched</span></div>
+                <div class="scx-cargo-chips"><span class="scx-cargo-chip"><b>10×</b> DCSR2</span></div>
+              </div>
+              <div class="scx-objective-row">
+                <span class="scx-action scx-action--delivery"><i data-icon="unload"></i>Deliver</span>
+                <div class="scx-location"><i data-icon="pin"></i><span>Grim HEX <small>· Yela / Crusader</small></span><span class="scx-status scx-status--ready">Matched</span></div>
+                <div class="scx-cargo-chips"><span class="scx-cargo-chip"><b>10×</b> DCSR2</span></div>
+              </div>
+            </article>
+
+            <article class="scx-mission-card">
+              <header class="scx-mission-card__header">
+                <span class="scx-sequence">02</span>
+                <div class="scx-mission-title"><strong>Multi-stop industrial supply</strong><small>Red Wind Linehaul</small></div>
+                <span class="scx-payout">72,000 aUEC</span>
+                <div class="scx-toolbar">
+                  <span class="scx-status scx-status--warning">Review</span>
+                  <button class="scx-icon-button" aria-label="Edit mission" title="Edit mission"><i data-icon="edit"></i></button>
+                  <button class="scx-icon-button scx-button--danger" aria-label="Remove mission" title="Remove mission"><i data-icon="trash"></i></button>
+                </div>
+              </header>
+              <div class="scx-objective-row">
+                <span class="scx-action scx-action--pickup"><i data-icon="load"></i>Collect</span>
+                <div class="scx-location"><i data-icon="pin"></i><span>CRU-L4 Shallow Fields Station <small>· CRU-L4</small></span><span class="scx-status scx-status--ready">Matched</span></div>
+                <div class="scx-cargo-chips"><span class="scx-cargo-chip"><b>32×</b> Revenant Tree Pollen</span><span class="scx-cargo-chip"><b>16×</b> Neon</span></div>
+              </div>
+              <div class="scx-objective-row">
+                <span class="scx-action scx-action--delivery"><i data-icon="unload"></i>Deliver</span>
+                <div class="scx-location"><i data-icon="warning"></i><span>Rustville <small>· Pyro I</small></span><span class="scx-status scx-status--warning">Confirm</span></div>
+                <div class="scx-cargo-chips"><span class="scx-cargo-chip"><b>26×</b> Revenant Tree Pollen</span></div>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="scx-panel scx-panel--primary scx-span-7">
+        <header class="scx-panel-header">
+          <div><span class="scx-label">Active leg</span><strong>Grim HEX → Stanton Gateway</strong></div>
+          <span class="scx-status scx-status--pickup">Quantum</span>
+        </header>
+        <div class="scx-panel-body">
+          <div class="scx-callout">
+            <i data-icon="gateway"></i>
+            <div><strong>Next jump sequence</strong><p>Stanton Gateway → Pyro Gateway. Complete the Grim HEX transfer before leaving Stanton.</p></div>
+          </div>
+          <div style="height:16px"></div>
+          <div class="scx-meter" aria-label="Session route progress"><span style="width:38%"></span></div>
+          <div style="display:flex;justify-content:space-between;margin-top:8px;color:var(--scx-content-muted);font:700 var(--scx-type-2xs)/1 var(--scx-font-data)"><span>5 / 13 stops</span><span>~42 min travel remaining</span></div>
+        </div>
+      </section>
+
+      <section class="scx-panel scx-span-5">
+        <header class="scx-panel-header">
+          <div><span class="scx-label">Current stop</span><strong>Grim HEX</strong></div>
+          <span class="scx-status scx-status--danger">High exposure</span>
+        </header>
+        <div class="scx-panel-body">
+          <div class="scx-toolbar" style="margin-bottom:12px">
+            <span class="scx-status"><i data-icon="hangar"></i>Hangar</span>
+            <span class="scx-status"><i data-icon="fuel"></i>Service</span>
+            <span class="scx-status scx-status--danger"><i data-icon="shield"></i>Outlaw</span>
+            <span class="scx-status"><i data-icon="medical"></i>Medical</span>
+          </div>
+          <button class="scx-button scx-button--primary" style="width:100%"><i data-icon="check"></i>Complete stop</button>
+        </div>
+      </section>
+
+      <section class="scx-panel scx-span-7">
+        <header class="scx-panel-header"><div><span class="scx-label">Commodity rows</span><strong>Warehouse allocation</strong></div><span class="scx-build">67 / 72 SCU</span></header>
+        <div class="scx-table-scroll">
+          <table class="scx-data-table">
+            <thead><tr><th>Commodity</th><th>Quantity</th><th>Source</th><th>Destination</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr aria-selected="true"><td>Revenant Tree Pollen</td><td>32 SCU</td><td>CRU-L4</td><td>Rustville</td><td><span class="scx-status scx-status--pickup">Onboard</span></td></tr>
+              <tr><td>Neon</td><td>16 SCU</td><td>CRU-L4</td><td>Grim HEX</td><td><span class="scx-status scx-status--pickup">Onboard</span></td></tr>
+              <tr><td>DCSR2</td><td>10 SCU</td><td>Attritus PAF-III</td><td>Grim HEX</td><td><span class="scx-status scx-status--ready">Delivered</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="scx-panel scx-span-5">
+        <header class="scx-panel-header"><div><span class="scx-label">Route timeline</span><strong>Session 1</strong></div><span class="scx-build">60 MIN MAX</span></header>
+        <div class="scx-route-timeline">
+          <div class="scx-route-step is-complete"><span class="scx-route-step__node">✓</span><div class="scx-route-step__copy"><strong>Attritus PAF-III</strong><small>Collected 10 SCU DCSR2</small></div><span class="scx-route-step__meta">DONE</span></div>
+          <div class="scx-route-step is-current"><span class="scx-route-step__node">2</span><div class="scx-route-step__copy"><strong>Grim HEX</strong><small>Deliver 10 SCU · collect 6 SCU</small></div><span class="scx-route-step__meta">NOW</span></div>
+          <div class="scx-route-step"><span class="scx-route-step__node">3</span><div class="scx-route-step__copy"><strong>Stanton Gateway</strong><small>Transit to Pyro Gateway</small></div><span class="scx-route-step__meta">NEXT</span></div>
+          <div class="scx-route-step"><span class="scx-route-step__node">4</span><div class="scx-route-step__copy"><strong>Checkmate Station</strong><small>Pyro · route continuation</small></div><span class="scx-route-step__meta">+18 MIN</span></div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script src="./mfd-icons.js"></script>
+  <script>
+    document.querySelectorAll('[data-icon]').forEach((host) => {
+      host.outerHTML = window.SCCompanionMfdIcons.render(host.dataset.icon, 'scx-icon');
+    });
+  </script>
+</body>
+</html>

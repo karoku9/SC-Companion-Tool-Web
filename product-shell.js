@@ -5,6 +5,8 @@
   const icons = window.SCCompanionMfdIcons;
   if (!registry) return;
 
+  document.documentElement.dataset.theme = 'industrial';
+
   const navigation = document.querySelector('#product-navigation');
   const mobileSelect = document.querySelector('#mobile-page-select');
   const futureRoot = document.querySelector('#future-pages-root');
@@ -12,6 +14,22 @@
   const pageTitle = document.querySelector('#shell-page-title');
   const navFooter = document.querySelector('.nav-footer');
   const icon = (name) => icons?.render(name, 'mfd-icon') ?? name.slice(0, 2).toUpperCase();
+
+  function renderBrandIdentity() {
+    const emblem = document.querySelector('.brand-emblem span');
+    const brand = document.querySelector('.brand-text');
+    const legal = document.querySelector('.app-footer');
+    if (emblem) emblem.textContent = 'SC';
+    if (brand) {
+      const owner = brand.querySelector('small');
+      const product = brand.querySelector('strong');
+      const qualifier = brand.querySelector('em');
+      if (owner) owner.textContent = 'SC Companion';
+      if (product) product.textContent = 'Hauling Ops';
+      if (qualifier) qualifier.textContent = 'Local companion';
+    }
+    if (legal) legal.textContent = 'Unofficial community tool. Star Citizen and related marks belong to Cloud Imperium Games.';
+  }
 
   function renderNavigation() {
     if (!navigation) return;
@@ -40,7 +58,7 @@
     if (!navFooter) return;
     const build = navFooter.querySelector('span');
     const privacy = navFooter.querySelector('small');
-    if (build) build.textContent = 'BUILD 0.25.0';
+    if (build) build.textContent = 'BUILD 0.25.0 · DESIGN 0.27';
     if (privacy) privacy.textContent = 'Private session · local review and routing';
   }
 
@@ -52,7 +70,7 @@
     if (pageTitle) pageTitle.textContent = page.title;
     if (mobileSelect) mobileSelect.value = page.id;
     document.documentElement.dataset.activeView = page.id;
-    document.title = `${page.label} · SC Companion MFD`;
+    document.title = `${page.label} · SC Companion`;
   }
 
   function openTarget(targetId) {
@@ -64,6 +82,7 @@
     }
   }
 
+  renderBrandIdentity();
   renderNavigation();
   renderMobileOptions();
   renderDynamicHosts();

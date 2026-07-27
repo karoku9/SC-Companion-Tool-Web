@@ -118,6 +118,7 @@
     .then(() => import('./operational-ui-v025.js'))
     .then(() => import('./operational-polish-v026.js'))
     .then(() => import('./operations-exposure-intel.js'))
+    .then(() => import('./operations-design-v027.js'))
     .then(() => import('./ship-selector-sync.js'))
     .then(() => import('./missions-operations-bridge.js'))
     .then(() => window.dispatchEvent(new Event('sc:dynamic-pages-ready')))

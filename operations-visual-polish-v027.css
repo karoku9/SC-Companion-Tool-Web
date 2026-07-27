@@ -1,0 +1,49 @@
+/* Final v0.27 visual refinement for the active operation surface. */
+
+.operations-v027 .ops-v027-command-metrics article strong {
+  display: -webkit-box;
+  overflow: hidden;
+  line-height: 1.15;
+  white-space: normal;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.operations-v027 .ops-v027-intel-item {
+  min-height: 68px;
+  grid-template-columns: 1fr;
+  grid-template-rows: 22px auto;
+  align-content: center;
+  justify-items: center;
+  gap: 6px;
+  padding: 8px 5px;
+  text-align: center;
+}
+
+.operations-v027 .ops-v027-intel-item .intel-icon {
+  grid-row: auto;
+  align-self: center;
+  justify-self: center;
+}
+
+.operations-v027 .ops-v027-intel-item small {
+  display: none;
+}
+
+.operations-v027 .ops-v027-intel-item strong {
+  display: -webkit-box;
+  overflow: hidden;
+  width: 100%;
+  color: var(--scx-content-secondary);
+  font: 700 var(--scx-type-2xs)/1.15 var(--scx-font-ui);
+  text-align: center;
+  white-space: normal;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+@media (max-width: 700px) {
+  .operations-v027 .ops-v027-intel-item {
+    min-height: 66px;
+  }
+}
