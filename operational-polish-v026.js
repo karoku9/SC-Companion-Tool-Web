@@ -55,7 +55,9 @@
           return;
         }
 
-        const inputValue = resolved.map((location) => location.navigationTarget ?? location.name).join(' + ');
+        // Persist the exact station/outpost name, not its broader navigation target.
+        // Example: keep "Teasa Spaceport" instead of collapsing it to "Lorville".
+        const inputValue = resolved.map((location) => location.name ?? location.navigationTarget).join(' + ');
         const displayValue = resolved.map((location) => locations.formatOperationalLabel(location)).join(' + ');
         if (input.value !== inputValue) input.value = inputValue;
         if (display.textContent !== displayValue) display.textContent = displayValue;
