@@ -37,6 +37,7 @@
     page.classList.add('operations-v027');
     legacySequence.classList.add('ops-v027-legacy-sequence');
     legacySequence.setAttribute('aria-hidden', 'true');
+    legacySequence.hidden = true;
 
     const commandDeck = document.createElement('section');
     commandDeck.className = 'ops-v027-command-deck';
