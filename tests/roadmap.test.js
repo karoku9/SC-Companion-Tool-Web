@@ -34,7 +34,7 @@ test('current and future releases form one linear delivery path', () => {
   if (firstFutureIndex >= 0) assert.ok(roadmap.releases.slice(firstFutureIndex).every((release) => release.status === 'future'));
 });
 
-test('v0.25 delivers the operational hauling cockpit after OCR', () => {
+test('v0.27 delivers the proprietary industrial redesign after exact sessions', () => {
   const context = roadmap.releases.find((item) => item.version === '0.19');
   const loadouts = roadmap.releases.find((item) => item.version === '0.20');
   const ux = roadmap.releases.find((item) => item.version === '0.21');
@@ -42,6 +42,8 @@ test('v0.25 delivers the operational hauling cockpit after OCR', () => {
   const gameLog = roadmap.releases.find((item) => item.version === '0.23');
   const ocr = roadmap.releases.find((item) => item.version === '0.24');
   const cockpit = roadmap.releases.find((item) => item.version === '0.25');
+  const exactSessions = roadmap.releases.find((item) => item.version === '0.26');
+  const redesign = roadmap.releases.find((item) => item.version === '0.27');
   const release = roadmap.releases.find((item) => item.version === '1.0');
 
   assert.equal(context.status, 'done');
@@ -64,12 +66,23 @@ test('v0.25 delivers the operational hauling cockpit after OCR', () => {
   assert.ok(ocr.changes.some((change) => /Tesseract\.js 7/i.test(change)));
   assert.ok(ocr.changes.some((change) => /OCR-line provenance/i.test(change)));
   assert.ok(ocr.changes.some((change) => /mission validation/i.test(change)));
-  assert.equal(cockpit.status, 'current');
+  assert.equal(cockpit.status, 'done');
   assert.match(cockpit.title, /Operational hauling cockpit/i);
   assert.ok(cockpit.changes.some((change) => /current-location/i.test(change)));
   assert.ok(cockpit.changes.some((change) => /safe sessions/i.test(change)));
   assert.ok(cockpit.changes.some((change) => /gateway/i.test(change)));
   assert.ok(cockpit.changes.some((change) => /route map/i.test(change)));
+  assert.equal(exactSessions.status, 'done');
+  assert.match(exactSessions.title, /Exact run sheet/i);
+  assert.ok(exactSessions.changes.some((change) => /Exact minute budget/i.test(change)));
+  assert.ok(exactSessions.changes.some((change) => /Travel-only/i.test(change)));
+  assert.ok(exactSessions.changes.some((change) => /Canonical station/i.test(change)));
+  assert.equal(redesign.status, 'current');
+  assert.match(redesign.title, /Industrial design library/i);
+  assert.ok(redesign.changes.some((change) => /Proprietary industrial tokens/i.test(change)));
+  assert.ok(redesign.changes.some((change) => /Operations command deck/i.test(change)));
+  assert.ok(redesign.changes.some((change) => /session timeline/i.test(change)));
+  assert.ok(redesign.changes.some((change) => /No copied game assets/i.test(change)));
   assert.match(release.title, /Core companion release/i);
 });
 
