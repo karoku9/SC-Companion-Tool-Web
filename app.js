@@ -130,6 +130,7 @@
       import('./assisted-intake-access.js')
     ]))
     .then(() => import('./focused-route-optimizer.js'))
+    .then(() => import('./route-locality-hotfix-v0294.js'))
     .then(() => import('./route-session-planner.js'))
     .then(() => import('./missions-focus-workflow.js'))
     .then(() => import('./mission-location-picker.js'))
