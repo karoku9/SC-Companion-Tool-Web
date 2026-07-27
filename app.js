@@ -84,7 +84,11 @@
 (function loadApplicationRuntimes() {
   window.dispatchEvent(new Event('sc:location-registry-ready'));
 
-  import('./fleet-loadouts.js')
+  import('./location-pyro-hotfix-v0293.js')
+    .then(() => {
+      window.dispatchEvent(new Event('sc:location-registry-ready'));
+      return import('./fleet-loadouts.js');
+    })
     .then(() => import('./game-log-intake.js'))
     .then(() => import('./game-log-intake-correlation.js'))
     .then(() => import('./ocr-intake.js'))
