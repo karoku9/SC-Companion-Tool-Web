@@ -54,21 +54,25 @@ collect reclamation & disposal orinth 4scu e'tam
 collect fallow field 2scu slam 2scu neon
 deliver grim hex 4scu e'tam 2scu slam 2scu neon`;
 
-test('focused route visits each feasible destination once without exceeding Corsair capacity', () => {
+test('focused route preserves dependency phases without exceeding Corsair capacity', () => {
   const report = validator.inspectMissionText(source, locations);
   assert.equal(report.ready, true, report.blockingIssues.map((item) => item.message).join('\n'));
   const route = optimizer.buildRoute(report.missions, missions);
   assert.equal(route.totalCargoScu, 84);
-  assert.equal(route.optimization.strategy, 'consolidated-fastest');
+  assert.equal(route.optimization.strategy, 'phase-safe-fastest');
   assert.equal(route.optimization.capacityFeasible, true);
+  assert.equal(route.optimization.repeatedLocationsAllowed, true);
   assert.ok(route.optimization.peakOnboardScu <= 72);
   assert.ok(route.stops.length < 16);
-  const locationsInRoute = route.stops.map((stop) => stop.locationId);
-  assert.equal(new Set(locationsInRoute).size, locationsInRoute.length);
-  assert.equal(route.stops.filter((stop) => /grim-hex/.test(stop.locationId)).length, 1);
+
+  const grimStops = route.stops.filter((stop) => /grim-hex/.test(stop.locationId));
+  assert.ok(grimStops.length >= 2, 'Grim HEX must remain in separate phases because the final delivery depends on the later Fallow Field pickup');
+  route.stops.slice(1).forEach((stop, index) => {
+    assert.notEqual(stop.locationId, route.stops[index].locationId, 'Only adjacent compatible visits may be merged');
+  });
 });
 
-test('optimizer preserves dependency-safe fallback when consolidation exceeds capacity', () => {
+test('optimizer preserves phase-safe dependency fallback when capacity is insufficient', () => {
   global.SCCompanionSession.getState = () => ({
     selectedShipId: 'tiny',
     hangarShips: [{ id: 'tiny', modelId: 'drake-cutlass-black', cargoCapacityScu: 10, quantumTimeFactor: 1 }],
@@ -76,6 +80,8 @@ test('optimizer preserves dependency-safe fallback when consolidation exceeds ca
   });
   const report = validator.inspectMissionText(source, locations);
   const route = optimizer.buildRoute(report.missions, missions);
-  assert.equal(route.optimization.strategy, 'dependency-safe-fallback');
-  assert.ok(route.stops.length >= route.optimization.consolidatedStopCount);
+  assert.equal(route.optimization.strategy, 'phase-safe-dependency-fallback');
+  assert.equal(route.optimization.repeatedLocationsAllowed, true);
+  assert.equal(route.optimization.capacityFeasible, false);
+  assert.ok(route.stops.length >= 1);
 });
