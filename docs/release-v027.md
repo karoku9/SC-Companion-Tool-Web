@@ -1,8 +1,8 @@
-# Release 0.27.0 — Industrial Design Library and Operations Rework
+# Design Iteration 0.27 — Industrial Library and Operations Rework
 
 ## Scope
 
-Release 0.27 replaces the previous manufacturer-imitation presentation with an original SC Companion industrial interface language. It keeps the existing mission parser, route planner, cargo state and correction mechanics while replacing the primary Mission and Operations composition.
+Design iteration 0.27 replaces the previous manufacturer-imitation presentation with an original SC Companion industrial interface language. The functional application remains build 0.25: the mission parser, route planner, cargo state and correction mechanics are unchanged while the primary Mission and Operations composition is replaced.
 
 ## Design foundation
 
