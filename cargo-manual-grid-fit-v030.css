@@ -6,15 +6,19 @@ html.cargo-grid-editor-open body {
 }
 
 .ops-v030-grid-wrap {
+  position: relative;
+  display: block;
   overflow: hidden;
 }
 
 .ops-v030-grid {
+  position: absolute;
+  inset: 8px;
   width: auto;
-  height: 100%;
-  max-width: 100%;
-  max-height: 100%;
-  aspect-ratio: 4 / 6;
+  height: auto;
+  max-width: none;
+  max-height: none;
+  aspect-ratio: auto;
   grid-template-columns: repeat(var(--cargo-columns), minmax(0, 1fr));
   grid-template-rows: repeat(var(--cargo-rows), minmax(0, 1fr));
 }
