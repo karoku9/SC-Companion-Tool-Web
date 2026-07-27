@@ -109,7 +109,7 @@ try {
   const stored = await page.evaluate(() => window.SCCompanionSession.getState());
   assert.equal(stored.missionValidation.status, 'ready');
   assert.equal(stored.missionValidation.sourceText, brokenSource);
-  assert.match(stored.missionValidation.reviewedText, /deliver area18/i);
+  assert.match(stored.missionValidation.reviewedText, /deliver Riker Memorial Spaceport/i);
   assert.match(stored.missionValidation.reviewedText, /Teasa Spaceport/i);
   assert.match(stored.missionValidation.sourceText, /delver/);
   assert.ok(stored.route.stops.some((stop) => stop.locationId === 'stanton-hurston-lorville-teasa'));
