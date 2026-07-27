@@ -5,6 +5,7 @@
   const icons = window.SCCompanionMfdIcons;
   if (!registry) return;
 
+  const releaseLabel = 'CORE 0.25 · UI 0.29.1';
   document.documentElement.dataset.theme = 'industrial';
 
   const navigation = document.querySelector('#product-navigation');
@@ -58,8 +59,16 @@
     if (!navFooter) return;
     const build = navFooter.querySelector('span');
     const privacy = navFooter.querySelector('small');
-    if (build) build.textContent = 'CORE 0.25 · UI 0.29.1';
+    if (build && build.textContent !== releaseLabel) build.textContent = releaseLabel;
     if (privacy) privacy.textContent = 'Private session · local review and routing';
+  }
+
+  function protectReleaseFooter() {
+    const build = navFooter?.querySelector('span');
+    if (!build) return;
+    new MutationObserver(() => {
+      if (build.textContent !== releaseLabel) build.textContent = releaseLabel;
+    }).observe(build, { childList: true, characterData: true, subtree: true });
   }
 
   function setContext(requestedId) {
@@ -87,6 +96,7 @@
   renderMobileOptions();
   renderDynamicHosts();
   renderReleaseFooter();
+  protectReleaseFooter();
 
   navigation?.addEventListener('click', (event) => {
     const button = event.target.closest('[data-view-target]');
@@ -95,7 +105,7 @@
   mobileSelect?.addEventListener('change', () => openTarget(mobileSelect.value));
   document.addEventListener('click', (event) => {
     const shortcut = event.target.closest('[data-shell-link]');
-    if (shortcut) openTarget(shortcut.dataset.shellLink);
+    if (shortcut) openTarget(shortcut.datasetShellLink);
   });
   window.addEventListener('hashchange', () => setContext(location.hash.slice(1) || registry.defaultPageId));
   setContext(location.hash.slice(1) || registry.defaultPageId);
