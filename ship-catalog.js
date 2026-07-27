@@ -13,13 +13,24 @@
   }
 
   function model(input) {
+    const snapGrid = input.snapGrid ? Object.freeze({
+      rows: Math.max(1, Number(input.snapGrid.rows ?? 1)),
+      columns: Math.max(1, Number(input.snapGrid.columns ?? 1)),
+      layers: Math.max(1, Number(input.snapGrid.layers ?? 1)),
+      cellCapacityScu: Math.max(1, Number(input.snapGrid.cellCapacityScu ?? input.snapGrid.layers ?? 1)),
+      accessEdges: Object.freeze([...(input.snapGrid.accessEdges ?? input.accessPoints ?? ['rear'])]),
+      orientation: String(input.snapGrid.orientation ?? 'Primary access at row A'),
+      status: String(input.snapGrid.status ?? 'configured-snap-grid')
+    }) : null;
     return Object.freeze({
       ...input,
+      snapGrid,
       layout: Object.freeze({
-        rows: 1,
-        columns: input.capacityScu,
+        rows: snapGrid?.rows ?? 1,
+        columns: snapGrid?.columns ?? input.capacityScu,
+        layers: snapGrid?.layers ?? 1,
         accessPoints: Object.freeze(input.accessPoints ?? ['rear']),
-        geometryStatus: 'concept',
+        geometryStatus: snapGrid?.status ?? 'concept',
         zones: zones(input.capacityScu, input.zones)
       }),
       sourceStatus: input.sourceStatus ?? 'official-capacity-reference'
@@ -30,6 +41,15 @@
     model({
       id: 'drake-corsair', manufacturer: 'Drake', model: 'Corsair', capacityScu: 72,
       accessPoints: ['rear'],
+      snapGrid: {
+        rows: 6,
+        columns: 4,
+        layers: 3,
+        cellCapacityScu: 3,
+        accessEdges: ['rear'],
+        orientation: 'Rear ramp at row A',
+        status: 'configured-corsair-72-scu-grid'
+      },
       zones: [['rear-access', 'Rear access', 'Rear ramp'], ['mid-bay', 'Mid bay', 'Through rear access'], ['forward-bay', 'Forward bay', 'Deep cargo']]
     }),
     model({
