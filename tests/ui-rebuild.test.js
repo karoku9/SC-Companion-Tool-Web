@@ -10,7 +10,7 @@ function read(file) {
 }
 
 function cleanCss() {
-  return ['design-system-legibility.css', 'mission-validation.css', 'game-log-intake.css', 'ocr-intake.css', 'location-context.css', 'location-context-adapters.css', 'fleet-loadouts.css', 'starmap-v2.css', 'ui-v2-shell.css', 'ui-v2-operations.css', 'ui-v2-workspaces.css', 'ui-v2-responsive.css', 'operational-ui-v025.css', 'operational-ui-legibility.css'].map(read).join('\n');
+  return ['design-system-legibility.css', 'mission-validation.css', 'game-log-intake.css', 'ocr-intake.css', 'location-context.css', 'location-context-adapters.css', 'fleet-loadouts.css', 'starmap-v2.css', 'ui-v2-shell.css', 'ui-v2-operations.css', 'ui-v2-workspaces.css', 'ui-v2-responsive.css', 'operational-ui-v025.css', 'operational-ui-legibility.css', 'operations-readable-short-desktop-v0291.css'].map(read).join('\n');
 }
 
 test('clean interface scripts remain valid JavaScript', () => {
@@ -23,8 +23,8 @@ test('clean UI replaces accumulated layout layers rather than overriding them', 
   const html = read('index.html');
   const app = read('app.js');
   const entry = read('ui-v2.css');
-  assert.match(html, /href="design-system\.css"/);
-  assert.match(html, /href="ui-v2\.css"/);
+  assert.match(html, /href="design-system\.css\?v=0\.29\.1"/);
+  assert.match(html, /href="ui-v2\.css\?v=0\.29\.1"/);
   assert.match(entry, /mission-validation\.css/);
   assert.match(entry, /game-log-intake\.css/);
   assert.match(entry, /ocr-intake\.css/);
@@ -35,6 +35,7 @@ test('clean UI replaces accumulated layout layers rather than overriding them', 
   assert.match(entry, /starmap-v2\.css/);
   assert.match(entry, /operational-ui-v025\.css/);
   assert.match(entry, /operational-ui-legibility\.css/);
+  assert.match(entry, /operations-readable-short-desktop-v0291\.css/);
   assert.doesNotMatch(html, /styles\.css|workspace-consolidation\.css|ui-rebuild\.css|drake-mfd\.css|mfd-layout-v2\.css/);
   assert.doesNotMatch(app, /workspace-shell\.js|ui-rebuild\.js|mfd-layout-v2\.js|ux-shell\.js/);
 });
