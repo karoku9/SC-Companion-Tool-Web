@@ -74,8 +74,13 @@
   }
 
   html[data-active-view="route"] .operations-v028 .current-operation-body {
-    gap: 7px;
-    padding: 9px 11px;
+    gap: 6px;
+    padding: 8px 11px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .current-operation-body > .display-label,
+  html[data-active-view="route"] .operations-v028 .current-stop-intel > header {
+    display: none;
   }
 
   html[data-active-view="route"] .operations-v028 .current-operation-body > h2 {
@@ -83,17 +88,22 @@
   }
 
   html[data-active-view="route"] .operations-v028 .ops-v0291-operation-compact {
-    min-height: 46px;
-    padding: 7px 9px;
+    min-height: 44px;
+    padding: 6px 9px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .current-stop-intel {
+    margin-top: 0;
+    padding-top: 0;
   }
 
   html[data-active-view="route"] .operations-v028 .current-stop-intel-grid {
-    gap: 5px;
+    gap: 4px;
   }
 
   html[data-active-view="route"] .operations-v028 .current-stop-intel-card {
-    min-height: 44px;
-    padding: 5px 6px;
+    min-height: 40px;
+    padding: 4px 5px;
   }
 
   html[data-active-view="route"] .operations-v028 .operation-controls {
