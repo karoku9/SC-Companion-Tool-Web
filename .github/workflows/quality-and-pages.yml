@@ -21,8 +21,11 @@ jobs:
         uses: actions/checkout@v6
       - name: Test clean UI generation
         run: |
-          node --test tests/ui-clean-rebuild.test.js
-          node --test tests/ui-rebuild.test.js
+          mkdir -p ui-smoke-artifacts
+          set -o pipefail
+          : > ui-smoke-artifacts/ui-clean-tests.log
+          node --test tests/ui-clean-rebuild.test.js 2>&1 | tee -a ui-smoke-artifacts/ui-clean-tests.log
+          node --test tests/ui-rebuild.test.js 2>&1 | tee -a ui-smoke-artifacts/ui-clean-tests.log
       - name: Test design system
         run: node --test tests/design-system.test.js
       - name: Test mission validation and provenance
