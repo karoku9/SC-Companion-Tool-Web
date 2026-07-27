@@ -18,8 +18,8 @@ test('clean shell scripts remain valid JavaScript', () => {
 test('the application uses one design system and one clean layout entry', () => {
   const html = read('index.html');
   const entry = read('ui-v2.css');
-  assert.match(html, /href="design-system\.css"/);
-  assert.match(html, /href="ui-v2\.css"/);
+  assert.match(html, /href="design-system\.css\?v=0\.29\.1"/);
+  assert.match(html, /href="ui-v2\.css\?v=0\.29\.1"/);
   assert.match(entry, /mission-validation\.css/);
   assert.match(entry, /game-log-intake\.css/);
   assert.match(entry, /ocr-intake\.css/);
@@ -29,6 +29,7 @@ test('the application uses one design system and one clean layout entry', () => 
   assert.match(entry, /starmap-v2\.css/);
   assert.match(entry, /operational-ui-v025\.css/);
   assert.match(entry, /operational-ui-legibility\.css/);
+  assert.match(entry, /operations-readable-short-desktop-v0291\.css/);
   ['styles.css', 'sections.css', 'planner.css', 'starmap.css', 'product-shell.css', 'workspace-consolidation.css', 'ui-rebuild.css', 'drake-mfd.css', 'mfd-layout-v2.css'].forEach((legacy) => {
     assert.doesNotMatch(html, new RegExp(`href="${legacy.replace('.', '\\.')}"`));
   });

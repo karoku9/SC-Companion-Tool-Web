@@ -1,0 +1,448 @@
+/* UI 0.29.1 — readable one-page Operations layout for short desktop viewports.
+   Target: browser content areas around 1180–1700px wide and 650–850px high.
+   Keep the whole flight deck visible without shrinking the interface into microcopy. */
+
+@media (min-width: 1180px) and (min-height: 650px) and (max-height: 850px) {
+  html[data-active-view="route"],
+  html[data-active-view="route"] body {
+    height: 100%;
+    overflow: hidden;
+  }
+
+  /* Operations uses an icon rail; Missions keeps the full navigation. */
+  html[data-active-view="route"] .app-frame {
+    height: 100dvh;
+    min-height: 0;
+    grid-template-columns: 64px minmax(0, 1fr);
+  }
+
+  html[data-active-view="route"] .app-nav {
+    height: 100dvh;
+  }
+
+  html[data-active-view="route"] .brand-panel {
+    min-height: 52px;
+    grid-template-columns: 42px;
+    justify-content: center;
+    padding: 5px 8px;
+  }
+
+  html[data-active-view="route"] .brand-text,
+  html[data-active-view="route"] #sidebar-toggle,
+  html[data-active-view="route"] .nav-group h2,
+  html[data-active-view="route"] .nav-copy,
+  html[data-active-view="route"] .nav-footer small {
+    display: none;
+  }
+
+  html[data-active-view="route"] .product-navigation {
+    padding: 8px 6px;
+  }
+
+  html[data-active-view="route"] .nav-group {
+    margin: 0;
+  }
+
+  html[data-active-view="route"] .product-navigation button {
+    min-height: 48px;
+    grid-template-columns: 1fr;
+    padding: 6px;
+  }
+
+  html[data-active-view="route"] .nav-glyph {
+    margin: auto;
+  }
+
+  html[data-active-view="route"] .nav-footer {
+    justify-items: center;
+    padding: 8px 2px;
+  }
+
+  html[data-active-view="route"] .nav-footer span {
+    display: none;
+  }
+
+  html[data-active-view="route"] .nav-footer::before {
+    content: "UI 0.29.1";
+    color: var(--ds-action-primary);
+    font: 800 12px/1.1 var(--ds-font-technical, ui-monospace, monospace);
+    text-align: center;
+  }
+
+  html[data-active-view="route"] .app-main {
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  /* The command deck already provides route status; keep the shell bar minimal. */
+  html[data-active-view="route"] .app-topbar {
+    position: relative;
+    height: 34px;
+    min-height: 34px;
+    padding: 3px 10px;
+    backdrop-filter: none;
+  }
+
+  html[data-active-view="route"] .page-context small,
+  html[data-active-view="route"] .topbar-status {
+    display: none;
+  }
+
+  html[data-active-view="route"] .page-context h1 {
+    margin: 0;
+    font-size: 14px;
+    letter-spacing: .02em;
+  }
+
+  html[data-active-view="route"] .operations-page.operations-v028 {
+    width: 100%;
+    height: calc(100dvh - 34px);
+    min-height: 0;
+    margin: 0;
+    padding: 6px;
+    overflow: hidden;
+  }
+
+  html[data-active-view="route"] .operations-v028 .operations-grid {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1.55fr) minmax(400px, .86fr);
+    grid-template-rows: 72px minmax(300px, 1fr) 198px 44px;
+    grid-template-areas:
+      "command command"
+      "primary primary"
+      "timeline cargo"
+      "tools tools";
+    gap: 6px;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  /* Command deck: one concise status row plus compact session tabs. */
+  html[data-active-view="route"] .operations-v028 .ops-v027-command-deck {
+    grid-area: command;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v027-command-header {
+    min-height: 44px;
+    height: 44px;
+    grid-template-columns: minmax(170px, .72fr) minmax(0, 2.7fr) minmax(180px, .72fr);
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v027-command-title,
+  html[data-active-view="route"] .operations-v028 .quick-ship-control {
+    padding: 5px 8px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v027-command-title small,
+  html[data-active-view="route"] .operations-v028 .ops-v027-command-metrics article small,
+  html[data-active-view="route"] .operations-v028 .quick-ship-control small {
+    display: none;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v027-command-metrics article {
+    grid-template-columns: 17px minmax(0, 1fr);
+    column-gap: 5px;
+    padding: 5px 7px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v027-command-metrics article strong,
+  html[data-active-view="route"] .operations-v028 .quick-ship-control select {
+    font-size: 12px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-session-bar,
+  html[data-active-view="route"] .operations-v028 .ops-session-tabs,
+  html[data-active-view="route"] .operations-v028 .ops-session-tabs button {
+    min-height: 28px;
+    height: 28px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-session-bar {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-session-bar > header {
+    min-height: 28px;
+    padding: 0 8px;
+    border-right: 1px solid var(--scx-border-subtle);
+    border-bottom: 0;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-session-tabs button {
+    min-width: 158px;
+    grid-template-columns: 22px minmax(0, 1fr);
+    padding: 2px 7px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-session-tabs button > span {
+    width: 20px;
+    height: 20px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-session-tabs button small {
+    display: none;
+  }
+
+  /* Give the map and Current Step most of the screen. */
+  html[data-active-view="route"] .operations-v028 .ops-v027-primary-grid {
+    grid-area: primary;
+    min-height: 0;
+    height: 100%;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(350px, 30%);
+    gap: 6px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-live-navigation,
+  html[data-active-view="route"] .operations-v028 .current-operation-panel {
+    min-height: 0;
+    height: 100%;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-live-navigation {
+    grid-template-rows: 36px 34px minmax(0, 1fr) 26px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-live-nav-header,
+  html[data-active-view="route"] .operations-v028 .mfd-header,
+  html[data-active-view="route"] .operations-v028 .ops-v027-panel-header {
+    min-height: 36px;
+    padding: 4px 8px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-next-leg-strip {
+    min-height: 34px;
+    height: 34px;
+    padding: 3px 7px;
+    flex-wrap: nowrap;
+    overflow: hidden;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-next-leg-strip .ops-nav-chip {
+    min-height: 26px;
+    padding-inline: 7px;
+    white-space: nowrap;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-live-map {
+    min-height: 0;
+    height: 100%;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-map-legend {
+    min-height: 26px;
+    padding: 2px 7px;
+  }
+
+  /* No internal scroll in Current Step: show current, next and compact intel only. */
+  html[data-active-view="route"] .operations-v028 .current-operation-panel {
+    display: grid;
+    grid-template-rows: 36px minmax(0, 1fr) 46px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .current-operation-body {
+    min-height: 0;
+    align-content: start;
+    gap: 5px;
+    padding: 8px 10px;
+    overflow: hidden;
+  }
+
+  html[data-active-view="route"] .operations-v028 .current-operation-body > h2 {
+    font-size: 20px;
+    line-height: 1.05;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v028-travel-card {
+    min-height: 54px;
+    grid-template-columns: 34px minmax(0, 1fr) auto;
+    gap: 8px;
+    padding: 7px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v028-travel-card > span {
+    width: 32px;
+    height: 32px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v028-after-step {
+    gap: 3px;
+    margin-top: 0;
+    padding-top: 5px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v028-upcoming {
+    display: none;
+  }
+
+  html[data-active-view="route"] .operations-v028 .current-stop-intel {
+    display: block;
+    min-height: 0;
+    margin-top: 2px;
+    padding-top: 4px;
+    overflow: hidden;
+  }
+
+  html[data-active-view="route"] .operations-v028 .current-stop-intel-header {
+    display: none;
+  }
+
+  html[data-active-view="route"] .operations-v028 .current-stop-intel-grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 3px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .current-stop-intel-card {
+    min-height: 40px;
+    grid-template-columns: 18px minmax(0, 1fr);
+    grid-template-rows: 1fr;
+    align-content: center;
+    gap: 4px;
+    padding: 3px 4px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .current-stop-intel-card small,
+  html[data-active-view="route"] .operations-v028 .current-stop-intel-card > span:not(.intel-icon) {
+    display: none;
+  }
+
+  html[data-active-view="route"] .operations-v028 .current-stop-intel-card strong {
+    min-width: 0;
+    overflow: hidden;
+    font-size: 12px;
+    line-height: 1.1;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  html[data-active-view="route"] .operations-v028 .operation-controls {
+    min-height: 46px;
+    padding: 5px 7px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .operation-controls .button {
+    min-height: 36px;
+    padding-inline: 10px;
+  }
+
+  /* More readable lower instruments. */
+  html[data-active-view="route"] .operations-v028 .ops-v027-timeline-panel,
+  html[data-active-view="route"] .operations-v028 .ops-v028-cargo-panel {
+    min-height: 0;
+    height: 198px;
+    overflow: hidden;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v027-timeline-panel {
+    grid-area: timeline;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v028-cargo-panel {
+    grid-area: cargo;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v027-timeline-panel > header,
+  html[data-active-view="route"] .ops-v028-panel-header {
+    min-height: 36px;
+    height: 36px;
+    padding: 4px 8px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v027-timeline {
+    height: 162px;
+    display: flex;
+    grid-template-columns: none;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x proximity;
+    scrollbar-width: thin;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v028-stop-card {
+    flex: 0 0 194px;
+    min-width: 194px;
+    min-height: 0;
+    height: 100%;
+    gap: 5px;
+    padding: 7px 8px;
+    scroll-snap-align: start;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v028-stop-card strong,
+  html[data-active-view="route"] .operations-v028 .ops-v028-stop-card small,
+  html[data-active-view="route"] .operations-v028 .ops-v028-stop-card b,
+  html[data-active-view="route"] .operations-v028 .ops-v028-stop-card em {
+    font-size: 12px;
+  }
+
+  html[data-active-view="route"] .ops-v028-cargo-body {
+    height: 162px;
+    min-height: 0;
+    grid-template-columns: minmax(250px, 1.18fr) minmax(150px, .82fr);
+  }
+
+  html[data-active-view="route"] .ops-v028-cargo-guidance {
+    display: none;
+  }
+
+  html[data-active-view="route"] .ops-v028-cargo-grid-wrap {
+    min-height: 0;
+    padding: 7px 8px 24px;
+  }
+
+  html[data-active-view="route"] .ops-v028-cargo-grid {
+    width: 100%;
+    min-height: 0;
+    height: 128px;
+    gap: 2px;
+  }
+
+  html[data-active-view="route"] .ops-v028-cargo-cell small,
+  html[data-active-view="route"] .ops-v028-access-edge {
+    font-size: 12px;
+  }
+
+  html[data-active-view="route"] .ops-v028-cargo-legend {
+    min-height: 0;
+    overflow-y: auto;
+    scrollbar-width: thin;
+  }
+
+  html[data-active-view="route"] .ops-v028-cargo-legend > article {
+    gap: 5px;
+    padding: 6px 7px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .operations-tools {
+    grid-area: tools;
+    min-height: 0;
+    height: 44px;
+    overflow: hidden;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-action-bar,
+  html[data-active-view="route"] .operations-v028 .ops-action-bar [data-ops-action] {
+    min-height: 44px;
+    height: 44px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-action-bar [data-ops-action] {
+    padding-block: 4px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-action-bar [data-ops-action] small {
+    display: none;
+  }
+
+  html[data-active-view="route"] .app-footer {
+    display: none;
+  }
+}

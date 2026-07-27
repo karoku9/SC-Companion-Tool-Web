@@ -75,7 +75,7 @@ try {
   await page.reload({ waitUntil: 'networkidle' });
   await page.locator('#mission-text').waitFor({ state: 'visible' });
   assert.equal(await page.locator('html').getAttribute('data-theme'), 'industrial');
-  assert.match(await page.locator('.nav-footer span').textContent(), /CORE 0\.25.*UI 0\.29/i);
+  assert.match(await page.locator('.nav-footer span').textContent(), /CORE 0\.25.*UI 0\.29\.1/i);
   assert.equal(await page.locator('#mission-start-location').isVisible(), false);
 
   step = 'parse exact seven-mission sample';
@@ -139,6 +139,45 @@ try {
   await noHorizontalOverflow('Operations single-screen 1600x900');
   await page.screenshot({ path: `${output}/operations-single-screen-1600x900.png`, fullPage: true });
 
+  step = 'verify readable short-desktop layout at 1664x800';
+  await page.setViewportSize({ width: 1664, height: 800 });
+  await page.locator('.operations-page.operations-v028').waitFor({ state: 'visible' });
+  const compact = await page.evaluate(() => {
+    const rect = (selector) => document.querySelector(selector)?.getBoundingClientRect() ?? null;
+    const nav = rect('.app-nav');
+    const topbar = rect('.app-topbar');
+    const map = rect('.ops-live-navigation');
+    const current = rect('.current-operation-panel');
+    const timelineCard = rect('.ops-v028-stop-card');
+    const currentBody = document.querySelector('.current-operation-body');
+    return {
+      viewportHeight: innerHeight,
+      documentHeight: document.documentElement.scrollHeight,
+      bodyHeight: document.body.scrollHeight,
+      navWidth: nav?.width ?? 0,
+      topbarHeight: topbar?.height ?? 0,
+      mapHeight: map?.height ?? 0,
+      currentHeight: current?.height ?? 0,
+      timelineCardWidth: timelineCard?.width ?? 0,
+      currentClientHeight: currentBody?.clientHeight ?? 0,
+      currentScrollHeight: currentBody?.scrollHeight ?? 0,
+      upcomingDisplay: getComputedStyle(document.querySelector('.ops-v028-upcoming')).display,
+      releaseText: document.querySelector('.nav-footer')?.textContent ?? ''
+    };
+  });
+  assert.ok(compact.navWidth <= 70, `Operations sidebar is not icon-only: ${JSON.stringify(compact)}`);
+  assert.ok(compact.topbarHeight <= 36, `Topbar still wastes vertical space: ${JSON.stringify(compact)}`);
+  assert.ok(compact.mapHeight >= 300, `Focused map is too short: ${JSON.stringify(compact)}`);
+  assert.ok(compact.currentHeight >= 300, `Current Step is too short: ${JSON.stringify(compact)}`);
+  assert.ok(compact.timelineCardWidth >= 190, `Timeline cards are too compressed: ${JSON.stringify(compact)}`);
+  assert.ok(compact.currentScrollHeight <= compact.currentClientHeight + 2, `Current Step still scrolls internally: ${JSON.stringify(compact)}`);
+  assert.equal(compact.upcomingDisplay, 'none');
+  assert.match(compact.releaseText, /UI 0\.29\.1/i);
+  assert.ok(compact.documentHeight <= compact.viewportHeight + 2, `Short desktop document scrolls: ${JSON.stringify(compact)}`);
+  assert.ok(compact.bodyHeight <= compact.viewportHeight + 2, `Short desktop body scrolls: ${JSON.stringify(compact)}`);
+  await noHorizontalOverflow('Operations readable 1664x800');
+  await page.screenshot({ path: `${output}/operations-readable-1664x800.png`, fullPage: true });
+
   step = 'verify explicit gateway sequence';
   const gatewaySetup = await page.evaluate(() => {
     const state = window.SCCompanionSession.getState();
@@ -187,4 +226,4 @@ try {
 }
 
 if (failure) throw failure;
-console.log('v0.29 1600px single-screen Operations smoke passed.');
+console.log('UI 0.29.1 readable one-page Operations smoke passed.');
