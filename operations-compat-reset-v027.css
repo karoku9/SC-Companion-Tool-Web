@@ -1,0 +1,49 @@
+/* Explicit migration boundary between the v0.25 cockpit grid and the v0.27
+   active-leg composition. These resets remove inherited named grid areas and
+   viewport clipping before the new layout rules are applied. */
+
+.operations-page.operations-v027 {
+  height: auto;
+  min-height: calc(100dvh - 64px);
+  overflow: visible;
+}
+
+.operations-v027 .operations-grid {
+  height: auto;
+  min-height: calc(100dvh - 88px);
+  grid-template-areas: none;
+  grid-template-rows: none;
+  align-items: start;
+}
+
+.operations-v027 .ops-session-bar,
+.operations-v027 .ops-live-navigation,
+.operations-v027 .current-operation-panel,
+.operations-v027 .operations-tools,
+.operations-v027 .route-sequence-panel {
+  grid-area: auto;
+  grid-column: auto;
+  grid-row: auto;
+}
+
+.operations-v027 .ops-v027-primary-grid > .ops-live-navigation,
+.operations-v027 .ops-v027-primary-grid > .current-operation-panel {
+  position: relative;
+  inset: auto;
+  width: auto;
+  max-width: none;
+  height: auto;
+  margin: 0;
+  translate: none;
+}
+
+.operations-v027 .ops-v027-command-deck,
+.operations-v027 .ops-v027-primary-grid,
+.operations-v027 .ops-v027-timeline-panel,
+.operations-v027 .operations-tools {
+  position: relative;
+  inset: auto;
+  width: auto;
+  max-width: none;
+  translate: none;
+}
