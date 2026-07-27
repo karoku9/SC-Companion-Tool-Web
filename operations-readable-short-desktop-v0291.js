@@ -29,6 +29,8 @@
     const commodityLabel = commodities.length > 3
       ? `${commodities.slice(0, 3).join(' · ')} · +${commodities.length - 3}`
       : commodities.join(' · ');
+    const detail = rows.map((row) => row.textContent.trim().replace(/\s+/g, ' ')).join('\n');
+    const signature = JSON.stringify({ totalScu, count: rows.length, commodityLabel, detail });
 
     let summary = list.previousElementSibling;
     if (!summary?.classList.contains('ops-v0291-operation-compact')) {
@@ -37,13 +39,15 @@
       list.before(summary);
     }
 
+    if (summary.dataset.signature === signature) return;
+    summary.dataset.signature = signature;
     summary.innerHTML = `
       <span aria-hidden="true">${icon('cargo')}</span>
       <div>
         <strong>${totalScu} SCU · ${rows.length} cargo line${rows.length === 1 ? '' : 's'}</strong>
         <small>${commodityLabel}</small>
       </div>`;
-    summary.title = rows.map((row) => row.textContent.trim().replace(/\s+/g, ' ')).join('\n');
+    summary.title = detail;
   }
 
   function schedule() {
