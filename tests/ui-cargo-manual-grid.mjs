@@ -67,6 +67,23 @@ try {
   assert.equal(await page.locator('[data-v030-cell]').count(), 24);
   assert.match(await page.locator('.ops-v030-editor-footer').textContent(), /6 × 4 floor cells · 3 SCU vertical capacity per cell/i);
   assert.match(await page.locator('.ops-v030-editor-title').textContent(), /Drake Corsair · 72 SCU official grid/i);
+  const gridFit = await page.evaluate(() => {
+    const wrap = document.querySelector('.ops-v030-grid-wrap');
+    const cells = [...document.querySelectorAll('[data-v030-cell]')];
+    const wrapRect = wrap.getBoundingClientRect();
+    const first = cells[0].getBoundingClientRect();
+    const last = cells.at(-1).getBoundingClientRect();
+    return {
+      clientHeight: wrap.clientHeight,
+      scrollHeight: wrap.scrollHeight,
+      firstTop: first.top,
+      lastBottom: last.bottom,
+      wrapTop: wrapRect.top,
+      wrapBottom: wrapRect.bottom
+    };
+  });
+  assert.ok(gridFit.scrollHeight <= gridFit.clientHeight + 2, `Cargo grid still scrolls vertically: ${JSON.stringify(gridFit)}`);
+  assert.ok(gridFit.firstTop >= gridFit.wrapTop - 2 && gridFit.lastBottom <= gridFit.wrapBottom + 2, `Not all cargo rows are visible: ${JSON.stringify(gridFit)}`);
 
   step = 'drag cargo laterally to an exact coordinate';
   const sourceId = await findCellId('occupied');
