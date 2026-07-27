@@ -1,0 +1,476 @@
+/* Effective desktop viewport support.
+   A 1536px Windows display at 125% scaling exposes roughly 1228x690 CSS pixels.
+   Keep the full Operations flight deck in one viewport at that real browser size. */
+
+@media (min-width: 1180px) and (max-width: 1449px) and (min-height: 650px),
+       (min-width: 1180px) and (min-height: 650px) and (max-height: 819px) {
+  html[data-active-view="route"],
+  html[data-active-view="route"] body {
+    height: 100%;
+    overflow: hidden;
+  }
+
+  html[data-active-view="route"] .app-frame {
+    grid-template-columns: 68px minmax(0, 1fr);
+    height: 100dvh;
+    min-height: 0;
+  }
+
+  html[data-active-view="route"] .app-nav {
+    height: 100dvh;
+  }
+
+  html[data-active-view="route"] .brand-panel {
+    min-height: 50px;
+    grid-template-columns: 42px;
+    justify-content: center;
+    padding: 4px 8px;
+  }
+
+  html[data-active-view="route"] .brand-text,
+  html[data-active-view="route"] #sidebar-toggle,
+  html[data-active-view="route"] .nav-group h2,
+  html[data-active-view="route"] .nav-copy,
+  html[data-active-view="route"] .nav-footer small {
+    display: none;
+  }
+
+  html[data-active-view="route"] .product-navigation {
+    padding: 7px 6px;
+  }
+
+  html[data-active-view="route"] .nav-group {
+    margin: 0;
+  }
+
+  html[data-active-view="route"] .product-navigation button {
+    min-height: 46px;
+    grid-template-columns: 1fr;
+    padding: 5px;
+  }
+
+  html[data-active-view="route"] .nav-glyph {
+    margin: auto;
+  }
+
+  html[data-active-view="route"] .nav-footer {
+    justify-items: center;
+    padding: 8px 3px;
+  }
+
+  html[data-active-view="route"] .nav-footer span {
+    font-size: 0;
+  }
+
+  html[data-active-view="route"] .nav-footer span::after {
+    content: "UI 0.29";
+    font-size: 12px;
+    letter-spacing: 0;
+  }
+
+  html[data-active-view="route"] .app-main {
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  html[data-active-view="route"] .app-topbar {
+    height: 50px;
+    padding: 5px 10px;
+  }
+
+  html[data-active-view="route"] .page-context h1 {
+    font-size: 16px;
+  }
+
+  html[data-active-view="route"] .session-chip {
+    width: min(280px, 30vw);
+    min-height: 38px;
+    padding: 4px 8px;
+  }
+
+  html[data-active-view="route"] .operations-page.operations-v028 {
+    width: 100%;
+    height: calc(100dvh - 50px);
+    min-height: 0;
+    margin: 0;
+    padding: 6px;
+    overflow: hidden;
+  }
+
+  html[data-active-view="route"] .operations-v028 .operations-grid {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1.45fr) minmax(390px, .9fr);
+    grid-template-rows: 84px minmax(248px, 1fr) 184px 42px;
+    grid-template-areas:
+      "command command"
+      "primary primary"
+      "timeline cargo"
+      "tools tools";
+    gap: 6px;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v027-command-deck {
+    grid-area: command;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v027-command-header {
+    min-height: 50px;
+    height: 50px;
+    grid-template-columns: minmax(145px, .62fr) minmax(0, 2.55fr) minmax(165px, .7fr);
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v027-command-title,
+  html[data-active-view="route"] .operations-v028 .quick-ship-control {
+    padding: 5px 7px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v027-command-title small,
+  html[data-active-view="route"] .operations-v028 .ops-v027-command-metrics article small,
+  html[data-active-view="route"] .operations-v028 .quick-ship-control small {
+    display: none;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v027-command-metrics article {
+    grid-template-columns: 17px minmax(0, 1fr);
+    column-gap: 5px;
+    padding: 5px 6px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v027-command-metrics article strong,
+  html[data-active-view="route"] .operations-v028 .quick-ship-control select {
+    font-size: 12px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v027-command-metrics article > span svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-session-bar {
+    min-height: 34px;
+    height: 34px;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-session-bar > header {
+    min-height: 34px;
+    padding: 0 8px;
+    border-right: 1px solid var(--scx-border-subtle);
+    border-bottom: 0;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-session-tabs,
+  html[data-active-view="route"] .operations-v028 .ops-session-tabs button {
+    min-height: 34px;
+    height: 34px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-session-tabs button {
+    min-width: 158px;
+    grid-template-columns: 22px minmax(0, 1fr);
+    padding: 3px 7px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-session-tabs button > span {
+    width: 20px;
+    height: 20px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-session-tabs button small {
+    display: none;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v027-primary-grid {
+    grid-area: primary;
+    min-height: 0;
+    height: 100%;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(320px, 34%);
+    gap: 6px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-live-navigation,
+  html[data-active-view="route"] .operations-v028 .current-operation-panel {
+    min-height: 0;
+    height: 100%;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-live-navigation {
+    grid-template-rows: 36px 34px minmax(0, 1fr) 24px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-live-nav-header,
+  html[data-active-view="route"] .operations-v028 .mfd-header,
+  html[data-active-view="route"] .operations-v028 .ops-v027-panel-header {
+    min-height: 36px;
+    padding: 4px 8px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-next-leg-strip {
+    min-height: 34px;
+    height: 34px;
+    padding: 3px 7px;
+    flex-wrap: nowrap;
+    overflow: hidden;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-next-leg-strip .ops-nav-chip {
+    min-height: 26px;
+    padding-inline: 6px;
+    white-space: nowrap;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-live-map {
+    min-height: 0;
+    height: 100%;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-map-legend {
+    min-height: 24px;
+    padding: 2px 7px;
+    gap: 8px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .current-operation-panel {
+    display: grid;
+    grid-template-rows: 36px minmax(0, 1fr) 46px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .current-operation-body {
+    min-height: 0;
+    align-content: start;
+    gap: 5px;
+    padding: 7px 9px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+  }
+
+  html[data-active-view="route"] .operations-v028 .current-operation-body > h2 {
+    font-size: 19px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v028-travel-card {
+    min-height: 48px;
+    grid-template-columns: 30px minmax(0, 1fr) auto;
+    gap: 7px;
+    padding: 6px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v028-travel-card > span {
+    width: 28px;
+    height: 28px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v028-after-step,
+  html[data-active-view="route"] .operations-v028 .ops-v028-upcoming {
+    gap: 3px;
+    margin-top: 0;
+    padding-top: 5px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v028-upcoming > div {
+    min-height: 24px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .current-stop-intel {
+    display: none;
+  }
+
+  html[data-active-view="route"] .operations-v028 .operation-controls {
+    min-height: 46px;
+    padding: 5px 7px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .operation-controls .button {
+    min-height: 36px;
+    padding-inline: 10px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v027-timeline-panel {
+    grid-area: timeline;
+    min-height: 0;
+    height: 184px;
+    overflow: hidden;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v027-timeline-panel > header,
+  html[data-active-view="route"] .ops-v028-panel-header {
+    min-height: 36px;
+    height: 36px;
+    padding: 4px 8px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v027-timeline {
+    height: 148px;
+    display: flex;
+    grid-template-columns: none;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x proximity;
+    scrollbar-width: thin;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v028-stop-card {
+    flex: 0 0 174px;
+    min-width: 174px;
+    min-height: 0;
+    height: 100%;
+    gap: 4px;
+    padding: 6px 7px;
+    scroll-snap-align: start;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v028-stop-card .ops-v027-route-copy {
+    gap: 1px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v028-stop-card .ops-v027-route-node {
+    width: 22px;
+    height: 22px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v028-stop-context,
+  html[data-active-view="route"] .operations-v028 .ops-v028-stop-system {
+    display: inline-flex;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v028-stop-action {
+    margin-top: 0;
+    padding-top: 3px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v028-stop-cargo {
+    gap: 3px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v028-stop-cargo em {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v028-cargo-panel {
+    grid-area: cargo;
+    min-height: 0;
+    height: 184px;
+    overflow: hidden;
+  }
+
+  html[data-active-view="route"] .ops-v028-grouping span {
+    display: none;
+  }
+
+  html[data-active-view="route"] .ops-v028-grouping select {
+    min-width: 96px;
+    min-height: 28px;
+  }
+
+  html[data-active-view="route"] .ops-v028-cargo-body {
+    height: 148px;
+    min-height: 0;
+    grid-template-columns: minmax(245px, 1.25fr) minmax(125px, .75fr);
+  }
+
+  html[data-active-view="route"] .ops-v028-cargo-guidance {
+    display: none;
+  }
+
+  html[data-active-view="route"] .ops-v028-cargo-grid-wrap {
+    min-height: 0;
+    padding: 5px 7px 22px;
+  }
+
+  html[data-active-view="route"] .ops-v028-cargo-grid {
+    width: 100%;
+    min-height: 0;
+    height: 116px;
+    gap: 2px;
+  }
+
+  html[data-active-view="route"] .ops-v028-cargo-cell small,
+  html[data-active-view="route"] .ops-v028-access-edge {
+    font-size: 12px;
+  }
+
+  html[data-active-view="route"] .ops-v028-access-edge {
+    bottom: 3px;
+    left: 7px;
+    right: 7px;
+    min-height: 16px;
+  }
+
+  html[data-active-view="route"] .ops-v028-cargo-legend {
+    min-height: 0;
+    overflow-y: auto;
+    scrollbar-width: thin;
+  }
+
+  html[data-active-view="route"] .ops-v028-cargo-legend > article {
+    gap: 4px;
+    padding: 5px 6px;
+  }
+
+  html[data-active-view="route"] .ops-v028-cargo-legend > article em {
+    display: none;
+  }
+
+  html[data-active-view="route"] .ops-v028-cargo-legend footer {
+    position: sticky;
+    bottom: 0;
+    padding: 5px 6px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .operations-tools {
+    grid-area: tools;
+    min-height: 0;
+    height: 42px;
+    overflow: visible;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-action-bar,
+  html[data-active-view="route"] .operations-v028 .ops-action-bar [data-ops-action] {
+    min-height: 42px;
+    height: 42px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-action-bar [data-ops-action] {
+    padding: 3px 7px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-action-bar [data-ops-action] small {
+    display: none;
+  }
+
+  html[data-active-view="route"] .app-footer {
+    display: none;
+  }
+
+  html[data-active-view="route"] .ops-editor-drawer:not([hidden]),
+  html[data-active-view="route"] #ops-tool-panel:not([hidden]) {
+    position: fixed;
+    z-index: 1200;
+    top: 56px;
+    right: 10px;
+    bottom: 50px;
+    width: min(520px, calc(100vw - 92px));
+    max-height: none;
+    overflow: hidden;
+    border: 1px solid var(--scx-border-strong, var(--ds-border-strong));
+    background: var(--scx-surface-raised, var(--ds-surface-panel-raised));
+    box-shadow: 0 18px 48px rgb(0 0 0 / .55);
+  }
+
+  html[data-active-view="route"] .ops-editor-drawer:not([hidden]) .ops-editor-body,
+  html[data-active-view="route"] #ops-tool-panel:not([hidden]) .tool-panel-body {
+    min-height: 0;
+    overflow-y: auto;
+  }
+}

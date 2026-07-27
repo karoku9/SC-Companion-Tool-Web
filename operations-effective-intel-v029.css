@@ -1,0 +1,47 @@
+/* Keep operational intel visible in the constrained desktop flight deck.
+   It remains icon-first and scrolls inside Current Step instead of growing the page. */
+
+@media (min-width: 1180px) and (max-width: 1449px) and (min-height: 650px),
+       (min-width: 1180px) and (min-height: 650px) and (max-height: 819px) {
+  html[data-active-view="route"] .operations-v028 .current-stop-intel {
+    display: block;
+    margin-top: 3px;
+    padding-top: 4px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .current-stop-intel-header {
+    display: none;
+  }
+
+  html[data-active-view="route"] .operations-v028 .current-stop-intel-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 3px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .current-stop-intel-card {
+    min-height: 42px;
+    grid-template-columns: 18px minmax(0, 1fr);
+    grid-template-rows: 1fr;
+    align-content: center;
+    gap: 4px;
+    padding: 3px 4px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .current-stop-intel-card .intel-icon {
+    grid-row: 1;
+  }
+
+  html[data-active-view="route"] .operations-v028 .current-stop-intel-card small,
+  html[data-active-view="route"] .operations-v028 .current-stop-intel-card > span:not(.intel-icon) {
+    display: none;
+  }
+
+  html[data-active-view="route"] .operations-v028 .current-stop-intel-card strong {
+    min-width: 0;
+    overflow: hidden;
+    font-size: 12px;
+    line-height: 1.1;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
