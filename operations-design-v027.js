@@ -33,6 +33,7 @@
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#039;');
+    const shortLocationLabel = (value) => String(value ?? '—').split(' · ')[0].trim() || '—';
 
     page.classList.add('operations-v027');
     legacySequence.classList.add('ops-v027-legacy-sequence');
@@ -170,9 +171,22 @@
       intelGrid.classList.add('ops-v027-intel-strip');
       intelGrid.querySelectorAll('.current-stop-intel-card').forEach((card) => {
         card.classList.add('ops-v027-intel-item');
-        const detail = card.querySelector(':scope > span:not(.intel-icon)');
-        if (detail && !card.title) card.title = detail.textContent.trim();
+        const label = card.querySelector('small')?.textContent?.trim();
+        const value = card.querySelector('strong')?.textContent?.trim();
+        const detail = card.querySelector(':scope > span:not(.intel-icon)')?.textContent?.trim();
+        const description = [label, value, detail].filter(Boolean).join(' · ');
+        if (description) {
+          card.title = description;
+          card.setAttribute('aria-label', description);
+        }
       });
+    }
+
+    function setMetric(id, visibleValue, fullValue = visibleValue) {
+      const element = commandDeck.querySelector(id);
+      if (!element) return;
+      element.textContent = visibleValue;
+      element.title = fullValue;
     }
 
     function render(state = store.getState()) {
@@ -184,17 +198,20 @@
       const session = state.routePlan?.sessions?.[sessionIndex] ?? null;
       const model = shipCatalog.getModel(state.selectedShipModelId);
       const gateway = currentGateway(route, current, next);
+      const currentFull = progress.complete ? 'Complete' : current?.locationLabel ?? state.routeStartLocationLabel ?? '—';
+      const nextFull = next?.locationLabel ?? (progress.complete ? 'Session complete' : current?.locationLabel ?? '—');
+      const gatewayFull = gateway ? `${gateway.fromGateway} → ${gateway.toGateway}` : 'None';
 
-      commandDeck.querySelector('#ops-v027-session-title').textContent = sessionCount
+      setMetric('#ops-v027-session-title', sessionCount
         ? `Session ${sessionIndex + 1} of ${sessionCount} · ${session?.missionCount ?? 0} mission${session?.missionCount === 1 ? '' : 's'}`
-        : 'No session generated';
-      commandDeck.querySelector('#ops-v027-current').textContent = progress.complete ? 'Complete' : current?.locationLabel ?? state.routeStartLocationLabel ?? '—';
-      commandDeck.querySelector('#ops-v027-next').textContent = next?.locationLabel ?? (progress.complete ? 'Session complete' : current?.locationLabel ?? '—');
-      commandDeck.querySelector('#ops-v027-gateway').textContent = gateway ? `${gateway.fromGateway} → ${gateway.toGateway}` : 'None';
-      commandDeck.querySelector('#ops-v027-budget').textContent = state.routeMode === 'fastest'
+        : 'No session generated');
+      setMetric('#ops-v027-current', shortLocationLabel(currentFull), currentFull);
+      setMetric('#ops-v027-next', shortLocationLabel(nextFull), nextFull);
+      setMetric('#ops-v027-gateway', gatewayFull, gatewayFull);
+      setMetric('#ops-v027-budget', state.routeMode === 'fastest'
         ? 'Fastest route'
-        : `${state.sessionTargetMinutes ?? 60} min travel`;
-      commandDeck.querySelector('#ops-v027-onboard').textContent = `${cargo.totals.onboardScu} / ${model?.capacityScu ?? '—'} SCU`;
+        : `${state.sessionTargetMinutes ?? 60} min travel`);
+      setMetric('#ops-v027-onboard', `${cargo.totals.onboardScu} / ${model?.capacityScu ?? '—'} SCU`);
 
       renderActionSummary(route, progress, cargo);
       renderTimeline(route, progress);
