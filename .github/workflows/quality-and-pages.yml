@@ -123,6 +123,7 @@ jobs:
           node --check route-planner-engine.js
           node --check route-corrections.js
           node --check route-progress.js
+          node --check route-locality-hotfix-v0294.js
           node --check ship-catalog.js
           node --check fleet-loadouts.js
           node --check fleet-estimate-adapter.js
@@ -131,6 +132,8 @@ jobs:
           node --check cargo-state.js
           node --check cargo-layout.js
           node --check cargo-zone-model.js
+          node --check cargo-manual-layout-v030.js
+          node --check cargo-manual-grid-view-v030.js
           node --check session-store.js
           node --check starmap-data.js
           node --check roadmap.js
@@ -163,6 +166,7 @@ jobs:
           node --check tests/ui-starmap-ux.mjs
           node --check tests/ui-ocr-intake.mjs
           node --check tests/ui-assisted-intake-access.mjs
+          node --check tests/ui-cargo-manual-grid.mjs
       - name: Install browser smoke dependencies
         run: |
           npm install --no-save playwright@1.55.0
@@ -178,6 +182,7 @@ jobs:
           UI_BASE_URL=http://127.0.0.1:4173 node tests/ui-starmap-ux.mjs
           UI_BASE_URL=http://127.0.0.1:4173 node tests/ui-ocr-intake.mjs
           UI_BASE_URL=http://127.0.0.1:4173 node tests/ui-assisted-intake-access.mjs
+          UI_BASE_URL=http://127.0.0.1:4173 node tests/ui-cargo-manual-grid.mjs
       - name: Upload interface screenshots
         if: always()
         uses: actions/upload-artifact@v4
