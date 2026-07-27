@@ -27,6 +27,12 @@ async function selectCurrentLocation(pattern = /grim hex/i) {
   await page.locator('#mission-start-location-status[data-state="ready"]').waitFor({ state: 'visible' });
 }
 
+async function openMissionEditor(index = 0) {
+  const button = page.locator(`[data-edit-mission="${index}"]`);
+  await button.click();
+  await page.locator(`[data-review-mission="${index}"] .mission-card-editor`).waitFor({ state: 'visible' });
+}
+
 async function assertReviewFieldsFit(label) {
   const result = await page.evaluate(() => {
     const panel = document.querySelector('#mission-validation-panel').getBoundingClientRect();
@@ -67,18 +73,20 @@ try {
   await page.reload({ waitUntil: 'networkidle' });
   await page.locator('.mission-steps').waitFor({ state: 'visible' });
   await page.locator('#mission-text').waitFor({ state: 'visible' });
-  await selectCurrentLocation();
+  assert.equal(await page.locator('#mission-start-location').isVisible(), false);
 
   step = 'review broken source';
   await page.locator('#mission-text').fill(brokenSource);
   await page.locator('#mission-form button[type="submit"]').click();
   await page.locator('#focused-review-count').filter({ hasText: '1 mission' }).waitFor({ state: 'visible' });
+  assert.equal(await page.locator('#mission-start-location').isVisible(), true);
   const issueText = await page.locator('#focused-review-alerts').textContent();
   assert.match(issueText, /blocking issue/i);
   assert.equal(await page.locator('#focused-review-generate').isDisabled(), true);
   assert.equal(await page.evaluate(() => window.SCCompanionSession.getState().route), null);
   assert.equal(await page.locator('[data-review-mission]').count(), 1);
-  assert.equal(await page.locator('.location-state.is-error').count(), 1);
+  assert.equal(await page.locator('.location-state-v26.is-error').count(), 1);
+  await selectCurrentLocation();
   await assertReviewFieldsFit('Blocked visual review');
   await page.screenshot({ path: `${output}/mission-validation-blocked.png`, fullPage: true });
 
@@ -86,11 +94,12 @@ try {
   const rows = page.locator('[data-review-mission] [data-objective]');
   assert.equal(await rows.count(), 2);
   assert.equal(await rows.nth(1).locator('[data-field="action"]').inputValue(), 'deliver');
+  await openMissionEditor(0);
   await rows.nth(0).locator('[data-field="location"]').fill('Teasa Spaceport');
   await page.locator('#focused-review-validate').click();
   await page.locator('#focused-review-alerts .is-ready').waitFor({ state: 'visible' });
   assert.equal(await page.locator('#focused-review-generate').isEnabled(), true);
-  assert.equal(await page.locator('.location-state.is-ready').count(), 2);
+  assert.equal(await page.locator('.location-state-v26.is-ready').count(), 2);
   await assertReviewFieldsFit('Corrected visual review');
   await page.screenshot({ path: `${output}/mission-validation-reviewed.png`, fullPage: true });
 
@@ -100,7 +109,7 @@ try {
   const stored = await page.evaluate(() => window.SCCompanionSession.getState());
   assert.equal(stored.missionValidation.status, 'ready');
   assert.equal(stored.missionValidation.sourceText, brokenSource);
-  assert.match(stored.missionValidation.reviewedText, /deliver area18/i);
+  assert.match(stored.missionValidation.reviewedText, /deliver Riker Memorial Spaceport/i);
   assert.match(stored.missionValidation.reviewedText, /Teasa Spaceport/i);
   assert.match(stored.missionValidation.sourceText, /delver/);
   assert.ok(stored.route.stops.some((stop) => stop.locationId === 'stanton-hurston-lorville-teasa'));
@@ -113,11 +122,12 @@ try {
   await page.locator('#mission-text').fill(`Mission Ambiguous\ncollect pyro 2scu etam\ndeliver area18 2scu etam`);
   await page.locator('#mission-form button[type="submit"]').click();
   await page.locator('#focused-review-count').filter({ hasText: '1 mission' }).waitFor({ state: 'visible' });
-  assert.equal(await page.locator('.location-state.is-warning').count(), 1);
+  assert.equal(await page.locator('.location-state-v26.is-warning').count(), 1);
   assert.equal(await page.locator('#focused-review-generate').isDisabled(), true);
   assert.equal(JSON.stringify(await page.evaluate(() => window.SCCompanionSession.getState().route)), firstRoute);
 
   step = 'resolve ambiguous location manually';
+  await openMissionEditor(0);
   await page.locator('[data-review-mission] [data-objective]').first().locator('[data-field="location"]').fill('Checkmate Station');
   await page.locator('#focused-review-validate').click();
   await page.locator('#focused-review-alerts .is-ready').waitFor({ state: 'visible' });

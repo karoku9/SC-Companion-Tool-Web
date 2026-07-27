@@ -1,25 +1,38 @@
 'use strict';
 
-(function exposeRouteSessionPlanner(root) {
+(function exposeRouteSessionPlannerV026(root) {
   const DEFAULT_TARGET_MINUTES = 60;
-  const MAX_SESSION_FACTOR = 1.2;
+  const MIN_TARGET_MINUTES = 5;
 
   function number(value, fallback = 0) {
     const parsed = Number(value);
     return Number.isFinite(parsed) ? parsed : fallback;
   }
 
-  function estimateOf(route) {
-    const estimate = route?.estimate ?? {};
-    const minMinutes = number(estimate.totalMin, 0);
-    const maxMinutes = number(estimate.totalMax, minMinutes);
+  function travelEstimateOf(route) {
+    const source = route?.estimate ?? {};
+    const legs = Array.isArray(source.legs) ? source.legs : [];
+    const travelMinMinutes = legs.length
+      ? legs.reduce((sum, leg) => sum + number(leg?.travel?.minMinutes, 0), 0)
+      : number(source.totalMin, 0);
+    const travelMaxMinutes = legs.length
+      ? legs.reduce((sum, leg) => sum + number(leg?.travel?.maxMinutes, leg?.travel?.minMinutes ?? 0), 0)
+      : number(source.totalMax, travelMinMinutes);
+    const travelMinutes = Math.max(0, Math.ceil(travelMaxMinutes));
+
     return Object.freeze({
-      minMinutes,
-      maxMinutes,
-      midpointMinutes: number(estimate.midpoint, (minMinutes + maxMinutes) / 2),
-      peakOnboardScu: number(estimate.peakOnboardScu, route?.optimization?.peakOnboardScu ?? 0),
-      capacityFeasible: route?.optimization?.capacityFeasible !== false && estimate.capacityFeasible !== false,
-      jumpCount: number(estimate.totalJumpCount, 0)
+      minMinutes: travelMinMinutes,
+      maxMinutes: travelMaxMinutes,
+      midpointMinutes: travelMinutes,
+      travelMinMinutes,
+      travelMaxMinutes,
+      travelMinutes,
+      budgetMinutes: travelMinutes,
+      basis: 'travel-only',
+      peakOnboardScu: number(source.peakOnboardScu, route?.optimization?.peakOnboardScu ?? 0),
+      capacityFeasible: route?.optimization?.capacityFeasible !== false && source.capacityFeasible !== false,
+      jumpCount: number(source.totalJumpCount, 0),
+      stopCount: number(source.stopCount, route?.stops?.length ?? 0)
     });
   }
 
@@ -43,7 +56,7 @@
         startLocationId,
         selectedShipId: options.selectedShipId
       });
-      return Object.freeze({ route, estimate: estimateOf(route) });
+      return Object.freeze({ route, estimate: travelEstimateOf(route) });
     } catch (error) {
       return Object.freeze({ route: null, estimate: null, error });
     }
@@ -51,12 +64,12 @@
 
   function candidateScore(candidate, targetMinutes, missionCount) {
     if (!candidate?.route || !candidate.estimate?.capacityFeasible) return Infinity;
-    const midpoint = candidate.estimate.midpointMinutes;
-    const overTarget = Math.max(0, midpoint - targetMinutes);
-    const distance = Math.abs(targetMinutes - midpoint);
-    const cargoPenalty = candidate.estimate.peakOnboardScu * 0.08;
-    const jumpPenalty = candidate.estimate.jumpCount * 1.5;
-    return distance + overTarget * 4 + cargoPenalty + jumpPenalty - missionCount * 4;
+    const travelMinutes = candidate.estimate.travelMinutes;
+    const unusedBudget = Math.max(0, targetMinutes - travelMinutes);
+    const overTarget = Math.max(0, travelMinutes - targetMinutes);
+    const cargoPenalty = candidate.estimate.peakOnboardScu * 0.02;
+    const jumpPenalty = candidate.estimate.jumpCount * 0.25;
+    return unusedBudget + overTarget * 100 + cargoPenalty + jumpPenalty - missionCount * 2;
   }
 
   function pickSeed(remaining, missionModel, startLocationId, targetMinutes, options) {
@@ -66,10 +79,12 @@
     })).filter((item) => item.candidate.route && item.candidate.estimate?.capacityFeasible);
     if (!candidates.length) return null;
 
-    const underTarget = candidates.filter((item) => item.candidate.estimate.midpointMinutes <= targetMinutes * MAX_SESSION_FACTOR);
-    const pool = underTarget.length ? underTarget : candidates;
+    const withinBudget = candidates.filter((item) => item.candidate.estimate.travelMinutes <= targetMinutes);
+    const pool = withinBudget.length ? withinBudget : candidates;
     return [...pool].sort((left, right) => {
-      if (!underTarget.length) return left.candidate.estimate.midpointMinutes - right.candidate.estimate.midpointMinutes;
+      if (!withinBudget.length) {
+        return left.candidate.estimate.travelMinutes - right.candidate.estimate.travelMinutes;
+      }
       return candidateScore(left.candidate, targetMinutes, 1) - candidateScore(right.candidate, targetMinutes, 1);
     })[0];
   }
@@ -77,40 +92,33 @@
   function fillSession(seed, remaining, missionModel, startLocationId, targetMinutes, options) {
     let selected = [...seed.missions];
     let current = seed.candidate;
-    let keepTrying = true;
 
-    while (keepTrying) {
-      keepTrying = false;
+    while (current.estimate.travelMinutes <= targetMinutes) {
       const selectedIds = new Set(selected.map((mission) => mission.id));
-      const additions = remaining.filter((mission) => !selectedIds.has(mission.id)).map((mission) => {
-        const missions = [...selected, mission];
-        return { mission, missions, candidate: buildCandidate(missions, missionModel, startLocationId, options) };
-      }).filter((item) => {
-        if (!item.candidate.route || !item.candidate.estimate?.capacityFeasible) return false;
-        const midpointLimit = targetMinutes * (current.estimate.midpointMinutes < targetMinutes * 0.45 ? 1.35 : MAX_SESSION_FACTOR);
-        return item.candidate.estimate.midpointMinutes <= midpointLimit
-          && item.candidate.estimate.maxMinutes <= targetMinutes * 1.65;
-      });
+      const additions = remaining
+        .filter((mission) => !selectedIds.has(mission.id))
+        .map((mission) => {
+          const missions = [...selected, mission];
+          return { mission, missions, candidate: buildCandidate(missions, missionModel, startLocationId, options) };
+        })
+        .filter((item) => item.candidate.route
+          && item.candidate.estimate?.capacityFeasible
+          && item.candidate.estimate.travelMinutes <= targetMinutes);
 
       if (!additions.length) break;
       const best = additions.sort((left, right) => (
         candidateScore(left.candidate, targetMinutes, left.missions.length)
         - candidateScore(right.candidate, targetMinutes, right.missions.length)
       ))[0];
-      const currentDistance = Math.abs(targetMinutes - current.estimate.midpointMinutes);
-      const nextDistance = Math.abs(targetMinutes - best.candidate.estimate.midpointMinutes);
-      if (nextDistance <= currentDistance || current.estimate.midpointMinutes < targetMinutes * 0.7) {
-        selected = best.missions;
-        current = best.candidate;
-        keepTrying = true;
-      }
+      selected = best.missions;
+      current = best.candidate;
     }
 
     return Object.freeze({ missions: Object.freeze(selected), candidate: current });
   }
 
   function describeSession(index, missions, route, startLocationId, targetMinutes) {
-    const estimate = estimateOf(route);
+    const estimate = travelEstimateOf(route);
     const lastStop = route.stops.at(-1) ?? null;
     const rewardAuec = missions.reduce((sum, mission) => sum + missionReward(mission), 0);
     const totalCargoScu = missions.reduce((sum, mission) => sum + missionScu(mission), 0);
@@ -130,13 +138,13 @@
       totalCargoScu,
       estimate,
       route,
-      overTarget: estimate.midpointMinutes > targetMinutes * MAX_SESSION_FACTOR,
+      overTarget: estimate.travelMinutes > targetMinutes,
       gatewaySegments: route.gatewaySegments ?? Object.freeze([])
     });
   }
 
   function plan(missions, missionModel, options = {}) {
-    const targetMinutes = Math.max(20, number(options.targetMinutes, DEFAULT_TARGET_MINUTES));
+    const targetMinutes = Math.max(MIN_TARGET_MINUTES, Math.round(number(options.targetMinutes, DEFAULT_TARGET_MINUTES)));
     const mode = options.mode === 'fastest' ? 'fastest' : 'sessions';
     const startLocationId = String(options.startLocationId ?? '').trim();
     if (!startLocationId) throw new Error('Select your current location before building a route.');
@@ -150,6 +158,7 @@
       return Object.freeze({
         mode,
         targetMinutes,
+        estimateBasis: 'travel-only',
         startLocationId,
         startLocationLabel: startLabel(startLocationId),
         sessions: Object.freeze([session]),
@@ -177,6 +186,7 @@
     return Object.freeze({
       mode,
       targetMinutes,
+      estimateBasis: 'travel-only',
       startLocationId,
       startLocationLabel: startLabel(startLocationId),
       sessions: Object.freeze(sessions),
@@ -187,7 +197,7 @@
     });
   }
 
-  const api = Object.freeze({ plan, estimateOf, DEFAULT_TARGET_MINUTES });
+  const api = Object.freeze({ plan, estimateOf: travelEstimateOf, DEFAULT_TARGET_MINUTES, MIN_TARGET_MINUTES });
   root.SCCompanionRouteSessionPlanner = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 }(typeof globalThis !== 'undefined' ? globalThis : window));

@@ -1,0 +1,212 @@
+/* v0.26 mechanical cleanup: graphical run sheet and travel-only session budgeting. */
+
+html[data-active-view="missions"] .quick-ship-control { display: none !important; }
+
+.mission-route-context-v026 {
+  margin: 0 12px 12px;
+  border: 1px solid var(--ds-border-subtle);
+  border-top-color: var(--ds-border-strong);
+}
+.mission-route-context-v026 > header em { color: var(--ds-content-muted); }
+.mission-route-context-v026 .mission-context-grid {
+  grid-template-columns: minmax(250px, 1.4fr) minmax(180px, .9fr) minmax(180px, .9fr) minmax(190px, .85fr);
+}
+.mission-minute-input {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: stretch;
+}
+.mission-minute-input input { border-right: 0; }
+.mission-minute-input b {
+  display: grid;
+  place-items: center;
+  min-width: 48px;
+  border: 1px solid var(--ds-border-subtle);
+  background: color-mix(in srgb, var(--ops-orange) 8%, var(--ds-surface-screen));
+  color: var(--ops-orange-hot);
+  font: 900 12px/1 var(--ds-font-technical, ui-monospace, monospace);
+}
+
+.mission-review-card-v26 {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--ds-border-subtle);
+  background: var(--ds-surface-panel);
+  box-shadow: inset 3px 0 0 color-mix(in srgb, var(--ops-orange) 72%, transparent);
+}
+.mission-review-card-header-v26 {
+  min-height: 58px;
+  display: grid;
+  grid-template-columns: 36px minmax(180px, 1fr) auto 34px 38px 38px;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--ds-border-subtle);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--ops-orange) 10%, transparent), transparent 52%);
+}
+.mission-index {
+  color: var(--ops-orange);
+  font: 900 15px/1 var(--ds-font-technical, ui-monospace, monospace);
+}
+.mission-card-identity { min-width: 0; display: grid; gap: 3px; }
+.mission-card-identity strong {
+  overflow: hidden;
+  color: var(--ds-content-primary);
+  font-size: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mission-card-identity small {
+  overflow: hidden;
+  color: var(--ds-content-muted);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mission-payout-pill {
+  min-height: 31px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 9px;
+  border: 1px solid color-mix(in srgb, var(--ops-orange) 42%, var(--ds-border-subtle));
+  background: color-mix(in srgb, var(--ops-orange) 7%, transparent);
+  color: var(--ops-orange-hot);
+  font: 800 12px/1 var(--ds-font-technical, ui-monospace, monospace);
+  white-space: nowrap;
+}
+.mission-location-flag,
+.location-state-v26 {
+  display: grid;
+  place-items: center;
+  color: var(--ds-status-warning);
+}
+.mission-location-flag.is-ready,
+.location-state-v26.is-ready { color: var(--ds-status-success); }
+.mission-location-flag .mission-icon,
+.location-state-v26 .mission-icon { width: 17px; height: 17px; }
+.mission-edit,
+.mission-review-card-v26 .mission-remove {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--ds-border-subtle);
+  background: transparent;
+  color: var(--ds-content-secondary);
+  cursor: pointer;
+}
+.mission-edit[aria-pressed="true"] {
+  border-color: var(--ops-orange);
+  color: var(--ops-orange-hot);
+  background: color-mix(in srgb, var(--ops-orange) 8%, transparent);
+}
+.mission-review-card-v26 .mission-remove { color: var(--ops-red); }
+
+.mission-review-objectives { display: grid; }
+.mission-objective-row-v26 {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 112px minmax(240px, 1fr) minmax(190px, .8fr);
+  align-items: center;
+  gap: 9px;
+  padding: 9px 10px;
+  border-bottom: 1px solid color-mix(in srgb, var(--ds-border-subtle) 72%, transparent);
+}
+.mission-objective-row-v26:last-child { border-bottom: 0; }
+.mission-objective-row-v26 > select {
+  min-height: 38px;
+  border: 1px solid var(--ds-border-subtle);
+  background: color-mix(in srgb, var(--ds-surface-screen) 92%, transparent);
+  padding: 0 9px;
+  font: 900 12px/1 var(--ds-font-technical, ui-monospace, monospace);
+}
+.mission-objective-row-v26.is-collect > select,
+.mission-objective-row-v26.is-pickup > select { color: var(--ops-blue); }
+.mission-objective-row-v26.is-deliver > select { color: var(--ops-green); }
+.mission-location-summary {
+  min-width: 0;
+  min-height: 38px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 28px;
+  align-items: center;
+  gap: 7px;
+  padding: 0 8px 0 11px;
+  border: 1px solid var(--ds-border-subtle);
+  background: var(--ds-surface-screen);
+}
+.mission-location-name {
+  overflow: hidden;
+  color: var(--ds-content-primary);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mission-cargo-summary { min-width: 0; }
+.mission-cargo-summary .mission-cargo-chips {
+  min-height: 38px;
+  padding: 5px 7px;
+  border: 1px solid var(--ds-border-subtle);
+  background: var(--ds-surface-screen);
+}
+.mission-review-card-v26 .cargo-chip {
+  min-height: 29px;
+  border-color: color-mix(in srgb, var(--ops-orange) 42%, var(--ds-border-subtle));
+  background: color-mix(in srgb, var(--ops-orange) 8%, transparent);
+  font-size: 12px;
+}
+.mission-review-card-v26 .cargo-chip b { font-size: 12px; }
+.mission-location-edit,
+.mission-cargo-edit { display: none; }
+
+.mission-card-editor {
+  grid-template-columns: minmax(220px, 1fr) minmax(180px, .75fr) minmax(150px, .45fr);
+  gap: 8px;
+  padding: 10px;
+  border-top: 1px solid var(--ds-border-strong);
+  background: color-mix(in srgb, var(--ops-orange) 4%, var(--ds-surface-screen));
+}
+.mission-card-editor:not([hidden]) { display: grid; }
+.mission-card-editor label { display: grid; gap: 5px; }
+.mission-card-editor label span {
+  color: var(--ds-content-muted);
+  font: 800 12px/1 var(--ds-font-technical, ui-monospace, monospace);
+  text-transform: uppercase;
+}
+.mission-card-editor input,
+.mission-review-card-v26.is-editing .mission-location-edit,
+.mission-review-card-v26.is-editing .mission-cargo-edit {
+  width: 100%;
+  min-width: 0;
+  min-height: 38px;
+  border: 1px solid var(--ds-border-subtle);
+  background: var(--ds-surface-interactive);
+  color: var(--ds-content-primary);
+  padding: 0 9px;
+}
+.mission-review-card-v26.is-editing .mission-location-name,
+.mission-review-card-v26.is-editing .location-state-v26,
+.mission-review-card-v26.is-editing .mission-cargo-chips { display: none; }
+.mission-review-card-v26.is-editing .mission-location-edit,
+.mission-review-card-v26.is-editing .mission-cargo-edit { display: block; grid-column: 1 / -1; }
+.mission-review-card-v26.is-editing .mission-location-summary,
+.mission-review-card-v26.is-editing .mission-cargo-summary { display: block; padding: 0; border: 0; background: transparent; }
+
+.mission-route-overview span:last-child { color: var(--ops-orange-hot); }
+.mission-session-card > header strong { white-space: nowrap; }
+
+@media (max-width: 1050px) {
+  .mission-route-context-v026 .mission-context-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .mission-objective-row-v26 { grid-template-columns: 105px minmax(190px, 1fr) minmax(170px, .8fr); }
+}
+
+@media (max-width: 700px) {
+  .mission-route-context-v026 { margin: 0 8px 8px; }
+  .mission-route-context-v026 .mission-context-grid { grid-template-columns: 1fr; }
+  .mission-review-card-header-v26 {
+    grid-template-columns: 34px minmax(0, 1fr) 34px 38px 38px;
+  }
+  .mission-payout-pill { grid-column: 2 / -1; grid-row: 2; width: fit-content; }
+  .mission-objective-row-v26 { grid-template-columns: 1fr; }
+  .mission-objective-row-v26 > select { width: 100%; }
+  .mission-card-editor { grid-template-columns: 1fr; }
+}

@@ -81,12 +81,15 @@ try {
   await page.reload({ waitUntil: 'networkidle' });
   await page.locator('.mission-steps').waitFor({ state: 'visible' });
   await page.locator('#mission-text').waitFor({ state: 'visible' });
-  await selectCurrentLocation();
+  assert.equal(await page.locator('#mission-start-location').isVisible(), false);
 
   step = 'generate context route';
   await page.locator('#mission-text').fill(missionText);
   await page.locator('#mission-form button[type="submit"]').click();
   await page.locator('#focused-review-count').filter({ hasText: '1 mission' }).waitFor({ state: 'visible' });
+  assert.equal(await page.locator('#mission-start-location').isVisible(), true);
+  assert.equal(await page.locator('#focused-review-generate').isDisabled(), true);
+  await selectCurrentLocation();
   assert.equal(await page.locator('#focused-review-generate').isEnabled(), true);
   await page.locator('#focused-review-generate').click();
   await page.locator('[data-stage="route"][aria-current="step"]').waitFor({ state: 'visible' });

@@ -107,13 +107,14 @@ try {
   await openWorkspace('missions');
   await page.locator('.mission-steps').waitFor({ state: 'visible' });
   await page.locator('[data-stage="input"]').click();
-  await selectCurrentLocation();
+  assert.equal(await page.locator('#mission-start-location').isVisible(), false);
   await page.locator('#mission-text').fill(longMissionText);
   await page.locator('#mission-form button[type="submit"]').click();
   await page.locator('#focused-review-count').filter({ hasText: '1 mission' }).waitFor({ state: 'visible' });
-  assert.match(await page.locator('[data-review-mission] [data-field="title"]').inputValue(), /Long-range medical consolidation/);
-  const reviewedCargo = await page.locator('[data-review-mission] [data-field="cargo"]').evaluateAll((controls) => controls.map((control) => control.value));
-  assert.ok(reviewedCargo.some((value) => /extremely_long_medical_supplies/.test(value)));
+  await selectCurrentLocation();
+  assert.match(await page.locator('[data-review-mission] .mission-card-identity strong').textContent(), /Long-range medical consolidation/);
+  const visibleCargo = await page.locator('[data-review-mission] .mission-cargo-chips').allTextContents();
+  assert.ok(visibleCargo.some((value) => /extremely_long_medical_supplies/.test(value)));
   assert.ok(await page.locator('.cargo-chip').count() >= 3);
   assert.equal(await page.locator('#focused-review-generate').isEnabled(), true);
   await noHorizontalOverflow('Long mission Review desktop');
@@ -124,6 +125,7 @@ try {
   assert.match(stored.missions[0].title, /Long-range medical consolidation/);
   assert.equal(stored.missions[0].cargoLots[0].commodity, 'extremely_long_medical_supplies');
   assert.equal(stored.routePlan.sessions.length, 1, 'A single mission must never be split across play sessions');
+  assert.ok(Number.isFinite(stored.routePlan.sessions[0].estimate.travelMinutes));
   await page.screenshot({ path: `${output}/hardening-long-missions-1664.png`, fullPage: true });
 
   step = 'verify integrated Operations tools';
@@ -173,8 +175,8 @@ try {
   await page.setViewportSize({ width: 390, height: 844 });
   await inspectActiveWorkspaces('390x844');
   await openWorkspace('missions');
-  await page.locator('[data-stage="input"]').click();
-  await minimumTouchTargets('390x844 Missions');
+  await page.locator('[data-stage="review"]').click();
+  await minimumTouchTargets('390x844 Missions review');
   await page.screenshot({ path: `${output}/hardening-missions-390.png`, fullPage: true });
   await openWorkspace('route');
   await minimumTouchTargets('390x844 Operations');

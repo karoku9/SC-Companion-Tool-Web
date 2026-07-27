@@ -80,7 +80,7 @@ try {
   await page.evaluate(() => localStorage.removeItem('sc-companion-session-v1'));
   await page.reload({ waitUntil: 'networkidle' });
   await page.locator('.mission-steps').waitFor({ state: 'visible' });
-  await selectCurrentLocation();
+  assert.equal(await page.locator('#mission-start-location').isVisible(), false);
   await page.locator('[data-input="screenshot"]').click();
   await page.locator('#ocr-intake').waitFor({ state: 'visible' });
   assert.equal(await page.locator('#ocr-use-draft').isDisabled(), true);
@@ -121,14 +121,27 @@ try {
   step = 'load OCR draft into visual mission review';
   await page.locator('#ocr-use-draft').click();
   await page.locator('#focused-review-count').filter({ hasText: '1 mission' }).waitFor({ state: 'visible' });
+  assert.equal(await page.locator('#mission-start-location').isVisible(), true);
   assert.equal(await page.locator('[data-review-mission]').count(), 1);
   assert.equal(await page.locator('[data-review-mission] [data-objective]').count(), 2);
-  assert.equal(await page.locator('.location-state.is-ready').count(), 2);
+  assert.equal(await page.locator('.location-state-v26.is-ready').count(), 2);
   assert.equal(await page.locator('.cargo-chip').count(), 2);
   assert.match(await page.locator('.mission-cargo-chips').first().textContent(), /3×\s*Titanium/i);
-  const editorText = await page.locator('#mission-text').inputValue();
-  assert.match(editorText, /collect ARC-L2 Lively Pathway Station 3scu titanium/i);
-  assert.match(editorText, /deliver Lorville 3scu titanium/i);
+  assert.match(await page.locator('.mission-location-name').nth(1).textContent(), /Teasa Spaceport\s*·\s*Lorville/i);
+
+  const rawDraftText = await page.locator('#mission-text').inputValue();
+  assert.match(rawDraftText, /collect ARC-L2 Lively Pathway Station 3scu titanium/i);
+  assert.match(rawDraftText, /deliver Lorville 3scu titanium/i);
+
+  step = 'validate canonical OCR locations';
+  await page.locator('#focused-review-validate').click();
+  await page.locator('#focused-review-alerts .is-ready').waitFor({ state: 'visible' });
+  const canonicalDraftText = await page.locator('#mission-text').inputValue();
+  assert.match(canonicalDraftText, /deliver Teasa Spaceport 3scu titanium/i);
+  assert.equal(await page.locator('#focused-review-generate').isDisabled(), true);
+
+  step = 'complete route settings after OCR review';
+  await selectCurrentLocation();
   assert.equal(await page.locator('#focused-review-generate').isEnabled(), true);
   assert.equal(await page.evaluate(() => window.SCCompanionSession.getState().route), null);
   await noHorizontalOverflow('OCR visual review mobile');

@@ -46,11 +46,12 @@ try {
   await page.evaluate(() => localStorage.removeItem('sc-companion-session-v1'));
   await page.reload({ waitUntil: 'networkidle' });
   await page.locator('.mission-steps').waitFor({ state: 'visible' });
-  await selectCurrentLocation();
-  await page.locator('#mission-route-mode').selectOption('fastest');
+  assert.equal(await page.locator('#mission-start-location').isVisible(), false);
   await page.locator('#mission-text').fill(missionText);
   await page.locator('#mission-form button[type="submit"]').click();
   await page.locator('#focused-review-count').filter({ hasText: '1 mission' }).waitFor({ state: 'visible' });
+  await selectCurrentLocation();
+  await page.locator('#mission-route-mode').selectOption('fastest');
   assert.equal(await page.locator('#focused-review-generate').isEnabled(), true);
   await page.locator('#focused-review-generate').click();
   await page.locator('[data-stage="route"][aria-current="step"]').waitFor({ state: 'visible' });
@@ -69,7 +70,7 @@ try {
   assert.ok(await page.locator('#ops-live-map .ops-map-gateway').count() >= 4, 'Stanton → Pyro → Nyx must expose both gateway pairs');
   assert.equal(await page.locator('#ops-live-map .ops-map-node.is-current').count(), 1);
   assert.ok(await page.locator('#ops-live-map .ops-map-leg.is-active').count() >= 1);
-  assert.match(await page.locator('#ops-next-leg-strip').textContent(), /Gateway|Area18/i);
+  assert.match(await page.locator('#ops-next-leg-strip').textContent(), /Gateway|Area18|Riker Memorial Spaceport/i);
   assert.notEqual((await page.locator('#ops-next-leg-title').textContent())?.trim(), 'No active route');
   await noHorizontalOverflow('integrated desktop map');
   await page.screenshot({ path: `${output}/integrated-route-map-desktop.png`, fullPage: true });
