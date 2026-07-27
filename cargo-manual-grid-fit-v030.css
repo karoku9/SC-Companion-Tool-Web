@@ -1,0 +1,64 @@
+/* UI 0.30 — keep the complete physical grid visible as one ship-bay plan. */
+
+html.cargo-grid-editor-open,
+html.cargo-grid-editor-open body {
+  overflow: hidden;
+}
+
+.ops-v030-grid-wrap {
+  overflow: hidden;
+}
+
+.ops-v030-grid {
+  width: auto;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  aspect-ratio: 4 / 6;
+  grid-template-columns: repeat(var(--cargo-columns), minmax(0, 1fr));
+  grid-template-rows: repeat(var(--cargo-rows), minmax(0, 1fr));
+}
+
+.ops-v030-cell {
+  min-width: 0;
+  min-height: 0;
+  padding: 5px 6px;
+}
+
+.ops-v030-cell strong {
+  font-size: 12px;
+}
+
+.ops-v030-stack i {
+  height: 4px;
+}
+
+@media (max-height: 760px) and (min-width: 901px) {
+  .ops-v030-cargo-editor {
+    inset: 8px;
+  }
+
+  .ops-v030-editor-header {
+    min-height: 42px;
+  }
+
+  .ops-v030-editor-footer {
+    min-height: 34px;
+  }
+
+  .ops-v030-grid-side,
+  .ops-v030-side-panel {
+    padding: 8px;
+    gap: 6px;
+  }
+
+  .ops-v030-editor-toolbar {
+    gap: 4px;
+  }
+
+  .ops-v030-mode-button,
+  .ops-v030-action-button {
+    min-height: 32px;
+    padding: 4px 7px;
+  }
+}
