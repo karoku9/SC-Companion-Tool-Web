@@ -30,10 +30,10 @@ async function selectCurrentLocation(pattern) {
   await page.locator('#mission-start-location-status[data-state="ready"]').waitFor({ state: 'visible' });
 }
 
-async function findCellId(kind, excluded = []) {
-  return page.locator('[data-v030-cell]').evaluateAll((cells, { kind, excluded }) => {
+async function findCellId(kind, excluded = [], preferredRow = null) {
+  return page.locator('[data-v030-cell]').evaluateAll((cells, { kind, excluded, preferredRow }) => {
     const blocked = new Set(excluded);
-    const match = [...cells].find((cell) => {
+    const candidates = [...cells].filter((cell) => {
       const id = cell.dataset.v030Cell;
       if (!id || blocked.has(id)) return false;
       const label = cell.querySelector('strong')?.textContent?.trim() ?? '';
@@ -41,8 +41,9 @@ async function findCellId(kind, excluded = []) {
       if (kind === 'empty') return label === 'Empty';
       return false;
     });
+    const match = candidates.find((cell) => preferredRow !== null && cell.dataset.v030Cell?.startsWith(`${preferredRow}:`)) ?? candidates[0];
     return match?.dataset.v030Cell ?? '';
-  }, { kind, excluded });
+  }, { kind, excluded, preferredRow });
 }
 
 try {
@@ -67,11 +68,16 @@ try {
   assert.match(await page.locator('.ops-v030-editor-footer').textContent(), /6 × 4 floor cells · 3 SCU vertical capacity per cell/i);
   assert.match(await page.locator('.ops-v030-editor-title').textContent(), /Drake Corsair · 72 SCU official grid/i);
 
-  step = 'drag cargo to an exact coordinate';
+  step = 'drag cargo laterally to an exact coordinate';
   const sourceId = await findCellId('occupied');
-  const targetId = await findCellId('empty', [sourceId]);
+  const sourceRow = Number(sourceId.split(':')[0]);
+  const targetId = await findCellId('empty', [sourceId], sourceRow);
   assert.ok(sourceId && targetId && sourceId !== targetId);
-  await page.locator(`[data-v030-cell="${sourceId}"]`).dragTo(page.locator(`[data-v030-cell="${targetId}"]`));
+  const source = page.locator(`[data-v030-cell="${sourceId}"]`);
+  const target = page.locator(`[data-v030-cell="${targetId}"]`);
+  await source.scrollIntoViewIfNeeded();
+  await target.scrollIntoViewIfNeeded();
+  await source.dragTo(target);
   await page.waitForFunction(({ sourceId, targetId }) => {
     const state = window.SCCompanionSession.getState();
     const record = state.cargoManualLayouts?.[state.selectedShipId];
@@ -79,9 +85,20 @@ try {
   }, { sourceId, targetId });
   await page.locator(`[data-v030-cell="${targetId}"].is-manual`).waitFor({ state: 'visible' });
 
+  step = 'assign the same cargo group by coordinate click';
+  const selectedGroup = page.locator('[data-v030-group]').first();
+  await selectedGroup.click();
+  const clickTargetId = await findCellId('empty', [sourceId, targetId], sourceRow);
+  assert.ok(clickTargetId);
+  await page.locator(`[data-v030-cell="${clickTargetId}"]`).click();
+  await page.waitForFunction((cellId) => {
+    const state = window.SCCompanionSession.getState();
+    return Boolean(state.cargoManualLayouts?.[state.selectedShipId]?.placements?.[cellId]);
+  }, clickTargetId);
+
   step = 'reserve unrelated occupied space';
   await page.locator('[data-v030-mode="reserve"]').click();
-  const reserveId = await findCellId('empty', [sourceId, targetId]);
+  const reserveId = await findCellId('empty', [sourceId, targetId, clickTargetId]);
   assert.ok(reserveId);
   await page.locator(`[data-v030-cell="${reserveId}"]`).click();
   await page.waitForFunction((cellId) => {
