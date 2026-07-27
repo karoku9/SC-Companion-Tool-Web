@@ -10,7 +10,8 @@
 
   function update() {
     const guidance = document.querySelector('.operations-page.operations-v028 .ops-v028-cargo-guidance');
-    if (!guidance) return;
+    if (!guidance || guidance.dataset.guidanceVersion === '0.29.2') return;
+    guidance.dataset.guidanceVersion = '0.29.2';
     const spans = [...guidance.querySelectorAll(':scope > span')];
     if (spans[1]) spans[1].innerHTML = `${icon('check')} Left / right zones first`;
     if (spans[2]) spans[2].innerHTML = `${icon('check')} Earlier drops stay nearer the ramp`;
