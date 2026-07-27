@@ -126,7 +126,7 @@ try {
   const exposureLabel = await page.locator('.ops-v028-intel > header strong').textContent();
   assert.match(exposureLabel, /Protected hangar delivery|High cargo exposure|Cargo cleared/i);
   assert.match(await page.locator('.current-operation-panel').textContent(), /2 SCU/i);
-  assert.ok(await page.locator('#ops-live-map .ops-map-gateway').count() >= 2);
+  assert.equal(await page.locator('#ops-live-map .ops-map-node.is-current').count(), 1);
   assert.ok(await page.locator('.current-stop-intel-card .intel-icon').count() >= 5);
   await page.screenshot({ path: `${output}/location-context-operations-pyro.png`, fullPage: true });
 
