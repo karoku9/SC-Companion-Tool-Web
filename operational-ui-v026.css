@@ -24,7 +24,7 @@ html[data-active-view="missions"] .quick-ship-control { display: none !important
   border: 1px solid var(--ds-border-subtle);
   background: color-mix(in srgb, var(--ops-orange) 8%, var(--ds-surface-screen));
   color: var(--ops-orange-hot);
-  font: 900 10px/1 var(--ds-font-technical, ui-monospace, monospace);
+  font: 900 12px/1 var(--ds-font-technical, ui-monospace, monospace);
 }
 
 .mission-review-card-v26 {
@@ -59,7 +59,7 @@ html[data-active-view="missions"] .quick-ship-control { display: none !important
 .mission-card-identity small {
   overflow: hidden;
   color: var(--ds-content-muted);
-  font-size: 10px;
+  font-size: 12px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -71,7 +71,7 @@ html[data-active-view="missions"] .quick-ship-control { display: none !important
   border: 1px solid color-mix(in srgb, var(--ops-orange) 42%, var(--ds-border-subtle));
   background: color-mix(in srgb, var(--ops-orange) 7%, transparent);
   color: var(--ops-orange-hot);
-  font: 800 10px/1 var(--ds-font-technical, ui-monospace, monospace);
+  font: 800 12px/1 var(--ds-font-technical, ui-monospace, monospace);
   white-space: nowrap;
 }
 .mission-location-flag,
@@ -118,7 +118,7 @@ html[data-active-view="missions"] .quick-ship-control { display: none !important
   border: 1px solid var(--ds-border-subtle);
   background: color-mix(in srgb, var(--ds-surface-screen) 92%, transparent);
   padding: 0 9px;
-  font: 900 10px/1 var(--ds-font-technical, ui-monospace, monospace);
+  font: 900 12px/1 var(--ds-font-technical, ui-monospace, monospace);
 }
 .mission-objective-row-v26.is-collect > select,
 .mission-objective-row-v26.is-pickup > select { color: var(--ops-blue); }
@@ -149,11 +149,12 @@ html[data-active-view="missions"] .quick-ship-control { display: none !important
   background: var(--ds-surface-screen);
 }
 .mission-review-card-v26 .cargo-chip {
-  min-height: 27px;
+  min-height: 29px;
   border-color: color-mix(in srgb, var(--ops-orange) 42%, var(--ds-border-subtle));
   background: color-mix(in srgb, var(--ops-orange) 8%, transparent);
+  font-size: 12px;
 }
-.mission-review-card-v26 .cargo-chip b { font-size: 11px; }
+.mission-review-card-v26 .cargo-chip b { font-size: 12px; }
 .mission-location-edit,
 .mission-cargo-edit { display: none; }
 
@@ -168,7 +169,7 @@ html[data-active-view="missions"] .quick-ship-control { display: none !important
 .mission-card-editor label { display: grid; gap: 5px; }
 .mission-card-editor label span {
   color: var(--ds-content-muted);
-  font: 800 9px/1 var(--ds-font-technical, ui-monospace, monospace);
+  font: 800 12px/1 var(--ds-font-technical, ui-monospace, monospace);
   text-transform: uppercase;
 }
 .mission-card-editor input,
