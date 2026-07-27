@@ -106,7 +106,9 @@
     ]))
     .then(() => Promise.all([
       import('./route-operational-steps-v028.js'),
-      import('./cargo-auto-layout-v028.js').then(() => import('./cargo-auto-layout-v0292.js'))
+      import('./cargo-auto-layout-v028.js')
+        .then(() => import('./cargo-auto-layout-v0292.js'))
+        .then(() => import('./cargo-manual-layout-v030.js'))
     ]))
     .then(() => import('./fleet-estimate-adapter.js'))
     .then(() => {
@@ -141,6 +143,7 @@
     .then(() => import('./operations-flow-v028.js'))
     .then(() => import('./operations-readable-short-desktop-v0291.js'))
     .then(() => import('./operations-cargo-guidance-v0292.js'))
+    .then(() => import('./cargo-manual-grid-view-v030.js'))
     .then(() => import('./ship-selector-sync.js'))
     .then(() => import('./missions-operations-bridge.js'))
     .then(() => window.dispatchEvent(new Event('sc:dynamic-pages-ready')))
