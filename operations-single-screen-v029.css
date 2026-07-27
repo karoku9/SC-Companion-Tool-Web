@@ -1,0 +1,372 @@
+/* v0.29 desktop flight-deck layout.
+   Keeps the active Operations workflow inside one viewport on wide desktop screens.
+   Smaller desktop, tablet and mobile layouts keep the existing natural document flow. */
+
+@media (min-width: 1450px) and (min-height: 820px) {
+  html[data-active-view="route"],
+  html[data-active-view="route"] body {
+    height: 100%;
+    overflow: hidden;
+  }
+
+  html[data-active-view="route"] .app-main {
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  html[data-active-view="route"] .operations-page.operations-v028 {
+    width: 100%;
+    height: calc(100dvh - 64px);
+    min-height: 0;
+    margin: 0;
+    padding: 8px 10px;
+    overflow: hidden;
+  }
+
+  html[data-active-view="route"] .operations-v028 .operations-grid {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1.55fr) minmax(430px, .85fr);
+    grid-template-rows: auto minmax(330px, 1fr) 242px 48px;
+    grid-template-areas:
+      "command command"
+      "primary primary"
+      "timeline cargo"
+      "tools tools";
+    gap: 8px;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v027-command-deck {
+    grid-area: command;
+    min-height: 0;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v027-primary-grid {
+    grid-area: primary;
+    min-height: 0;
+    height: 100%;
+    gap: 8px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v027-timeline-panel {
+    grid-area: timeline;
+    min-height: 0;
+    height: 242px;
+    overflow: hidden;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v028-cargo-panel {
+    grid-area: cargo;
+    min-height: 0;
+    height: 242px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .operations-tools {
+    grid-area: tools;
+    min-height: 0;
+    height: 48px;
+    overflow: hidden;
+  }
+
+  /* Compact command deck. */
+  html[data-active-view="route"] .operations-v028 .ops-v027-command-header {
+    min-height: 58px;
+    grid-template-columns: minmax(180px, .72fr) minmax(560px, 2.55fr) minmax(190px, .7fr);
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v027-command-title {
+    gap: 2px;
+    padding: 8px 10px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v027-command-title strong {
+    font-size: var(--scx-type-md);
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v027-command-metrics article {
+    grid-template-columns: 18px minmax(0, 1fr);
+    column-gap: 6px;
+    padding: 6px 8px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v027-command-metrics article > span svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v027-command-metrics article strong {
+    margin-top: 2px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .quick-ship-control {
+    padding: 7px 9px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-session-bar {
+    min-height: 38px;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: stretch;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-session-bar > header {
+    min-height: 38px;
+    padding: 0 10px;
+    border-right: 1px solid var(--scx-border-subtle);
+    border-bottom: 0;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-session-tabs {
+    min-height: 38px;
+    overflow-y: hidden;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-session-tabs button {
+    min-width: 170px;
+    min-height: 38px;
+    grid-template-columns: 24px minmax(0, 1fr);
+    padding: 4px 9px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-session-tabs button > span {
+    width: 22px;
+    height: 22px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-session-tabs button small {
+    margin-top: 1px;
+  }
+
+  /* Main map/current-step row. */
+  html[data-active-view="route"] .operations-v028 .ops-live-navigation,
+  html[data-active-view="route"] .operations-v028 .current-operation-panel {
+    min-height: 0;
+    height: 100%;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-live-navigation {
+    grid-template-rows: 42px 40px minmax(0, 1fr) 28px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-live-nav-header,
+  html[data-active-view="route"] .operations-v028 .mfd-header,
+  html[data-active-view="route"] .operations-v028 .ops-v027-panel-header {
+    min-height: 42px;
+    padding: 6px 10px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-live-nav-header strong,
+  html[data-active-view="route"] .operations-v028 .mfd-header strong,
+  html[data-active-view="route"] .operations-v028 .ops-v027-panel-header strong {
+    font-size: var(--scx-type-md);
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-next-leg-strip {
+    min-height: 40px;
+    padding: 5px 10px;
+    overflow: hidden;
+    flex-wrap: nowrap;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-live-map {
+    min-height: 0;
+    height: 100%;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-map-legend {
+    min-height: 28px;
+    padding-block: 3px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .current-operation-panel {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+  }
+
+  html[data-active-view="route"] .operations-v028 .current-operation-body {
+    min-height: 0;
+    align-content: start;
+    gap: 7px;
+    padding: 10px 12px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+  }
+
+  html[data-active-view="route"] .operations-v028 .current-operation-body > h2 {
+    font-size: clamp(20px, 1.35vw, 25px);
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v028-travel-card {
+    min-height: 62px;
+    grid-template-columns: 38px minmax(0, 1fr) auto;
+    gap: 9px;
+    padding: 8px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v028-travel-card > span {
+    width: 36px;
+    height: 36px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v028-after-step,
+  html[data-active-view="route"] .operations-v028 .ops-v028-upcoming {
+    gap: 4px;
+    margin-top: 2px;
+    padding-top: 7px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v028-upcoming > div {
+    min-height: 28px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v028-intel .current-stop-intel-grid {
+    grid-template-columns: repeat(5, minmax(48px, 1fr));
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v028-intel .current-stop-intel-card {
+    min-height: 55px;
+    gap: 3px;
+    padding: 5px 3px;
+  }
+
+  /* Timeline becomes one horizontal instrument strip instead of a wrapped wall. */
+  html[data-active-view="route"] .operations-v028 .ops-v027-timeline-panel > header {
+    min-height: 42px;
+    padding: 6px 10px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v027-timeline {
+    height: 198px;
+    display: flex;
+    grid-template-columns: none;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x proximity;
+    scrollbar-width: thin;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v028-stop-card {
+    flex: 0 0 210px;
+    min-width: 210px;
+    min-height: 0;
+    height: 100%;
+    gap: 7px;
+    padding: 9px 9px;
+    scroll-snap-align: start;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v028-stop-card .ops-v027-route-copy {
+    gap: 2px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v028-stop-action {
+    margin-top: 1px;
+    padding-top: 5px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v028-stop-cargo {
+    gap: 4px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v028-stop-cargo em {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  /* Cargo planner shares the lower row with the timeline. */
+  html[data-active-view="route"] .ops-v028-panel-header {
+    min-height: 42px;
+    padding: 6px 9px;
+  }
+
+  html[data-active-view="route"] .ops-v028-panel-header strong {
+    font-size: var(--scx-type-md);
+  }
+
+  html[data-active-view="route"] .ops-v028-grouping span {
+    display: none;
+  }
+
+  html[data-active-view="route"] .ops-v028-grouping select {
+    min-width: 104px;
+    min-height: 30px;
+  }
+
+  html[data-active-view="route"] .ops-v028-cargo-body {
+    height: 198px;
+    min-height: 0;
+    grid-template-columns: minmax(270px, 1.28fr) minmax(155px, .72fr);
+  }
+
+  html[data-active-view="route"] .ops-v028-cargo-guidance {
+    display: none;
+  }
+
+  html[data-active-view="route"] .ops-v028-cargo-grid-wrap {
+    min-height: 0;
+    padding: 8px 10px 25px;
+  }
+
+  html[data-active-view="route"] .ops-v028-cargo-grid {
+    width: 100%;
+    min-height: 0;
+    height: 158px;
+    gap: 2px;
+  }
+
+  html[data-active-view="route"] .ops-v028-cargo-cell small {
+    top: 2px;
+    left: 3px;
+    font-size: 8px;
+  }
+
+  html[data-active-view="route"] .ops-v028-access-edge {
+    bottom: 5px;
+    left: 10px;
+    right: 10px;
+    min-height: 16px;
+    font-size: 9px;
+  }
+
+  html[data-active-view="route"] .ops-v028-cargo-legend {
+    min-height: 0;
+    overflow-y: auto;
+    scrollbar-width: thin;
+  }
+
+  html[data-active-view="route"] .ops-v028-cargo-legend > article {
+    gap: 6px;
+    padding: 7px 8px;
+  }
+
+  html[data-active-view="route"] .ops-v028-cargo-legend footer {
+    position: sticky;
+    bottom: 0;
+    padding: 8px;
+  }
+
+  /* The bottom action strip remains available without consuming a second row. */
+  html[data-active-view="route"] .operations-v028 .ops-action-bar {
+    min-height: 48px;
+    height: 48px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-action-bar [data-ops-action] {
+    min-height: 48px;
+    padding-block: 5px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-action-bar [data-ops-action] small {
+    display: none;
+  }
+
+  html[data-active-view="route"] .operations-v028 + .site-footer,
+  html[data-active-view="route"] .operations-v028 ~ .site-footer {
+    display: none;
+  }
+}
