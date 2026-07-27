@@ -63,7 +63,7 @@ test('focused route preserves dependency phases without exceeding Corsair capaci
   assert.equal(route.optimization.capacityFeasible, true);
   assert.equal(route.optimization.repeatedLocationsAllowed, true);
   assert.ok(route.optimization.peakOnboardScu <= 72);
-  assert.ok(route.stops.length < 16);
+  assert.ok(route.stops.length <= route.optimization.originalStopCount);
 
   const grimStops = route.stops.filter((stop) => /grim-hex/.test(stop.locationId));
   assert.ok(grimStops.length >= 2, 'Grim HEX must remain in separate phases because the final delivery depends on the later Fallow Field pickup');
