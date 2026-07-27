@@ -127,10 +127,20 @@ try {
   assert.equal(await page.locator('.location-state-v26.is-ready').count(), 2);
   assert.equal(await page.locator('.cargo-chip').count(), 2);
   assert.match(await page.locator('.mission-cargo-chips').first().textContent(), /3×\s*Titanium/i);
-  const editorText = await page.locator('#mission-text').inputValue();
-  assert.match(editorText, /collect ARC-L2 Lively Pathway Station 3scu titanium/i);
-  assert.match(editorText, /deliver Teasa Spaceport 3scu titanium/i);
+  assert.match(await page.locator('.mission-location-name').nth(1).textContent(), /Teasa Spaceport\s*·\s*Lorville/i);
+
+  const rawDraftText = await page.locator('#mission-text').inputValue();
+  assert.match(rawDraftText, /collect ARC-L2 Lively Pathway Station 3scu titanium/i);
+  assert.match(rawDraftText, /deliver Lorville 3scu titanium/i);
+
+  step = 'validate canonical OCR locations';
+  await page.locator('#focused-review-validate').click();
+  await page.locator('#focused-review-alerts .is-ready').waitFor({ state: 'visible' });
+  const canonicalDraftText = await page.locator('#mission-text').inputValue();
+  assert.match(canonicalDraftText, /deliver Teasa Spaceport 3scu titanium/i);
   assert.equal(await page.locator('#focused-review-generate').isDisabled(), true);
+
+  step = 'complete route settings after OCR review';
   await selectCurrentLocation();
   assert.equal(await page.locator('#focused-review-generate').isEnabled(), true);
   assert.equal(await page.evaluate(() => window.SCCompanionSession.getState().route), null);
