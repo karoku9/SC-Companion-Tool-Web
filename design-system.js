@@ -158,7 +158,7 @@
         qualifier: 'UNOFFICIAL HAULING OPERATIONS SOFTWARE'
       }),
       character: Object.freeze(['utilitarian', 'rugged', 'repairable', 'dense', 'amber phosphor', 'physical soft keys']),
-      sourceNote: 'Compatibility theme retained for existing pages while the proprietary industrial design library replaces manufacturer imitation.'
+      sourceNote: 'Compatibility theme retained for existing pages; it is not an official CIG palette and will be replaced by the proprietary industrial language.'
     })
   });
 
