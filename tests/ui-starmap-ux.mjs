@@ -93,14 +93,16 @@ try {
   const firstCurrentId = await page.locator('#ops-live-map .ops-map-node.is-current').getAttribute('data-reference-id');
   const firstCurrentName = (await page.locator('#current-stop-name').textContent())?.trim();
   await page.locator('#complete-stop').click();
-  await page.waitForFunction(({ previousId, previousName }) => {
-    const currentNode = document.querySelector('#ops-live-map .ops-map-node.is-current');
-    const currentName = document.querySelector('#current-stop-name')?.textContent?.trim();
-    return currentNode?.getAttribute('data-reference-id') !== previousId || currentName !== previousName;
-  }, { previousId: firstCurrentId, previousName: firstCurrentName });
+  await page.waitForFunction((previousName) => document.querySelector('#current-stop-name')?.textContent?.trim() !== previousName, firstCurrentName);
+  const secondCurrentId = await page.locator('#ops-live-map .ops-map-node.is-current').getAttribute('data-reference-id');
+  const secondCurrentName = (await page.locator('#current-stop-name').textContent())?.trim();
   assert.equal(await page.locator('#ops-live-map .ops-map-node.is-current').count(), 1);
   assert.ok(await page.locator('#ops-live-map .ops-map-node').count() <= 5);
-  assert.notEqual(await page.locator('#ops-live-map .ops-map-node.is-current').getAttribute('data-reference-id'), firstCurrentId);
+  assert.notEqual(secondCurrentName, firstCurrentName, 'Completing a travel step must advance the current instruction');
+  if (secondCurrentId === firstCurrentId) {
+    assert.equal(await page.locator('#ops-live-map .ops-map-node').count(), 1, 'An action at the just-reached location should collapse the focused map to that location');
+    assert.match(secondCurrentName ?? '', /Pick up|Drop|Complete/i);
+  }
   await page.screenshot({ path: `${output}/integrated-route-map-progress-desktop.png`, fullPage: true });
 
   step = 'complete route and verify focused map completion';
