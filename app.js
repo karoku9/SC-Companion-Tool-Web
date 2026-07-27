@@ -125,6 +125,7 @@
     .then(() => import('./operations-exposure-intel.js'))
     .then(() => import('./operations-design-v027.js'))
     .then(() => import('./operations-flow-v028.js'))
+    .then(() => import('./operations-readable-short-desktop-v0291.js'))
     .then(() => import('./ship-selector-sync.js'))
     .then(() => import('./missions-operations-bridge.js'))
     .then(() => window.dispatchEvent(new Event('sc:dynamic-pages-ready')))
