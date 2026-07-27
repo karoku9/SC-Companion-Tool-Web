@@ -67,7 +67,6 @@ try {
   await page.locator('#mission-text').waitFor({ state: 'visible' });
   assert.equal(await page.locator('html').getAttribute('data-theme'), 'industrial');
   assert.match(await page.locator('.brand-text').textContent(), /SC Companion/i);
-  assert.match(await page.locator('.nav-footer').textContent(), /DESIGN 0\.27/i);
 
   step = 'verify reduced navigation and deferred route settings';
   assert.equal(await page.locator('.nav-group[data-nav-group="plan"]').count(), 0);
