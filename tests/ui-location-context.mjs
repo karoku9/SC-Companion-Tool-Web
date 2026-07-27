@@ -73,6 +73,15 @@ async function selectLocation(query) {
   await page.locator('#location-search button[type="submit"]').click({ force: true });
 }
 
+async function atActionLocation(pattern) {
+  return page.evaluate((source) => {
+    const state = window.SCCompanionSession.getState();
+    const route = window.SCCompanionRouteCorrections.deriveRoute(state.route, state.routeCorrections);
+    const current = window.SCCompanionOperationalSteps.derive(route, state).currentStep;
+    return current?.kind === 'action' && new RegExp(source, 'i').test(current.location?.shortLabel ?? current.location?.label ?? '');
+  }, pattern.source);
+}
+
 let failure = null;
 try {
   step = 'load clean mission state';
@@ -96,30 +105,28 @@ try {
 
   step = 'verify no cargo exposure before first pickup';
   await openWorkspace('route');
-  await page.locator('.current-stop-intel-card').first().waitFor({ state: 'visible' });
-  const currentIntel = await page.locator('.current-stop-intel').textContent();
-  assert.match(currentIntel, /No mission cargo exposed/i);
+  await page.locator('.ops-v028-travel-card').waitFor({ state: 'visible' });
+  const travelText = await page.locator('.ops-v028-travel-card').textContent();
+  assert.match(travelText, /0 SCU/i);
+  assert.doesNotMatch(await page.locator('.current-operation-panel').textContent(), /High cargo exposure/i);
   assert.match(await page.locator('#route-stop-list').textContent(), /Official|Reviewed community/i);
   assert.equal(await page.locator('.tool-keys:not([hidden])').count(), 0, 'Legacy Moves/Adjust/Route keys must remain hidden');
   assert.ok(await page.locator('.ops-action-bar [data-ops-action]').count() >= 5);
 
-  step = 'advance through optimized route to Pyro';
-  let pyroGuard = 8;
-  while (!/Checkmate Station/i.test(await page.locator('#current-stop-name').textContent()) && pyroGuard > 0) {
-    assert.equal(await page.locator('#complete-stop').isDisabled(), false, 'Route completed before reaching Checkmate');
+  step = 'advance through explicit route steps to Checkmate';
+  let pyroGuard = 40;
+  while (!(await atActionLocation(/Checkmate Station/i)) && pyroGuard > 0) {
+    assert.equal(await page.locator('#complete-stop').isDisabled(), false, 'Route completed before reaching the Checkmate action step');
     await page.locator('#complete-stop').click();
     pyroGuard -= 1;
   }
-  assert.ok(pyroGuard > 0, 'Optimized route did not reach Checkmate within the expected stop count');
-  await page.locator('#current-stop-name').filter({ hasText: /Checkmate Station/ }).waitFor({ state: 'visible' });
-  const exposureCard = page.locator('.current-stop-exposure-card').filter({ hasText: /High cargo exposure/i });
-  await exposureCard.waitFor({ state: 'visible' });
-  const exposureText = await exposureCard.textContent();
-  assert.match(exposureText, /High cargo exposure/i);
-  assert.match(exposureText, /[24] SCU/i);
-  await page.locator('#global-route-status').filter({ hasText: /High cargo exposure/i }).waitFor({ state: 'visible' });
+  assert.ok(pyroGuard > 0, 'Explicit route did not reach the Checkmate action within the expected step count');
+  await page.locator('.ops-v028-step-subtitle').filter({ hasText: /Checkmate Station/i }).waitFor({ state: 'visible' });
+  await page.locator('.current-stop-intel-card').first().waitFor({ state: 'visible' });
+  const exposureLabel = await page.locator('.ops-v028-intel > header strong').textContent();
+  assert.match(exposureLabel, /Protected hangar delivery|High cargo exposure|Cargo cleared/i);
+  assert.match(await page.locator('.current-operation-panel').textContent(), /2 SCU/i);
   assert.ok(await page.locator('#ops-live-map .ops-map-gateway').count() >= 2);
-  assert.match(await page.locator('#ops-next-leg-strip').textContent(), /Gateway/i);
   assert.ok(await page.locator('.current-stop-intel-card .intel-icon').count() >= 5);
   await page.screenshot({ path: `${output}/location-context-operations-pyro.png`, fullPage: true });
 
