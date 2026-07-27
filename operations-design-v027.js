@@ -102,13 +102,6 @@
       return (route.gatewaySegments ?? []).find((segment) => targets.includes(String(segment.stopId))) ?? null;
     }
 
-    function routeStatus(index, progress) {
-      if (progress.completedSet.has(String(progress.routeStops?.[index]?.id))) return 'complete';
-      if (index === progress.currentStopIndex) return 'current';
-      if (index === progress.currentStopIndex + 1) return 'next';
-      return 'future';
-    }
-
     function renderActionSummary(route, progress, cargo) {
       const stop = progress.currentStop;
       if (!route || !stop) {
@@ -123,11 +116,12 @@
         onboardScu: cargo.totals.onboardScu,
         label: stop.locationLabel
       });
+      const exposure = intel?.exposure ?? { level: 'unknown', label: 'Exposure unknown' };
       const chips = [
         totals.delivery ? `<span class="is-delivery">${icon('unload')}<b>DROP ${totals.delivery} SCU</b></span>` : '',
         totals.pickup ? `<span class="is-pickup">${icon('load')}<b>PICK UP ${totals.pickup} SCU</b></span>` : '',
         `<span>${icon('cargo')}<b>${cargo.totals.onboardScu} SCU ONBOARD</b></span>`,
-        `<span class="is-exposure is-${escapeHtml(intel.exposure.level)}">${icon('shield')}<b>${escapeHtml(intel.exposure.label)}</b></span>`
+        `<span class="is-exposure is-${escapeHtml(exposure.level)}">${icon('shield')}<b>${escapeHtml(exposure.label)}</b></span>`
       ].filter(Boolean).join('');
       actionSummary.innerHTML = `<div class="ops-v027-action-chips">${chips}</div>`;
     }
@@ -182,7 +176,6 @@
 
     function render(state = store.getState()) {
       const { route, progress, cargo } = activeRoute(state);
-      progress.routeStops = route?.stops ?? [];
       const current = progress.currentStop;
       const next = route?.stops?.[progress.currentStopIndex + 1] ?? null;
       const sessionCount = state.routePlan?.sessions?.length ?? 0;
