@@ -93,7 +93,7 @@
     ]))
     .then(() => Promise.all([
       import('./route-operational-steps-v028.js'),
-      import('./cargo-auto-layout-v028.js')
+      import('./cargo-auto-layout-v028.js').then(() => import('./cargo-auto-layout-v0292.js'))
     ]))
     .then(() => import('./fleet-estimate-adapter.js'))
     .then(() => {
