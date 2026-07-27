@@ -1,0 +1,8 @@
+/* Preserve the global 12px legibility floor after the compact flight-deck rules. */
+
+@media (min-width: 1450px) and (min-height: 820px) {
+  html[data-active-view="route"] .operations-v028 .ops-v028-cargo-cell small,
+  html[data-active-view="route"] .operations-v028 .ops-v028-access-edge {
+    font-size: 12px;
+  }
+}
