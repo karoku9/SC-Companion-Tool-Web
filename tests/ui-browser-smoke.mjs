@@ -65,6 +65,9 @@ try {
   await page.goto(`${baseUrl}/#missions`, { waitUntil: 'networkidle' });
   await page.locator('.mission-steps').waitFor({ state: 'visible' });
   await page.locator('#mission-text').waitFor({ state: 'visible' });
+  assert.equal(await page.locator('html').getAttribute('data-theme'), 'industrial');
+  assert.match(await page.locator('.brand-text').textContent(), /SC Companion/i);
+  assert.match(await page.locator('.nav-footer').textContent(), /DESIGN 0\.27/i);
 
   step = 'verify reduced navigation and deferred route settings';
   assert.equal(await page.locator('.nav-group[data-nav-group="plan"]').count(), 0);
@@ -128,10 +131,18 @@ try {
   await page.locator('#focused-route-open').click();
   await page.locator('#current-stop-name').waitFor({ state: 'visible' });
   await page.locator('#ops-live-map .ops-map-node').first().waitFor({ state: 'visible' });
+  await page.locator('.ops-v027-command-deck').waitFor({ state: 'visible' });
+  assert.equal(await page.locator('.operations-page').evaluate((element) => element.classList.contains('operations-v027')), true);
   assert.ok(await page.locator('#ops-live-map .ops-map-leg').count() > 0);
   assert.ok(await page.locator('#ops-live-map .ops-map-gateway').count() >= 2);
   assert.match(await page.locator('#ops-next-leg-strip').textContent(), /Gateway/i);
   assert.match(await page.locator('#ops-session-summary').textContent(), /max 60 min travel/i);
+  assert.match(await page.locator('#ops-v027-budget').textContent(), /60 min travel/i);
+  assert.match(await page.locator('#ops-v027-gateway').textContent(), /Gateway/i);
+  assert.ok(await page.locator('.ops-v027-route-step').count() > 0);
+  assert.equal(await page.locator('.ops-v027-route-step.is-current').count(), 1);
+  assert.ok(await page.locator('.ops-v027-action-chips > span').count() >= 2);
+  assert.equal(await page.locator('.ops-v027-legacy-sequence').isVisible(), false);
   assert.equal(await page.locator('.ops-action-bar [data-ops-action]').count(), 5);
   assert.ok(await page.locator('.current-stop-intel-card .intel-icon').count() >= 5);
   await noHorizontalOverflow('Operations live cockpit desktop');
@@ -151,6 +162,8 @@ try {
   await page.screenshot({ path: `${output}/missions-focused-review-mobile.png`, fullPage: true });
   await page.locator('[data-view-target="route"]').click();
   await page.locator('#ops-live-map').waitFor({ state: 'visible' });
+  await page.locator('.ops-v027-command-deck').waitFor({ state: 'visible' });
+  assert.ok(await page.locator('.ops-v027-route-step').count() > 0);
   await noHorizontalOverflow('Operations live cockpit mobile');
   await page.screenshot({ path: `${output}/operations-live-cockpit-mobile.png`, fullPage: true });
 
@@ -165,4 +178,4 @@ try {
 }
 
 if (failure) throw failure;
-console.log('v0.26 mission run sheet and travel-only session smoke passed.');
+console.log('v0.27 industrial mission workflow and Operations cockpit smoke passed.');
