@@ -53,16 +53,16 @@ test('design system, icons and shell load before page routing', () => {
   const shell = read('product-shell.js');
   assert.match(html, /id="product-navigation"/);
   assert.match(html, /id="future-pages-root"/);
-  assert.match(html, /ui-v2\.css\?v=0\.29\.1/);
-  assert.match(html, /product-shell\.js\?v=0\.29\.1/);
+  assert.match(html, /ui-v2\.css\?v=0\.29\.2/);
+  assert.match(html, /product-shell\.js\?v=0\.29\.2/);
   assert.ok(html.indexOf('src="design-system.js"') < html.indexOf('src="mfd-icons.js"'));
   assert.ok(html.indexOf('src="mfd-icons.js"') < html.indexOf('src="product-pages.js"'));
-  assert.ok(html.indexOf('product-shell.js?v=0.29.1') < html.indexOf('src="sections.js"'));
+  assert.ok(html.indexOf('product-shell.js?v=0.29.2') < html.indexOf('src="sections.js"'));
   assert.match(shell, /id="route-planner"/);
   assert.doesNotMatch(shell, /id="load-operations"/);
   assert.match(shell, /nav-glyph/);
   assert.match(shell, /SCCompanionMfdIcons/);
-  assert.match(shell, /CORE 0\.25 · UI 0\.29\.1/);
+  assert.match(shell, /CORE 0\.25 · UI 0\.29\.2/);
   assert.match(shell, /MutationObserver/);
   assert.match(shell, /local review and routing/);
 });
@@ -96,6 +96,8 @@ test('v0.25 keeps assisted intake and adds the operational cockpit runtimes', ()
   assert.match(app, /location-context\.js/);
   assert.match(app, /location-context-planner\.js/);
   assert.match(app, /cargo-zone-model\.js/);
+  assert.match(app, /cargo-auto-layout-v0292\.js/);
+  assert.match(app, /operations-cargo-guidance-v0292\.js/);
   assert.match(app, /ui-v2-accessibility\.js/);
   assert.match(app, /game-log-intake\.js/);
   assert.match(app, /game-log-intake-correlation\.js/);
@@ -128,6 +130,7 @@ test('v0.25 keeps assisted intake and adds the operational cockpit runtimes', ()
   assert.match(entry, /operational-ui-v025\.css/);
   assert.match(entry, /operational-ui-legibility\.css/);
   assert.match(entry, /operations-readable-short-desktop-v0291\.css/);
+  assert.match(entry, /operations-spacing-v0292\.css/);
   assert.match(gameLog, /mergeImportedEvents/);
   assert.match(gameLogCorrelation, /nearest-preceding-contract-context/);
   assert.match(gameLogCorrelation, /normalizeStructuredFields/);
