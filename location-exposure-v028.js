@@ -4,7 +4,11 @@
   const base = root.SCCompanionLocationContext;
   const locations = root.SCCompanionLocations;
   const profiles = root.SCCompanionLocationProfiles;
-  if (!base || !locations || !profiles || base.operationAwareExposure) return;
+  if (!base || !locations || !profiles) return;
+  if (base.operationAwareExposure) {
+    if (typeof module !== 'undefined' && module.exports) module.exports = base;
+    return;
+  }
 
   function freeze(value) {
     if (!value || typeof value !== 'object' || Object.isFrozen(value)) return value;
@@ -67,10 +71,12 @@
     return freeze({ ...context, exposure: exposureFor(locationId, options) });
   }
 
-  root.SCCompanionLocationContext = Object.freeze({
+  const api = Object.freeze({
     ...base,
     exposureFor,
     buildContext,
     operationAwareExposure: true
   });
+  root.SCCompanionLocationContext = api;
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
 }(typeof globalThis !== 'undefined' ? globalThis : window));
