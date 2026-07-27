@@ -5,7 +5,7 @@
   const roadmap = window.SCCompanionRoadmap;
 
   const buildLabel = document.querySelector('.nav-footer span');
-  if (buildLabel && roadmap?.currentVersion) buildLabel.textContent = `BUILD ${roadmap.currentVersion}`;
+  if (buildLabel && roadmap?.currentVersion) buildLabel.textContent = `CORE ${roadmap.currentVersion} · UI 0.29`;
   const localMapButton = document.querySelector('[data-map-mode="stanton"]');
   if (localMapButton) {
     localMapButton.dataset.mapMode = 'local';
