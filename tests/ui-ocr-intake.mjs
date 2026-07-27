@@ -16,20 +16,26 @@ DELIVER CARGO
 Destination: Teasa Spaceport
 3 SCU Titanium`;
 
+// Tesseract.js 7's CDN ESM build is produced from a CommonJS bundle and can
+// expose the browser API under the default export. This reproduces the real
+// export shape that caused library.createWorker to be undefined in production.
 const mockModule = `
-export const PSM = { SPARSE_TEXT: '11' };
-export async function createWorker(language, oem, options) {
-  if (language !== 'eng') throw new Error('Expected English OCR worker');
-  return {
-    async setParameters() {},
-    async recognize() {
-      options?.logger?.({ status: 'recognizing text', progress: 0.55 });
-      options?.logger?.({ status: 'recognizing text', progress: 1 });
-      return { data: { text: ${JSON.stringify(recognizedText)}, confidence: 93, blocks: [] } };
-    },
-    async terminate() {}
-  };
-}`;
+const api = {
+  PSM: { SPARSE_TEXT: '11' },
+  async createWorker(language, oem, options) {
+    if (language !== 'eng') throw new Error('Expected English OCR worker');
+    return {
+      async setParameters() {},
+      async recognize() {
+        options?.logger?.({ status: 'recognizing text', progress: 0.55 });
+        options?.logger?.({ status: 'recognizing text', progress: 1 });
+        return { data: { text: ${JSON.stringify(recognizedText)}, confidence: 93, blocks: [] } };
+      },
+      async terminate() {}
+    };
+  }
+};
+export default api;`;
 
 const validPng = Buffer.from(
   'iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAAAKUlEQVR4nO3NMQEAAAjDMMC/52ECvlRA00nqs3m9AwAAAAAAAAAAgMMWx/EDPS4YA2MAAAAASUVORK5CYII=',
@@ -44,7 +50,7 @@ let failure = null;
 
 page.on('pageerror', (error) => errors.push(`pageerror: ${error.message}`));
 page.on('console', (message) => { if (message.type() === 'error') errors.push(`console: ${message.text()}`); });
-await page.route('https://cdn.jsdelivr.net/npm/tesseract.js@7.0.0/dist/tesseract.esm.min.js', async (route) => {
+await page.route('**/tesseract.esm.min.js?sc-companion-upstream=0.29.3', async (route) => {
   await route.fulfill({
     status: 200,
     contentType: 'application/javascript',
@@ -86,7 +92,7 @@ try {
   assert.equal(await page.locator('#ocr-use-draft').isDisabled(), true);
   assert.equal(await page.evaluate(() => window.SCCompanionSession.getState().route), null);
 
-  step = 'upload screenshot and run mocked browser OCR';
+  step = 'upload screenshot and run default-export browser OCR';
   await page.locator('#ocr-file-input').setInputFiles({
     name: 'covalex-contract.png',
     mimeType: 'image/png',
