@@ -1,0 +1,665 @@
+/* v0.27 application migration: Mission Intake, Run Sheet, and Sessions.
+   This layer maps the new component language onto the live workflow while the
+   old page-specific presentation is removed incrementally. */
+
+html[data-active-view="missions"] .app-main {
+  background:
+    linear-gradient(rgba(255, 255, 255, .014) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, .01) 1px, transparent 1px),
+    var(--scx-surface-canvas);
+  background-size: 32px 32px;
+}
+
+html[data-active-view="missions"] .missions-page {
+  color: var(--scx-content-primary);
+  font-family: var(--scx-font-ui);
+}
+
+html[data-active-view="missions"] .missions-page .page-header {
+  min-height: 72px;
+  margin: 0 12px 12px;
+  padding: 12px 16px;
+  border: 1px solid var(--scx-border-subtle);
+  border-top-color: var(--scx-border-strong);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--scx-action-primary) 7%, transparent), transparent 46%), var(--scx-surface-panel);
+}
+
+html[data-active-view="missions"] .missions-page .page-header h2 {
+  color: var(--scx-content-primary);
+  font: 700 var(--scx-type-xl)/1 var(--scx-font-display);
+  letter-spacing: .025em;
+}
+
+html[data-active-view="missions"] .missions-page .page-header p {
+  color: var(--scx-content-muted);
+  font-size: var(--scx-type-2xs);
+}
+
+html[data-active-view="missions"] .mission-steps {
+  display: flex;
+  margin: 0 12px;
+  border: 1px solid var(--scx-border-subtle);
+  border-bottom: 0;
+  background: var(--scx-surface-panel);
+}
+
+html[data-active-view="missions"] .mission-steps button {
+  min-height: var(--scx-control-lg);
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  padding: 0 18px;
+  border: 0;
+  border-right: 1px solid var(--scx-border-subtle);
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--scx-content-muted);
+  font-family: var(--scx-font-data);
+}
+
+html[data-active-view="missions"] .mission-steps button span {
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--scx-border-subtle);
+  color: inherit;
+  font: 800 var(--scx-type-2xs)/1 var(--scx-font-data);
+}
+
+html[data-active-view="missions"] .mission-steps button strong {
+  font: 800 var(--scx-type-xs)/1 var(--scx-font-data);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+html[data-active-view="missions"] .mission-steps button[aria-current="step"] {
+  border-bottom-color: var(--scx-action-primary);
+  background: color-mix(in srgb, var(--scx-action-primary) 6%, transparent);
+  color: var(--scx-action-primary-strong);
+}
+
+html[data-active-view="missions"] .mission-steps button[aria-current="step"] span {
+  border-color: var(--scx-action-primary);
+  background: var(--scx-action-primary);
+  color: var(--scx-text-inverse);
+}
+
+html[data-active-view="missions"] .mission-steps button:disabled {
+  opacity: .45;
+}
+
+html[data-active-view="missions"] .mission-stage {
+  margin: 0 12px 12px;
+  border: 1px solid var(--scx-border-subtle);
+  background: var(--scx-surface-panel);
+}
+
+html[data-active-view="missions"] #mission-form,
+html[data-active-view="missions"] #mission-validation-panel,
+html[data-active-view="missions"] .mission-output,
+html[data-active-view="missions"] .mission-preview {
+  background: transparent;
+}
+
+html[data-active-view="missions"] .mission-input-tools {
+  margin: 12px 12px 0;
+  border: 1px solid var(--scx-border-subtle);
+  background: var(--scx-surface-screen);
+}
+
+html[data-active-view="missions"] .mission-input-choice {
+  min-height: 58px;
+  border-color: transparent;
+  border-right-color: var(--scx-border-subtle);
+  border-radius: 0;
+  background: transparent;
+  color: var(--scx-content-muted);
+}
+
+html[data-active-view="missions"] .mission-input-choice strong {
+  color: inherit;
+  font: 800 var(--scx-type-xs)/1 var(--scx-font-data);
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+html[data-active-view="missions"] .mission-input-choice small {
+  color: var(--scx-content-muted);
+  font-size: var(--scx-type-2xs);
+}
+
+html[data-active-view="missions"] .mission-input-choice.is-active {
+  box-shadow: inset 0 -2px 0 var(--scx-action-primary);
+  background: color-mix(in srgb, var(--scx-action-primary) 6%, transparent);
+  color: var(--scx-action-primary-strong);
+}
+
+html[data-active-view="missions"] #mission-text {
+  margin: 12px;
+  width: calc(100% - 24px);
+  min-height: 260px;
+  border: 1px solid var(--scx-border-subtle);
+  border-radius: 0;
+  outline: 0;
+  background: var(--scx-surface-screen);
+  color: var(--scx-content-primary);
+  padding: 14px;
+  font: 500 var(--scx-type-sm)/1.55 var(--scx-font-data);
+}
+
+html[data-active-view="missions"] #mission-text:focus {
+  border-color: var(--scx-border-focus);
+  box-shadow: inset 3px 0 0 var(--scx-border-focus);
+}
+
+html[data-active-view="missions"] .form-actions,
+html[data-active-view="missions"] .mission-review-controls,
+html[data-active-view="missions"] .mission-route-actions {
+  padding: 12px;
+  border-top: 1px solid var(--scx-border-subtle);
+}
+
+html[data-active-view="missions"] .button {
+  min-height: var(--scx-control-md);
+  border: 1px solid var(--scx-border-subtle);
+  border-radius: var(--scx-radius-1);
+  background: var(--scx-surface-control);
+  color: var(--scx-content-secondary);
+  font: 800 var(--scx-type-2xs)/1 var(--scx-font-data);
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+html[data-active-view="missions"] .button:hover,
+html[data-active-view="missions"] .button:focus-visible {
+  outline: 0;
+  border-color: var(--scx-border-focus);
+  color: var(--scx-content-primary);
+}
+
+html[data-active-view="missions"] .button--primary {
+  border-color: var(--scx-action-primary);
+  background: var(--scx-action-primary);
+  color: var(--scx-text-inverse);
+}
+
+html[data-active-view="missions"] .button--primary:hover,
+html[data-active-view="missions"] .button--primary:focus-visible {
+  background: var(--scx-action-primary-strong);
+  color: var(--scx-text-inverse);
+}
+
+html[data-active-view="missions"] .mission-review-heading,
+html[data-active-view="missions"] .mission-route-heading {
+  min-height: 58px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--scx-border-subtle);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--scx-action-primary) 6%, transparent), transparent 44%);
+}
+
+html[data-active-view="missions"] .mission-review-heading small,
+html[data-active-view="missions"] .mission-route-heading small {
+  color: var(--scx-content-muted);
+  font: 800 var(--scx-type-2xs)/1 var(--scx-font-data);
+  letter-spacing: .1em;
+}
+
+html[data-active-view="missions"] .mission-review-heading strong,
+html[data-active-view="missions"] .mission-route-heading strong {
+  color: var(--scx-content-primary);
+  font: 700 var(--scx-type-xl)/1 var(--scx-font-display);
+}
+
+html[data-active-view="missions"] #focused-review-count {
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 9px;
+  border: 1px solid var(--scx-border-subtle);
+  color: var(--scx-content-muted);
+  font: 800 var(--scx-type-2xs)/1 var(--scx-font-data);
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+html[data-active-view="missions"] .mission-route-context-v026 {
+  margin: 12px;
+  border: 1px solid var(--scx-border-subtle);
+  border-top-color: var(--scx-action-primary);
+  background: var(--scx-surface-screen);
+}
+
+html[data-active-view="missions"] .mission-route-context-v026 > header {
+  min-height: 48px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--scx-border-subtle);
+  background: color-mix(in srgb, var(--scx-action-primary) 4%, transparent);
+}
+
+html[data-active-view="missions"] .mission-route-context-v026 > header small {
+  color: var(--scx-content-muted);
+  font: 800 var(--scx-type-2xs)/1 var(--scx-font-data);
+  letter-spacing: .1em;
+}
+
+html[data-active-view="missions"] .mission-route-context-v026 > header strong {
+  color: var(--scx-content-primary);
+  font: 700 var(--scx-type-md)/1.1 var(--scx-font-display);
+}
+
+html[data-active-view="missions"] .mission-route-context-v026 > header em {
+  color: var(--scx-action-primary-strong);
+  font: 800 var(--scx-type-2xs)/1 var(--scx-font-data);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+html[data-active-view="missions"] .mission-context-grid {
+  padding: 12px;
+  gap: 12px;
+}
+
+html[data-active-view="missions"] .mission-context-grid label > span {
+  color: var(--scx-content-muted);
+  font: 800 var(--scx-type-2xs)/1 var(--scx-font-data);
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+
+html[data-active-view="missions"] .mission-context-grid input,
+html[data-active-view="missions"] .mission-context-grid select {
+  min-height: var(--scx-control-md);
+  border: 1px solid var(--scx-border-subtle);
+  border-radius: var(--scx-radius-1);
+  outline: 0;
+  background: var(--scx-surface-panel);
+  color: var(--scx-content-primary);
+  padding: 0 11px;
+  font: 600 var(--scx-type-sm)/1 var(--scx-font-ui);
+}
+
+html[data-active-view="missions"] .mission-context-grid input:focus,
+html[data-active-view="missions"] .mission-context-grid select:focus {
+  border-color: var(--scx-border-focus);
+  box-shadow: inset 3px 0 0 var(--scx-border-focus);
+}
+
+html[data-active-view="missions"] .mission-context-grid small {
+  color: var(--scx-content-muted);
+  font-size: var(--scx-type-2xs);
+}
+
+html[data-active-view="missions"] .mission-minute-input b {
+  min-width: 52px;
+  border-color: var(--scx-border-subtle);
+  background: color-mix(in srgb, var(--scx-action-primary) 7%, var(--scx-surface-panel));
+  color: var(--scx-action-primary-strong);
+  font: 800 var(--scx-type-2xs)/1 var(--scx-font-data);
+}
+
+html[data-active-view="missions"] .mission-review-alerts {
+  margin: 0 12px 12px;
+}
+
+html[data-active-view="missions"] .mission-review-alerts p {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--scx-border-subtle);
+  border-left: 3px solid currentColor;
+  background: var(--scx-surface-screen);
+  font-size: var(--scx-type-2xs);
+}
+
+html[data-active-view="missions"] .mission-review-alerts .is-ready { color: var(--scx-green-400); }
+html[data-active-view="missions"] .mission-review-alerts .is-error { color: var(--scx-red-400); }
+
+html[data-active-view="missions"] .mission-review-grid {
+  display: grid;
+  gap: 12px;
+  padding: 0 12px 12px;
+}
+
+html[data-active-view="missions"] .mission-review-card-v26 {
+  border: 1px solid var(--scx-border-subtle);
+  border-left: 3px solid var(--scx-action-primary);
+  border-radius: 0;
+  background: var(--scx-surface-panel);
+  box-shadow: none;
+}
+
+html[data-active-view="missions"] .mission-review-card-header-v26 {
+  min-height: 60px;
+  grid-template-columns: 44px minmax(200px, 1fr) auto 32px 40px 40px;
+  gap: 10px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--scx-border-subtle);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--scx-action-primary) 7%, transparent), transparent 46%);
+}
+
+html[data-active-view="missions"] .mission-index {
+  color: var(--scx-action-primary-strong);
+  font: 800 var(--scx-type-lg)/1 var(--scx-font-data);
+  font-variant-numeric: tabular-nums;
+}
+
+html[data-active-view="missions"] .mission-card-identity strong {
+  color: var(--scx-content-primary);
+  font: 700 var(--scx-type-lg)/1.1 var(--scx-font-display);
+}
+
+html[data-active-view="missions"] .mission-card-identity small {
+  color: var(--scx-content-muted);
+  font-size: var(--scx-type-2xs);
+}
+
+html[data-active-view="missions"] .mission-payout-pill {
+  min-height: 30px;
+  border: 0;
+  background: transparent;
+  color: var(--scx-action-primary-strong);
+  font: 800 var(--scx-type-sm)/1 var(--scx-font-data);
+  font-variant-numeric: tabular-nums;
+}
+
+html[data-active-view="missions"] .mission-location-flag,
+html[data-active-view="missions"] .location-state-v26 {
+  color: var(--scx-amber-300);
+}
+
+html[data-active-view="missions"] .mission-location-flag.is-ready,
+html[data-active-view="missions"] .location-state-v26.is-ready {
+  color: var(--scx-green-400);
+}
+
+html[data-active-view="missions"] .mission-edit,
+html[data-active-view="missions"] .mission-remove {
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--scx-border-subtle);
+  border-radius: var(--scx-radius-1);
+  background: var(--scx-surface-control);
+  color: var(--scx-content-secondary);
+}
+
+html[data-active-view="missions"] .mission-edit:hover,
+html[data-active-view="missions"] .mission-edit:focus-visible,
+html[data-active-view="missions"] .mission-remove:hover,
+html[data-active-view="missions"] .mission-remove:focus-visible {
+  outline: 0;
+  border-color: var(--scx-border-focus);
+  color: var(--scx-content-primary);
+}
+
+html[data-active-view="missions"] .mission-remove {
+  color: var(--scx-red-400);
+}
+
+html[data-active-view="missions"] .mission-objective-row-v26 {
+  min-height: 54px;
+  grid-template-columns: 116px minmax(240px, 1fr) minmax(240px, .8fr);
+  gap: 12px;
+  padding: 8px 12px;
+  border-bottom-color: color-mix(in srgb, var(--scx-border-subtle) 72%, transparent);
+}
+
+html[data-active-view="missions"] .mission-objective-row-v26 > select {
+  min-height: 38px;
+  border: 0;
+  border-left: 3px solid currentColor;
+  border-radius: 0;
+  outline: 0;
+  background: transparent;
+  padding: 0 9px;
+  font: 800 var(--scx-type-xs)/1 var(--scx-font-data);
+  letter-spacing: .05em;
+}
+
+html[data-active-view="missions"] .mission-objective-row-v26.is-collect > select,
+html[data-active-view="missions"] .mission-objective-row-v26.is-pickup > select {
+  color: var(--scx-action-pickup);
+}
+
+html[data-active-view="missions"] .mission-objective-row-v26.is-deliver > select {
+  color: var(--scx-action-delivery);
+}
+
+html[data-active-view="missions"] .mission-location-summary,
+html[data-active-view="missions"] .mission-cargo-summary .mission-cargo-chips {
+  min-height: 40px;
+  border: 1px solid var(--scx-border-subtle);
+  border-radius: 0;
+  background: var(--scx-surface-screen);
+}
+
+html[data-active-view="missions"] .mission-location-name {
+  color: var(--scx-content-primary);
+  font-size: var(--scx-type-xs);
+}
+
+html[data-active-view="missions"] .mission-review-card-v26 .cargo-chip {
+  min-height: 28px;
+  border: 1px solid color-mix(in srgb, var(--scx-action-primary) 36%, var(--scx-border-subtle));
+  border-radius: var(--scx-radius-1);
+  background: color-mix(in srgb, var(--scx-action-primary) 6%, var(--scx-surface-screen));
+  color: var(--scx-content-secondary);
+  font-size: var(--scx-type-2xs);
+}
+
+html[data-active-view="missions"] .mission-review-card-v26 .cargo-chip b {
+  color: var(--scx-action-primary-strong);
+  font: 800 var(--scx-type-xs)/1 var(--scx-font-data);
+}
+
+html[data-active-view="missions"] .mission-card-editor {
+  gap: 10px;
+  padding: 12px;
+  border-top: 1px solid var(--scx-border-strong);
+  background: var(--scx-surface-screen);
+}
+
+html[data-active-view="missions"] .mission-card-editor label span {
+  color: var(--scx-content-muted);
+  font: 800 var(--scx-type-2xs)/1 var(--scx-font-data);
+  letter-spacing: .07em;
+}
+
+html[data-active-view="missions"] .mission-card-editor input,
+html[data-active-view="missions"] .mission-review-card-v26.is-editing .mission-location-edit,
+html[data-active-view="missions"] .mission-review-card-v26.is-editing .mission-cargo-edit {
+  min-height: var(--scx-control-md);
+  border-color: var(--scx-border-subtle);
+  border-radius: var(--scx-radius-1);
+  outline: 0;
+  background: var(--scx-surface-control);
+  color: var(--scx-content-primary);
+  font-size: var(--scx-type-sm);
+}
+
+html[data-active-view="missions"] .mission-card-editor input:focus,
+html[data-active-view="missions"] .mission-review-card-v26.is-editing .mission-location-edit:focus,
+html[data-active-view="missions"] .mission-review-card-v26.is-editing .mission-cargo-edit:focus {
+  border-color: var(--scx-border-focus);
+  box-shadow: inset 3px 0 0 var(--scx-border-focus);
+}
+
+html[data-active-view="missions"] .mission-route-summary {
+  padding: 12px;
+}
+
+html[data-active-view="missions"] .mission-route-overview {
+  margin-bottom: 12px;
+  border: 1px solid var(--scx-border-subtle);
+  background: var(--scx-surface-screen);
+}
+
+html[data-active-view="missions"] .mission-route-overview strong,
+html[data-active-view="missions"] .mission-route-overview span {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 11px;
+  border-right: 1px solid var(--scx-border-subtle);
+  color: var(--scx-content-secondary);
+  font: 700 var(--scx-type-2xs)/1 var(--scx-font-data);
+}
+
+html[data-active-view="missions"] .mission-route-overview strong,
+html[data-active-view="missions"] .mission-route-overview span:last-child {
+  color: var(--scx-action-primary-strong);
+}
+
+html[data-active-view="missions"] .mission-session-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+html[data-active-view="missions"] .mission-session-card {
+  border: 1px solid var(--scx-border-subtle);
+  border-left: 3px solid var(--scx-border-strong);
+  border-radius: 0;
+  background: var(--scx-surface-panel);
+}
+
+html[data-active-view="missions"] .mission-session-card.is-selected {
+  border-left-color: var(--scx-action-primary);
+  border-color: color-mix(in srgb, var(--scx-action-primary) 48%, var(--scx-border-subtle));
+  background: color-mix(in srgb, var(--scx-action-primary) 5%, var(--scx-surface-panel));
+}
+
+html[data-active-view="missions"] .mission-session-card.is-over-target {
+  border-left-color: var(--scx-red-400);
+}
+
+html[data-active-view="missions"] .mission-session-card > header {
+  min-height: 50px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--scx-border-subtle);
+}
+
+html[data-active-view="missions"] .mission-session-card > header b {
+  color: var(--scx-content-primary);
+  font: 700 var(--scx-type-md)/1 var(--scx-font-display);
+}
+
+html[data-active-view="missions"] .mission-session-card > header strong {
+  color: var(--scx-action-primary-strong);
+  font: 800 var(--scx-type-xs)/1 var(--scx-font-data);
+}
+
+html[data-active-view="missions"] .session-route-line,
+html[data-active-view="missions"] .session-stats,
+html[data-active-view="missions"] .session-gateways,
+html[data-active-view="missions"] .mission-session-card ul,
+html[data-active-view="missions"] .session-warning {
+  margin-left: 12px;
+  margin-right: 12px;
+}
+
+html[data-active-view="missions"] .session-route-line {
+  color: var(--scx-content-primary);
+  font-size: var(--scx-type-xs);
+}
+
+html[data-active-view="missions"] .session-route-line i,
+html[data-active-view="missions"] .session-gateways i {
+  color: var(--scx-action-primary);
+}
+
+html[data-active-view="missions"] .session-stats span,
+html[data-active-view="missions"] .session-gateways span {
+  min-height: 28px;
+  border-color: var(--scx-border-subtle);
+  border-radius: var(--scx-radius-1);
+  background: var(--scx-surface-screen);
+  color: var(--scx-content-muted);
+  font-size: var(--scx-type-2xs);
+}
+
+html[data-active-view="missions"] .mission-session-card li {
+  color: var(--scx-content-secondary);
+  font-size: var(--scx-type-xs);
+}
+
+html[data-active-view="missions"] .mission-session-card li .mission-icon {
+  color: var(--scx-green-400);
+}
+
+html[data-active-view="missions"] .session-warning {
+  padding: 10px;
+  border: 1px solid color-mix(in srgb, var(--scx-red-400) 50%, var(--scx-border-subtle));
+  border-left: 3px solid var(--scx-red-400);
+  background: color-mix(in srgb, var(--scx-red-400) 5%, var(--scx-surface-screen));
+  color: var(--scx-red-400);
+  font-size: var(--scx-type-2xs);
+}
+
+@media (max-width: 1050px) {
+  html[data-active-view="missions"] .mission-review-card-header-v26 {
+    grid-template-columns: 40px minmax(160px, 1fr) auto 32px 40px 40px;
+  }
+
+  html[data-active-view="missions"] .mission-objective-row-v26 {
+    grid-template-columns: 110px minmax(190px, 1fr) minmax(180px, .8fr);
+  }
+
+  html[data-active-view="missions"] .mission-session-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  html[data-active-view="missions"] .missions-page .page-header,
+  html[data-active-view="missions"] .mission-steps,
+  html[data-active-view="missions"] .mission-stage {
+    margin-left: 8px;
+    margin-right: 8px;
+  }
+
+  html[data-active-view="missions"] .mission-steps {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  html[data-active-view="missions"] .mission-steps button {
+    min-width: 0;
+    justify-content: center;
+    padding: 0 6px;
+  }
+
+  html[data-active-view="missions"] .mission-steps button strong {
+    font-size: var(--scx-type-2xs);
+  }
+
+  html[data-active-view="missions"] .mission-review-card-header-v26 {
+    grid-template-columns: 34px minmax(0, 1fr) 32px 40px 40px;
+  }
+
+  html[data-active-view="missions"] .mission-payout-pill {
+    grid-column: 2 / -1;
+    grid-row: 2;
+    justify-self: start;
+    padding: 0;
+  }
+
+  html[data-active-view="missions"] .mission-objective-row-v26 {
+    grid-template-columns: 1fr;
+  }
+
+  html[data-active-view="missions"] .mission-objective-row-v26 > select {
+    width: 100%;
+  }
+
+  html[data-active-view="missions"] .mission-route-overview {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  html[data-active-view="missions"] .mission-route-overview strong,
+  html[data-active-view="missions"] .mission-route-overview span {
+    border-right: 0;
+    border-bottom: 1px solid var(--scx-border-subtle);
+  }
+}
