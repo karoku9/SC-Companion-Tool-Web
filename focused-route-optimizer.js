@@ -115,6 +115,62 @@
     };
   }
 
+  function resultSignature(result) {
+    return result.stops.map((stop) => String(stop.id)).join('|');
+  }
+
+  function fastestSort(left, right) {
+    return left.midpoint - right.midpoint
+      || left.missionCompletionScore - right.missionCompletionScore
+      || left.exposureScuMinutes - right.exposureScuMinutes
+      || resultSignature(left).localeCompare(resultSignature(right));
+  }
+
+  function chooseGatewayEfficient(route, context) {
+    const orders = engine.enumerateOrders(route, route.stops);
+    const evaluated = orders.map((order) => engine.evaluateOrder(order, context));
+    const feasible = evaluated.filter((candidate) => candidate.capacityFeasible);
+    const minimumRequiredCapacityScu = evaluated.length
+      ? Math.min(...evaluated.map((candidate) => candidate.peakOnboardScu))
+      : 0;
+    if (!feasible.length) {
+      return Object.freeze({
+        result: null,
+        candidateCount: orders.length,
+        feasibleCandidateCount: 0,
+        capacityRejectedCount: evaluated.length,
+        minimumRequiredCapacityScu,
+        minimumJumpCount: null,
+        safetyAdjusted: false
+      });
+    }
+
+    const minimumJumpCount = Math.min(...feasible.map((candidate) => candidate.totalJumpCount));
+    const gatewayEfficient = feasible.filter((candidate) => candidate.totalJumpCount === minimumJumpCount);
+    const pureFastest = [...gatewayEfficient].sort(fastestSort)[0];
+    let result = pureFastest;
+    if (context.cargoSafetyEnabled) {
+      const margin = Math.max(0, Number(context.safetyMarginMinutes ?? 15));
+      const eligible = gatewayEfficient.filter((candidate) => candidate.midpoint <= pureFastest.midpoint + margin);
+      result = [...eligible].sort((left, right) => (
+        left.missionCompletionScore - right.missionCompletionScore
+        || left.exposureScuMinutes - right.exposureScuMinutes
+        || left.midpoint - right.midpoint
+        || resultSignature(left).localeCompare(resultSignature(right))
+      ))[0] ?? pureFastest;
+    }
+
+    return Object.freeze({
+      result,
+      candidateCount: orders.length,
+      feasibleCandidateCount: feasible.length,
+      capacityRejectedCount: evaluated.length - feasible.length,
+      minimumRequiredCapacityScu,
+      minimumJumpCount,
+      safetyAdjusted: resultSignature(result) !== resultSignature(pureFastest)
+    });
+  }
+
   function gatewaySegments(estimate) {
     const systems = new Map((root.SCCompanionStarmapData?.systems ?? []).map((system) => [system.id, system]));
     const segments = [];
@@ -162,7 +218,8 @@
         startLocationLabel: context.startStop?.locationLabel ?? null,
         totalMinMinutes: estimate.totalMin,
         totalMaxMinutes: estimate.totalMax,
-        midpointMinutes: estimate.midpoint
+        midpointMinutes: estimate.midpoint,
+        totalJumpCount: estimate.totalJumpCount
       })
     });
   }
@@ -170,10 +227,8 @@
   function buildRoute(missions, missionModel, options = {}) {
     const base = originalBuildRoute(missions, missionModel);
     const context = comparisonContext(base, options);
-    const comparison = engine.compare(base, { completedSet: new Set() }, context);
-    const fastest = comparison.profiles.find((profile) => profile.id === 'fastest' && !profile.duplicate)?.result
-      ?? comparison.profiles[0]?.result
-      ?? null;
+    const comparison = chooseGatewayEfficient(base, context);
+    const fastest = comparison.result;
 
     if (fastest?.capacityFeasible) {
       const phaseSafeStops = mergeAdjacentStops(fastest.stops);
@@ -182,10 +237,14 @@
         originalStopCount: base.stops.length,
         consolidatedStopCount: phaseSafeStops.length,
         candidateCount: comparison.candidateCount,
+        feasibleCandidateCount: comparison.feasibleCandidateCount,
         physicalCapacityScu: context.physicalCapacityScu,
         peakOnboardScu: fastest.peakOnboardScu,
         capacityFeasible: true,
-        repeatedLocationsAllowed: true
+        repeatedLocationsAllowed: true,
+        minimumJumpCount: comparison.minimumJumpCount,
+        gatewayEfficient: true,
+        safetyAdjusted: comparison.safetyAdjusted
       }, comparisonContext({ ...base, stops: phaseSafeStops, allStops: phaseSafeStops }, options));
     }
 
@@ -200,11 +259,21 @@
       physicalCapacityScu: context.physicalCapacityScu,
       minimumRequiredCapacityScu: comparison.minimumRequiredCapacityScu,
       capacityFeasible: false,
-      repeatedLocationsAllowed: true
+      repeatedLocationsAllowed: true,
+      minimumJumpCount: comparison.minimumJumpCount,
+      gatewayEfficient: true
     }, fallbackContext);
   }
 
-  const api = Object.freeze({ ...planner, buildRoute, focusedOptimization: true, consolidate, mergeAdjacentStops, comparisonContext });
+  const api = Object.freeze({
+    ...planner,
+    buildRoute,
+    focusedOptimization: true,
+    consolidate,
+    mergeAdjacentStops,
+    comparisonContext,
+    chooseGatewayEfficient
+  });
   root.SCCompanionRoutePlanner = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 }(typeof globalThis !== 'undefined' ? globalThis : window));
