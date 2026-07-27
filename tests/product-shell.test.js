@@ -48,7 +48,7 @@ test('ship cargo zones remain separable, layered and capacity-safe', () => {
   });
 });
 
-test('design system, icons and v0.25 shell load before page routing', () => {
+test('design system, icons and shell load before page routing', () => {
   const html = read('index.html');
   const shell = read('product-shell.js');
   assert.match(html, /id="product-navigation"/);
@@ -60,7 +60,7 @@ test('design system, icons and v0.25 shell load before page routing', () => {
   assert.doesNotMatch(shell, /id="load-operations"/);
   assert.match(shell, /nav-glyph/);
   assert.match(shell, /SCCompanionMfdIcons/);
-  assert.match(shell, /BUILD 0\.25\.0/);
+  assert.match(shell, /CORE 0\.25 · UI 0\.29/);
   assert.match(shell, /local review and routing/);
 });
 
