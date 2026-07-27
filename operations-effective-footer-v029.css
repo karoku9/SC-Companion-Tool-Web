@@ -1,0 +1,21 @@
+/* Compact sidebar version label without leaving a zero-size text node. */
+
+@media (min-width: 1180px) and (max-width: 1449px) and (min-height: 650px),
+       (min-width: 1180px) and (min-height: 650px) and (max-height: 819px) {
+  html[data-active-view="route"] .nav-footer span {
+    display: none;
+  }
+
+  html[data-active-view="route"] .nav-footer::after {
+    content: "UI 0.29";
+    color: var(--ds-action-primary);
+    font-family: var(--ds-font-technical, ui-monospace, monospace);
+    font-size: 12px;
+    line-height: 1;
+    letter-spacing: 0;
+  }
+
+  html[data-active-view="route"] .nav-footer span::after {
+    content: none;
+  }
+}
