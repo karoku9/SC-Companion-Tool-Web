@@ -72,6 +72,15 @@
   selectLocation(currentModel()?.getLocation('stanton-hurston-lorville-teasa'));
 }());
 
+(function installOcrRuntimeImportMap() {
+  const upstream = 'https://cdn.jsdelivr.net/npm/tesseract.js@7.0.0/dist/tesseract.esm.min.js';
+  const adapter = new URL('./tesseract-runtime-adapter-v0293.js', document.baseURI).href;
+  const importMap = document.createElement('script');
+  importMap.type = 'importmap';
+  importMap.textContent = JSON.stringify({ imports: { [upstream]: adapter } });
+  document.head.append(importMap);
+}());
+
 (function loadApplicationRuntimes() {
   window.dispatchEvent(new Event('sc:location-registry-ready'));
 

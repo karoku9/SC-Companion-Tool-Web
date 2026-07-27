@@ -61,7 +61,7 @@ await page.addInitScript(() => {
   });
 });
 
-await page.route('https://cdn.jsdelivr.net/npm/tesseract.js@7.0.0/dist/tesseract.esm.min.js', async (route) => {
+await page.route('**/tesseract.esm.min.js?sc-companion-upstream=0.29.3', async (route) => {
   await route.fulfill({
     status: 200,
     contentType: 'application/javascript',

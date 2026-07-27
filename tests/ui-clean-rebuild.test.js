@@ -37,6 +37,17 @@ test('the application uses one design system and one clean layout entry', () => 
   assert.doesNotMatch(read('app.js'), /workspace-shell\.js|ui-rebuild\.js|mfd-layout-v2\.js|ux-shell\.js/);
 });
 
+test('OCR runtime adapter accepts named and default Tesseract.js exports', () => {
+  const app = read('app.js');
+  const adapter = read('tesseract-runtime-adapter-v0293.js');
+  assert.match(app, /installOcrRuntimeImportMap/);
+  assert.match(app, /tesseract-runtime-adapter-v0293\.js/);
+  assert.match(adapter, /namespace\?\.createWorker/);
+  assert.match(adapter, /defaultApi\?\.createWorker/);
+  assert.match(adapter, /sc-companion-upstream=0\.29\.3/);
+  assert.match(adapter, /Tesseract\.js createWorker export is unavailable/);
+});
+
 test('Operations keeps native auxiliary tools below the primary displays', () => {
   const html = read('index.html');
   const ui = read('ui-v2-operations.js');
