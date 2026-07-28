@@ -133,14 +133,46 @@ html[data-active-view="route"][data-ops-density]:not([data-ops-density="flow"]) 
 }
 
 /* Current Step: keep the route queue anchored above the controls instead of leaving
-   a random empty slab underneath it. */
+   a random empty slab underneath it. Dense pickup/delivery rows save vertical space
+   through padding, not smaller text. */
 html[data-active-view="route"][data-ops-density]:not([data-ops-density="flow"]) .operations-v028 .current-operation-body {
+  gap: 3px;
+  padding: 5px 9px;
   overflow-y: hidden;
+}
+
+html[data-active-view="route"][data-ops-density]:not([data-ops-density="flow"]) .operations-v028 .ops-v028-current-chips {
+  margin-block: 0;
+}
+
+html[data-active-view="route"][data-ops-density]:not([data-ops-density="flow"]) .operations-v028 .ops-v028-current-chips span {
+  min-height: 27px;
+  padding-block: 3px;
+}
+
+html[data-active-view="route"][data-ops-density]:not([data-ops-density="flow"]) .operations-v028 .ops-v028-operation-list {
+  gap: 2px;
+}
+
+html[data-active-view="route"][data-ops-density]:not([data-ops-density="flow"]) .operations-v028 .ops-v028-operation-row {
+  min-height: 29px;
+  padding: 3px 6px;
+}
+
+html[data-active-view="route"][data-ops-density]:not([data-ops-density="flow"]) .operations-v028 .ops-v028-after-step {
+  margin-top: 0;
+  padding-top: 3px;
+}
+
+html[data-active-view="route"][data-ops-density]:not([data-ops-density="flow"]) .operations-v028 .ops-v028-after-step > div {
+  min-height: 38px;
+  padding: 4px 6px;
 }
 
 html[data-active-view="route"][data-ops-density]:not([data-ops-density="flow"]) .operations-v028 .ops-v028-upcoming {
   align-self: end;
   margin-top: auto;
+  padding-top: 3px;
   width: 100%;
 }
 
