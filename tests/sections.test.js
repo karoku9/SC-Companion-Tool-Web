@@ -1,22 +1,13 @@
 'use strict';
-
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const pages = require('../product-pages.js');
 
-test('the application exposes six primary workspaces and contextual secondary views', () => {
-  const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
-  ['route', 'missions', 'route-planner', 'map', 'hangar', 'roadmap'].forEach((id) => {
-    assert.ok(pages.getPage(id), `missing registered page ${id}`);
-  });
-  ['route', 'missions', 'map', 'hangar', 'roadmap'].forEach((id) => assert.match(html, new RegExp(`data-view="${id}"`)));
-  ['locations', 'changelog', 'cargo', 'load-operations'].forEach((id) => assert.ok(pages.getPage(id)?.parentView, `${id} must remain contextual`));
-  assert.match(html, /id="product-navigation"/);
-  assert.match(html, /product-pages\.js/);
-  assert.match(html, /product-shell\.js/);
-  assert.match(html, /sections\.js/);
-  assert.match(html, /ui-v2\.css/);
-  assert.doesNotMatch(html, /sections\.css/);
+test('the application exposes five user workspaces in workflow order', () => {
+  const ui = fs.readFileSync(path.join(__dirname, '..', 'ui', 'app-shell.js'), 'utf8');
+  const order = ['contracts', 'plan', 'live', 'fleet', 'intel'].map((id) => ui.indexOf(`id: '${id}'`));
+  order.forEach((index) => assert.ok(index >= 0));
+  assert.deepEqual(order, [...order].sort((a, b) => a - b));
+  assert.doesNotMatch(ui, /id: 'roadmap'|id: 'development'/);
 });

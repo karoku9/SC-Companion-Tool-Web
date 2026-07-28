@@ -95,17 +95,13 @@ test('derived From and To labels are used only when explicit action headings are
   assert.equal(report.objectives[1].action.value, 'deliver');
 });
 
-test('OCR runtime stays local-review-first and pins its browser OCR dependency', () => {
-  const view = readProject('ocr-intake-view.js');
-  const css = readProject('ocr-intake.css');
+test('OCR intake remains local-review-first in the Contracts workspace', () => {
   const app = readProject('app.js');
-  assert.match(view, /TESSERACT_VERSION = '7\.0\.0'/);
-  assert.match(view, /tesseract\.js@\$\{TESSERACT_VERSION\}/);
-  assert.match(view, /createWorker\('eng'/);
-  assert.match(view, /Load OCR draft into review/);
-  assert.match(view, /form\.requestSubmit\(\)/);
-  assert.match(view, /Nothing is sent to route generation until the draft passes the normal mission review/);
-  assert.match(css, /\.ocr-intake/);
+  const ui = readProject('ui/app-shell.js');
   assert.match(app, /ocr-intake\.js/);
-  assert.match(app, /ocr-intake-view\.js/);
+  assert.match(ui, /Screenshot \/ OCR/);
+  assert.match(ui, /accept="image\/\*"/);
+  assert.match(ui, /Recognized draft/);
+  assert.match(ui, /reviewContracts/);
+  assert.match(ui, /validator\.inspectMissionText/);
 });

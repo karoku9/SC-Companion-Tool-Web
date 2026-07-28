@@ -59,21 +59,15 @@ test('base expanded mission locations resolve to stable system and distance anch
   assert.equal(Object.keys(starmap.locationAnchors).length, 34);
 });
 
-test('Starmap 2.0 data still separates itinerary, system and network layers', () => {
-  const html = read('index.html');
-  const view = read('starmap-view.js');
-  const css = read('starmap-v2.css');
+test('the starmap remains a separate Intel workspace and uses canonical route data', () => {
+  const view = read('ui/app-shell.js');
+  const css = read('ui/app.css');
   assert.equal(pages.getPage('map').status, 'live');
-  assert.match(html, /data-view="map"/);
-  assert.match(view, /data-map-mode="route"[^>]*>Itinerary/);
-  assert.match(view, /data-map-mode="local"[^>]*>System/);
-  assert.match(view, /data-map-mode="network"[^>]*>Network/);
-  assert.match(view, /renderRouteMode/);
-  assert.match(view, /renderLocalMode/);
-  assert.match(view, /renderNetworkMode/);
-  assert.match(view, /NavigationEstimates/);
-  assert.match(css, /\.starmap-objective-hud/);
-  assert.match(css, /\.starmap-context-panel/);
+  assert.match(view, /intelMapMarkup/);
+  assert.match(view, /state\.route\?\.stops/);
+  assert.match(view, /data-intel-tab="map"/);
+  assert.match(css, /\.starmap/);
+  assert.doesNotMatch(view, /livePage[\s\S]{0,500}starmap/i);
 });
 
 test('Starmap 2.0 keeps orientation, selection and camera controls explicit', () => {

@@ -87,43 +87,26 @@ test('visible UI Kit documents palette, type, buttons, icons and manufacturer co
   assert.match(view, /Manufacturer theme contract/);
 });
 
-test('design foundation loads before shared workspaces and standalone Operations', () => {
+test('active design foundation is coherent and loads before the feature controller', () => {
   const html = read('index.html');
   const app = read('app.js');
-  const entry = read('ui-v2.css');
-  const operationsLoader = read('operations-rebuild-v040-loader.js');
-
-  assert.ok(html.indexOf('src="design-system.js"') < html.indexOf('src="mfd-icons.js"'));
-  assert.ok(html.indexOf('href="design-system.css?v=0.29.2"') < html.indexOf('href="ui-v2.css?v=0.29.2"'));
-  assert.ok(entry.indexOf('mission-validation.css') < entry.indexOf('game-log-intake.css'));
-  assert.ok(entry.indexOf('game-log-intake.css') < entry.indexOf('ocr-intake.css'));
-  assert.ok(entry.indexOf('ocr-intake.css') < entry.indexOf('location-context.css'));
-  assert.ok(entry.indexOf('location-context-adapters.css') < entry.indexOf('fleet-loadouts.css'));
-  assert.ok(entry.indexOf('fleet-loadouts.css') < entry.indexOf('design-system-legibility.css'));
-  assert.ok(entry.indexOf('design-system-legibility.css') < entry.indexOf('starmap-v2.css'));
-  assert.doesNotMatch(entry, /operational-ui-v025\.css|operations-design-v027\.css|operations-flow-v028\.css|operations-single-screen|operations-readable-short-desktop|operations-spacing/);
-
+  const css = read('ui/app.css');
+  assert.ok(html.indexOf('ui/app.css') < html.indexOf('app.js'));
+  assert.equal((html.match(/rel="stylesheet"/g) ?? []).length, 1);
   assert.match(app, /game-log-intake\.js/);
-  assert.match(app, /game-log-intake-correlation\.js/);
-  assert.match(app, /game-log-intake-view\.js/);
   assert.match(app, /ocr-intake\.js/);
-  assert.match(app, /ocr-intake-view\.js/);
   assert.match(app, /official-universe-data\.js/);
   assert.match(app, /navigation-estimates\.js/);
   assert.match(app, /location-context\.js/);
-  assert.match(app, /location-context-planner\.js/);
   assert.match(app, /fleet-loadouts\.js/);
   assert.match(app, /fleet-estimate-adapter\.js/);
-  assert.match(app, /fleet-loadouts-view\.js/);
-  assert.match(app, /ui-v2-accessibility\.js/);
   assert.match(app, /route-session-planner\.js/);
-  assert.match(app, /operations-rebuild-v040-loader\.js/);
   assert.match(app, /cargo-auto-layout-v0292\.js/);
-  assert.match(app, /SCCompanionCleanInterfaceReady/);
-  assert.match(operationsLoader, /operations-rebuild-v040\.css/);
-  assert.match(operationsLoader, /operations-rebuild-v040\.js/);
+  assert.match(app, /ui\/app-shell\.js/);
+  assert.match(css, /:focus-visible/);
+  assert.match(css, /prefers-reduced-motion: reduce/);
+  assert.doesNotMatch(app, /operations-rebuild-v040|ui-v2/);
   assert.equal(roadmap.currentVersion, '0.25');
-  assert.equal(roadmap.releases.find((item) => item.version === '0.25').status, 'current');
 });
 
 test('research rules prohibit page-specific invention', () => {

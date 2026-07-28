@@ -80,11 +80,11 @@ test('pre-1.0 roadmap excludes deferred expansion features', () => {
   assert.doesNotMatch(titles, /Trading foundation/i);
 });
 
-test('roadmap page keeps the English shell and release track host', () => {
+test('the product stays English while roadmap content leaves primary navigation', () => {
   const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
   const view = fs.readFileSync(path.join(__dirname, '..', 'roadmap-view.js'), 'utf8');
   assert.match(html, /<html lang="en"/);
-  assert.match(html, /id="roadmap-board"/);
+  assert.doesNotMatch(html, /id="roadmap-board"|data-nav="roadmap"/);
   assert.match(view, /release-roadmap-track/);
   assert.match(view, /roadmap\.releases/);
 });
