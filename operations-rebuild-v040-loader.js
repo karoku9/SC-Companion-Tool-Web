@@ -9,3 +9,4 @@ if (!document.querySelector('[data-operations-v040-style]')) {
 }
 
 await import('./operations-rebuild-v040.js?v=0.40.0');
+await import('./operations-v040-manual-grid-bridge.js?v=0.40.0');
