@@ -3,13 +3,18 @@
 (function installAdaptiveOperationsFit(root) {
   const STYLE_VERSION = '0.30.3';
 
-  function installStyle() {
-    if (document.querySelector('[data-operations-adaptive-fit-style]')) return;
+  function appendStyle(path, marker) {
+    if (document.querySelector(`[${marker}]`)) return;
     const link = document.createElement('link');
     link.rel = 'stylesheet';
-    link.href = new URL(`./operations-adaptive-fit-v0303.css?v=${STYLE_VERSION}`, document.baseURI).href;
-    link.dataset.operationsAdaptiveFitStyle = STYLE_VERSION;
+    link.href = new URL(`./${path}?v=${STYLE_VERSION}`, document.baseURI).href;
+    link.setAttribute(marker, STYLE_VERSION);
     document.head.append(link);
+  }
+
+  function installStyles() {
+    appendStyle('operations-adaptive-fit-v0303.css', 'data-operations-adaptive-fit-style');
+    appendStyle('operations-adaptive-fit-v0303-readable.css', 'data-operations-adaptive-fit-readable-style');
   }
 
   function resolveDensity() {
@@ -31,7 +36,7 @@
   }
 
   function install() {
-    installStyle();
+    installStyles();
     if (!applyDensity()) return false;
     root.addEventListener('resize', applyDensity, { passive: true });
     root.addEventListener('orientationchange', applyDensity, { passive: true });
