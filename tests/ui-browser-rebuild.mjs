@@ -19,11 +19,17 @@ const consoleErrors = [];
 page.on('console', (message) => { if (message.type() === 'error') consoleErrors.push(message.text()); });
 page.on('pageerror', (error) => consoleErrors.push(error.message));
 
+let navigationSequence = 0;
+
 async function ready(route = 'live', clear = false) {
-  await page.goto(`${baseUrl}/#${route}`, { waitUntil: 'domcontentloaded' });
+  const navigate = () => page.goto(
+    `${baseUrl}/?smoke=${navigationSequence += 1}#${route}`,
+    { waitUntil: 'domcontentloaded' }
+  );
+  await navigate();
   if (clear) {
     await page.evaluate(() => localStorage.removeItem('sc-companion-session-v1'));
-    await page.reload({ waitUntil: 'domcontentloaded' });
+    await navigate();
   }
   await page.waitForFunction(() => window.SCCompanionUI && window.SCCompanionSession);
   if (clear && route !== 'live') await page.locator(`.primary-nav [data-nav="${route}"]`).click();
