@@ -26,7 +26,7 @@
     await import('./focused-route-optimizer.js');
     await import('./route-locality-hotfix-v0294.js');
     await import('./route-session-planner.js');
-    await import('./ui/app-shell.js?v=3');
+    await import('./ui/app-shell.js?v=5');
     window.dispatchEvent(new Event('sc:app-ready'));
   } catch (error) {
     console.error('Application runtime failed to load.', error);
