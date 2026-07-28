@@ -1,0 +1,6 @@
+/* UI 0.30.3 cockpit cleanup: location/exposure intel duplicates route and destination data.
+   Keep it in the natural-flow fallback, remove it from fitted desktop densities. */
+
+html[data-active-view="route"][data-ops-density]:not([data-ops-density="flow"]) .operations-v028 .current-stop-intel {
+  display: none;
+}
