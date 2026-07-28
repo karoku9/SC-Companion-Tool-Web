@@ -2,6 +2,7 @@
 
 html[data-active-view="route"][data-ops-density]:not([data-ops-density="flow"]) .operations-v028 .ops-v027-command-title small,
 html[data-active-view="route"][data-ops-density]:not([data-ops-density="flow"]) .operations-v028 .ops-v027-command-metrics article small,
+html[data-active-view="route"][data-ops-density]:not([data-ops-density="flow"]) .operations-v028 .ops-v027-command-metrics article strong,
 html[data-active-view="route"][data-ops-density]:not([data-ops-density="flow"]) .operations-v028 .quick-ship-control small,
 html[data-active-view="route"][data-ops-density]:not([data-ops-density="flow"]) .operations-v028 .ops-session-tabs button small,
 html[data-active-view="route"][data-ops-density]:not([data-ops-density="flow"]) .operations-v028 .operation-controls .button,
