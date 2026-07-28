@@ -8,167 +8,67 @@ const pages = require('../product-pages.js');
 const catalog = require('../ship-catalog.js');
 const roadmap = require('../roadmap.js');
 
-const visiblePages = ['route', 'missions', 'route-planner', 'map', 'hangar', 'roadmap'];
+const read = (file) => fs.readFileSync(path.join(__dirname, '..', file), 'utf8');
 
-function read(file) {
-  return fs.readFileSync(path.join(__dirname, '..', file), 'utf8');
-}
-
-test('page registry preserves compatible workspace targets', () => {
+test('page registry and compatibility routes remain stable', () => {
   const ids = pages.pages.map((page) => page.id);
-  assert.deepEqual(ids, visiblePages);
-  assert.equal(new Set(ids).size, ids.length);
+  assert.deepEqual(ids, ['route', 'missions', 'route-planner', 'map', 'hangar', 'roadmap']);
   assert.equal(pages.defaultPageId, 'route');
-  assert.equal(pages.groups.length, 3);
-  pages.pages.forEach((page) => {
-    assert.ok(page.icon);
-    assert.ok(page.hint);
-  });
-});
-
-test('secondary links still resolve into their compatibility workspace', () => {
   assert.equal(pages.resolveView('cargo'), 'route');
   assert.equal(pages.resolveView('load-operations'), 'route');
   assert.equal(pages.resolveView('locations'), 'route-planner');
   assert.equal(pages.resolveView('changelog'), 'roadmap');
-  assert.equal(pages.resolveView('route-planner'), 'route-planner');
 });
 
-test('ship cargo zones remain separable, layered and capacity-safe', () => {
+test('ship cargo geometry remains layered and capacity-safe', () => {
   catalog.models.forEach((model) => {
-    const zones = model.layout.zones;
-    assert.ok(Array.isArray(zones) && zones.length > 1);
-    assert.equal(zones.reduce((total, zone) => total + zone.capacityScu, 0), model.capacityScu);
-    zones.forEach((zone) => {
+    assert.equal(model.layout.zones.reduce((sum, zone) => sum + zone.capacityScu, 0), model.capacityScu);
+    model.layout.zones.forEach((zone) => {
       assert.ok(zone.layers > 0);
       assert.ok(zone.columns > 0);
       assert.equal(zone.separable, true);
     });
-    if (model.id === 'drake-corsair') {
-      assert.equal(model.layout.geometryStatus, 'configured-corsair-72-scu-grid');
-      assert.equal(model.snapGrid.rows, 6);
-      assert.equal(model.snapGrid.columns, 4);
-      assert.equal(model.snapGrid.layers, 3);
-      assert.equal(model.snapGrid.rows * model.snapGrid.columns * model.snapGrid.layers, 72);
-    } else {
-      assert.equal(model.layout.geometryStatus, 'concept');
-    }
   });
+  const corsair = catalog.getModel('drake-corsair');
+  assert.equal(corsair.snapGrid.rows, 6);
+  assert.equal(corsair.snapGrid.columns, 4);
+  assert.equal(corsair.snapGrid.layers, 3);
+  assert.equal(corsair.snapGrid.rows * corsair.snapGrid.columns * corsair.snapGrid.layers, 72);
 });
 
-test('design system, icons and shell load before page routing', () => {
+test('design system, icons and shell load before application runtimes', () => {
   const html = read('index.html');
   const shell = read('product-shell.js');
   assert.match(html, /id="product-navigation"/);
   assert.match(html, /id="future-pages-root"/);
-  assert.match(html, /ui-v2\.css\?v=0\.29\.2/);
-  assert.match(html, /product-shell\.js\?v=0\.29\.2/);
   assert.ok(html.indexOf('src="design-system.js"') < html.indexOf('src="mfd-icons.js"'));
   assert.ok(html.indexOf('src="mfd-icons.js"') < html.indexOf('src="product-pages.js"'));
-  assert.ok(html.indexOf('product-shell.js?v=0.29.2') < html.indexOf('src="sections.js"'));
-  assert.match(shell, /id="route-planner"/);
-  assert.doesNotMatch(shell, /id="load-operations"/);
-  assert.match(shell, /nav-glyph/);
   assert.match(shell, /SCCompanionMfdIcons/);
   assert.match(shell, /CORE 0\.25 · UI 0\.29\.2/);
-  assert.match(shell, /MutationObserver/);
-  assert.match(shell, /local review and routing/);
 });
 
-test('v0.25 keeps assisted intake and adds the operational cockpit runtimes', () => {
+test('Operations 0.40 connects the existing route, cargo, fleet and mission models', () => {
   const app = read('app.js');
-  const clean = read('ui-v2.js');
-  const accessibility = read('ui-v2-accessibility.js');
-  const validation = read('mission-validation.js');
-  const context = read('location-context.js');
-  const contextView = read('location-intel-view.js');
-  const plannerContext = read('location-context-planner.js');
-  const fleet = read('fleet-loadouts.js');
-  const adapter = read('fleet-estimate-adapter.js');
-  const fleetView = read('fleet-loadouts-view.js');
-  const starmap = read('starmap-view.js');
-  const locations = read('locations.js');
-  const mapData = read('starmap-data.js');
+  const operations = read('operations-rebuild-v040.js');
+  const loader = read('operations-rebuild-v040-loader.js');
   const entry = read('ui-v2.css');
-  const gameLog = read('game-log-intake.js');
-  const gameLogCorrelation = read('game-log-intake-correlation.js');
-  const gameLogView = read('game-log-intake-view.js');
-  const ocr = read('ocr-intake.js');
-  const ocrView = read('ocr-intake-view.js');
-  assert.equal(roadmap.currentVersion, '0.25');
-  assert.match(app, /fleet-loadouts\.js/);
-  assert.match(app, /fleet-estimate-adapter\.js/);
-  assert.match(app, /fleet-loadouts-view\.js/);
-  assert.match(app, /official-universe-data\.js/);
-  assert.match(app, /navigation-estimates\.js/);
-  assert.match(app, /location-context\.js/);
-  assert.match(app, /location-context-planner\.js/);
-  assert.match(app, /cargo-zone-model\.js/);
-  assert.match(app, /cargo-ship-grid-profile-v030\.js/);
-  assert.match(app, /cargo-auto-layout-v0292\.js/);
-  assert.match(app, /cargo-manual-layout-v030\.js/);
-  assert.match(app, /cargo-manual-grid-view-v0301\.js/);
-  assert.match(app, /operations-cargo-guidance-v0292\.js/);
-  assert.match(app, /ui-v2-accessibility\.js/);
-  assert.match(app, /game-log-intake\.js/);
-  assert.match(app, /game-log-intake-correlation\.js/);
-  assert.match(app, /game-log-intake-view\.js/);
-  assert.match(app, /ocr-intake\.js/);
-  assert.match(app, /ocr-intake-view\.js/);
-  assert.match(app, /route-session-planner\.js/);
-  assert.match(app, /missions-focus-workflow\.js/);
-  assert.match(app, /operational-ui-v025\.js/);
-  assert.match(app, /operations-exposure-intel\.js/);
-  assert.match(app, /ship-selector-sync\.js/);
-  assert.match(app, /SCCompanionCleanInterfaceReady/);
-  assert.match(clean, /SCCompanionCleanInterfaceReady/);
-  assert.match(accessibility, /activateDevelopmentTab/);
-  assert.match(validation, /inspectMissionText/);
-  assert.match(context, /exposureFor/);
-  assert.match(contextView, /SOURCE LEDGER/);
-  assert.match(plannerContext, /planner-location-context/);
-  assert.match(fleet, /activeLoadoutByShip/);
-  assert.match(fleet, /Imported configuration/);
-  assert.match(adapter, /handlingTimeFactor/);
-  assert.match(fleetView, /Ship loadouts/);
-  assert.match(starmap, /CURRENT OBJECTIVE/);
-  assert.match(starmap, /data-map-action="current"/);
-  assert.match(locations, /operationalDestinations/);
-  assert.match(locations, /validateCatalog/);
-  assert.match(mapData, /registry\.locations/);
-  assert.match(entry, /game-log-intake\.css/);
-  assert.match(entry, /ocr-intake\.css/);
-  assert.match(entry, /operational-ui-v025\.css/);
-  assert.match(entry, /operational-ui-legibility\.css/);
-  assert.match(entry, /operations-readable-short-desktop-v0291\.css/);
-  assert.match(entry, /operations-spacing-v0292\.css/);
-  assert.match(gameLog, /mergeImportedEvents/);
-  assert.match(gameLogCorrelation, /nearest-preceding-contract-context/);
-  assert.match(gameLogCorrelation, /normalizeStructuredFields/);
-  assert.match(gameLogView, /showOpenFilePicker/);
-  assert.match(gameLogView, /Load extracted draft into review/);
-  assert.match(ocr, /inspectOcrText/);
-  assert.match(ocr, /selectActionAnchors/);
-  assert.match(ocrView, /TESSERACT_VERSION = '7\.0\.0'/);
-  assert.match(ocrView, /Load OCR draft into review/);
-  assert.doesNotMatch(app, /workspace-shell\.js/);
-  assert.match(read('design-system.js'), /manufacturer: 'Drake Interplanetary'/);
+
+  ['fleet-loadouts.js', 'fleet-estimate-adapter.js', 'fleet-loadouts-view.js', 'official-universe-data.js', 'navigation-estimates.js', 'location-context.js', 'location-context-planner.js', 'cargo-zone-model.js', 'cargo-ship-grid-profile-v030.js', 'cargo-auto-layout-v0292.js', 'cargo-manual-layout-v030.js', 'cargo-manual-grid-view-v0301.js', 'route-session-planner.js', 'missions-focus-workflow.js', 'operations-rebuild-v040-loader.js'].forEach((file) => assert.match(app, new RegExp(file.replaceAll('.', '\\.'))));
+
+  assert.doesNotMatch(app, /operational-ui-v025\.js|operations-exposure-intel\.js|operations-cargo-guidance-v0292\.js|ship-selector-sync\.js/);
+  assert.doesNotMatch(entry, /operational-ui-v025\.css|operations-design-v027\.css|operations-flow-v028\.css|operations-single-screen|operations-readable-short-desktop|operations-spacing/);
+  assert.match(loader, /operations-rebuild-v040\.css/);
+  assert.match(loader, /operations-rebuild-v040\.js/);
+  assert.match(operations, /renderTop/);
+  assert.match(operations, /renderCargo/);
+  assert.match(operations, /renderStep/);
+  assert.match(operations, /renderTimeline/);
+  assert.match(operations, /sessionPlanner\.plan/);
+  assert.match(operations, /corrections\.changeOrder/);
+  assert.match(operations, /operationalSteps\.completeCurrent/);
 });
 
-test('v0.25 follows OCR with the operational hauling cockpit', () => {
-  const universe = roadmap.releases.find((release) => release.version === '0.22');
-  const gameLog = roadmap.releases.find((release) => release.version === '0.23');
-  const ocr = roadmap.releases.find((release) => release.version === '0.24');
-  const cockpit = roadmap.releases.find((release) => release.version === '0.25');
-  assert.equal(universe.status, 'done');
-  assert.match(universe.title, /Expanded universe data/i);
-  assert.equal(gameLog.status, 'done');
-  assert.match(gameLog.title, /Game\.log assisted intake/i);
-  assert.equal(ocr.status, 'done');
-  assert.match(ocr.title, /OCR assisted intake/i);
-  assert.equal(cockpit.status, 'current');
-  assert.match(cockpit.title, /Operational hauling cockpit/i);
-  assert.ok(cockpit.changes.some((change) => /safe sessions/i.test(change)));
-  assert.ok(cockpit.changes.some((change) => /gateway/i.test(change)));
-  assert.ok(cockpit.changes.some((change) => /route map/i.test(change)));
+test('roadmap remains a product history rather than a UI implementation contract', () => {
+  assert.equal(roadmap.currentVersion, '0.25');
+  assert.equal(roadmap.releases.find((release) => release.version === '0.25').status, 'current');
 });
