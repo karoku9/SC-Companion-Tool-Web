@@ -138,6 +138,7 @@
     .then(() => import('./route-session-planner.js'))
     .then(() => import('./missions-focus-workflow.js'))
     .then(() => import('./mission-location-picker.js'))
+    .then(() => import('./missions-session-sync-v040.js'))
     .then(() => import('./missions-review-location-normalizer-v040.js'))
     .then(() => import('./operations-rebuild-v040-loader.js'))
     .then(() => import('./cargo-manual-grid-view-v0301.js'))
