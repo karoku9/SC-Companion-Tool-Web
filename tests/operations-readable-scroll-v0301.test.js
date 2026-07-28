@@ -12,6 +12,7 @@ test('Operations fits supported desktop viewports while cargo remains primary', 
   const cargoLoader = read('operations-cargo-primary-v0302.js');
   const adaptiveCss = read('operations-adaptive-fit-v0303.css');
   const adaptiveReadableCss = read('operations-adaptive-fit-v0303-readable.css');
+  const adaptiveCleanupCss = read('operations-adaptive-fit-v0303-cleanup.css');
   const adaptiveLoader = read('operations-adaptive-fit-v0303.js');
   const app = read('app.js');
   const index = read('index.html');
@@ -22,6 +23,7 @@ test('Operations fits supported desktop viewports while cargo remains primary', 
   assert.match(cargoLoader, /mapPanel\.remove\(\)/);
   assert.match(adaptiveLoader, /appendStyle\('operations-adaptive-fit-v0303\.css'/);
   assert.match(adaptiveLoader, /appendStyle\('operations-adaptive-fit-v0303-readable\.css'/);
+  assert.match(adaptiveLoader, /appendStyle\('operations-adaptive-fit-v0303-cleanup\.css'/);
   assert.match(adaptiveLoader, /if \(width < 1280 \|\| height < 680\) return 'flow'/);
   assert.match(adaptiveLoader, /if \(width < 1450 \|\| height < 760\) return 'tight'/);
   assert.match(adaptiveLoader, /if \(height < 860\) return 'compact'/);
@@ -36,4 +38,5 @@ test('Operations fits supported desktop viewports while cargo remains primary', 
   assert.match(adaptiveCss, /ops-v027-timeline-panel[\s\S]*height:\s*var\(--ops-timeline-height\)/);
   assert.match(adaptiveCss, /data-ops-density="flow"/);
   assert.match(adaptiveReadableCss, /font-size:\s*11\.5px/);
+  assert.match(adaptiveCleanupCss, /current-stop-intel[\s\S]*display:\s*none/);
 });
