@@ -109,10 +109,12 @@ try {
   const stored = await page.evaluate(() => window.SCCompanionSession.getState());
   assert.equal(stored.missionValidation.status, 'ready');
   assert.equal(stored.missionValidation.sourceText, brokenSource);
-  assert.match(stored.missionValidation.reviewedText, /deliver Riker Memorial Spaceport/i);
+  assert.match(stored.missionValidation.reviewedText, /deliver Area18/i);
   assert.match(stored.missionValidation.reviewedText, /Teasa Spaceport/i);
   assert.match(stored.missionValidation.sourceText, /delver/);
   assert.ok(stored.route.stops.some((stop) => stop.locationId === 'stanton-hurston-lorville-teasa'));
+  assert.equal(stored.missions[0].cargoLots[0].pickupLocationId, 'stanton-hurston-lorville-teasa');
+  assert.equal(stored.missions[0].cargoLots[0].deliveryLocationId, 'stanton-arccorp-area18-riker');
   assert.equal(stored.missions[0].cargoLots[0].source.pickupLine, 2);
   assert.equal(stored.missions[0].cargoLots[0].source.deliveryLine, 3);
   const firstRoute = JSON.stringify(stored.route);
@@ -145,3 +147,4 @@ try {
 }
 
 if (failure) throw failure;
+console.log('Mission validation browser test passed.');
