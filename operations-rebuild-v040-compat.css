@@ -27,6 +27,10 @@
   height: 19px;
 }
 
+.ops40-page .ops40-cargo-tools label > span {
+  font-size: 11px;
+}
+
 .ops40-page .ops40-stop {
   flex-grow: 1;
 }
