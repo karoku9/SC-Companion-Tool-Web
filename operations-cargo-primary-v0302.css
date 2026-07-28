@@ -1,0 +1,87 @@
+/* UI 0.30.2 — Cargo replaces the decorative route map in the primary workspace. */
+
+@media (min-width: 1180px) {
+  html[data-active-view="route"] .nav-footer::before {
+    content: "UI 0.30.2";
+  }
+
+  html[data-active-view="route"] .operations-v028 .operations-grid {
+    grid-template-areas:
+      "command"
+      "primary"
+      "timeline"
+      "tools";
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v027-primary-grid {
+    grid-template-columns: minmax(0, 1.65fr) minmax(430px, .75fr);
+    align-items: stretch;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v0302-primary-cargo {
+    grid-area: auto;
+    height: auto;
+    min-height: 540px;
+    overflow: hidden;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v0302-primary-cargo .ops-v028-panel-header {
+    min-height: 52px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v0302-primary-cargo .ops-v028-cargo-body {
+    height: auto;
+    min-height: 488px;
+    grid-template-columns: minmax(0, 1.35fr) minmax(280px, .65fr);
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v0302-primary-cargo .ops-v028-cargo-grid-wrap {
+    min-height: 0;
+    padding: 18px 20px 44px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v0302-primary-cargo .ops-v028-cargo-grid {
+    width: min(100%, 900px);
+    height: 356px;
+    min-height: 356px;
+    gap: 6px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v0302-primary-cargo .ops-v028-cargo-cell {
+    min-height: 48px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v0302-primary-cargo .ops-v028-cargo-cell small,
+  html[data-active-view="route"] .operations-v028 .ops-v0302-primary-cargo .ops-v028-access-edge {
+    font-size: 14px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v0302-primary-cargo .ops-v028-cargo-legend {
+    min-height: 0;
+    overflow-y: auto;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v0302-primary-cargo .ops-v028-cargo-legend > article {
+    padding: 12px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v0302-primary-cargo .ops-v028-cargo-legend footer {
+    position: sticky;
+    bottom: 0;
+  }
+}
+
+@media (min-width: 1180px) and (max-width: 1399px) {
+  html[data-active-view="route"] .operations-v028 .ops-v027-primary-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v0302-primary-cargo,
+  html[data-active-view="route"] .operations-v028 .current-operation-panel {
+    min-height: 500px;
+  }
+
+  html[data-active-view="route"] .operations-v028 .ops-v0302-primary-cargo .ops-v028-cargo-body {
+    min-height: 448px;
+  }
+}
