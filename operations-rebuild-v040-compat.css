@@ -1,3 +1,32 @@
+/* Narrow compatibility bridge plus final sizing rules for the canonical icon renderer. */
+
 .ops40-page .ops-v030-edit-grid {
   display: none !important;
+}
+
+.ops40-page .ops40-icon {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+}
+
+.ops40-page .ops40-top-metric > span .ops40-icon,
+.ops40-page .ops40-ship-control > span .ops40-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.ops40-page .ops40-action-totals .ops40-icon,
+.ops40-page .ops40-travel-card .ops40-icon {
+  width: 22px;
+  height: 22px;
+}
+
+.ops40-page .ops40-dock .ops40-icon {
+  width: 19px;
+  height: 19px;
+}
+
+.ops40-page .ops40-stop {
+  flex-grow: 1;
 }
