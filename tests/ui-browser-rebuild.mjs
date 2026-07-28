@@ -360,7 +360,7 @@ async function showOperationalKind(kind, screenshotName) {
   assert.equal(await page.locator('.command-panel .location-status-strip').getAttribute('data-location-id'), expectedLocationId);
   assert.match(await page.locator('.command-panel').innerText(), kind === 'jump' ? /Jump transit/i : /Gateway context/i);
   await capture(screenshotName, { viewport: { width: 1600, height: 900 } });
-  await assertLiveDensity(`1600×900 ${kind}`, 460);
+  await assertLiveDensity(`1600×900 ${kind}`, 480);
 }
 
 await showOperationalKind('gateway-approach', 'live-gateway-approach-1600x900');
