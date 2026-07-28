@@ -122,7 +122,8 @@ try {
   }
   assert.ok(pyroGuard > 0, 'Explicit route did not reach the Checkmate action within the expected step count');
   await page.locator('.ops-v028-step-subtitle').filter({ hasText: /Checkmate Station/i }).waitFor({ state: 'visible' });
-  await page.locator('.current-stop-intel-card').first().waitFor({ state: 'visible' });
+  assert.equal(await page.locator('.current-stop-intel').isVisible(), false, 'Fitted Operations must hide redundant location/exposure cards');
+  assert.ok(await page.locator('.current-stop-intel-card').count() >= 5, 'Location intel data must remain rendered for the dedicated detail view');
   const exposureLabel = await page.locator('.ops-v028-intel > header strong').textContent();
   assert.match(exposureLabel, /Protected hangar delivery|High cargo exposure|Cargo cleared/i);
   assert.match(await page.locator('.current-operation-panel').textContent(), /2 SCU/i);

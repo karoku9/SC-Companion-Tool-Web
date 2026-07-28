@@ -149,6 +149,7 @@
     .then(() => import('./cargo-manual-grid-fit-v030.js'))
     .then(() => import('./operations-readable-scroll-v0301.js'))
     .then(() => import('./operations-cargo-primary-v0302.js'))
+    .then(() => import('./operations-adaptive-fit-v0303.js'))
     .then(() => import('./ship-selector-sync.js'))
     .then(() => import('./missions-operations-bridge.js'))
     .then(() => window.dispatchEvent(new Event('sc:dynamic-pages-ready')))
