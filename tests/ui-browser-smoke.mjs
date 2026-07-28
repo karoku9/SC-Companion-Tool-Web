@@ -102,13 +102,14 @@ try {
   await page.locator('#focused-route-open').click();
   await page.locator('.operations-page.operations-v028').waitFor({ state: 'visible' });
   await page.locator('#ops-live-map .ops-map-node').first().waitFor({ state: 'visible' });
+  await page.locator('link[data-operations-readable-scroll-style="0.30.1"]').waitFor({ state: 'attached' });
   assert.equal(await page.locator('.ops-action-bar [data-ops-action]').count(), 5);
   assert.ok(await page.locator('.ops-v028-stop-card').count() > 0);
   assert.ok(await page.locator('.ops-v028-cargo-cell').count() > 0);
   assert.doesNotMatch(await page.locator('.current-operation-panel').textContent(), /CURRENT DESTINATION/i);
   assert.equal(await page.evaluate(() => window.SCCompanionAutoCargoLayout?.version), '0.29.2');
 
-  step = 'verify single-screen flight deck at 1600x900';
+  step = 'verify readable natural-scroll flight deck at 1600x900';
   const layout = await page.evaluate(() => {
     const box = (selector) => {
       const rect = document.querySelector(selector)?.getBoundingClientRect();
@@ -123,34 +124,43 @@ try {
       map: box('.ops-live-navigation'),
       current: box('.current-operation-panel'),
       timeline: box('.ops-v027-timeline-panel'),
+      timelineCard: box('.ops-v028-stop-card'),
       cargo: box('.ops-v028-cargo-panel'),
+      cargoGrid: box('.ops-v028-cargo-grid'),
       tools: box('.operations-tools')
     };
   });
-  assert.ok(layout.command && layout.primary && layout.map && layout.current && layout.timeline && layout.cargo && layout.tools, `Missing layout regions: ${JSON.stringify(layout)}`);
+  assert.ok(layout.command && layout.primary && layout.map && layout.current && layout.timeline && layout.timelineCard && layout.cargo && layout.cargoGrid && layout.tools, `Missing layout regions: ${JSON.stringify(layout)}`);
   assert.ok(layout.command.bottom <= layout.primary.top + 2, `Command deck order is wrong: ${JSON.stringify(layout)}`);
   assert.ok(Math.abs(layout.map.top - layout.current.top) <= 2, `Map/current row is misaligned: ${JSON.stringify(layout)}`);
   assert.ok(layout.map.width > layout.current.width, `Map must remain dominant: ${JSON.stringify(layout)}`);
-  assert.ok(layout.primary.bottom <= layout.timeline.top + 2, `Lower instrument row must follow primary workspace: ${JSON.stringify(layout)}`);
-  assert.ok(Math.abs(layout.timeline.top - layout.cargo.top) <= 2, `Timeline and cargo must share the lower row: ${JSON.stringify(layout)}`);
-  assert.ok(Math.max(layout.timeline.bottom, layout.cargo.bottom) <= layout.tools.top + 2, `Tools must remain below lower row: ${JSON.stringify(layout)}`);
-  assert.ok(layout.tools.bottom <= layout.viewportHeight + 2, `Tools escape viewport: ${JSON.stringify(layout)}`);
-  assert.ok(layout.documentHeight <= layout.viewportHeight + 2, `Document still scrolls vertically: ${JSON.stringify(layout)}`);
-  assert.ok(layout.bodyHeight <= layout.viewportHeight + 2, `Body still scrolls vertically: ${JSON.stringify(layout)}`);
-  await noHorizontalOverflow('Operations single-screen 1600x900');
-  await page.screenshot({ path: `${output}/operations-single-screen-1600x900.png`, fullPage: true });
+  assert.ok(layout.map.height >= 520 && layout.current.height >= 520, `Primary instruments are still compressed: ${JSON.stringify(layout)}`);
+  assert.ok(layout.primary.bottom <= layout.timeline.top + 2, `Timeline must follow primary workspace: ${JSON.stringify(layout)}`);
+  assert.ok(layout.timeline.bottom <= layout.cargo.top + 2, `Cargo must have its own row below timeline: ${JSON.stringify(layout)}`);
+  assert.ok(layout.cargo.bottom <= layout.tools.top + 2, `Tools must follow cargo: ${JSON.stringify(layout)}`);
+  assert.ok(layout.timeline.height >= 300 && layout.timelineCard.width >= 240, `Timeline is still compressed: ${JSON.stringify(layout)}`);
+  assert.ok(layout.cargo.height >= 390 && layout.cargoGrid.height >= 280, `Cargo plan is still clipped: ${JSON.stringify(layout)}`);
+  assert.ok(layout.documentHeight > layout.viewportHeight + 400, `Document is still being forced into one viewport: ${JSON.stringify(layout)}`);
+  assert.ok(layout.bodyHeight > layout.viewportHeight + 400, `Body is still being forced into one viewport: ${JSON.stringify(layout)}`);
+  await noHorizontalOverflow('Operations readable natural scroll 1600x900');
+  await page.screenshot({ path: `${output}/operations-readable-scroll-1600x900.png`, fullPage: true });
 
-  step = 'verify readable short-desktop layout at 1664x800';
+  step = 'verify readable desktop at 1664x800';
   await page.setViewportSize({ width: 1664, height: 800 });
+  await page.evaluate(() => scrollTo(0, 0));
   await page.locator('.operations-page.operations-v028').waitFor({ state: 'visible' });
-  const compact = await page.evaluate(() => {
+  const readable = await page.evaluate(() => {
     const rect = (selector) => document.querySelector(selector)?.getBoundingClientRect() ?? null;
+    const style = (selector) => {
+      const node = document.querySelector(selector);
+      return node ? getComputedStyle(node) : null;
+    };
     const nav = rect('.app-nav');
     const topbar = rect('.app-topbar');
     const map = rect('.ops-live-navigation');
     const current = rect('.current-operation-panel');
     const timelineCard = rect('.ops-v028-stop-card');
-    const currentBody = document.querySelector('.current-operation-body');
+    const currentBodyStyle = style('.current-operation-body');
     return {
       viewportHeight: innerHeight,
       documentHeight: document.documentElement.scrollHeight,
@@ -160,26 +170,27 @@ try {
       mapHeight: map?.height ?? 0,
       currentHeight: current?.height ?? 0,
       timelineCardWidth: timelineCard?.width ?? 0,
-      currentClientHeight: currentBody?.clientHeight ?? 0,
-      currentScrollHeight: currentBody?.scrollHeight ?? 0,
-      upcomingDisplay: getComputedStyle(document.querySelector('.ops-v028-upcoming')).display,
-      releaseText: document.querySelector('.nav-footer')?.textContent ?? '',
-      cargoGuidance: document.querySelector('.ops-v028-cargo-guidance')?.textContent ?? ''
+      currentOverflowY: currentBodyStyle?.overflowY ?? '',
+      upcomingDisplay: style('.ops-v028-upcoming')?.display ?? '',
+      currentTitleSize: parseFloat(style('.current-operation-body > h2')?.fontSize ?? '0'),
+      timelineTextSize: parseFloat(style('.ops-v028-stop-card strong')?.fontSize ?? '0'),
+      cargoTextSize: parseFloat(style('.ops-v028-cargo-cell small')?.fontSize ?? '0')
     };
   });
-  assert.ok(compact.navWidth <= 70, `Operations sidebar is not icon-only: ${JSON.stringify(compact)}`);
-  assert.ok(compact.topbarHeight <= 1, `Operations topbar should be removed: ${JSON.stringify(compact)}`);
-  assert.ok(compact.mapHeight >= 320, `Focused map is too short: ${JSON.stringify(compact)}`);
-  assert.ok(compact.currentHeight >= 320, `Current Step is too short: ${JSON.stringify(compact)}`);
-  assert.ok(compact.timelineCardWidth >= 200, `Timeline cards are too compressed: ${JSON.stringify(compact)}`);
-  assert.ok(compact.currentScrollHeight <= compact.currentClientHeight + 2, `Current Step still scrolls internally: ${JSON.stringify(compact)}`);
-  assert.equal(compact.upcomingDisplay, 'none');
-  assert.match(compact.releaseText, /UI 0\.29\.2/i);
-  assert.match(compact.cargoGuidance, /Left \/ right zones first/i);
-  assert.ok(compact.documentHeight <= compact.viewportHeight + 2, `Short desktop document scrolls: ${JSON.stringify(compact)}`);
-  assert.ok(compact.bodyHeight <= compact.viewportHeight + 2, `Short desktop body scrolls: ${JSON.stringify(compact)}`);
+  assert.ok(readable.navWidth <= 74, `Operations sidebar is not icon-only: ${JSON.stringify(readable)}`);
+  assert.ok(readable.topbarHeight <= 1, `Operations topbar should remain removed: ${JSON.stringify(readable)}`);
+  assert.ok(readable.mapHeight >= 520, `Focused map is too short: ${JSON.stringify(readable)}`);
+  assert.ok(readable.currentHeight >= 520, `Current Step is too short: ${JSON.stringify(readable)}`);
+  assert.ok(readable.timelineCardWidth >= 240, `Timeline cards are too compressed: ${JSON.stringify(readable)}`);
+  assert.ok(!['auto', 'scroll'].includes(readable.currentOverflowY), `Current Step still scrolls internally: ${JSON.stringify(readable)}`);
+  assert.notEqual(readable.upcomingDisplay, 'none', `Upcoming step was hidden to save space: ${JSON.stringify(readable)}`);
+  assert.ok(readable.currentTitleSize >= 24, `Current Step title is too small: ${JSON.stringify(readable)}`);
+  assert.ok(readable.timelineTextSize >= 13, `Timeline text is too small: ${JSON.stringify(readable)}`);
+  assert.ok(readable.cargoTextSize >= 13, `Cargo coordinates are too small: ${JSON.stringify(readable)}`);
+  assert.ok(readable.documentHeight > readable.viewportHeight + 400, `Desktop document is still forced into one viewport: ${JSON.stringify(readable)}`);
+  assert.ok(readable.bodyHeight > readable.viewportHeight + 400, `Desktop body is still forced into one viewport: ${JSON.stringify(readable)}`);
   await noHorizontalOverflow('Operations readable 1664x800');
-  await page.screenshot({ path: `${output}/operations-readable-1664x800.png`, fullPage: true });
+  await page.screenshot({ path: `${output}/operations-readable-scroll-1664x800.png`, fullPage: true });
 
   step = 'verify explicit gateway sequence';
   const gatewaySetup = await page.evaluate(() => {
@@ -229,4 +240,4 @@ try {
 }
 
 if (failure) throw failure;
-console.log('UI 0.29.2 spacing and left-right cargo smoke passed.');
+console.log('UI 0.30.1 readable scrolling Operations smoke passed.');
