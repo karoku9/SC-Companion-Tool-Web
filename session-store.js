@@ -28,6 +28,19 @@ deliver baijini 2scu etam 1scu neon`;
       missionValidation: null,
       missions: [],
       route: null,
+      routePlayMode: 'sessions',
+      routeStrategy: 'balanced',
+      routeStrategyWeights: {
+        travelTime: 70,
+        missionCompletion: 60,
+        gatewayJumps: 65,
+        stopCount: 45,
+        riskExposure: 50,
+        trafficExposure: 25,
+        cargoTurnover: 55
+      },
+      selectedRouteCandidateId: 'recommended',
+      routeOptimizationSummary: null,
       currentStopIndex: 0,
       completedStopIds: null,
       routeCorrections: null,
@@ -234,9 +247,28 @@ deliver baijini 2scu etam 1scu neon`;
   function normalize(nextState) {
     const defaults = initialState();
     const migrated = migrateKnownLocations(nextState ?? {});
+    const legacyMode = migrated?.routeMode === 'fastest' ? 'full' : 'sessions';
+    const routePlayMode = migrated?.routePlayMode === 'full' || migrated?.routePlayMode === 'sessions'
+      ? migrated.routePlayMode
+      : legacyMode;
+    const routeStrategy = String(migrated?.routeStrategy ?? (migrated?.routeMode === 'fastest' ? 'fastest' : 'balanced'));
+    const routeStrategyWeights = Object.fromEntries(Object.entries({
+      ...defaults.routeStrategyWeights,
+      ...(migrated?.routeStrategyWeights ?? {})
+    }).map(([key, value]) => [key, Math.max(0, Math.min(100, Math.round(Number(value) || 0)))]));
+    if (!Object.values(routeStrategyWeights).some((value) => value > 0)) {
+      Object.assign(routeStrategyWeights, defaults.routeStrategyWeights);
+    }
     return {
       ...defaults,
       ...migrated,
+      routePlayMode,
+      routeStrategy,
+      routeStrategyWeights,
+      selectedRouteCandidateId: String(migrated?.selectedRouteCandidateId ?? defaults.selectedRouteCandidateId),
+      routeOptimizationSummary: migrated?.routeOptimizationSummary && typeof migrated.routeOptimizationSummary === 'object'
+        ? { ...migrated.routeOptimizationSummary }
+        : null,
       missionSourceText: String(migrated?.missionSourceText ?? migrated?.missionValidation?.sourceText ?? migrated?.missionText ?? defaults.missionSourceText),
       missionText: String(migrated?.missionText ?? defaults.missionText),
       missionValidation: normalizeValidation(migrated?.missionValidation),

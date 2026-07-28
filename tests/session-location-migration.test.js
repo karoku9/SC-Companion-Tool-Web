@@ -85,6 +85,10 @@ test('saved free-text route locations rebind to the current operational registry
   assert.equal(state.missions[0].cargoLots[0].pickupLocationId, 'pyro-monox-checkmate');
   assert.equal(state.missions[0].cargoLots[0].deliveryLocationId, 'nyx-delamar-levski');
   assert.equal(state.route.stops[1].locationId, 'custom-user-camp', 'truly unknown custom locations must remain custom');
+  assert.equal(state.routePlayMode, 'sessions');
+  assert.equal(state.routeStrategy, 'balanced');
+  assert.equal(state.selectedRouteCandidateId, 'recommended');
+  assert.ok(Object.values(state.routeStrategyWeights).some((value) => value > 0));
 
   const persisted = JSON.parse(storage.read('sc-companion-session-v1'));
   assert.equal(persisted.route.stops[0].locationId, 'nyx-delamar-levski', 'migration must persist on load');
