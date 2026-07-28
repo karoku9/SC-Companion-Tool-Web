@@ -45,7 +45,7 @@ async function noHorizontalOverflow(label) {
   assert.ok(metrics.bodyWidth <= metrics.viewport + 2, `${label}: body overflow ${JSON.stringify(metrics)}`);
 }
 
-async function readableCargoOperations(label) {
+async function fittedCargoOperations(label, expectedDensity) {
   const metrics = await page.evaluate(() => {
     const root = document.querySelector('.operations-page.operations-v028');
     const grid = root?.querySelector('.operations-grid');
@@ -65,30 +65,37 @@ async function readableCargoOperations(label) {
     }));
     const rootBox = root?.getBoundingClientRect();
     const gridBox = grid?.getBoundingClientRect();
+    const currentBody = root?.querySelector('.current-operation-body');
     return {
+      density: document.documentElement.dataset.opsDensity ?? '',
       viewport: { width: innerWidth, height: innerHeight },
-      documentHeight: document.documentElement.scrollHeight,
-      bodyHeight: document.body.scrollHeight,
+      document: { width: document.documentElement.scrollWidth, height: document.documentElement.scrollHeight },
+      body: { width: document.body.scrollWidth, height: document.body.scrollHeight },
       root: rootBox ? { top: rootBox.top, bottom: rootBox.bottom, height: rootBox.height } : null,
       grid: gridBox ? { top: gridBox.top, bottom: gridBox.bottom, height: gridBox.height } : null,
       mapCount: root?.querySelectorAll('.ops-live-navigation').length ?? -1,
+      currentBody: currentBody ? { clientHeight: currentBody.clientHeight, scrollHeight: currentBody.scrollHeight } : null,
       boxes
     };
   });
 
-  assert.ok(metrics.root && metrics.grid, `${label}: Operations root or grid is missing`);
+  assert.equal(metrics.density, expectedDensity, `${label}: wrong density ${JSON.stringify(metrics)}`);
+  assert.ok(metrics.root && metrics.grid && metrics.currentBody, `${label}: Operations root, grid or Current Step body is missing`);
   Object.entries(metrics.boxes).forEach(([key, box]) => assert.ok(box, `${label}: missing ${key} panel`));
   assert.equal(metrics.mapCount, 0, `${label}: route map still exists`);
+  assert.ok(metrics.document.height <= metrics.viewport.height + 2, `${label}: document exceeds viewport ${JSON.stringify(metrics)}`);
+  assert.ok(metrics.body.height <= metrics.viewport.height + 2, `${label}: body exceeds viewport ${JSON.stringify(metrics)}`);
+  assert.ok(metrics.root.top >= -2 && metrics.root.bottom <= metrics.viewport.height + 2, `${label}: Operations root escapes viewport ${JSON.stringify(metrics)}`);
   assert.ok(metrics.boxes.command.bottom <= metrics.boxes.primary.top + 2, `${label}: command deck order is wrong`);
   assert.ok(Math.abs(metrics.boxes.cargo.top - metrics.boxes.current.top) <= 2, `${label}: cargo/current row is misaligned`);
-  assert.ok(metrics.boxes.cargo.width > metrics.boxes.current.width, `${label}: cargo did not inherit the former map area`);
-  assert.ok(metrics.boxes.cargo.height >= 520 && metrics.boxes.current.height >= 520, `${label}: primary instruments remain compressed ${JSON.stringify(metrics.boxes)}`);
-  assert.ok(metrics.boxes.cargoGrid.height >= 340, `${label}: cargo grid remains clipped`);
+  assert.ok(metrics.boxes.cargo.width > metrics.boxes.current.width, `${label}: cargo did not inherit the dominant area`);
+  assert.ok(metrics.boxes.cargo.height >= 430 && metrics.boxes.current.height >= 430, `${label}: primary instruments are too short ${JSON.stringify(metrics.boxes)}`);
+  assert.ok(metrics.boxes.cargoGrid.height >= 300, `${label}: cargo grid is clipped`);
   assert.ok(metrics.boxes.primary.bottom <= metrics.boxes.timeline.top + 2, `${label}: timeline must follow the primary row`);
   assert.ok(metrics.boxes.timeline.bottom <= metrics.boxes.tools.top + 2, `${label}: tools must follow timeline`);
-  assert.ok(metrics.boxes.timelineCard.width >= 240, `${label}: timeline cards remain compressed`);
-  assert.ok(metrics.documentHeight > metrics.viewport.height + 150, `${label}: document is still forced into one viewport ${JSON.stringify(metrics)}`);
-  assert.ok(metrics.bodyHeight > metrics.viewport.height + 150, `${label}: body is still forced into one viewport ${JSON.stringify(metrics)}`);
+  assert.ok(metrics.boxes.tools.bottom <= metrics.viewport.height + 2, `${label}: bottom controls are below the fold`);
+  assert.ok(metrics.boxes.timelineCard.width >= 190, `${label}: timeline cards are too narrow`);
+  assert.ok(metrics.currentBody.scrollHeight <= metrics.currentBody.clientHeight + 2, `${label}: tested Current Step state needs internal scrolling ${JSON.stringify(metrics.currentBody)}`);
 }
 
 async function readableTypography(label) {
@@ -137,6 +144,8 @@ try {
   await page.locator('.product-navigation').waitFor({ state: 'visible' });
   await page.locator('#sidebar-toggle').waitFor({ state: 'attached' });
   await page.locator('.operations-cargo-primary-v0302').waitFor({ state: 'visible' });
+  await page.locator('link[data-operations-adaptive-fit-style="0.30.3"]').waitFor({ state: 'attached' });
+  await page.locator('link[data-operations-adaptive-fit-readable-style="0.30.3"]').waitFor({ state: 'attached' });
   assert.equal(await page.locator('#sidebar-toggle').isVisible(), false, 'Operations uses a fixed icon rail, so its expand control must remain hidden');
   assert.equal(await page.locator('.ops-live-navigation').count(), 0);
 
@@ -151,7 +160,7 @@ try {
   assert.equal(await page.locator('[data-view-target="roadmap"]').count(), 0);
   await noHorizontalOverflow('Empty Operations desktop');
   await readableTypography('Empty Operations desktop');
-  await page.screenshot({ path: `${output}/hardening-no-route-1664.png`, fullPage: true });
+  await page.screenshot({ path: `${output}/hardening-no-route-1664.png`, fullPage: false });
 
   step = 'generate long mission through visual review';
   await openWorkspace('missions');
@@ -210,13 +219,13 @@ try {
   await noHorizontalOverflow('Integrated Operations desktop');
   await readableTypography('Integrated Operations desktop');
 
-  step = 'verify cargo-first Operations at 1700x900';
+  step = 'verify comfortable one-viewport Operations at 1700x900';
   await page.setViewportSize({ width: 1700, height: 900 });
-  await page.evaluate(() => scrollTo(0, 0));
+  await page.waitForFunction(() => document.documentElement.dataset.opsDensity === 'comfortable');
   await page.locator('.ops-v0302-primary-cargo').waitFor({ state: 'visible' });
-  await readableCargoOperations('1700x900 Operations');
+  await fittedCargoOperations('1700x900 Operations', 'comfortable');
   await noHorizontalOverflow('1700x900 Operations');
-  await page.screenshot({ path: `${output}/operations-cargo-primary-1700x900.png`, fullPage: true });
+  await page.screenshot({ path: `${output}/operations-adaptive-fit-1700x900.png`, fullPage: false });
 
   step = 'complete route in Operations';
   let guard = 20;
@@ -227,15 +236,23 @@ try {
   assert.ok(guard > 0, 'Route completion exceeded safety limit');
   assert.match(await page.locator('#current-stop-name').textContent(), /complete/i);
   assert.match(await page.locator('#ops-v027-next').textContent(), /complete/i);
-  await page.screenshot({ path: `${output}/hardening-route-complete-1664.png`, fullPage: true });
+  await page.screenshot({ path: `${output}/hardening-route-complete-1700.png`, fullPage: false });
 
   step = 'verify simplified ship selector';
   assert.equal(await page.locator('#quick-ship-select').isVisible(), true);
   assert.ok(await page.locator('#quick-ship-select option').count() >= 7);
   assert.equal(await page.locator('#fleet-loadout-editor:visible').count(), 0);
 
-  step = 'verify responsive active layouts';
+  step = 'verify tight one-viewport laptop layout';
   await page.setViewportSize({ width: 1366, height: 768 });
+  await openWorkspace('route');
+  await page.waitForFunction(() => document.documentElement.dataset.opsDensity === 'tight');
+  await fittedCargoOperations('1366x768 Operations', 'tight');
+  await noHorizontalOverflow('1366x768 Operations');
+  await readableTypography('1366x768 Operations');
+  await page.screenshot({ path: `${output}/operations-adaptive-fit-1366x768.png`, fullPage: false });
+
+  step = 'verify responsive active layouts';
   await inspectActiveWorkspaces('1366x768');
   await page.setViewportSize({ width: 390, height: 844 });
   await inspectActiveWorkspaces('390x844');
@@ -244,6 +261,7 @@ try {
   await minimumTouchTargets('390x844 Missions review');
   await page.screenshot({ path: `${output}/hardening-missions-390.png`, fullPage: true });
   await openWorkspace('route');
+  await page.waitForFunction(() => document.documentElement.dataset.opsDensity === 'flow');
   assert.equal(await page.locator('.ops-live-navigation').count(), 0);
   await minimumTouchTargets('390x844 Operations');
   await page.screenshot({ path: `${output}/hardening-operations-390.png`, fullPage: true });
