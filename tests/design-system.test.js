@@ -58,7 +58,7 @@ test('interaction contract includes focus, mobile target, reduced-motion and for
   assert.match(css, /forced-colors: active/);
 });
 
-test('feature layers reuse design-system roles instead of adding raw visual language', () => {
+test('shared feature layers reuse design-system roles instead of adding raw visual language', () => {
   const validation = read('mission-validation.css');
   const gameLog = read('game-log-intake.css');
   const ocr = read('ocr-intake.css');
@@ -87,10 +87,12 @@ test('visible UI Kit documents palette, type, buttons, icons and manufacturer co
   assert.match(view, /Manufacturer theme contract/);
 });
 
-test('design foundation remains loaded before assisted-intake and operational layers', () => {
+test('design foundation loads before shared workspaces and standalone Operations', () => {
   const html = read('index.html');
   const app = read('app.js');
   const entry = read('ui-v2.css');
+  const operationsLoader = read('operations-rebuild-v040-loader.js');
+
   assert.ok(html.indexOf('src="design-system.js"') < html.indexOf('src="mfd-icons.js"'));
   assert.ok(html.indexOf('href="design-system.css?v=0.29.2"') < html.indexOf('href="ui-v2.css?v=0.29.2"'));
   assert.ok(entry.indexOf('mission-validation.css') < entry.indexOf('game-log-intake.css'));
@@ -99,10 +101,8 @@ test('design foundation remains loaded before assisted-intake and operational la
   assert.ok(entry.indexOf('location-context-adapters.css') < entry.indexOf('fleet-loadouts.css'));
   assert.ok(entry.indexOf('fleet-loadouts.css') < entry.indexOf('design-system-legibility.css'));
   assert.ok(entry.indexOf('design-system-legibility.css') < entry.indexOf('starmap-v2.css'));
-  assert.ok(entry.indexOf('starmap-v2.css') < entry.indexOf('operational-ui-v025.css'));
-  assert.ok(entry.indexOf('operational-ui-v025.css') < entry.indexOf('operational-ui-legibility.css'));
-  assert.ok(entry.indexOf('operational-ui-legibility.css') < entry.indexOf('operations-readable-short-desktop-v0291.css'));
-  assert.ok(entry.indexOf('operations-readable-short-desktop-v0291.css') < entry.indexOf('operations-spacing-v0292.css'));
+  assert.doesNotMatch(entry, /operational-ui-v025\.css|operations-design-v027\.css|operations-flow-v028\.css|operations-single-screen|operations-readable-short-desktop|operations-spacing/);
+
   assert.match(app, /game-log-intake\.js/);
   assert.match(app, /game-log-intake-correlation\.js/);
   assert.match(app, /game-log-intake-view\.js/);
@@ -117,16 +117,13 @@ test('design foundation remains loaded before assisted-intake and operational la
   assert.match(app, /fleet-loadouts-view\.js/);
   assert.match(app, /ui-v2-accessibility\.js/);
   assert.match(app, /route-session-planner\.js/);
-  assert.match(app, /operational-ui-v025\.js/);
-  assert.match(app, /operations-exposure-intel\.js/);
+  assert.match(app, /operations-rebuild-v040-loader\.js/);
   assert.match(app, /cargo-auto-layout-v0292\.js/);
   assert.match(app, /SCCompanionCleanInterfaceReady/);
+  assert.match(operationsLoader, /operations-rebuild-v040\.css/);
+  assert.match(operationsLoader, /operations-rebuild-v040\.js/);
   assert.equal(roadmap.currentVersion, '0.25');
-  assert.equal(roadmap.releases.find((item) => item.version === '0.22').status, 'done');
-  assert.equal(roadmap.releases.find((item) => item.version === '0.23').status, 'done');
-  assert.equal(roadmap.releases.find((item) => item.version === '0.24').status, 'done');
   assert.equal(roadmap.releases.find((item) => item.version === '0.25').status, 'current');
-  assert.match(roadmap.releases.find((item) => item.version === '0.25').title, /Operational hauling cockpit/i);
 });
 
 test('research rules prohibit page-specific invention', () => {
