@@ -1,15 +1,24 @@
 'use strict';
 
 (function normalizeReviewedMissionLocations(root) {
-  function exactLocation(value, model) {
-    const normalized = model.normalizeSearchTerm(value);
-    const matches = model.searchOperationalLocations(value, { limit: 20 });
-    return matches.find((location) => [
+  function locationCandidates(location, model) {
+    return [
       location.name,
       location.navigationTarget,
       model.formatOperationalLabel(location),
       ...(location.aliases ?? [])
-    ].filter(Boolean).some((candidate) => model.normalizeSearchTerm(candidate) === normalized))
+    ].filter(Boolean);
+  }
+
+  function exactLocation(value, model) {
+    const normalized = model.normalizeSearchTerm(value);
+    const direct = (model.locations ?? []).find((location) => locationCandidates(location, model)
+      .some((candidate) => model.normalizeSearchTerm(candidate) === normalized));
+    if (direct) return direct;
+
+    const matches = model.searchOperationalLocations(value, { limit: 20 });
+    return matches.find((location) => locationCandidates(location, model)
+      .some((candidate) => model.normalizeSearchTerm(candidate) === normalized))
       ?? (matches.length === 1 ? matches[0] : null);
   }
 
