@@ -565,6 +565,8 @@ input::placeholder, textarea::placeholder { color: #696d68; }
 }
 
 @media (min-width: 821px) and (max-height: 820px) {
+  .app-shell { height: 100vh; min-height: 0; overflow: hidden; }
+  .app-stage { height: 100vh; overflow-x: hidden; overflow-y: auto; }
   .workspace.live-workspace { padding-top: 12px; padding-bottom: 76px; }
   .mission-bar { min-height: 52px; }
   .mission-bar > div { padding-top: 6px; padding-bottom: 6px; }
