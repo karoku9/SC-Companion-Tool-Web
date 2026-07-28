@@ -65,27 +65,27 @@ try {
   await page.locator('#focused-review-generate').click();
   await page.locator('[data-stage="route"][aria-current="step"]').waitFor({ state: 'visible' });
   await page.locator('#focused-route-open').click();
-  await page.locator('#quick-ship-select').waitFor({ state: 'visible' });
-  assert.equal(await page.locator('#quick-ship-select').inputValue(), 'drake-corsair');
+  await page.locator('#ops40-ship-select').waitFor({ state: 'visible' });
+  assert.equal(await page.locator('#ops40-ship-select').inputValue(), 'drake-corsair');
   let state = await page.evaluate(() => window.SCCompanionSession.getState());
   assert.equal(state.selectedShipModelId, 'drake-corsair');
   assert.equal(state.hangarShips.find((ship) => ship.id === state.selectedShipId)?.cargoCapacityScu, 72);
   const previousRoutePlan = JSON.stringify(state.routePlan);
 
   step = 'switch model and rebuild the active sessions';
-  await page.locator('#quick-ship-select').selectOption('rsi-constellation-taurus');
+  await page.locator('#ops40-ship-select').selectOption('rsi-constellation-taurus');
   await page.waitForFunction(() => window.SCCompanionSession.getState().selectedShipModelId === 'rsi-constellation-taurus');
   state = await page.evaluate(() => window.SCCompanionSession.getState());
   assert.equal(state.selectedShipModelId, 'rsi-constellation-taurus');
   assert.equal(state.hangarShips.find((ship) => ship.id === state.selectedShipId)?.cargoCapacityScu, 168);
   assert.notEqual(JSON.stringify(state.routePlan), previousRoutePlan, 'Changing ship must rebuild the session plan');
-  assert.equal(await page.locator('#quick-ship-select').inputValue(), 'rsi-constellation-taurus');
-  await noHorizontalOverflow('Simplified ship selector desktop');
-  await page.screenshot({ path: `${output}/ship-selector-desktop.png`, fullPage: true });
+  assert.equal(await page.locator('#ops40-ship-select').inputValue(), 'rsi-constellation-taurus');
+  assert.match(await page.locator('#ops40-onboard').textContent(), /168 SCU/);
+  await noHorizontalOverflow('Operations 0.40 ship selector desktop');
+  await page.screenshot({ path: `${output}/ship-selector-desktop.png`, fullPage: false });
 
   step = 'verify mobile keeps ship selection inside the review run sheet';
   await page.setViewportSize({ width: 390, height: 844 });
-  assert.equal(await page.locator('.quick-ship-control').isVisible(), false);
   await page.locator('[data-view-target="missions"]').click();
   await page.locator('[data-stage="review"]').click();
   await page.locator('#mission-ship-select').waitFor({ state: 'visible' });
@@ -105,3 +105,4 @@ try {
 }
 
 if (failure) throw failure;
+console.log('Fleet selection and Operations UI 0.40 integration passed.');
