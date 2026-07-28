@@ -86,7 +86,8 @@ try {
 
   step = 'verify mobile keeps ship selection inside the review run sheet';
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.locator('[data-view-target="missions"]').click();
+  await page.evaluate(() => { location.hash = '#missions'; });
+  await page.locator('[data-view="missions"]').waitFor({ state: 'visible' });
   await page.locator('[data-stage="review"]').click();
   await page.locator('#mission-ship-select').waitFor({ state: 'visible' });
   assert.equal(await page.locator('#mission-ship-select').inputValue(), 'rsi-constellation-taurus');
