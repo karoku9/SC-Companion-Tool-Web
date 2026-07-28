@@ -45,19 +45,18 @@ async function noHorizontalOverflow(label) {
   assert.ok(metrics.bodyWidth <= metrics.viewport + 2, `${label}: body overflow ${JSON.stringify(metrics)}`);
 }
 
-async function readableScrollingOperations(label) {
+async function readableCargoOperations(label) {
   const metrics = await page.evaluate(() => {
     const root = document.querySelector('.operations-page.operations-v028');
     const grid = root?.querySelector('.operations-grid');
     const selectors = {
       command: '.ops-v027-command-deck',
       primary: '.ops-v027-primary-grid',
-      map: '.ops-live-navigation',
+      cargo: '.ops-v0302-primary-cargo',
+      cargoGrid: '.ops-v028-cargo-grid',
       current: '.current-operation-panel',
       timeline: '.ops-v027-timeline-panel',
       timelineCard: '.ops-v028-stop-card',
-      cargo: '.ops-v028-cargo-panel',
-      cargoGrid: '.ops-v028-cargo-grid',
       tools: '.operations-tools'
     };
     const boxes = Object.fromEntries(Object.entries(selectors).map(([key, selector]) => {
@@ -72,22 +71,24 @@ async function readableScrollingOperations(label) {
       bodyHeight: document.body.scrollHeight,
       root: rootBox ? { top: rootBox.top, bottom: rootBox.bottom, height: rootBox.height } : null,
       grid: gridBox ? { top: gridBox.top, bottom: gridBox.bottom, height: gridBox.height } : null,
+      mapCount: root?.querySelectorAll('.ops-live-navigation').length ?? -1,
       boxes
     };
   });
 
   assert.ok(metrics.root && metrics.grid, `${label}: Operations root or grid is missing`);
   Object.entries(metrics.boxes).forEach(([key, box]) => assert.ok(box, `${label}: missing ${key} panel`));
+  assert.equal(metrics.mapCount, 0, `${label}: route map still exists`);
   assert.ok(metrics.boxes.command.bottom <= metrics.boxes.primary.top + 2, `${label}: command deck order is wrong`);
-  assert.ok(Math.abs(metrics.boxes.map.top - metrics.boxes.current.top) <= 2, `${label}: map/current row is misaligned`);
-  assert.ok(metrics.boxes.map.height >= 520 && metrics.boxes.current.height >= 520, `${label}: primary instruments remain compressed ${JSON.stringify(metrics.boxes)}`);
+  assert.ok(Math.abs(metrics.boxes.cargo.top - metrics.boxes.current.top) <= 2, `${label}: cargo/current row is misaligned`);
+  assert.ok(metrics.boxes.cargo.width > metrics.boxes.current.width, `${label}: cargo did not inherit the former map area`);
+  assert.ok(metrics.boxes.cargo.height >= 520 && metrics.boxes.current.height >= 520, `${label}: primary instruments remain compressed ${JSON.stringify(metrics.boxes)}`);
+  assert.ok(metrics.boxes.cargoGrid.height >= 340, `${label}: cargo grid remains clipped`);
   assert.ok(metrics.boxes.primary.bottom <= metrics.boxes.timeline.top + 2, `${label}: timeline must follow the primary row`);
-  assert.ok(metrics.boxes.timeline.bottom <= metrics.boxes.cargo.top + 2, `${label}: cargo must have its own row`);
-  assert.ok(metrics.boxes.cargo.bottom <= metrics.boxes.tools.top + 2, `${label}: tools must follow cargo`);
+  assert.ok(metrics.boxes.timeline.bottom <= metrics.boxes.tools.top + 2, `${label}: tools must follow timeline`);
   assert.ok(metrics.boxes.timelineCard.width >= 240, `${label}: timeline cards remain compressed`);
-  assert.ok(metrics.boxes.cargo.height >= 390 && metrics.boxes.cargoGrid.height >= 280, `${label}: cargo plan remains clipped`);
-  assert.ok(metrics.documentHeight > metrics.viewport.height + 400, `${label}: document is still forced into one viewport ${JSON.stringify(metrics)}`);
-  assert.ok(metrics.bodyHeight > metrics.viewport.height + 400, `${label}: body is still forced into one viewport ${JSON.stringify(metrics)}`);
+  assert.ok(metrics.documentHeight > metrics.viewport.height + 150, `${label}: document is still forced into one viewport ${JSON.stringify(metrics)}`);
+  assert.ok(metrics.bodyHeight > metrics.viewport.height + 150, `${label}: body is still forced into one viewport ${JSON.stringify(metrics)}`);
 }
 
 async function readableTypography(label) {
@@ -135,7 +136,9 @@ try {
   await page.reload({ waitUntil: 'networkidle' });
   await page.locator('.product-navigation').waitFor({ state: 'visible' });
   await page.locator('#sidebar-toggle').waitFor({ state: 'attached' });
+  await page.locator('.operations-cargo-primary-v0302').waitFor({ state: 'visible' });
   assert.equal(await page.locator('#sidebar-toggle').isVisible(), false, 'Operations uses a fixed icon rail, so its expand control must remain hidden');
+  assert.equal(await page.locator('.ops-live-navigation').count(), 0);
 
   step = 'verify empty Operations cockpit';
   assert.match(await page.locator('#current-stop-name').textContent(), /Generate a session/i);
@@ -177,9 +180,9 @@ try {
 
   step = 'verify integrated Operations tools';
   await page.locator('#focused-route-open').click();
-  await page.locator('#ops-live-map .ops-map-node').first().waitFor({ state: 'visible' });
+  await page.locator('.ops-v0302-primary-cargo .ops-v028-cargo-cell').first().waitFor({ state: 'visible' });
+  assert.equal(await page.locator('.ops-live-navigation').count(), 0);
   assert.match(await page.locator('#route-stop-list').textContent(), /Checkmate Station|Levski/);
-  assert.ok(await page.locator('#ops-live-map .ops-map-leg').count() >= 1);
   const routeKinds = await page.evaluate(() => {
     const state = window.SCCompanionSession.getState();
     const route = window.SCCompanionRouteCorrections.deriveRoute(state.route, state.routeCorrections);
@@ -207,13 +210,13 @@ try {
   await noHorizontalOverflow('Integrated Operations desktop');
   await readableTypography('Integrated Operations desktop');
 
-  step = 'verify readable scrolling Operations at 1700x900';
+  step = 'verify cargo-first Operations at 1700x900';
   await page.setViewportSize({ width: 1700, height: 900 });
   await page.evaluate(() => scrollTo(0, 0));
-  await page.locator('.ops-v028-cargo-panel').waitFor({ state: 'visible' });
-  await readableScrollingOperations('1700x900 Operations');
+  await page.locator('.ops-v0302-primary-cargo').waitFor({ state: 'visible' });
+  await readableCargoOperations('1700x900 Operations');
   await noHorizontalOverflow('1700x900 Operations');
-  await page.screenshot({ path: `${output}/operations-readable-scroll-1700x900.png`, fullPage: true });
+  await page.screenshot({ path: `${output}/operations-cargo-primary-1700x900.png`, fullPage: true });
 
   step = 'complete route in Operations';
   let guard = 20;
@@ -223,7 +226,7 @@ try {
   }
   assert.ok(guard > 0, 'Route completion exceeded safety limit');
   assert.match(await page.locator('#current-stop-name').textContent(), /complete/i);
-  assert.match(await page.locator('#ops-next-leg-title').textContent(), /complete/i);
+  assert.match(await page.locator('#ops-v027-next').textContent(), /complete/i);
   await page.screenshot({ path: `${output}/hardening-route-complete-1664.png`, fullPage: true });
 
   step = 'verify simplified ship selector';
@@ -241,6 +244,7 @@ try {
   await minimumTouchTargets('390x844 Missions review');
   await page.screenshot({ path: `${output}/hardening-missions-390.png`, fullPage: true });
   await openWorkspace('route');
+  assert.equal(await page.locator('.ops-live-navigation').count(), 0);
   await minimumTouchTargets('390x844 Operations');
   await page.screenshot({ path: `${output}/hardening-operations-390.png`, fullPage: true });
 
