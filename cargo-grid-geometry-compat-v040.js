@@ -4,14 +4,21 @@
   const base = root.SCCompanionAutoCargoLayout;
   if (!base || base.geometryCompatibilityV040) return;
 
-  function withLayerAlias(layout) {
-    if (!layout?.geometry || Number.isFinite(Number(layout.geometry.layersPerCell))) return layout;
-    const layers = Math.max(1, Number(layout.geometry.layers ?? 1));
+  function withGeometryCompatibility(layout) {
+    if (!layout?.geometry) return layout;
+    const layers = Math.max(1, Number(layout.geometry.layersPerCell ?? layout.geometry.layers ?? 1));
+    const modelLabel = String(layout.modelLabel ?? 'Active ship').trim();
+    const capacity = Math.max(0, Number(layout.capacityScu ?? 0));
+    const label = String(layout.geometry.label ?? '').trim()
+      || `${modelLabel} · ${capacity} SCU configured grid`;
+
+    if (Number(layout.geometry.layersPerCell) === layers && layout.geometry.label === label) return layout;
     return Object.freeze({
       ...layout,
       geometry: Object.freeze({
         ...layout.geometry,
-        layersPerCell: layers
+        layersPerCell: layers,
+        label
       })
     });
   }
@@ -19,10 +26,10 @@
   const api = Object.freeze({
     ...base,
     plan(...args) {
-      return withLayerAlias(base.plan(...args));
+      return withGeometryCompatibility(base.plan(...args));
     },
     getLastLayout() {
-      return withLayerAlias(base.getLastLayout());
+      return withGeometryCompatibility(base.getLastLayout());
     },
     geometryCompatibilityV040: true
   });
