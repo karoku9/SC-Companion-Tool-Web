@@ -1,7 +1,6 @@
-/* Clean UI generation 2. The interface is split by responsibility, not accumulated overrides. */
+/* Clean UI generation 2. Shared workspaces only; Operations 0.40 loads its own stylesheet. */
 @import url('./industrial-theme-v027.css');
 @import url('./ui-v2-shell.css');
-@import url('./ui-v2-operations.css');
 @import url('./ui-v2-workspaces.css');
 @import url('./ui-v2-responsive.css');
 @import url('./mission-validation.css');
@@ -15,27 +14,8 @@
 @import url('./location-context-adapters.css');
 @import url('./fleet-loadouts.css');
 @import url('./design-system-legibility.css');
-@import url('./current-stop-intel-legibility.css');
 @import url('./starmap-v2.css');
 @import url('./starmap-v2-legibility.css');
 @import url('./roadmap-legibility.css');
-@import url('./operational-ui-v025.css');
-@import url('./operational-ui-legibility.css');
-@import url('./operational-ui-v026.css');
 @import url('./design-library-v027.css');
 @import url('./design-library-app-v027.css');
-@import url('./operations-compat-reset-v027.css');
-@import url('./operations-design-v027.css');
-@import url('./operations-visual-polish-v027.css');
-@import url('./operations-flow-v028.css');
-@import url('./operations-flow-v028-legibility.css');
-@import url('./operations-single-screen-v029.css');
-@import url('./operations-single-screen-breakpoint-v029.css');
-@import url('./operations-single-screen-legibility-v029.css');
-@import url('./operations-single-screen-overlay-v029.css');
-@import url('./operations-effective-viewport-v029.css');
-@import url('./operations-effective-intel-v029.css');
-@import url('./operations-effective-footer-v029.css');
-@import url('./operations-readable-short-desktop-v0291.css');
-@import url('./operations-current-step-summary-v0291.css');
-@import url('./operations-spacing-v0292.css');
