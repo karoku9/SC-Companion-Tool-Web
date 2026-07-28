@@ -11,6 +11,8 @@
   const cargoStateModel = root.SCCompanionCargoState;
   const cargoLayout = root.SCCompanionAutoCargoLayout;
   const locationContext = root.SCCompanionLocationContext;
+  const routeOptimization = root.SCCompanionRouteOptimization;
+  const routePlanner = root.SCCompanionRoutePlanner;
   const app = document.querySelector('#app');
   if (!store || !locations || !validator || !missionModel || !sessionPlanner || !ships || !operational || !app) {
     const missing = [
@@ -36,6 +38,8 @@
     reviewDrafts: [],
     selectedMission: 0,
     selectedSession: Number(store.getState().activeRouteSessionIndex ?? 0),
+    selectedCandidateId: store.getState().selectedRouteCandidateId ?? 'recommended',
+    showMoreStrategies: false,
     intelTab: 'locations',
     intelQuery: 'Lorville',
     intelLocationId: 'stanton-hurston-lorville-teasa',
@@ -318,9 +322,52 @@
     }).join('');
   }
 
+  function strategyCoverage(missions) {
+    const ids = [...new Set((missions ?? []).flatMap((mission) => (mission.cargoLots ?? [])
+      .flatMap((lot) => [lot.pickupLocationId, lot.deliveryLocationId]).filter(Boolean)))];
+    const covered = ids.filter((id) => {
+      const profile = root.SCCompanionLocationProfiles?.getProfile?.(id);
+      return profile?.traffic?.level && profile.traffic.level !== 'unknown';
+    }).length;
+    return { covered, total: ids.length, ratio: ids.length ? covered / ids.length : 0 };
+  }
+
+  function strategyCards(selectedId, coverage) {
+    const definitions = routeOptimization?.STRATEGIES ?? [];
+    const primaryIds = new Set(['balanced', 'fastest', 'complete-missions', 'fewest-jumps']);
+    const visible = definitions.filter((strategy) => primaryIds.has(strategy.id) || ui.showMoreStrategies);
+    return visible.map((strategy) => {
+      const disabled = strategy.id === 'low-traffic' && coverage.ratio < 0.6;
+      const reason = disabled ? `Insufficient traffic coverage (${coverage.covered}/${coverage.total}).` : '';
+      return `<button class="strategy-option" type="button" data-route-strategy="${escapeHtml(strategy.id)}" aria-pressed="${strategy.id === selectedId}" ${disabled ? 'disabled' : ''} title="${escapeHtml(reason)}">
+        <span class="strategy-icon" aria-hidden="true">${escapeHtml(strategy.icon)}</span>
+        <span><strong>${escapeHtml(strategy.label)}</strong><small>${escapeHtml(strategy.description)}</small><em>${escapeHtml(strategy.priorities.join(' · '))}</em></span>
+        ${strategy.experimental ? '<i class="tag">Experimental</i>' : ''}
+      </button>`;
+    }).join('');
+  }
+
+  function customWeightsMarkup(weights) {
+    const labels = {
+      travelTime: ['Travel time', 'Prefer shorter estimated travel.'],
+      missionCompletion: ['Mission completion', 'Close whole missions earlier.'],
+      gatewayJumps: ['Gateway jumps', 'Avoid inter-system crossings.'],
+      stopCount: ['Stop count', 'Group compatible operations.'],
+      riskExposure: ['Risk exposure', 'Reduce reviewed security risk.'],
+      trafficExposure: ['Traffic exposure', 'Avoid known busy locations.'],
+      cargoTurnover: ['Cargo turnover', 'Reduce SCU carried over time.']
+    };
+    return `<div class="custom-strategy">
+      <div class="custom-strategy-head"><div><p class="eyebrow">Custom priorities</p><p>Weights are normalized internally and saved automatically.</p></div><button class="button" type="button" data-action="reset-strategy-weights">Reset to Balanced</button></div>
+      <div class="weight-grid">${Object.entries(labels).map(([key, [label, detail]]) => `<label class="weight-control"><span><strong>${label}</strong><small>${detail}</small></span><output>${safeNumber(weights[key])}</output><input type="range" min="0" max="100" step="5" value="${safeNumber(weights[key])}" data-strategy-weight="${key}"></label>`).join('')}</div>
+    </div>`;
+  }
+
   function configureMarkup() {
     const state = store.getState();
-    const routeMode = state.routeMode === 'fastest' ? 'fastest' : 'sessions';
+    const playMode = state.routePlayMode === 'full' ? 'full' : 'sessions';
+    const strategy = state.routeStrategy ?? 'balanced';
+    const coverage = strategyCoverage(ui.report?.missions ?? state.missions);
     return `<div class="configure-layout">
       <section class="panel">
         <div class="panel-heading"><strong>Route constraints</strong><span class="tag tag-ready">${ui.report?.missions.length ?? 0} missions verified</span></div>
@@ -330,18 +377,25 @@
               <label>Current location<select id="route-start">${locationOptions(state.routeStartLocationId || 'stanton-hurston-lorville-teasa')}</select></label>
               <label>Active ship<select id="route-ship">${shipOptions(state.selectedShipId)}</select></label>
             </div>
-            <p class="eyebrow" style="margin:20px 0 8px">Planning method</p>
+            <p class="eyebrow" style="margin:20px 0 8px">Play mode</p>
             <div class="mode-picker">
-              <button class="mode-option" type="button" data-route-mode="fastest" aria-pressed="${routeMode === 'fastest'}"><strong>Fastest full route</strong><span>Keep every mission in one optimized run.</span></button>
-              <button class="mode-option" type="button" data-route-mode="sessions" aria-pressed="${routeMode === 'sessions'}"><strong>Time-boxed sessions</strong><span>Group complete missions into playable blocks.</span></button>
+              <button class="mode-option" type="button" data-play-mode="full" aria-pressed="${playMode === 'full'}"><strong>Full operation</strong><span>Keep every selected mission in one run.</span></button>
+              <button class="mode-option" type="button" data-play-mode="sessions" aria-pressed="${playMode === 'sessions'}"><strong>Time-boxed sessions</strong><span>Group complete missions into playable blocks.</span></button>
             </div>
-            <label id="duration-field" style="margin-top:14px" ${routeMode === 'fastest' ? 'hidden' : ''}>Maximum travel time per session
+            <label id="duration-field" style="margin-top:14px" ${playMode === 'full' ? 'hidden' : ''}>Maximum travel minutes per session
               <input id="route-duration" type="number" min="5" max="600" step="5" value="${safeNumber(state.sessionTargetMinutes, 60)}">
             </label>
+            <div class="route-preference">
+              <div class="preference-heading"><div><p class="eyebrow">Route preference</p><p>Choose what the optimizer should prioritize independently from play mode.</p></div><button class="button" type="button" data-action="toggle-more-strategies">${ui.showMoreStrategies ? 'Fewer strategies' : 'More strategies'}</button></div>
+              <div class="strategy-grid">${strategyCards(strategy, coverage)}</div>
+              ${strategy === 'custom' ? customWeightsMarkup(state.routeStrategyWeights) : ''}
+              <p class="coverage-note">${coverage.covered === coverage.total && coverage.total ? `Traffic data available for all ${coverage.total} route locations.` : `Traffic data available for ${coverage.covered} of ${coverage.total} route locations.`}${coverage.ratio < 0.6 ? ' Low-traffic optimization unavailable: insufficient traffic coverage.' : ''}</p>
+            </div>
           </div>
           <aside>
             <p class="eyebrow">Verified manifest</p>
             <ul class="verified-list">${(ui.report?.missions ?? []).map((mission) => `<li><span>${escapeHtml(mission.title)}</span><strong>${formatScu(mission.cargoLots.reduce((sum, lot) => sum + lot.scu, 0))}</strong></li>`).join('')}</ul>
+            <div class="plan-readiness"><p class="eyebrow">Plan input</p><dl><div><dt>Play mode</dt><dd>${playMode === 'full' ? 'Full operation' : 'Time-boxed sessions'}</dd></div><div><dt>Strategy</dt><dd>${escapeHtml(routeOptimization?.STRATEGIES?.find((item) => item.id === strategy)?.label ?? strategy)}</dd></div><div><dt>Ship</dt><dd>${escapeHtml(selectedModel(state).model)}</dd></div><div><dt>Capacity</dt><dd>${formatScu(selectedShip(state).cargoCapacityScu)}</dd></div></dl></div>
           </aside>
         </div>
       </section>
@@ -365,6 +419,16 @@
       <section class="empty-state"><div class="empty-symbol">Ⅱ</div><h2>No plan built</h2><p>Review your contracts and configure a route to generate comparable sessions.</p><button class="button button-primary" type="button" data-nav="contracts">Open Contracts</button></section></main>`;
     ui.selectedSession = Math.min(ui.selectedSession, plan.sessions.length - 1);
     const selected = plan.sessions[ui.selectedSession] ?? plan.sessions[0];
+    const routeCandidates = selected.routeCandidates?.length ? selected.routeCandidates : [{
+      id: 'recommended',
+      label: 'Recommended',
+      rationale: selected.route.optimization?.rationale ?? '',
+      metrics: selected.route.optimization?.metrics ?? null,
+      route: selected.route
+    }];
+    const selectedCandidate = routeCandidates.find((candidate) => candidate.id === ui.selectedCandidateId) ?? routeCandidates[0];
+    const selectedRoute = selectedCandidate.route;
+    const score = selectedCandidate.metrics ?? selectedRoute.optimization?.metrics ?? {};
     const capacity = selectedShip(state).cargoCapacityScu;
     return `<main class="workspace">
       ${workspaceHeader('Session planning', 'Choose a run', `${plan.totalMissionCount} missions · ${formatScu(plan.totalCargoScu)} · travel estimates exclude loading time.`,
@@ -385,11 +449,35 @@
           </tr>`;
         }).join('')}</tbody>
       </table></div>
+      <section class="candidate-comparison">
+        <div class="candidate-heading"><div><p class="eyebrow">Route variants</p><h2>Compare valid candidates</h2></div><span class="tag">${escapeHtml(routeOptimization?.STRATEGIES?.find((item) => item.id === plan.routeStrategy)?.label ?? plan.routeStrategy ?? 'Balanced')}</span></div>
+        ${routeCandidates.length === 1 ? '<p class="inline-message">Only one valid route satisfies cargo capacity and pickup/delivery constraints.</p>' : `<div class="candidate-grid">${routeCandidates.map((candidate) => {
+          const metrics = candidate.metrics ?? {};
+          return `<button class="candidate-card" type="button" data-select-candidate="${escapeHtml(candidate.id)}" aria-pressed="${candidate.id === selectedCandidate.id}">
+            <span class="eyebrow">${escapeHtml(candidate.label)}</span><strong>${formatMinutes(metrics.totalTravelMinutes ?? candidate.route.estimate?.midpoint)}</strong>
+            <span>${safeNumber(metrics.gatewayJumpCount)} jumps · ${safeNumber(metrics.stopCount, candidate.route.stops.length)} stops</span>
+            <small>${escapeHtml(candidate.rationale)}</small>
+          </button>`;
+        }).join('')}</div>`}
+      </section>
+      <section class="route-scorecard">
+        <div class="panel-heading"><strong>Route scorecard</strong><span class="tag">${escapeHtml(selectedCandidate.label)}</span></div>
+        <div class="scorecard-grid">
+          <div><span>Travel</span><strong>${formatMinutes(score.totalTravelMinutes ?? selectedRoute.estimate?.midpoint)}</strong></div>
+          <div><span>Gateway jumps</span><strong>${safeNumber(score.gatewayJumpCount)}</strong></div>
+          <div><span>Stops</span><strong>${safeNumber(score.stopCount, selectedRoute.stops.length)}</strong></div>
+          <div><span>First complete</span><strong>${score.firstMissionCompletedAtStep ? `Step ${score.firstMissionCompletedAtStep}` : '—'}</strong></div>
+          <div><span>Peak onboard</span><strong>${formatScu(score.peakOnboardScu)}</strong></div>
+          <div><span>Average onboard</span><strong>${formatScu(score.averageOnboardScu)}</strong></div>
+          <div><span>Risk score</span><strong>${safeNumber(score.riskExposureScore)}</strong></div>
+          <div><span>Traffic coverage</span><strong>${safeNumber(score.coveredTrafficLocations)} / ${safeNumber(score.routeLocationCount)}</strong></div>
+        </div>
+      </section>
       <div class="plan-detail">
-        <section class="panel"><div class="panel-heading"><strong>Ordered route · ${escapeHtml(selected.title)}</strong><span class="tag">${selected.route.stops.length} stops</span></div><div class="panel-body"><ol class="route-order">
-          ${selected.route.stops.map((stop, index) => `<li><b>${String(index + 1).padStart(2, '0')}</b><span><strong>${escapeHtml(stop.locationLabel)}</strong><br><small class="muted">${stop.operations.map((op) => `${operationVerb(op.type)} ${op.scu} SCU ${op.commodity}`).join(' · ')}</small></span><span class="tag ${stop.operations.some((op) => op.type === 'delivery') ? 'tag-ready' : 'tag-active'}">${stop.operations.some((op) => op.type === 'delivery') ? 'Delivery' : 'Pickup'}</span></li>`).join('')}
+        <section class="panel"><div class="panel-heading"><strong>Ordered route · ${escapeHtml(selected.title)}</strong><span class="tag">${selectedRoute.stops.length} stops</span></div><div class="panel-body"><ol class="route-order">
+          ${selectedRoute.stops.map((stop, index) => `<li><b>${String(index + 1).padStart(2, '0')}</b><span><strong>${escapeHtml(stop.locationLabel)}</strong><br><small class="muted">${stop.operations.map((op) => `${operationVerb(op.type)} ${op.scu} SCU ${op.commodity}`).join(' · ')}</small></span><span class="tag ${stop.operations.some((op) => op.type === 'delivery') ? 'tag-ready' : 'tag-active'}">${stop.operations.some((op) => op.type === 'delivery') ? 'Delivery' : 'Pickup'}</span></li>`).join('')}
         </ol></div></section>
-        <aside class="panel"><div class="panel-heading"><strong>Included contracts</strong><span class="tag">${selected.missionCount}</span></div><div class="panel-body"><ul class="verified-list">${selected.missionTitles.map((title) => `<li><span>${escapeHtml(title)}</span><span class="success">Ready</span></li>`).join('')}</ul><button class="button button-primary" style="width:100%;margin-top:16px" type="button" data-start-session="${ui.selectedSession}">Start ${escapeHtml(selected.title)} →</button></div></aside>
+        <aside class="panel"><div class="panel-heading"><strong>Included contracts</strong><span class="tag">${selected.missionCount}</span></div><div class="panel-body"><ul class="verified-list">${selected.missionTitles.map((title) => `<li><span>${escapeHtml(title)}</span><span class="success">Ready</span></li>`).join('')}</ul><button class="button button-primary" style="width:100%;margin-top:16px" type="button" data-start-session="${ui.selectedSession}" data-candidate-id="${escapeHtml(selectedCandidate.id)}">Start ${escapeHtml(selected.title)} · ${escapeHtml(selectedCandidate.label)} →</button></div></aside>
       </div>
     </main>`;
   }
@@ -592,6 +680,106 @@
     ${groups.length ? `<div class="cargo-legend">${groups.map((group, index) => `<span class="legend-item"><i class="legend-swatch" style="--group-color:${GROUP_COLORS[index % GROUP_COLORS.length]}"></i>${escapeHtml(group.label ?? group.key)} · ${formatScu(group.scu ?? group.totalScu)}</span>`).join('')}</div>` : ''}`;
   }
 
+  function strategyLabel(state) {
+    const id = state.route?.optimization?.strategy ?? state.routeStrategy ?? 'balanced';
+    if (id === 'phase-safe-fastest') return 'Fastest';
+    if (id === 'phase-safe-dependency-fallback') return 'Balanced';
+    return routeOptimization?.STRATEGIES?.find((strategy) => strategy.id === id)?.label ?? id;
+  }
+
+  function routeMetricLine(state) {
+    const metrics = state.route?.optimization?.metrics ?? {};
+    const legacyTravel = (state.route?.estimate?.legs ?? []).reduce((sum, leg) => (
+      sum + (safeNumber(leg.travel?.minMinutes) + safeNumber(leg.travel?.maxMinutes, leg.travel?.minMinutes)) / 2
+    ), 0);
+    const primary = state.route?.optimization?.strategy === 'complete-missions' && metrics.firstMissionCompletedAtStep
+      ? `FIRST COMPLETE AT STEP ${metrics.firstMissionCompletedAtStep}`
+      : `${safeNumber(metrics.gatewayJumpCount, state.route?.estimate?.totalJumpCount)} JUMPS · ${Math.round(safeNumber(metrics.totalTravelMinutes, legacyTravel || state.route?.estimate?.midpoint))} MIN`;
+    return `${strategyLabel(state).toUpperCase()} · ${primary}`;
+  }
+
+  function contextDatum(label, value, detail = '') {
+    return `<div class="context-datum"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value ?? 'Unknown')}</strong>${detail ? `<small>${escapeHtml(detail)}</small>` : ''}</div>`;
+  }
+
+  function operationManifest(step, state, layout, capacity) {
+    const leg = state.route?.estimate?.legs?.[step.stopIndex] ?? {};
+    const before = safeNumber(leg.onboardBeforeScu);
+    const after = safeNumber(leg.onboardAfterScu, before + safeNumber(step.totals?.delta));
+    const coordinates = (layout?.floorCells ?? [])
+      .filter((cell) => cell.groupKey && !cell.reserved)
+      .slice(0, 8)
+      .map((cell) => String(cell.coordinate ?? cell.label ?? cell.id).replace(':', '·'));
+    const group = (type, label) => {
+      const operations = (step.operations ?? []).filter((operation) => type === 'delivery'
+        ? operation.type === 'delivery'
+        : operation.type !== 'delivery');
+      if (!operations.length) return '';
+      return `<section class="manifest-group is-${type}"><h3>${label}</h3>${operations.map((operation) => `<article>
+        <span><strong>${escapeHtml(operation.commodity)}</strong><small>${escapeHtml(operation.missionTitle)} · ${escapeHtml(operation.pickupLocationLabel ?? step.location?.label)} → ${escapeHtml(operation.destinationLocationLabel ?? operation.deliveryLocationLabel ?? step.location?.label)}</small></span>
+        <b>${formatScu(operation.scu)}</b>
+      </article>`).join('')}</section>`;
+    };
+    return `<div class="step-context operation-manifest">
+      <div class="context-heading"><span class="eyebrow">Operation manifest</span><strong>${formatScu(before)} → ${formatScu(after)} onboard</strong></div>
+      <div class="manifest-columns">${group('pickup', 'PICKUP')}${group('delivery', 'DELIVERY')}</div>
+      <div class="context-grid compact">${contextDatum('Onboard before', formatScu(before))}${contextDatum('Onboard after', formatScu(after))}${contextDatum('Free after', formatScu(Math.max(0, capacity - after)))}${contextDatum('Cargo cells', coordinates.length ? coordinates.join(', ') : 'Auto-assigned')}</div>
+    </div>`;
+  }
+
+  function navigationContext(step, next, state, onboard) {
+    const estimate = step.estimate ?? {};
+    const metrics = state.route?.optimization?.metrics ?? {};
+    const rationale = state.route?.optimization?.rationale ?? '';
+    const nextAction = progress(state)?.steps?.find((candidate, index) => index > progress(state).currentIndex && candidate.kind === 'action');
+    const nextCargo = (nextAction?.operations ?? []).map((operation) => `${operationVerb(operation.type)} ${operation.scu} SCU ${operation.commodity}`).join(' · ');
+    if (step.kind === 'gateway-approach') {
+      const crossing = (state.route.gatewaySegments ?? []).find((segment) => segment.connectionId === step.segment?.connectionId) ?? step.segment;
+      const required = state.route.missions?.map((mission) => mission.title).join(', ') ?? '';
+      return `<div class="step-context"><div class="context-heading"><span class="eyebrow">Gateway context</span><strong>${routeMetricLine(state)}</strong></div><div class="context-grid">
+        ${contextDatum('Departure gateway', crossing?.fromGateway ?? step.to?.label)}
+        ${contextDatum('Arrival gateway', crossing?.toGateway ?? 'Next system gateway')}
+        ${contextDatum('Systems', `${step.from?.systemName ?? 'Unknown'} → ${crossing?.toSystemId ?? step.to?.systemName ?? 'Unknown'}`)}
+        ${contextDatum('Jump sequence', `${safeNumber(step.segment?.legIndex, 0) + 1} / ${Math.max(1, state.route.gatewaySegments?.length ?? 1)}`)}
+        ${contextDatum('Cargo crossing', formatScu(onboard), required)}
+        ${contextDatum('Exposure', `Risk ${safeNumber(metrics.riskExposureScore)}`, 'Gateway services shown above')}
+      </div></div>`;
+    }
+    if (step.kind === 'jump') {
+      return `<div class="step-context"><div class="context-heading"><span class="eyebrow">Jump transit</span><strong>${routeMetricLine(state)}</strong></div><div class="context-grid">
+        ${contextDatum('Leaving system', step.from?.systemName)}
+        ${contextDatum('Reaching system', step.to?.systemName)}
+        ${contextDatum('Gateway pair', `${step.from?.shortLabel ?? step.from?.label} → ${step.to?.shortLabel ?? step.to?.label}`)}
+        ${contextDatum('Cargo onboard', formatScu(onboard))}
+        ${contextDatum('Missions in transfer', String(state.route.missions?.length ?? 0))}
+        ${contextDatum('First objective after jump', nextCargo || stepDestination(next))}
+      </div></div>`;
+    }
+    return `<div class="step-context"><div class="context-heading"><span class="eyebrow">Travel context</span><strong>${routeMetricLine(state)}</strong></div><div class="context-grid">
+      ${contextDatum('Origin', step.from?.label)}
+      ${contextDatum('Destination', step.to?.label)}
+      ${contextDatum('Systems', `${step.from?.systemName ?? 'Unknown'} → ${step.to?.systemName ?? 'Unknown'}`)}
+      ${contextDatum('Estimated travel', `${safeNumber(estimate.minMinutes)}–${safeNumber(estimate.maxMinutes)} min`, estimate.distanceLabel)}
+      ${contextDatum('Gateways', String(safeNumber(estimate.jumpCount)), estimate.transitionKind)}
+      ${contextDatum('Cargo at arrival', formatScu(onboard), nextCargo || 'No cargo operation at next step')}
+    </div>${rationale ? `<p class="optimizer-rationale">${escapeHtml(rationale)}</p>` : ''}</div>`;
+  }
+
+  function routeCompleteSummary(state) {
+    const metrics = state.route?.optimization?.metrics ?? {};
+    const missions = state.route?.missions ?? state.missions ?? [];
+    const delivered = missions.reduce((sum, mission) => sum + (mission.cargoLots ?? []).reduce((lotSum, lot) => lotSum + safeNumber(lot.scu), 0), 0);
+    const excluded = Math.max(0, (state.missions?.length ?? 0) - missions.length);
+    return `<div class="completion-summary"><div class="context-heading"><span class="eyebrow">Operation summary</span><strong>${routeMetricLine(state)}</strong></div><div class="scorecard-grid">
+      ${contextDatum('Missions complete', String(missions.length))}
+      ${contextDatum('SCU delivered', formatScu(delivered))}
+      ${contextDatum('Stops', String(safeNumber(metrics.stopCount, state.route?.stops?.length)))}
+      ${contextDatum('Gateway jumps', String(safeNumber(metrics.gatewayJumpCount, state.route?.estimate?.totalJumpCount)))}
+      ${contextDatum('Estimated travel', formatMinutes(metrics.totalTravelMinutes ?? state.route?.estimate?.midpoint))}
+      ${contextDatum('Outside session', excluded ? `${excluded} missions` : 'None')}
+    </div></div>`;
+  }
+
   function livePage() {
     const state = store.getState();
     if (!state.route) return `<main class="workspace live-workspace">${workspaceHeader('Execution workspace', 'Live Ops', 'Action-first guidance for the active hauling session.')}
@@ -601,7 +789,7 @@
       const finalLocation = getRelevantLocationForStep(null, state.route, state);
       const finalStatus = finalLocation ? getLocationServiceStatus(finalLocation.id, 0) : null;
       return `<main class="workspace live-workspace">${workspaceHeader('Execution workspace', 'Session complete', 'All operational steps in this session are complete.')}
-        <section class="empty-state"><div class="empty-symbol success">✓</div><h2>Cargo delivered</h2><p>${state.route.missions?.length ?? state.missions.length} missions complete · ${formatScu(state.route.totalCargoScu)} planned cargo handled.</p>${renderLocationStatusStrip(finalStatus)}<button class="button button-primary" type="button" data-nav="plan">Return to Plan</button></section></main>`;
+        <section class="completion-panel"><div class="completion-hero"><div class="empty-symbol success">✓</div><div><h2>Cargo delivered</h2><p>${state.route.missions?.length ?? state.missions.length} missions complete · ${formatScu(state.route.totalCargoScu)} planned cargo handled.</p></div></div>${renderLocationStatusStrip(finalStatus)}${routeCompleteSummary(state)}<button class="button button-primary" type="button" data-nav="plan">Return to Plan</button></section></main>`;
     }
     const step = prog.currentStep;
     const next = prog.nextStep;
@@ -631,7 +819,7 @@
             <p class="nav-target">NAV TARGET · ${escapeHtml(stepNavTarget(step))}</p>
             ${renderLocationStatusStrip(locationStatus)}
             <p class="command-instruction">${escapeHtml(moves.length ? 'Handle the listed cargo at this stop, then confirm the operation.' : step.from?.label ? `Depart ${step.from.label} and follow the navigation target.` : 'Follow the in-game navigation target to continue.')}</p>
-            ${moves.length ? `<div class="move-list">${moves.map((op) => `<article class="cargo-move"><span class="tag ${op.type === 'delivery' ? 'tag-ready' : 'tag-active'}">${operationVerb(op.type)}</span><span><strong>${escapeHtml(op.commodity)}</strong><small>${escapeHtml(op.missionTitle)}${op.pickupLocationLabel ? ` · from ${escapeHtml(op.pickupLocationLabel)}` : ''}</small></span><strong>${formatScu(op.scu)}</strong></article>`).join('')}</div>` : ''}
+            ${moves.length ? operationManifest(step, state, layout, capacity) : navigationContext(step, next, state, onboard)}
           </div>
           <div class="next-preview"><span class="eyebrow">Next meaningful step</span><br><b>${escapeHtml(next ? `${kindLabel(next.kind)} · ${stepDestination(next)}` : 'Complete session')}</b></div>
         </section>
@@ -733,8 +921,10 @@
 
   function routeDrawerMarkup() {
     const prog = progress();
+    const state = store.getState();
     return `<div class="drawer-backdrop" data-close-drawer></div><aside class="drawer" role="dialog" aria-modal="true" aria-label="Route and missions"><header class="drawer-header"><div><span class="eyebrow">Session management</span><h2>Route & missions</h2></div><button class="button icon-button" type="button" data-close-drawer aria-label="Close">×</button></header><div class="drawer-body">
       <p class="editor-note">The active order preserves pickup-before-delivery dependencies and capacity constraints.</p>
+      <div class="route-tools"><button class="button" type="button" data-action="view-plan">View plan</button><label>Change strategy<select id="replan-strategy">${(routeOptimization?.STRATEGIES ?? []).filter((strategy) => strategy.id !== 'low-traffic' || state.route?.optimization?.availability?.available !== false).map((strategy) => `<option value="${escapeHtml(strategy.id)}" ${strategy.id === state.routeStrategy ? 'selected' : ''}>${escapeHtml(strategy.label)}</option>`).join('')}</select></label><button class="button button-primary" type="button" data-action="replan-route">Replan remaining route</button></div>
       <ol class="route-order">${(prog?.steps ?? []).map((step, index) => `<li><b>${String(index + 1).padStart(2, '0')}</b><span><strong>${escapeHtml(stepDestination(step))}</strong><br><small class="muted">${escapeHtml(kindLabel(step.kind))}</small></span><span class="tag ${index < prog.currentIndex ? 'tag-ready' : index === prog.currentIndex ? 'tag-active' : ''}">${index < prog.currentIndex ? 'Done' : index === prog.currentIndex ? 'Current' : 'Queued'}</span></li>`).join('')}</ol>
       <p class="eyebrow" style="margin:22px 0 8px">Missions in session</p><ul class="verified-list">${(store.getState().route?.missions ?? []).map((mission) => `<li><span>${escapeHtml(mission.title)}</span><strong>${formatScu(mission.cargoLots.reduce((sum, lot) => sum + lot.scu, 0))}</strong></li>`).join('')}</ul>
     </div></aside>`;
@@ -813,11 +1003,18 @@
     if (!ui.report.ready) { ui.contractStage = 'resolve'; render(); return; }
     const startLocationId = document.querySelector('#route-start')?.value;
     const selectedShipId = document.querySelector('#route-ship')?.value;
-    const routeMode = document.querySelector('[data-route-mode][aria-pressed="true"]')?.dataset.routeMode ?? 'sessions';
+    const routePlayMode = document.querySelector('[data-play-mode][aria-pressed="true"]')?.dataset.playMode ?? store.getState().routePlayMode ?? 'sessions';
+    const routeStrategy = document.querySelector('[data-route-strategy][aria-pressed="true"]')?.dataset.routeStrategy ?? store.getState().routeStrategy ?? 'balanced';
+    const routeStrategyWeights = { ...store.getState().routeStrategyWeights };
     const sessionTargetMinutes = Math.max(5, safeNumber(document.querySelector('#route-duration')?.value, 60));
     try {
       const plan = sessionPlanner.plan(ui.report.missions, missionModel, {
-        startLocationId, selectedShipId, mode: routeMode, targetMinutes: sessionTargetMinutes
+        startLocationId,
+        selectedShipId,
+        playMode: routePlayMode,
+        routeStrategy,
+        routeStrategyWeights,
+        targetMinutes: sessionTargetMinutes
       });
       const start = locations.getLocation(startLocationId);
       const configuredShip = store.getState().hangarShips.find((ship) => ship.id === selectedShipId) ?? selectedShip(store.getState());
@@ -829,7 +1026,12 @@
         routeStartLocationLabel: start ? locations.formatOperationalLabel(start) : startLocationId,
         selectedShipId,
         selectedShipModelId: configuredShip.modelId,
-        routeMode,
+        routeMode: routePlayMode === 'full' ? 'fastest' : 'sessions',
+        routePlayMode,
+        routeStrategy,
+        routeStrategyWeights,
+        selectedRouteCandidateId: 'recommended',
+        routeOptimizationSummary: plan.sessions[0]?.route.optimization ?? null,
         sessionTargetMinutes,
         routePlan: plan,
         activeRouteSessionIndex: 0,
@@ -848,12 +1050,16 @@
     }
   }
 
-  function startSession(index) {
+  function startSession(index, candidateId = ui.selectedCandidateId) {
     const state = store.getState();
     const session = routePlan(state)?.sessions[index];
     if (!session) return;
+    const candidate = session.routeCandidates?.find((item) => item.id === candidateId) ?? session.routeCandidates?.[0];
+    const route = candidate?.route ?? session.route;
     store.patch({
-      route: session.route,
+      route,
+      selectedRouteCandidateId: candidate?.id ?? 'recommended',
+      routeOptimizationSummary: route.optimization ?? null,
       activeRouteSessionIndex: index,
       currentStopIndex: 0,
       completedStopIds: [],
@@ -925,6 +1131,33 @@
     store.patch(changes);
   }
 
+  function replanActiveRoute() {
+    const state = store.getState();
+    const strategy = document.querySelector('#replan-strategy')?.value ?? state.routeStrategy;
+    if (!state.route || !routePlanner?.replanRemaining) return toast('Replanning is unavailable for this route.', 'error');
+    const result = routePlanner.replanRemaining(state.route, state.completedStopIds ?? [], {
+      startLocationId: state.routeStartLocationId,
+      selectedShipId: state.selectedShipId,
+      routeStrategy: strategy,
+      routeStrategyWeights: state.routeStrategyWeights
+    });
+    if (!result.changed) return toast('The remaining valid route is already optimal for this strategy.');
+    const before = result.previousOrder.join(' → ');
+    const after = result.nextOrder.join(' → ');
+    if (!root.confirm(`Replace the remaining route?\n\nCurrent: ${before}\n\nNew: ${after}\n\nCompleted steps, onboard cargo and manual cargo overrides will be preserved.`)) return;
+    store.patch({
+      route: result.route,
+      routeStrategy: strategy,
+      routeOptimizationSummary: result.route.optimization,
+      completedStopIds: result.completedStopIds,
+      currentStopIndex: result.completedStopIds.length,
+      completedOperationalStepIds: [],
+      operationalRouteKey: null
+    });
+    ui.drawer = null;
+    toast('Remaining route replanned. Completed work and cargo overrides were preserved.');
+  }
+
   function applyEditorCell(cellId) {
     const model = selectedModel();
     const layout = planCargoGrid();
@@ -961,12 +1194,17 @@
     if (target.dataset.contractSource) { ui.contractSource = target.dataset.contractSource; render(); return; }
     if (target.dataset.contractStage) { ui.contractStage = target.dataset.contractStage; render(); return; }
     if (target.dataset.selectMission !== undefined) { ui.selectedMission = Number(target.dataset.selectMission); render(); return; }
-    if (target.dataset.selectSession !== undefined) { ui.selectedSession = Number(target.dataset.selectSession); render(); return; }
-    if (target.dataset.sessionRow !== undefined) { ui.selectedSession = Number(target.dataset.sessionRow); render(); return; }
-    if (target.dataset.startSession !== undefined) return startSession(Number(target.dataset.startSession));
-    if (target.dataset.routeMode) {
-      document.querySelectorAll('[data-route-mode]').forEach((button) => button.setAttribute('aria-pressed', String(button === target)));
-      document.querySelector('#duration-field')?.toggleAttribute('hidden', target.dataset.routeMode === 'fastest');
+    if (target.dataset.selectSession !== undefined) { ui.selectedSession = Number(target.dataset.selectSession); ui.selectedCandidateId = 'recommended'; render(); return; }
+    if (target.dataset.sessionRow !== undefined) { ui.selectedSession = Number(target.dataset.sessionRow); ui.selectedCandidateId = 'recommended'; render(); return; }
+    if (target.dataset.selectCandidate) { ui.selectedCandidateId = target.dataset.selectCandidate; render(); return; }
+    if (target.dataset.startSession !== undefined) return startSession(Number(target.dataset.startSession), target.dataset.candidateId);
+    if (target.dataset.playMode) {
+      store.patch({ routePlayMode: target.dataset.playMode, routeMode: target.dataset.playMode === 'full' ? 'fastest' : 'sessions' });
+      document.querySelector('#duration-field')?.toggleAttribute('hidden', target.dataset.playMode === 'full');
+      return;
+    }
+    if (target.dataset.routeStrategy) {
+      store.patch({ routeStrategy: target.dataset.routeStrategy });
       return;
     }
     if (target.dataset.openDrawer) { ui.drawer = target.dataset.openDrawer; render(); return; }
@@ -986,6 +1224,10 @@
       case 'review-contracts': reviewContracts(); break;
       case 'configure-route': ui.contractStage = 'configure'; render(); break;
       case 'build-plan': buildPlan(); break;
+      case 'view-plan': ui.drawer = null; navigate('plan'); break;
+      case 'replan-route': replanActiveRoute(); break;
+      case 'toggle-more-strategies': ui.showMoreStrategies = !ui.showMoreStrategies; render(); break;
+      case 'reset-strategy-weights': store.patch({ routeStrategyWeights: { ...routeOptimization.BALANCED_WEIGHTS } }); break;
       case 'choose-ocr': document.querySelector('#ocr-file')?.click(); break;
       case 'choose-log': document.querySelector('#log-file')?.click(); break;
       case 'add-mission':
@@ -1015,6 +1257,11 @@
       ui.intelQuery = event.target.value;
       const container = document.querySelector('.search-results');
       if (container) container.innerHTML = locationResults().map((item) => `<button type="button" class="location-result${item.id === ui.intelLocationId ? ' is-selected' : ''}" data-location-id="${escapeHtml(item.id)}"><strong>${escapeHtml(locations.formatOperationalLabel(item))}</strong><span>In game: ${escapeHtml(item.navigationTarget ?? item.name)}</span></button>`).join('');
+    }
+    if (event.target.dataset.strategyWeight) {
+      const weights = { ...store.getState().routeStrategyWeights, [event.target.dataset.strategyWeight]: safeNumber(event.target.value) };
+      if (!Object.values(weights).some((value) => value > 0)) weights[event.target.dataset.strategyWeight] = 5;
+      store.patch({ routeStrategyWeights: weights });
     }
   });
 
