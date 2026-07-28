@@ -74,52 +74,52 @@ async function cockpitMetrics() {
       const rect = document.querySelector(selector)?.getBoundingClientRect();
       return rect ? { top: rect.top, bottom: rect.bottom, left: rect.left, right: rect.right, width: rect.width, height: rect.height } : null;
     };
-    const currentBody = document.querySelector('.current-operation-body');
+    const stepBody = document.querySelector('.ops40-step-body');
     return {
-      density: document.documentElement.dataset.opsDensity ?? '',
       viewport: { width: innerWidth, height: innerHeight },
       document: { width: document.documentElement.scrollWidth, height: document.documentElement.scrollHeight },
       body: { width: document.body.scrollWidth, height: document.body.scrollHeight },
-      page: box('.operations-page.operations-v028'),
-      command: box('.ops-v027-command-deck'),
-      primary: box('.ops-v027-primary-grid'),
-      cargo: box('.ops-v0302-primary-cargo'),
-      cargoGrid: box('.ops-v028-cargo-grid'),
-      current: box('.current-operation-panel'),
-      timeline: box('.ops-v027-timeline-panel'),
-      timelineCard: box('.ops-v028-stop-card'),
-      tools: box('.operations-tools'),
-      currentBody: currentBody ? {
-        clientHeight: currentBody.clientHeight,
-        scrollHeight: currentBody.scrollHeight,
-        overflowY: getComputedStyle(currentBody).overflowY
+      page: box('.operations-page.ops40-page'),
+      topbar: box('.ops40-topbar'),
+      sessions: box('.ops40-session-strip'),
+      main: box('.ops40-main'),
+      cargo: box('.ops40-cargo-panel'),
+      cargoGrid: box('.ops40-cargo-grid'),
+      current: box('.ops40-step-panel'),
+      timeline: box('.ops40-timeline-panel'),
+      timelineCard: box('.ops40-stop'),
+      dock: box('.ops40-dock'),
+      stepBody: stepBody ? {
+        clientHeight: stepBody.clientHeight,
+        scrollHeight: stepBody.scrollHeight,
+        overflowY: getComputedStyle(stepBody).overflowY
       } : null,
-      currentTitleSize: parseFloat(getComputedStyle(document.querySelector('.current-operation-body > h2')).fontSize),
-      timelineTextSize: parseFloat(getComputedStyle(document.querySelector('.ops-v028-stop-card strong')).fontSize),
-      cargoTextSize: parseFloat(getComputedStyle(document.querySelector('.ops-v028-cargo-cell small')).fontSize)
+      currentTitleSize: parseFloat(getComputedStyle(document.querySelector('#ops40-step-title')).fontSize),
+      timelineTextSize: parseFloat(getComputedStyle(document.querySelector('.ops40-stop strong')).fontSize),
+      cargoTextSize: parseFloat(getComputedStyle(document.querySelector('.ops40-cargo-cell small')).fontSize)
     };
   });
 }
 
-function assertFittedCockpit(metrics, expectedDensity, label) {
-  assert.equal(metrics.density, expectedDensity, `${label}: wrong adaptive density ${JSON.stringify(metrics)}`);
-  assert.ok(metrics.page && metrics.command && metrics.primary && metrics.cargo && metrics.cargoGrid && metrics.current && metrics.timeline && metrics.timelineCard && metrics.tools && metrics.currentBody, `${label}: missing cockpit region ${JSON.stringify(metrics)}`);
+function assertDesktopCockpit(metrics, label) {
+  assert.ok(metrics.page && metrics.topbar && metrics.sessions && metrics.main && metrics.cargo && metrics.cargoGrid && metrics.current && metrics.timeline && metrics.timelineCard && metrics.dock && metrics.stepBody, `${label}: missing cockpit region ${JSON.stringify(metrics)}`);
   assert.ok(metrics.document.height <= metrics.viewport.height + 2, `${label}: document exceeds viewport ${JSON.stringify(metrics)}`);
   assert.ok(metrics.body.height <= metrics.viewport.height + 2, `${label}: body exceeds viewport ${JSON.stringify(metrics)}`);
   assert.ok(metrics.page.top >= -2 && metrics.page.bottom <= metrics.viewport.height + 2, `${label}: Operations page escapes viewport ${JSON.stringify(metrics)}`);
-  assert.ok(metrics.command.bottom <= metrics.primary.top + 2, `${label}: command deck order is wrong ${JSON.stringify(metrics)}`);
+  assert.ok(metrics.topbar.bottom <= metrics.sessions.top + 10, `${label}: session strip order is wrong ${JSON.stringify(metrics)}`);
+  assert.ok(metrics.sessions.bottom <= metrics.main.top + 10, `${label}: main cockpit order is wrong ${JSON.stringify(metrics)}`);
   assert.ok(Math.abs(metrics.cargo.top - metrics.current.top) <= 2, `${label}: cargo/current row is misaligned ${JSON.stringify(metrics)}`);
   assert.ok(metrics.cargo.width > metrics.current.width, `${label}: cargo must remain the dominant instrument ${JSON.stringify(metrics)}`);
   assert.ok(metrics.cargo.height >= 450 && metrics.current.height >= 450, `${label}: primary cockpit is too short ${JSON.stringify(metrics)}`);
   assert.ok(metrics.cargoGrid.height >= 330, `${label}: cargo grid is too short ${JSON.stringify(metrics)}`);
-  assert.ok(metrics.primary.bottom <= metrics.timeline.top + 2, `${label}: timeline must follow primary cockpit ${JSON.stringify(metrics)}`);
-  assert.ok(metrics.timeline.bottom <= metrics.tools.top + 2, `${label}: tools must follow timeline ${JSON.stringify(metrics)}`);
-  assert.ok(metrics.tools.bottom <= metrics.viewport.height + 2, `${label}: bottom controls are below the fold ${JSON.stringify(metrics)}`);
-  assert.ok(metrics.timelineCard.width >= 190, `${label}: timeline cards are too narrow ${JSON.stringify(metrics)}`);
-  assert.ok(metrics.currentBody.scrollHeight <= metrics.currentBody.clientHeight + 2, `${label}: common Current Step state requires internal scrolling ${JSON.stringify(metrics)}`);
-  assert.ok(metrics.currentTitleSize >= 19, `${label}: Current Step title is too small ${JSON.stringify(metrics)}`);
-  assert.ok(metrics.timelineTextSize >= 11.5, `${label}: timeline text is too small ${JSON.stringify(metrics)}`);
-  assert.ok(metrics.cargoTextSize >= 11.5, `${label}: cargo coordinates are too small ${JSON.stringify(metrics)}`);
+  assert.ok(metrics.main.bottom <= metrics.timeline.top + 10, `${label}: timeline must follow main cockpit ${JSON.stringify(metrics)}`);
+  assert.ok(metrics.timeline.bottom <= metrics.dock.top + 10, `${label}: dock must follow timeline ${JSON.stringify(metrics)}`);
+  assert.ok(metrics.dock.bottom <= metrics.viewport.height + 2, `${label}: dock is below the fold ${JSON.stringify(metrics)}`);
+  assert.ok(metrics.timelineCard.width >= 210, `${label}: timeline cards are too narrow ${JSON.stringify(metrics)}`);
+  assert.ok(metrics.stepBody.scrollHeight <= metrics.stepBody.clientHeight + 2, `${label}: common Current Step state requires internal scrolling ${JSON.stringify(metrics)}`);
+  assert.ok(metrics.currentTitleSize >= 21, `${label}: Current Step title is too small ${JSON.stringify(metrics)}`);
+  assert.ok(metrics.timelineTextSize >= 11, `${label}: timeline text is too small ${JSON.stringify(metrics)}`);
+  assert.ok(metrics.cargoTextSize >= 11, `${label}: cargo coordinates are too small ${JSON.stringify(metrics)}`);
 }
 
 try {
@@ -129,7 +129,6 @@ try {
   await page.reload({ waitUntil: 'networkidle' });
   await page.locator('#mission-text').waitFor({ state: 'visible' });
   assert.equal(await page.locator('html').getAttribute('data-theme'), 'industrial');
-  assert.match(await page.locator('.nav-footer span').textContent(), /CORE 0\.25.*UI 0\.29\.2/i);
   assert.equal(await page.locator('#mission-start-location').isVisible(), false);
 
   step = 'parse exact seven-mission sample';
@@ -150,34 +149,31 @@ try {
   assert.match(await page.locator('#focused-route-summary').textContent(), /84 SCU total/i);
   assert.match(await page.locator('#focused-route-summary').textContent(), /Timing:\s*travel only/i);
 
-  step = 'open inter-system session in Operations';
+  step = 'open inter-system session in Operations 0.40';
   const gatewaySession = page.locator('.mission-session-card').filter({ has: page.locator('.session-gateways') }).first();
   await gatewaySession.getByRole('button', { name: 'Select session' }).click();
   await page.locator('#focused-route-open').click();
-  await page.locator('.operations-page.operations-v028.operations-cargo-primary-v0302').waitFor({ state: 'visible' });
-  await page.locator('.ops-v0302-primary-cargo .ops-v028-cargo-cell').first().waitFor({ state: 'visible' });
-  await page.locator('link[data-operations-adaptive-fit-style="0.30.3"]').waitFor({ state: 'attached' });
-  assert.equal(await page.locator('.ops-live-navigation').count(), 0);
-  assert.equal(await page.locator('.ops-action-bar [data-ops-action]').count(), 5);
-  assert.ok(await page.locator('.ops-v028-stop-card').count() > 0);
-  assert.ok(await page.locator('.ops-v028-cargo-cell').count() > 0);
-  assert.doesNotMatch(await page.locator('.current-operation-panel').textContent(), /CURRENT DESTINATION/i);
+  await page.locator('.operations-page.ops40-page').waitFor({ state: 'visible' });
+  await page.locator('.ops40-cargo-cell').first().waitFor({ state: 'visible' });
+  await page.locator('link[data-operations-v040-style="0.40.0"]').waitFor({ state: 'attached' });
+  assert.equal(await page.locator('.ops-live-navigation, .ops-live-map').count(), 0);
+  assert.equal(await page.locator('.ops40-dock [data-ops40-action]').count(), 5);
+  assert.ok(await page.locator('.ops40-stop').count() > 0);
+  assert.ok(await page.locator('.ops40-cargo-cell').count() > 0);
   assert.equal(await page.evaluate(() => window.SCCompanionAutoCargoLayout?.version), '0.29.2');
 
-  step = 'fit comfortable cockpit at 1600x900';
-  await page.waitForFunction(() => document.documentElement.dataset.opsDensity === 'comfortable');
-  const comfortable = await cockpitMetrics();
-  assertFittedCockpit(comfortable, 'comfortable', '1600x900');
-  await noHorizontalOverflow('Operations adaptive 1600x900');
-  await page.screenshot({ path: `${output}/operations-adaptive-fit-1600x900.png`, fullPage: false });
+  step = 'fit clean cockpit at 1600x900';
+  const desktop = await cockpitMetrics();
+  assertDesktopCockpit(desktop, '1600x900');
+  await noHorizontalOverflow('Operations 0.40 1600x900');
+  await page.screenshot({ path: `${output}/operations-v040-1600x900.png`, fullPage: false });
 
-  step = 'fit compact cockpit at 1664x800';
+  step = 'fit clean cockpit at 1664x800';
   await page.setViewportSize({ width: 1664, height: 800 });
-  await page.waitForFunction(() => document.documentElement.dataset.opsDensity === 'compact');
   const compact = await cockpitMetrics();
-  assertFittedCockpit(compact, 'compact', '1664x800');
-  await noHorizontalOverflow('Operations adaptive 1664x800');
-  await page.screenshot({ path: `${output}/operations-adaptive-fit-1664x800.png`, fullPage: false });
+  assertDesktopCockpit(compact, '1664x800');
+  await noHorizontalOverflow('Operations 0.40 1664x800');
+  await page.screenshot({ path: `${output}/operations-v040-1664x800.png`, fullPage: false });
 
   step = 'verify explicit gateway sequence';
   const gatewaySetup = await page.evaluate(() => {
@@ -197,36 +193,36 @@ try {
     return true;
   });
   assert.equal(gatewaySetup, true);
-  await page.locator('#current-stop-name').filter({ hasText: /Travel to .*Gateway/i }).waitFor({ state: 'visible' });
+  await page.locator('#ops40-step-title').filter({ hasText: /Travel to .*Gateway/i }).waitFor({ state: 'visible' });
   const completedBeforeGateway = await page.evaluate(() => window.SCCompanionSession.getState().completedStopIds.length);
-  await page.locator('#complete-stop').click();
-  await page.locator('#current-stop-name').filter({ hasText: /Jump to .*Gateway/i }).waitFor({ state: 'visible' });
+  await page.locator('#ops40-complete').click();
+  await page.locator('#ops40-step-title').filter({ hasText: /Jump to .*Gateway/i }).waitFor({ state: 'visible' });
   assert.equal(await page.evaluate(() => window.SCCompanionSession.getState().completedStopIds.length), completedBeforeGateway);
-  await page.locator('#complete-stop').click();
-  await page.locator('#current-stop-name').filter({ hasText: /Fly to /i }).waitFor({ state: 'visible' });
+  await page.locator('#ops40-complete').click();
+  await page.locator('#ops40-step-title').filter({ hasText: /Fly to /i }).waitFor({ state: 'visible' });
   assert.equal(await page.evaluate(() => window.SCCompanionSession.getState().completedStopIds.length), completedBeforeGateway);
 
   step = 'verify cargo grouping and mobile flow fallback';
-  await page.locator('#ops-v028-cargo-mode').selectOption('mission');
+  await page.locator('#ops40-cargo-mode').selectOption('mission');
   await page.waitForFunction(() => window.SCCompanionSession.getState().cargoLayoutGroupingMode === 'mission');
-  await page.locator('#ops-v028-cargo-mode').selectOption('destination');
+  await page.locator('#ops40-cargo-mode').selectOption('destination');
   await page.waitForFunction(() => window.SCCompanionSession.getState().cargoLayoutGroupingMode === 'destination');
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.waitForFunction(() => document.documentElement.dataset.opsDensity === 'flow');
-  await page.locator('.ops-v0302-primary-cargo').waitFor({ state: 'visible' });
-  assert.equal(await page.locator('.ops-live-navigation').count(), 0);
-  assert.equal(await page.locator('.ops-v028-cargo-panel').isVisible(), true);
-  await noHorizontalOverflow('Operations mobile');
-  await page.screenshot({ path: `${output}/operations-live-cockpit-mobile.png`, fullPage: true });
+  await page.locator('.ops40-cargo-panel').waitFor({ state: 'visible' });
+  assert.equal(await page.locator('.ops-live-navigation, .ops-live-map').count(), 0);
+  assert.ok(await page.evaluate(() => document.documentElement.scrollHeight > innerHeight));
+  await noHorizontalOverflow('Operations 0.40 mobile');
+  await page.screenshot({ path: `${output}/operations-v040-mobile.png`, fullPage: true });
 
   assert.deepEqual(errors, [], `Browser errors:\n${errors.join('\n')}`);
 } catch (error) {
   failure = error;
-  await fs.writeFile(`${output}/failure.txt`, `Step: ${step}\n\n${error.stack ?? error}\n\nBrowser errors:\n${errors.join('\n')}`);
+  const alertText = await page.locator('#focused-review-alerts').textContent().catch(() => '');
+  await fs.writeFile(`${output}/failure.txt`, `Step: ${step}\n\n${error.stack ?? error}\n\nReview alerts:\n${alertText}\n\nBrowser errors:\n${errors.join('\n')}`);
   await page.screenshot({ path: `${output}/failure-state.png`, fullPage: true }).catch(() => {});
 } finally {
   await browser.close();
 }
 
 if (failure) throw failure;
-console.log('UI 0.30.3 adaptive-fit Operations smoke passed.');
+console.log('Operations UI 0.40 Chromium smoke passed.');

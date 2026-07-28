@@ -63,7 +63,9 @@
       button.type = 'button';
       button.className = 'ops-v030-edit-grid';
       button.addEventListener('click', open);
-      header.insertBefore(button, header.querySelector('.ops-v028-grouping'));
+      const grouping = header.querySelector('.ops-v028-grouping');
+      if (grouping?.parentElement === header) header.insertBefore(button, grouping);
+      else header.append(button);
     }
     if (button) button.textContent = layout.manual?.active ? 'EDIT GRID · MANUAL' : 'EDIT GRID';
 

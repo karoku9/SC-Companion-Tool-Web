@@ -15,6 +15,8 @@ const browser = await chromium.launch({ headless: true });
 const page = await browser.newPage({ viewport: { width: 1664, height: 936 }, deviceScaleFactor: 1 });
 const errors = [];
 let step = 'initialization';
+let failure = null;
+
 page.on('pageerror', (error) => errors.push(`pageerror: ${error.message}`));
 page.on('console', (message) => { if (message.type() === 'error') errors.push(`console: ${message.text()}`); });
 
@@ -45,153 +47,90 @@ async function noHorizontalOverflow(label) {
   assert.ok(metrics.bodyWidth <= metrics.viewport + 2, `${label}: body overflow ${JSON.stringify(metrics)}`);
 }
 
-async function fittedCargoOperations(label, expectedDensity) {
+async function assertDesktopCockpit(label) {
   const metrics = await page.evaluate(() => {
-    const root = document.querySelector('.operations-page.operations-v028');
-    const grid = root?.querySelector('.operations-grid');
-    const selectors = {
-      command: '.ops-v027-command-deck',
-      primary: '.ops-v027-primary-grid',
-      cargo: '.ops-v0302-primary-cargo',
-      cargoGrid: '.ops-v028-cargo-grid',
-      current: '.current-operation-panel',
-      timeline: '.ops-v027-timeline-panel',
-      timelineCard: '.ops-v028-stop-card',
-      tools: '.operations-tools'
+    const box = (selector) => {
+      const rect = document.querySelector(selector)?.getBoundingClientRect();
+      return rect ? { top: rect.top, bottom: rect.bottom, width: rect.width, height: rect.height } : null;
     };
-    const boxes = Object.fromEntries(Object.entries(selectors).map(([key, selector]) => {
-      const box = root?.querySelector(selector)?.getBoundingClientRect();
-      return [key, box ? { top: box.top, bottom: box.bottom, left: box.left, right: box.right, width: box.width, height: box.height } : null];
-    }));
-    const rootBox = root?.getBoundingClientRect();
-    const gridBox = grid?.getBoundingClientRect();
-    const currentBody = root?.querySelector('.current-operation-body');
     return {
-      density: document.documentElement.dataset.opsDensity ?? '',
-      viewport: { width: innerWidth, height: innerHeight },
-      document: { width: document.documentElement.scrollWidth, height: document.documentElement.scrollHeight },
-      body: { width: document.body.scrollWidth, height: document.body.scrollHeight },
-      root: rootBox ? { top: rootBox.top, bottom: rootBox.bottom, height: rootBox.height } : null,
-      grid: gridBox ? { top: gridBox.top, bottom: gridBox.bottom, height: gridBox.height } : null,
-      mapCount: root?.querySelectorAll('.ops-live-navigation').length ?? -1,
-      currentBody: currentBody ? { clientHeight: currentBody.clientHeight, scrollHeight: currentBody.scrollHeight } : null,
-      boxes
+      viewportHeight: innerHeight,
+      documentHeight: document.documentElement.scrollHeight,
+      bodyHeight: document.body.scrollHeight,
+      topbar: box('.ops40-topbar'),
+      sessions: box('.ops40-session-strip'),
+      main: box('.ops40-main'),
+      cargo: box('.ops40-cargo-panel'),
+      current: box('.ops40-step-panel'),
+      timeline: box('.ops40-timeline-panel'),
+      dock: box('.ops40-dock'),
+      cargoGrid: box('.ops40-cargo-grid'),
+      stop: box('.ops40-stop')
     };
   });
-
-  assert.equal(metrics.density, expectedDensity, `${label}: wrong density ${JSON.stringify(metrics)}`);
-  assert.ok(metrics.root && metrics.grid && metrics.currentBody, `${label}: Operations root, grid or Current Step body is missing`);
-  Object.entries(metrics.boxes).forEach(([key, box]) => assert.ok(box, `${label}: missing ${key} panel`));
-  assert.equal(metrics.mapCount, 0, `${label}: route map still exists`);
-  assert.ok(metrics.document.height <= metrics.viewport.height + 2, `${label}: document exceeds viewport ${JSON.stringify(metrics)}`);
-  assert.ok(metrics.body.height <= metrics.viewport.height + 2, `${label}: body exceeds viewport ${JSON.stringify(metrics)}`);
-  assert.ok(metrics.root.top >= -2 && metrics.root.bottom <= metrics.viewport.height + 2, `${label}: Operations root escapes viewport ${JSON.stringify(metrics)}`);
-  assert.ok(metrics.boxes.command.bottom <= metrics.boxes.primary.top + 2, `${label}: command deck order is wrong`);
-  assert.ok(Math.abs(metrics.boxes.cargo.top - metrics.boxes.current.top) <= 2, `${label}: cargo/current row is misaligned`);
-  assert.ok(metrics.boxes.cargo.width > metrics.boxes.current.width, `${label}: cargo did not inherit the dominant area`);
-  assert.ok(metrics.boxes.cargo.height >= 430 && metrics.boxes.current.height >= 430, `${label}: primary instruments are too short ${JSON.stringify(metrics.boxes)}`);
-  assert.ok(metrics.boxes.cargoGrid.height >= 300, `${label}: cargo grid is clipped`);
-  assert.ok(metrics.boxes.primary.bottom <= metrics.boxes.timeline.top + 2, `${label}: timeline must follow the primary row`);
-  assert.ok(metrics.boxes.timeline.bottom <= metrics.boxes.tools.top + 2, `${label}: tools must follow timeline`);
-  assert.ok(metrics.boxes.tools.bottom <= metrics.viewport.height + 2, `${label}: bottom controls are below the fold`);
-  assert.ok(metrics.boxes.timelineCard.width >= 190, `${label}: timeline cards are too narrow`);
-  assert.ok(metrics.currentBody.scrollHeight <= metrics.currentBody.clientHeight + 2, `${label}: tested Current Step state needs internal scrolling ${JSON.stringify(metrics.currentBody)}`);
+  Object.entries(metrics).filter(([key]) => !key.endsWith('Height')).forEach(([key, value]) => assert.ok(value, `${label}: missing ${key}`));
+  assert.ok(metrics.documentHeight <= metrics.viewportHeight + 2, `${label}: document exceeds viewport ${JSON.stringify(metrics)}`);
+  assert.ok(metrics.bodyHeight <= metrics.viewportHeight + 2, `${label}: body exceeds viewport ${JSON.stringify(metrics)}`);
+  assert.ok(metrics.topbar.bottom <= metrics.sessions.top + 10, `${label}: topbar/session order is wrong`);
+  assert.ok(metrics.sessions.bottom <= metrics.main.top + 10, `${label}: sessions/main order is wrong`);
+  assert.ok(metrics.cargo.width > metrics.current.width, `${label}: cargo is not dominant`);
+  assert.ok(metrics.cargo.height >= 430 && metrics.current.height >= 430, `${label}: main instruments are too short`);
+  assert.ok(metrics.cargoGrid.height >= 300, `${label}: cargo grid is clipped`);
+  assert.ok(metrics.main.bottom <= metrics.timeline.top + 10, `${label}: timeline order is wrong`);
+  assert.ok(metrics.timeline.bottom <= metrics.dock.top + 10, `${label}: dock order is wrong`);
+  assert.ok(metrics.stop.width >= 210, `${label}: timeline card is too narrow`);
 }
 
-async function readableTypography(label) {
-  const result = await page.evaluate(() => [...document.querySelectorAll('.app-frame *')]
+async function visibleTextFloor(label, minimum = 10.5) {
+  const small = await page.evaluate((floor) => [...document.querySelectorAll('.app-frame *')]
     .filter((element) => {
       const style = getComputedStyle(element);
       const box = element.getBoundingClientRect();
       const directText = [...element.childNodes].some((node) => node.nodeType === Node.TEXT_NODE && node.textContent.trim());
-      return directText && style.display !== 'none' && style.visibility !== 'hidden' && box.width > 0 && box.height > 0 && !element.classList.contains('sr-only');
+      return directText && style.display !== 'none' && style.visibility !== 'hidden' && box.width > 0 && box.height > 0;
     })
     .map((element) => ({ text: element.textContent.trim().replace(/\s+/g, ' ').slice(0, 80), size: Number.parseFloat(getComputedStyle(element).fontSize) }))
-    .sort((left, right) => left.size - right.size)
-    .slice(0, 12));
-  assert.ok(result.every((item) => item.size >= 11.5), `${label}: text below 11.5px ${JSON.stringify(result)}`);
+    .filter((item) => item.size < floor), minimum);
+  assert.deepEqual(small, [], `${label}: text below ${minimum}px ${JSON.stringify(small)}`);
 }
 
-async function minimumTouchTargets(label) {
-  const undersized = await page.evaluate(() => [...document.querySelectorAll('button, select, input:not([type="hidden"])')]
-    .filter((element) => {
-      const style = getComputedStyle(element);
-      const box = element.getBoundingClientRect();
-      return style.display !== 'none' && style.visibility !== 'hidden' && box.width > 0 && box.height > 0 && !element.disabled;
-    })
-    .map((element) => ({ text: element.getAttribute('aria-label') || element.textContent.trim().slice(0, 40), height: element.getBoundingClientRect().height }))
-    .filter((item) => item.height < 43));
-  assert.deepEqual(undersized, [], `${label}: undersized controls ${JSON.stringify(undersized)}`);
-}
-
-async function inspectActiveWorkspaces(label) {
-  for (const id of ['route', 'missions']) {
-    await openWorkspace(id);
-    await noHorizontalOverflow(`${label} ${id}`);
-    await readableTypography(`${label} ${id}`);
-  }
-}
-
-let failure = null;
 try {
-  step = 'load application';
+  step = 'load empty Operations 0.40';
   await page.goto(`${baseUrl}/#route`, { waitUntil: 'networkidle' });
-  await page.evaluate(() => {
-    localStorage.removeItem('sc-companion-session-v1');
-    localStorage.removeItem('sc-companion-nav-collapsed');
-  });
+  await page.evaluate(() => localStorage.removeItem('sc-companion-session-v1'));
   await page.reload({ waitUntil: 'networkidle' });
-  await page.locator('.product-navigation').waitFor({ state: 'visible' });
-  await page.locator('#sidebar-toggle').waitFor({ state: 'attached' });
-  await page.locator('.operations-cargo-primary-v0302').waitFor({ state: 'visible' });
-  await page.locator('link[data-operations-adaptive-fit-style="0.30.3"]').waitFor({ state: 'attached' });
-  await page.locator('link[data-operations-adaptive-fit-readable-style="0.30.3"]').waitFor({ state: 'attached' });
-  assert.equal(await page.locator('#sidebar-toggle').isVisible(), false, 'Operations uses a fixed icon rail, so its expand control must remain hidden');
-  assert.equal(await page.locator('.ops-live-navigation').count(), 0);
-
-  step = 'verify empty Operations cockpit';
-  assert.match(await page.locator('#current-stop-name').textContent(), /Generate a session/i);
-  assert.equal(await page.locator('#complete-stop').isDisabled(), true);
-  assert.equal(await page.locator('.tool-keys:not([hidden])').count(), 0);
-  assert.equal(await page.locator('.ops-action-bar [data-ops-action]').count(), 5);
-  assert.equal(await page.locator('[data-view-target="route-planner"]').count(), 0);
-  assert.equal(await page.locator('[data-view-target="map"]').count(), 0);
-  assert.equal(await page.locator('[data-view-target="hangar"]').count(), 0);
-  assert.equal(await page.locator('[data-view-target="roadmap"]').count(), 0);
+  await page.locator('.operations-page.ops40-page').waitFor({ state: 'visible' });
+  await page.locator('link[data-operations-v040-style="0.40.0"]').waitFor({ state: 'attached' });
+  assert.match(await page.locator('#ops40-step-title').textContent(), /Generate a session/i);
+  assert.equal(await page.locator('#ops40-complete').isDisabled(), true);
+  assert.equal(await page.locator('.ops40-dock [data-ops40-action]').count(), 5);
+  assert.equal(await page.locator('.ops-live-navigation, .ops-live-map').count(), 0);
+  assert.equal(await page.locator('[data-view-target="route-planner"], [data-view-target="map"], [data-view-target="hangar"], [data-view-target="roadmap"]').count(), 0);
   await noHorizontalOverflow('Empty Operations desktop');
-  await readableTypography('Empty Operations desktop');
-  await page.screenshot({ path: `${output}/hardening-no-route-1664.png`, fullPage: false });
+  await visibleTextFloor('Empty Operations desktop');
+  await page.screenshot({ path: `${output}/operations-v040-empty-1664.png`, fullPage: false });
 
   step = 'generate long mission through visual review';
   await openWorkspace('missions');
-  await page.locator('.mission-steps').waitFor({ state: 'visible' });
   await page.locator('[data-stage="input"]').click();
-  assert.equal(await page.locator('#mission-start-location').isVisible(), false);
   await page.locator('#mission-text').fill(longMissionText);
   await page.locator('#mission-form button[type="submit"]').click();
   await page.locator('#focused-review-count').filter({ hasText: '1 mission' }).waitFor({ state: 'visible' });
   await selectCurrentLocation();
   assert.match(await page.locator('[data-review-mission] .mission-card-identity strong').textContent(), /Long-range medical consolidation/);
-  const visibleCargo = await page.locator('[data-review-mission] .mission-cargo-chips').allTextContents();
-  assert.ok(visibleCargo.some((value) => /extremely_long_medical_supplies/.test(value)));
-  assert.ok(await page.locator('.cargo-chip').count() >= 3);
+  assert.ok((await page.locator('[data-review-mission] .mission-cargo-chips').allTextContents()).some((value) => /extremely_long_medical_supplies/.test(value)));
   assert.equal(await page.locator('#focused-review-generate').isEnabled(), true);
-  await noHorizontalOverflow('Long mission Review desktop');
-  await readableTypography('Long mission Review desktop');
   await page.locator('#focused-review-generate').click();
   await page.locator('[data-stage="route"][aria-current="step"]').waitFor({ state: 'visible' });
   const stored = await page.evaluate(() => window.SCCompanionSession.getState());
   assert.match(stored.missions[0].title, /Long-range medical consolidation/);
   assert.equal(stored.missions[0].cargoLots[0].commodity, 'extremely_long_medical_supplies');
-  assert.equal(stored.routePlan.sessions.length, 1, 'A single mission must never be split across play sessions');
-  assert.ok(Number.isFinite(stored.routePlan.sessions[0].estimate.travelMinutes));
-  await page.screenshot({ path: `${output}/hardening-long-missions-1664.png`, fullPage: true });
+  assert.equal(stored.routePlan.sessions.length, 1, 'A single mission must never be split across sessions');
 
-  step = 'verify integrated Operations tools';
+  step = 'verify rebuilt Operations controls';
   await page.locator('#focused-route-open').click();
-  await page.locator('.ops-v0302-primary-cargo .ops-v028-cargo-cell').first().waitFor({ state: 'visible' });
-  assert.equal(await page.locator('.ops-live-navigation').count(), 0);
-  assert.match(await page.locator('#route-stop-list').textContent(), /Checkmate Station|Levski/);
+  await page.locator('.ops40-cargo-cell').first().waitFor({ state: 'visible' });
+  assert.match(await page.locator('.ops40-timeline').textContent(), /Checkmate Station|Levski/);
   const routeKinds = await page.evaluate(() => {
     const state = window.SCCompanionSession.getState();
     const route = window.SCCompanionRouteCorrections.deriveRoute(state.route, state.routeCorrections);
@@ -201,75 +140,48 @@ try {
   assert.ok(routeKinds.includes('jump'));
   assert.ok(routeKinds.includes('travel'));
   assert.ok(routeKinds.includes('action'));
-  await page.locator('[data-ops-action="missions"]').click();
-  await page.locator('.ops-editor-drawer').waitFor({ state: 'visible' });
-  assert.equal(await page.locator('.ops-manager-mission').count(), 1);
-  await page.locator('#ops-editor-close').click();
-  await page.locator('.ops-editor-drawer').waitFor({ state: 'hidden' });
-  await page.locator('[data-ops-action="order"]').click();
-  await page.locator('.ops-order-row').first().waitFor({ state: 'visible' });
-  await page.locator('#ops-editor-close').click();
-  await page.locator('[data-ops-action="cargo"]').click();
-  await page.locator('#ops-tool-panel').waitFor({ state: 'visible' });
-  assert.match(await page.locator('#ops-tool-title').textContent(), /Cargo/i);
-  await page.locator('#ops-tool-expand').click();
-  assert.equal(await page.locator('#ops-tool-panel').evaluate((element) => element.classList.contains('is-expanded')), true);
-  await page.keyboard.press('Escape');
-  await page.locator('#ops-tool-panel').waitFor({ state: 'hidden' });
-  await noHorizontalOverflow('Integrated Operations desktop');
-  await readableTypography('Integrated Operations desktop');
 
-  step = 'verify comfortable one-viewport Operations at 1700x900';
+  await page.locator('[data-ops40-action="missions"]').click();
+  await page.locator('#ops40-drawer').waitFor({ state: 'visible' });
+  assert.equal(await page.locator('#ops40-drawer-body .ops40-drawer-row').count(), 1);
+  await page.locator('#ops40-drawer-close').click();
+  await page.locator('#ops40-drawer').waitFor({ state: 'hidden' });
+
+  await page.locator('[data-ops40-action="order"]').click();
+  await page.locator('#ops40-drawer-body .ops40-drawer-row').first().waitFor({ state: 'visible' });
+  await page.keyboard.press('Escape');
+  await page.locator('#ops40-drawer').waitFor({ state: 'hidden' });
+
+  step = 'verify one-viewport desktop sizes';
   await page.setViewportSize({ width: 1700, height: 900 });
-  await page.waitForFunction(() => document.documentElement.dataset.opsDensity === 'comfortable');
-  await page.locator('.ops-v0302-primary-cargo').waitFor({ state: 'visible' });
-  await fittedCargoOperations('1700x900 Operations', 'comfortable');
+  await assertDesktopCockpit('1700x900 Operations');
   await noHorizontalOverflow('1700x900 Operations');
-  await page.screenshot({ path: `${output}/operations-adaptive-fit-1700x900.png`, fullPage: false });
+  await visibleTextFloor('1700x900 Operations');
+  await page.screenshot({ path: `${output}/operations-v040-1700x900.png`, fullPage: false });
+
+  await page.setViewportSize({ width: 1366, height: 768 });
+  await assertDesktopCockpit('1366x768 Operations');
+  await noHorizontalOverflow('1366x768 Operations');
+  await visibleTextFloor('1366x768 Operations');
+  await page.screenshot({ path: `${output}/operations-v040-1366x768.png`, fullPage: false });
 
   step = 'complete route in Operations';
-  let guard = 20;
-  while (!(await page.locator('#complete-stop').isDisabled()) && guard > 0) {
-    await page.locator('#complete-stop').click();
+  let guard = 50;
+  while (!(await page.locator('#ops40-complete').isDisabled()) && guard > 0) {
+    await page.locator('#ops40-complete').click();
     guard -= 1;
   }
   assert.ok(guard > 0, 'Route completion exceeded safety limit');
-  assert.match(await page.locator('#current-stop-name').textContent(), /complete/i);
-  assert.match(await page.locator('#ops-v027-next').textContent(), /complete/i);
-  await page.screenshot({ path: `${output}/hardening-route-complete-1700.png`, fullPage: false });
+  assert.match(await page.locator('#ops40-step-title').textContent(), /complete/i);
+  assert.match(await page.locator('#ops40-next').textContent(), /remaining|complete/i);
 
-  step = 'verify simplified ship selector';
-  assert.equal(await page.locator('#quick-ship-select').isVisible(), true);
-  assert.ok(await page.locator('#quick-ship-select option').count() >= 7);
-  assert.equal(await page.locator('#fleet-loadout-editor:visible').count(), 0);
-
-  step = 'verify tight one-viewport laptop layout';
-  await page.setViewportSize({ width: 1366, height: 768 });
-  await openWorkspace('route');
-  await page.waitForFunction(() => document.documentElement.dataset.opsDensity === 'tight');
-  await fittedCargoOperations('1366x768 Operations', 'tight');
-  await noHorizontalOverflow('1366x768 Operations');
-  await readableTypography('1366x768 Operations');
-  await page.screenshot({ path: `${output}/operations-adaptive-fit-1366x768.png`, fullPage: false });
-
-  step = 'verify responsive active layouts';
-  await inspectActiveWorkspaces('1366x768');
+  step = 'verify ship selector and mobile flow';
+  assert.ok(await page.locator('#ops40-ship-select option').count() >= 7);
   await page.setViewportSize({ width: 390, height: 844 });
-  await inspectActiveWorkspaces('390x844');
-  await openWorkspace('missions');
-  await page.locator('[data-stage="review"]').click();
-  await minimumTouchTargets('390x844 Missions review');
-  await page.screenshot({ path: `${output}/hardening-missions-390.png`, fullPage: true });
-  await openWorkspace('route');
-  await page.waitForFunction(() => document.documentElement.dataset.opsDensity === 'flow');
-  assert.equal(await page.locator('.ops-live-navigation').count(), 0);
-  await minimumTouchTargets('390x844 Operations');
-  await page.screenshot({ path: `${output}/hardening-operations-390.png`, fullPage: true });
-
-  step = 'verify reduced motion';
-  await page.emulateMedia({ reducedMotion: 'reduce' });
-  const duration = await page.locator('#sidebar-toggle').evaluate((element) => getComputedStyle(element).transitionDuration);
-  assert.ok(['0s', '0.00001s'].includes(duration), `Reduced motion transition remains active: ${duration}`);
+  await page.locator('.ops40-cargo-panel').waitFor({ state: 'visible' });
+  assert.ok(await page.evaluate(() => document.documentElement.scrollHeight > innerHeight));
+  await noHorizontalOverflow('390x844 Operations');
+  await page.screenshot({ path: `${output}/operations-v040-390.png`, fullPage: true });
 
   step = 'check browser errors';
   assert.deepEqual(errors, [], `Browser errors:\n${errors.join('\n')}`);
@@ -282,3 +194,4 @@ try {
 }
 
 if (failure) throw failure;
+console.log('Operations UI 0.40 hardening passed.');

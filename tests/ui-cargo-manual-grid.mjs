@@ -56,13 +56,15 @@ try {
   await page.locator('#focused-review-count').filter({ hasText: '1 mission' }).waitFor({ state: 'visible' });
   await selectCurrentLocation(/teasa/i);
   await page.locator('#focused-review-generate').click();
+  await page.locator('[data-stage="route"][aria-current="step"]').waitFor({ state: 'visible' });
   await page.locator('.mission-session-card').first().getByRole('button', { name: 'Select session' }).click();
   await page.locator('#focused-route-open').click();
-  await page.locator('.operations-page.operations-v028').waitFor({ state: 'visible' });
-  await page.locator('.ops-v030-edit-grid').waitFor({ state: 'visible' });
+  await page.locator('.operations-page.ops40-page').waitFor({ state: 'visible' });
+  await page.locator('#ops40-edit-grid').waitFor({ state: 'visible' });
+  assert.ok(await page.locator('.ops40-cargo-cell').count() > 0);
 
-  step = 'open exact ship grid';
-  await page.locator('.ops-v030-edit-grid').click();
+  step = 'open exact ship grid from Operations 0.40';
+  await page.locator('#ops40-edit-grid').click();
   await page.locator('#ops-v030-cargo-editor').waitFor({ state: 'visible' });
   assert.equal(await page.locator('[data-v030-cell]').count(), 24);
   assert.match(await page.locator('.ops-v030-editor-footer').textContent(), /6 × 4 floor cells · 3 SCU vertical capacity per cell/i);
@@ -103,8 +105,7 @@ try {
   await page.locator(`[data-v030-cell="${targetId}"].is-manual`).waitFor({ state: 'visible' });
 
   step = 'assign the same cargo group by coordinate click';
-  const selectedGroup = page.locator('[data-v030-group]').first();
-  await selectedGroup.click();
+  await page.locator('[data-v030-group]').first().click();
   const clickTargetId = await findCellId('empty', [sourceId, targetId], sourceRow);
   assert.ok(clickTargetId);
   await page.locator(`[data-v030-cell="${clickTargetId}"]`).click();
@@ -126,17 +127,17 @@ try {
   assert.match(await page.locator('.ops-v030-editor-stats').textContent(), /Reserved\s*3 SCU/i);
   await page.screenshot({ path: `${output}/cargo-manual-grid-desktop.png`, fullPage: true });
 
-  step = 'close and verify compact Operations preview';
+  step = 'close and verify Operations 0.40 preview';
   await page.locator('[data-v030-close]').click();
   await page.locator('#ops-v030-cargo-editor').waitFor({ state: 'hidden' });
-  assert.match(await page.locator('.ops-v030-edit-grid').textContent(), /MANUAL/i);
-  assert.ok(await page.locator('.ops-v028-cargo-cell.is-reserved').count() >= 1);
-  assert.ok(await page.locator('.ops-v028-cargo-cell.is-manual').count() >= 1);
+  await page.locator('.ops40-cargo-cell.is-reserved').first().waitFor({ state: 'visible' });
+  await page.locator('.ops40-cargo-cell.is-manual').first().waitFor({ state: 'visible' });
+  assert.match(await page.locator('#ops40-cargo-title').textContent(), /SCU/);
 
   step = 'persist manual grid after reload';
   await page.reload({ waitUntil: 'networkidle' });
-  await page.locator('.operations-page.operations-v028').waitFor({ state: 'visible' });
-  await page.locator('.ops-v030-edit-grid').click();
+  await page.locator('.operations-page.ops40-page').waitFor({ state: 'visible' });
+  await page.locator('#ops40-edit-grid').click();
   await page.locator('#ops-v030-cargo-editor').waitFor({ state: 'visible' });
   await page.locator(`[data-v030-cell="${clickTargetId}"].is-manual`).waitFor({ state: 'visible' });
   await page.locator(`[data-v030-cell="${reserveId}"].is-reserved`).waitFor({ state: 'visible' });
@@ -151,4 +152,4 @@ try {
 }
 
 if (failure) throw failure;
-console.log('Manual cargo grid browser test passed.');
+console.log('Manual cargo grid and Operations UI 0.40 integration passed.');

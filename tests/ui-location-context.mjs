@@ -61,9 +61,7 @@ async function exposeLocationBrowser() {
     root.style.setProperty('overflow', 'visible', 'important');
     root.style.setProperty('background', 'var(--ds-surface-panel)', 'important');
     root.style.setProperty('border', '1px solid var(--ds-border-subtle)', 'important');
-    [...root.querySelectorAll('*')].forEach((element) => {
-      element.style.setProperty('visibility', 'visible', 'important');
-    });
+    [...root.querySelectorAll('*')].forEach((element) => element.style.setProperty('visibility', 'visible', 'important'));
   });
   await page.locator('#location-search').waitFor({ state: 'visible' });
 }
@@ -103,34 +101,27 @@ try {
   await page.locator('#focused-review-generate').click();
   await page.locator('[data-stage="route"][aria-current="step"]').waitFor({ state: 'visible' });
 
-  step = 'verify no cargo exposure before first pickup';
+  step = 'verify clean Operations before first pickup';
   await openWorkspace('route');
-  await page.locator('.ops-v028-travel-card').waitFor({ state: 'visible' });
-  const travelText = await page.locator('.ops-v028-travel-card').textContent();
-  assert.match(travelText, /0 SCU/i);
-  assert.doesNotMatch(await page.locator('.current-operation-panel').textContent(), /High cargo exposure/i);
-  assert.match(await page.locator('#route-stop-list').textContent(), /Official|Reviewed community/i);
-  assert.equal(await page.locator('.tool-keys:not([hidden])').count(), 0, 'Legacy Moves/Adjust/Route keys must remain hidden');
-  assert.ok(await page.locator('.ops-action-bar [data-ops-action]').count() >= 5);
+  await page.locator('.ops40-travel-card').waitFor({ state: 'visible' });
+  assert.match(await page.locator('.ops40-travel-card').textContent(), /0 SCU/i);
+  assert.equal(await page.locator('.current-stop-intel, .current-stop-intel-card').count(), 0, 'Location intel must not be duplicated in Operations 0.40');
+  assert.match(await page.locator('.ops40-timeline').textContent(), /Checkmate Station|Levski/);
+  assert.equal(await page.locator('.ops-live-navigation, .ops-live-map').count(), 0);
+  assert.equal(await page.locator('.ops40-dock [data-ops40-action]').count(), 5);
 
   step = 'advance through explicit route steps to Checkmate';
   let pyroGuard = 40;
   while (!(await atActionLocation(/Checkmate Station/i)) && pyroGuard > 0) {
-    assert.equal(await page.locator('#complete-stop').isDisabled(), false, 'Route completed before reaching the Checkmate action step');
-    await page.locator('#complete-stop').click();
+    assert.equal(await page.locator('#ops40-complete').isDisabled(), false, 'Route completed before reaching the Checkmate action step');
+    await page.locator('#ops40-complete').click();
     pyroGuard -= 1;
   }
   assert.ok(pyroGuard > 0, 'Explicit route did not reach the Checkmate action within the expected step count');
-  await page.locator('.ops-v028-step-subtitle').filter({ hasText: /Checkmate Station/i }).waitFor({ state: 'visible' });
-  assert.equal(await page.locator('.current-stop-intel').isVisible(), false, 'Fitted Operations must hide redundant location/exposure cards');
-  assert.ok(await page.locator('.current-stop-intel-card').count() >= 5, 'Location intel data must remain rendered for the dedicated detail view');
-  const exposureLabel = await page.locator('.ops-v028-intel > header strong').textContent();
-  assert.match(exposureLabel, /Protected hangar delivery|High cargo exposure|Cargo cleared/i);
-  assert.match(await page.locator('.current-operation-panel').textContent(), /2 SCU/i);
-  assert.equal(await page.locator('.ops-live-navigation').count(), 0);
-  assert.equal(await page.locator('.ops-v0302-primary-cargo').count(), 1);
-  assert.ok(await page.locator('.current-stop-intel-card .intel-icon').count() >= 5);
-  await page.screenshot({ path: `${output}/location-context-operations-pyro.png`, fullPage: true });
+  await page.locator('#ops40-step-subtitle').filter({ hasText: /Checkmate Station/i }).waitFor({ state: 'visible' });
+  assert.match(await page.locator('.ops40-step-panel').textContent(), /2 SCU/i);
+  assert.ok(await page.locator('.ops40-cargo-cell').count() > 0);
+  await page.screenshot({ path: `${output}/location-context-operations-v040-pyro.png`, fullPage: false });
 
   step = 'open complete Checkmate location intel';
   await exposeLocationBrowser();
@@ -162,7 +153,6 @@ try {
   assert.match(arcServices, /A refinery deck/);
   assert.match(arcServices, /Food & drink/);
   assert.match(arcServices, /Fuel, repair & rearm/);
-  await page.screenshot({ path: `${output}/location-intel-complete-arc-l2-desktop.png`, fullPage: true });
 
   step = 'verify Grim HEX is useful but explicitly high risk';
   await selectLocation('Grim HEX');
@@ -194,7 +184,6 @@ try {
   const bezdekServices = await page.locator('#intel-services').textContent();
   assert.match(bezdekServices, /Ground vehicles/);
   assert.match(bezdekServices, /Commodity trade/);
-  await page.screenshot({ path: `${output}/location-intel-hdms-bezdek-desktop.png`, fullPage: true });
 
   step = 'verify distribution center profile';
   await selectLocation('S4LD01');
@@ -204,7 +193,6 @@ try {
   assert.match(depotServices, /Cargo servicesAvailable/);
   assert.match(depotServices, /Food & drinkLimited/);
   assert.match(await page.locator('#intel-risk-label').textContent(), /Elevated industrial-site exposure/);
-  await page.screenshot({ path: `${output}/location-intel-s4ld01-desktop.png`, fullPage: true });
 
   step = 'verify unregulated surface site';
   await selectLocation('Buds Growery');
@@ -216,8 +204,7 @@ try {
   await page.setViewportSize({ width: 390, height: 844 });
   await selectLocation('HDMS Bezdek');
   await noHorizontalOverflow('Location context mobile');
-  const searchButton = page.locator('#location-search button[type="submit"]');
-  const searchBox = await searchButton.boundingBox();
+  const searchBox = await page.locator('#location-search button[type="submit"]').boundingBox();
   assert.ok(searchBox && searchBox.height >= 43, `Mobile location search target is too small: ${JSON.stringify(searchBox)}`);
   assert.equal(await page.locator('.location-essentials article').count(), 4);
   await page.screenshot({ path: `${output}/location-intel-field-mobile.png`, fullPage: true });
@@ -232,3 +219,4 @@ try {
 }
 
 if (failure) throw failure;
+console.log('Location context and Operations UI 0.40 integration passed.');

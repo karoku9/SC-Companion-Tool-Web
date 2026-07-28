@@ -9,68 +9,60 @@ function read(file) {
   return fs.readFileSync(path.join(__dirname, '..', file), 'utf8');
 }
 
-function cleanCss() {
-  return ['design-system-legibility.css', 'mission-validation.css', 'game-log-intake.css', 'ocr-intake.css', 'location-context.css', 'location-context-adapters.css', 'fleet-loadouts.css', 'starmap-v2.css', 'ui-v2-shell.css', 'ui-v2-operations.css', 'ui-v2-workspaces.css', 'ui-v2-responsive.css', 'operational-ui-v025.css', 'operational-ui-legibility.css', 'operations-readable-short-desktop-v0291.css', 'operations-spacing-v0292.css'].map(read).join('\n');
-}
-
 test('clean interface scripts remain valid JavaScript', () => {
-  ['app.js', 'ui-v2.js', 'ui-v2-operations.js', 'ui-v2-shell.js', 'ui-v2-accessibility.js', 'mfd-icons.js', 'product-shell.js', 'mission-validation.js', 'mission-view.js', 'game-log-intake.js', 'game-log-intake-correlation.js', 'game-log-intake-view.js', 'ocr-intake.js', 'ocr-intake-view.js', 'location-context.js', 'location-context-planner.js', 'location-intel-view.js', 'fleet-loadouts.js', 'fleet-estimate-adapter.js', 'fleet-loadouts-view.js', 'route-view.js', 'hangar-view.js', 'starmap-view.js', 'focused-route-optimizer.js', 'route-session-planner.js', 'missions-focus-workflow.js', 'operational-ui-v025.js', 'cargo-auto-layout-v0292.js', 'operations-cargo-guidance-v0292.js'].forEach((file) => {
+  ['app.js', 'ui-v2.js', 'ui-v2-operations.js', 'ui-v2-shell.js', 'ui-v2-accessibility.js', 'mfd-icons.js', 'product-shell.js', 'mission-validation.js', 'mission-view.js', 'game-log-intake.js', 'game-log-intake-correlation.js', 'game-log-intake-view.js', 'ocr-intake.js', 'ocr-intake-view.js', 'location-context.js', 'location-context-planner.js', 'location-intel-view.js', 'fleet-loadouts.js', 'fleet-estimate-adapter.js', 'fleet-loadouts-view.js', 'route-view.js', 'hangar-view.js', 'starmap-view.js', 'focused-route-optimizer.js', 'route-session-planner.js', 'missions-focus-workflow.js', 'operations-rebuild-v040.js', 'operations-v040-manual-grid-bridge.js', 'cargo-auto-layout-v0292.js'].forEach((file) => {
     assert.doesNotThrow(() => new Function(read(file)), `${file} contains invalid JavaScript`);
   });
 });
 
-test('clean UI replaces accumulated layout layers rather than overriding them', () => {
-  const html = read('index.html');
+test('Operations uses a single replacement runtime rather than accumulated UI layers', () => {
   const app = read('app.js');
-  const entry = read('ui-v2.css');
-  assert.match(html, /href="design-system\.css\?v=0\.29\.2"/);
-  assert.match(html, /href="ui-v2\.css\?v=0\.29\.2"/);
-  assert.match(entry, /mission-validation\.css/);
-  assert.match(entry, /game-log-intake\.css/);
-  assert.match(entry, /ocr-intake\.css/);
-  assert.match(entry, /location-context\.css/);
-  assert.match(entry, /location-context-adapters\.css/);
-  assert.match(entry, /fleet-loadouts\.css/);
-  assert.match(entry, /design-system-legibility\.css/);
-  assert.match(entry, /starmap-v2\.css/);
-  assert.match(entry, /operational-ui-v025\.css/);
-  assert.match(entry, /operational-ui-legibility\.css/);
-  assert.match(entry, /operations-readable-short-desktop-v0291\.css/);
-  assert.match(entry, /operations-spacing-v0292\.css/);
-  assert.doesNotMatch(html, /styles\.css|workspace-consolidation\.css|ui-rebuild\.css|drake-mfd\.css|mfd-layout-v2\.css/);
-  assert.doesNotMatch(app, /workspace-shell\.js|ui-rebuild\.js|mfd-layout-v2\.js|ux-shell\.js/);
+  const loader = read('operations-rebuild-v040-loader.js');
+  const ui = read('operations-rebuild-v040.js');
+  const css = read('operations-rebuild-v040.css');
+
+  assert.match(app, /operations-rebuild-v040-loader\.js/);
+  assert.doesNotMatch(app, /operational-ui-v025\.js|operational-polish-v026\.js|operations-exposure-intel\.js|operations-design-v027\.js|operations-flow-v028\.js|operations-readable-short-desktop-v0291\.js|operations-cargo-guidance-v0292\.js|operations-readable-scroll-v0301\.js|operations-cargo-primary-v0302\.js|operations-adaptive-fit-v0303\.js|operations-balanced-cockpit-v0304\.js|ship-selector-sync\.js/);
+  assert.match(loader, /operations-rebuild-v040\.css/);
+  assert.match(loader, /operations-rebuild-v040\.js/);
+  assert.match(ui, /page\.innerHTML =/);
+  assert.match(ui, /root\.dispatchEvent\(new Event\('sc:operations-v040-ready'\)\)/);
+  assert.match(css, /Operations UI 0\.40/);
 });
 
-test('Operations uses one primary display, one route index and native auxiliary tools', () => {
-  const html = read('index.html');
-  const ui = read('ui-v2-operations.js');
-  const css = cleanCss();
-  assert.match(html, /current-operation-panel/);
-  assert.match(html, /route-sequence-panel/);
-  ['moves', 'cargo', 'adjust', 'route'].forEach((tool) => assert.match(html, new RegExp(`data-ops-tool="${tool}"`)));
-  assert.doesNotMatch(html, /id="load-operations"|data-view="cargo"/);
-  assert.match(ui, /renderMoves/);
-  assert.match(ui, /renderCargo/);
-  assert.match(ui, /renderAdjust/);
-  assert.match(ui, /renderRoute/);
-  assert.match(ui, /locationContext\.placementPriority/);
-  assert.match(css, /operations-tools \{ grid-column: 1 \/ -1/);
-  assert.match(css, /ops-live-navigation/);
-  assert.match(css, /ops-action-bar/);
+test('the rebuilt cockpit has cargo, current step, timeline and direct controls', () => {
+  const ui = read('operations-rebuild-v040.js');
+  const css = read('operations-rebuild-v040.css');
+
+  ['ops40-cargo-panel', 'ops40-step-panel', 'ops40-timeline-panel', 'ops40-dock'].forEach((className) => assert.match(ui, new RegExp(className)));
+  ['add', 'edit', 'missions', 'order', 'cargo'].forEach((action) => assert.match(ui, new RegExp(`data-ops40-action="${action}"`)));
+  assert.match(ui, /operationalSteps\.completeCurrent/);
+  assert.match(ui, /operationalSteps\.previous/);
+  assert.match(ui, /autoCargo\.plan/);
+  assert.match(ui, /corrections\.changeOrder/);
+  assert.match(ui, /sessionPlanner\.plan/);
+  assert.doesNotMatch(ui, /ops-live-map|renderFocusedMap|gatewayNodes/);
+
+  assert.match(css, /ops40-main[\s\S]*grid-template-columns/);
+  assert.match(css, /ops40-cargo-panel[\s\S]*grid-template-rows/);
+  assert.match(css, /ops40-step-panel[\s\S]*grid-template-rows/);
+  assert.match(css, /ops40-timeline-panel[\s\S]*grid-template-rows/);
+  assert.match(css, /@media \(max-width: 1279px\), \(max-height: 679px\)/);
 });
 
-test('close and expand controls operate on the native panel only', () => {
-  const ui = read('ui-v2-operations.js');
-  const accessibility = read('ui-v2-accessibility.js');
-  const css = cleanCss();
-  assert.match(ui, /function closeTool/);
-  assert.match(ui, /toolPanel\.hidden = true/);
-  assert.match(ui, /toolPanel\.classList\.remove\('is-expanded'\)/);
-  assert.match(ui, /event\.key === 'Escape'/);
-  assert.match(accessibility, /toolPanel\.setAttribute\('role', expanded \? 'dialog' : 'region'\)/);
-  assert.match(accessibility, /lastToolTrigger/);
-  assert.match(css, /tool-panel\.is-expanded \{ position: fixed/);
-  assert.doesNotMatch(css, /has-utility-panel/);
+test('manual cargo editing is preserved through a narrow compatibility bridge', () => {
+  const app = read('app.js');
+  const loader = read('operations-rebuild-v040-loader.js');
+  const bridge = read('operations-v040-manual-grid-bridge.js');
+  const ui = read('operations-rebuild-v040.js');
+
+  assert.match(app, /cargo-manual-grid-view-v0301\.js/);
+  assert.match(app, /cargo-manual-grid-fit-v030\.js/);
+  assert.match(loader, /operations-v040-manual-grid-bridge\.js/);
+  assert.match(bridge, /ops-v028-cargo-panel/);
+  assert.match(bridge, /sc:open-cargo-grid-editor/);
+  assert.match(ui, /id="ops40-edit-grid"/);
+  assert.match(ui, /sc:open-cargo-grid-editor/);
 });
 
 test('navigation continues using the canonical SVG icon family', () => {
@@ -84,27 +76,23 @@ test('navigation continues using the canonical SVG icon family', () => {
   assert.match(shell, /SCCompanionMfdIcons/);
 });
 
-test('v0.25 keeps assisted intake and integrates live route execution', () => {
+test('assisted intake and route execution models remain connected', () => {
   const roadmap = require('../roadmap.js');
   const app = read('app.js');
-  const map = read('operational-ui-v025.js');
+  const ui = read('operations-rebuild-v040.js');
   const locations = read('locations.js');
+
   assert.equal(roadmap.currentVersion, '0.25');
-  assert.equal(roadmap.releases.find((release) => release.version === '0.22').status, 'done');
-  assert.equal(roadmap.releases.find((release) => release.version === '0.23').status, 'done');
-  assert.equal(roadmap.releases.find((release) => release.version === '0.24').status, 'done');
-  assert.equal(roadmap.releases.find((release) => release.version === '0.25').status, 'current');
-  assert.match(roadmap.releases.find((release) => release.version === '0.25').title, /Operational hauling cockpit/i);
   assert.match(app, /fleet-estimate-adapter\.js/);
   assert.match(app, /fleet-loadouts-view\.js/);
   assert.match(app, /game-log-intake-view\.js/);
   assert.match(app, /ocr-intake-view\.js/);
   assert.match(app, /route-session-planner\.js/);
-  assert.match(app, /operational-ui-v025\.js/);
+  assert.match(app, /route-operational-steps-v028\.js/);
   assert.match(app, /cargo-auto-layout-v0292\.js/);
-  assert.match(map, /ops-live-map/);
-  assert.match(map, /gatewayNodes/);
-  assert.match(map, /data-ops-action="missions"/);
+  assert.match(ui, /renderStep/);
+  assert.match(ui, /renderCargo/);
+  assert.match(ui, /renderTimeline/);
   assert.match(locations, /validateCatalog/);
   assert.match(locations, /getCoverageSummary/);
 });
