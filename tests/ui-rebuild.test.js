@@ -23,13 +23,35 @@ test('Plan compares sessions by operational outcomes', () => {
 
 test('Live Ops connects action, cargo, physical grid and route progress', () => {
   const ui = read('ui/app-shell.js');
+  const css = read('ui/app.css');
   assert.match(ui, /commandButtonLabel/);
   assert.match(ui, /cargoGridMarkup/);
+  assert.match(ui, /getCargoCellOccupancy/);
+  assert.match(ui, /renderScuUnits/);
   assert.match(ui, /currentKeys\.has\(key\)/);
   assert.match(ui, /operational\.completeCurrent/);
   assert.match(ui, /operational\.previous/);
   assert.match(ui, /Route orientation/);
   assert.match(ui, /Edit grid/);
+  assert.match(css, /aspect-ratio: 1 \/ 1/);
+  assert.match(css, /\.scu-unit\.is-used/);
+});
+
+test('Live Ops derives a compact accessible location status from reviewed context', () => {
+  const ui = read('ui/app-shell.js');
+  const css = read('ui/app.css');
+  assert.match(ui, /getRelevantLocationForStep/);
+  assert.match(ui, /getLocationServiceStatus/);
+  assert.match(ui, /renderLocationStatusStrip/);
+  assert.match(ui, /locationContext\.buildContext/);
+  ['risk', 'hangars', 'refuel', 'repair', 'food', 'medical', 'cargo-services', 'security'].forEach((service) => {
+    assert.match(ui, new RegExp(service));
+  });
+  assert.match(ui, /tabindex="0"/);
+  assert.match(ui, /aria-label=/);
+  assert.match(css, /\.location-status-item:focus-visible/);
+  assert.match(css, /\.location-status-item\.is-unknown/);
+  assert.match(css, /\.location-status-item\.is-unavailable/);
 });
 
 test('manual cargo editing preserves move, assign, reserve, empty, clear and reset', () => {

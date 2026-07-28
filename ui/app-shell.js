@@ -10,6 +10,7 @@
   const operational = root.SCCompanionOperationalSteps;
   const cargoStateModel = root.SCCompanionCargoState;
   const cargoLayout = root.SCCompanionAutoCargoLayout;
+  const locationContext = root.SCCompanionLocationContext;
   const app = document.querySelector('#app');
   if (!store || !locations || !validator || !missionModel || !sessionPlanner || !ships || !operational || !app) {
     const missing = [
@@ -420,6 +421,133 @@
     return step?.kind === 'action' ? (step.operations ?? []) : [];
   }
 
+  function getCargoCellOccupancy(cell, capacity = 3) {
+    return Math.min(
+      Math.max(0, Math.round(safeNumber(cell?.usedLayers))),
+      Math.max(1, safeNumber(cell?.capacityLayers, capacity))
+    );
+  }
+
+  function renderScuUnits(usedScu, capacity = 3) {
+    const used = Math.min(Math.max(0, usedScu), capacity);
+    return `<span class="scu-units" aria-hidden="true">${Array.from({ length: capacity }, (_, index) => (
+      `<i class="scu-unit${index < used ? ' is-used' : ''}"></i>`
+    )).join('')}</span>`;
+  }
+
+  const STATUS_ICONS = Object.freeze({
+    danger: '<path d="M12 3 2.8 20h18.4L12 3Z"/><path d="M12 8v5m0 3.5v.5"/>',
+    hangar: '<path d="M3 20V8l9-5 9 5v12"/><path d="M7 20v-8h10v8M9 15h6"/>',
+    fuel: '<path d="M5 21V4h10v17M5 9h10M8 6h4"/><path d="M15 7h2l2 3v7a2 2 0 0 0 2 2V9"/>',
+    repair: '<path d="m14.5 6.5 3-3a5 5 0 0 1-6 6L5 16l3 3 6.5-6.5a5 5 0 0 1 6-6l-3 3-3-3Z"/>',
+    food: '<path d="M7 3v7m-3-7v5a3 3 0 0 0 6 0V3M7 11v10M16 3v18M16 3c3 2 4 5 4 8h-4"/>',
+    medical: '<path d="M9 3h6v6h6v6h-6v6H9v-6H3V9h6V3Z"/>',
+    cargo: '<path d="m4 7 8-4 8 4-8 4-8-4Z"/><path d="M4 7v10l8 4 8-4V7M12 11v10"/>',
+    security: '<path d="M12 3 4.5 6v5c0 5 3 8 7.5 10 4.5-2 7.5-5 7.5-10V6L12 3Z"/><path d="m9 12 2 2 4-5"/>',
+    unknown: '<circle cx="12" cy="12" r="9"/><path d="M9.8 9a2.4 2.4 0 1 1 3.8 2c-1 .7-1.6 1.1-1.6 2.5M12 17h.01"/>'
+  });
+
+  function statusIcon(name) {
+    return `<svg class="status-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${STATUS_ICONS[name] ?? STATUS_ICONS.unknown}</svg>`;
+  }
+
+  function normalizeServiceStatus(status) {
+    if (status === 'available') return 'available';
+    if (['limited', 'local-transfer', 'unregulated'].includes(status)) return 'limited';
+    if (status === 'not-available') return 'unavailable';
+    return 'unknown';
+  }
+
+  function getRelevantLocationForStep(step, route, state) {
+    const reference = step?.kind === 'action' ? step.location : step?.to;
+    const fallbackId = route?.stops?.at(-1)?.locationId ?? state?.routeStartLocationId ?? null;
+    const id = reference?.id ?? (!step ? fallbackId : null);
+    if (!id) return null;
+    return locations.getLocation(id) ?? {
+      id,
+      name: reference?.shortLabel ?? reference?.label ?? String(id)
+    };
+  }
+
+  function getLocationServiceStatus(locationId, onboardScu = 0) {
+    if (!locationId || !locationContext) return null;
+    const context = locationContext.buildContext(locationId, { onboardScu });
+    const services = new Map((context.services ?? []).map((service) => [service.id, service]));
+    const service = (sourceId, label, icon, id = sourceId) => {
+      const record = services.get(sourceId);
+      return {
+        id,
+        label,
+        icon,
+        status: normalizeServiceStatus(record?.status),
+        detail: record?.detail ?? `${label} availability unknown`
+      };
+    };
+    const cargoRank = { available: 4, limited: 3, unavailable: 2, unknown: 1 };
+    const cargoRecord = [services.get('cargo-center'), services.get('commodity-trade')]
+      .filter(Boolean)
+      .map((record) => ({ ...record, normalized: normalizeServiceStatus(record.status) }))
+      .sort((left, right) => cargoRank[right.normalized] - cargoRank[left.normalized])[0];
+    const risk = context.risk ?? {
+      level: 'unknown',
+      label: 'Risk unknown',
+      armistice: 'Unknown',
+      jurisdiction: 'Unknown'
+    };
+    const securityKnown = risk.armistice && String(risk.armistice).toLowerCase() !== 'unknown';
+    const securityStatus = !securityKnown
+      ? 'unknown'
+      : ['low', 'guarded'].includes(risk.level) ? 'available' : 'limited';
+    return {
+      locationId,
+      label: context.label,
+      risk: {
+        id: 'risk',
+        label: `${String(risk.level ?? 'unknown').toUpperCase()} RISK`,
+        icon: 'danger',
+        status: risk.level ?? 'unknown',
+        detail: `${risk.label ?? 'Risk unknown'}. ${risk.jurisdiction ?? 'Jurisdiction unknown'}.`
+      },
+      services: [
+        service('hangars', 'Hangar / pad', 'hangar'),
+        service('landing-services', 'Refuel', 'fuel', 'refuel'),
+        service('landing-services', 'Repair', 'repair', 'repair'),
+        service('food', 'Food', 'food'),
+        service('medical', 'Medical', 'medical'),
+        {
+          id: 'cargo-services',
+          label: 'Cargo',
+          icon: 'cargo',
+          status: cargoRecord?.normalized ?? 'unknown',
+          detail: cargoRecord?.detail ?? 'Cargo service availability unknown'
+        },
+        {
+          id: 'security',
+          label: 'Security',
+          icon: 'security',
+          status: securityStatus,
+          detail: securityKnown
+            ? `${risk.armistice}. ${risk.jurisdiction ?? ''}`.trim()
+            : 'Armistice and security status unknown'
+        }
+      ]
+    };
+  }
+
+  function renderLocationStatusStrip(status) {
+    if (!status) return '';
+    const riskTone = ['high', 'extreme'].includes(status.risk.status)
+      ? 'danger'
+      : ['elevated', 'guarded'].includes(status.risk.status)
+        ? 'limited'
+        : status.risk.status === 'unknown' ? 'unknown' : 'available';
+    const item = (entry, tone = entry.status) => {
+      const accessible = `${entry.label}: ${tone}. ${entry.detail}`;
+      return `<span class="location-status-item is-${escapeHtml(tone)}" tabindex="0" role="img" data-service="${escapeHtml(entry.id)}" data-status="${escapeHtml(tone)}" data-tooltip="${escapeHtml(accessible)}" aria-label="${escapeHtml(accessible)}">${statusIcon(entry.icon)}<span>${escapeHtml(entry.label)}</span><i class="status-mark" aria-hidden="true"></i></span>`;
+    };
+    return `<div class="location-status-strip" role="group" data-location-id="${escapeHtml(status.locationId)}" aria-label="Location services for ${escapeHtml(status.label)}">${item(status.risk, riskTone)}${status.services.map((entry) => item(entry)).join('')}</div>`;
+  }
+
   function cargoGridMarkup(layout, currentStep, editor = false) {
     const model = selectedModel();
     const geometry = layout?.geometry ?? model.snapGrid ?? { rows: 6, columns: 4 };
@@ -439,15 +567,25 @@
         : `destination:${operation.destinationLocationId ?? operation.locationId}`
     )));
     const sorted = [...cells].sort((a, b) => b.row - a.row || a.column - b.column);
-    return `<div class="cargo-grid${editor ? ' cargo-editor-grid' : ''}" style="--grid-columns:${geometry.columns};--grid-rows:${geometry.rows}">
+    const moveTypes = new Set(stepMoves(currentStep).map((operation) => (
+      operation.type === 'delivery' ? 'delivery' : 'pickup'
+    )));
+    const currentMove = moveTypes.size === 1 ? [...moveTypes][0] : moveTypes.size ? 'mixed' : '';
+    return `<div class="cargo-grid${editor ? ' cargo-editor-grid' : ''}${currentMove ? ` is-${currentMove}` : ''}" style="--grid-columns:${geometry.columns};--grid-rows:${geometry.rows}">
       ${sorted.map((cell) => {
         const key = String(cell.groupKey ?? '');
         const group = groups.find((item) => String(item.key) === key);
         const current = currentKeys.has(key);
         const reserved = Boolean(cell.reserved);
-        const empty = Boolean(cell.manualEmpty || cell.empty);
+        const keepEmpty = Boolean(cell.manualEmpty || cell.forcedEmpty || cell.buffer);
+        const manual = Boolean(cell.manual);
+        const occupancy = getCargoCellOccupancy(cell, geometry.layers ?? 3);
         const coordinate = cell.coordinate ?? cell.label ?? cell.id;
-        return `<button type="button" class="cargo-cell${key ? ' is-filled' : ''}${current ? ' is-current' : ''}${reserved ? ' is-reserved' : ''}${empty ? ' is-empty' : ''}" data-cargo-cell="${escapeHtml(cell.id)}" data-group="${escapeHtml(key)}" data-layers="${cell.usedLayers ? `${cell.usedLayers}×` : ''}" ${editor && key ? 'draggable="true"' : ''} style="--group-color:${groupColor.get(key) ?? '#8f948e'}" title="${escapeHtml(group?.label ?? (reserved ? 'Reserved cell' : empty ? 'Keep empty' : 'Free cell'))}">${escapeHtml(String(coordinate).replace(':', '·'))}</button>`;
+        const stateLabel = reserved
+          ? 'Reserved'
+          : keepEmpty ? 'Keep empty' : key ? `${occupancy} of 3 SCU occupied` : 'Free';
+        const detail = group?.label ? `${group.label}, ${stateLabel}` : stateLabel;
+        return `<button type="button" class="cargo-cell${key ? ' is-filled' : ''}${current ? ' is-current' : ''}${reserved ? ' is-reserved' : ''}${keepEmpty ? ' is-keep-empty' : ''}${manual ? ' is-manual' : ''}" data-cargo-cell="${escapeHtml(cell.id)}" data-group="${escapeHtml(key)}" data-occupancy="${occupancy}" aria-label="${escapeHtml(`${coordinate}: ${detail}`)}" ${editor && key ? 'draggable="true"' : ''} style="--group-color:${groupColor.get(key) ?? '#8f948e'}" title="${escapeHtml(detail)}"><span class="cargo-coordinate">${escapeHtml(String(coordinate).replace(':', '·'))}</span>${reserved || keepEmpty ? `<span class="cargo-cell-state">${reserved ? 'Reserved' : 'Keep empty'}</span>` : renderScuUnits(occupancy, geometry.layers ?? 3)}${key ? `<span class="cargo-quantity">${occupancy}/3</span>` : ''}${manual ? '<span class="manual-mark" aria-hidden="true">M</span>' : ''}</button>`;
       }).join('')}
     </div>
     <div class="ramp-marker">RAMP / ACCESS · ROW A</div>
@@ -459,8 +597,12 @@
     if (!state.route) return `<main class="workspace live-workspace">${workspaceHeader('Execution workspace', 'Live Ops', 'Action-first guidance for the active hauling session.')}
       <section class="empty-state"><div class="empty-symbol">▶</div><h2>No active session</h2><p>${state.missions?.length ? 'Your contracts are ready. Build or select a plan to begin operations.' : 'Acquire contracts, verify the cargo flow, and choose a session to begin.'}</p><button class="button button-primary" type="button" data-nav="${state.missions?.length ? 'plan' : 'contracts'}">${state.missions?.length ? 'Open Plan' : 'Add Contracts'}</button></section></main>`;
     const prog = progress(state);
-    if (prog?.complete) return `<main class="workspace live-workspace">${workspaceHeader('Execution workspace', 'Session complete', 'All operational steps in this session are complete.')}
-      <section class="empty-state"><div class="empty-symbol success">✓</div><h2>Cargo delivered</h2><p>${state.route.missions?.length ?? state.missions.length} missions complete · ${formatScu(state.route.totalCargoScu)} planned cargo handled.</p><button class="button button-primary" type="button" data-nav="plan">Return to Plan</button></section></main>`;
+    if (prog?.complete) {
+      const finalLocation = getRelevantLocationForStep(null, state.route, state);
+      const finalStatus = finalLocation ? getLocationServiceStatus(finalLocation.id, 0) : null;
+      return `<main class="workspace live-workspace">${workspaceHeader('Execution workspace', 'Session complete', 'All operational steps in this session are complete.')}
+        <section class="empty-state"><div class="empty-symbol success">✓</div><h2>Cargo delivered</h2><p>${state.route.missions?.length ?? state.missions.length} missions complete · ${formatScu(state.route.totalCargoScu)} planned cargo handled.</p>${renderLocationStatusStrip(finalStatus)}<button class="button button-primary" type="button" data-nav="plan">Return to Plan</button></section></main>`;
+    }
     const step = prog.currentStep;
     const next = prog.nextStep;
     const isAction = step?.kind === 'action';
@@ -470,6 +612,9 @@
     const onboard = cargo?.totals?.onboardScu ?? layout?.usedScu ?? 0;
     const free = Math.max(0, capacity - onboard);
     const moves = stepMoves(step);
+    const relevantLocation = getRelevantLocationForStep(step, state.route, state);
+    const locationStatus = relevantLocation ? getLocationServiceStatus(relevantLocation.id, onboard) : null;
+    const isNavigationFocus = ['gateway-approach', 'jump'].includes(step?.kind);
     return `<main class="workspace live-workspace">
       <div class="mission-bar">
         <div><small>Active session</small><strong>${escapeHtml(activeSession(state)?.title ?? 'Full route')}</strong></div>
@@ -484,11 +629,13 @@
             <span class="command-kicker">${escapeHtml(kindLabel(step.kind))} · Step ${prog.currentIndex + 1}</span>
             <h1>${escapeHtml(step.title ?? (isAction ? 'Handle cargo' : `Proceed to ${stepDestination(step)}`))}</h1>
             <p class="nav-target">NAV TARGET · ${escapeHtml(stepNavTarget(step))}</p>
-            ${moves.length ? `<div class="move-list">${moves.map((op) => `<article class="cargo-move"><span class="tag ${op.type === 'delivery' ? 'tag-ready' : 'tag-active'}">${operationVerb(op.type)}</span><span><strong>${escapeHtml(op.commodity)}</strong><small>${escapeHtml(op.missionTitle)}${op.pickupLocationLabel ? ` · from ${escapeHtml(op.pickupLocationLabel)}` : ''}</small></span><strong>${formatScu(op.scu)}</strong></article>`).join('')}</div>` : `<p class="muted" style="margin-top:22px">${escapeHtml(step.from?.label ? `Depart ${step.from.label} and follow the navigation target.` : 'Follow the in-game navigation target to continue.')}</p>`}
+            ${renderLocationStatusStrip(locationStatus)}
+            <p class="command-instruction">${escapeHtml(moves.length ? 'Handle the listed cargo at this stop, then confirm the operation.' : step.from?.label ? `Depart ${step.from.label} and follow the navigation target.` : 'Follow the in-game navigation target to continue.')}</p>
+            ${moves.length ? `<div class="move-list">${moves.map((op) => `<article class="cargo-move"><span class="tag ${op.type === 'delivery' ? 'tag-ready' : 'tag-active'}">${operationVerb(op.type)}</span><span><strong>${escapeHtml(op.commodity)}</strong><small>${escapeHtml(op.missionTitle)}${op.pickupLocationLabel ? ` · from ${escapeHtml(op.pickupLocationLabel)}` : ''}</small></span><strong>${formatScu(op.scu)}</strong></article>`).join('')}</div>` : ''}
           </div>
           <div class="next-preview"><span class="eyebrow">Next meaningful step</span><br><b>${escapeHtml(next ? `${kindLabel(next.kind)} · ${stepDestination(next)}` : 'Complete session')}</b></div>
         </section>
-        <section class="panel cargo-panel">
+        <section class="panel cargo-panel${isNavigationFocus ? ' is-navigation-muted' : ''}">
           <div class="panel-heading"><strong>${escapeHtml(selectedModel(state).manufacturer)} ${escapeHtml(selectedModel(state).model)} · Cargo hold</strong><div><button class="button" type="button" data-action="toggle-grouping">${state.cargoLayoutGroupingMode === 'mission' ? 'By mission' : 'By destination'}</button> <button class="button" type="button" data-open-drawer="cargo">Edit grid</button></div></div>
           <div class="cargo-metrics"><div><strong>${formatScu(onboard)}</strong><span>Onboard</span></div><div><strong>${formatScu(free)}</strong><span>Free</span></div><div><strong>${formatScu(layout?.reservedScu ?? 0)}</strong><span>Reserved</span></div></div>
           <div class="cargo-hold">${layout?.error ? `<p class="danger">Layout impossible: ${escapeHtml(layout.error)}</p>` : cargoGridMarkup(layout, step)}</div>
@@ -946,6 +1093,9 @@
     },
     setIntelLocation(id) { ui.intelLocationId = id; ui.page = 'intel'; ui.intelTab = 'locations'; render(); },
     openCargoEditor() { ui.page = 'live'; ui.drawer = 'cargo'; render(); },
+    getCargoCellOccupancy,
+    getRelevantLocationForStep,
+    getLocationServiceStatus,
     state: ui
   });
 }(window));

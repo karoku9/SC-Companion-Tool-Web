@@ -21,13 +21,12 @@ page.on('pageerror', (error) => consoleErrors.push(error.message));
 
 async function ready(route = 'live', clear = false) {
   await page.goto(`${baseUrl}/#${route}`, { waitUntil: 'domcontentloaded' });
-  await page.waitForFunction(() => window.SCCompanionUI && window.SCCompanionSession);
   if (clear) {
     await page.evaluate(() => localStorage.removeItem('sc-companion-session-v1'));
     await page.reload({ waitUntil: 'domcontentloaded' });
-    await page.waitForFunction(() => window.SCCompanionUI && window.SCCompanionSession);
-    if (route !== 'live') await page.locator(`.primary-nav [data-nav="${route}"]`).click();
   }
+  await page.waitForFunction(() => window.SCCompanionUI && window.SCCompanionSession);
+  if (clear && route !== 'live') await page.locator(`.primary-nav [data-nav="${route}"]`).click();
 }
 
 async function capture(name, options = {}) {
@@ -44,6 +43,45 @@ async function capture(name, options = {}) {
     assert.ok(metrics.minVisibleButtonHeight >= 42, `${name} has an undersized touch target`);
   }
   await page.screenshot({ path: path.join(output, `${name}.png`), fullPage: options.fullPage ?? false });
+}
+
+async function assertCargoSquaresAndUnits(expectedOccupancies = []) {
+  const gridSelector = await page.locator('.cargo-editor-grid:visible').count()
+    ? '.cargo-editor-grid:visible'
+    : '.cargo-panel .cargo-grid:visible';
+  const cells = page.locator(`${gridSelector} .cargo-cell`);
+  assert.equal(await cells.count(), 24, 'Corsair cargo grid must expose 24 floor coordinates');
+  const ratios = await cells.evaluateAll((items) => items.map((item) => {
+    const bounds = item.getBoundingClientRect();
+    return bounds.width / bounds.height;
+  }));
+  assert.ok(ratios.every((ratio) => Math.abs(1 - ratio) < 0.04), 'every cargo coordinate must be square');
+  for (const occupancy of expectedOccupancies) {
+    const occupied = page.locator(`${gridSelector} .cargo-cell[data-occupancy="${occupancy}"]`).first();
+    assert.ok(await occupied.count(), `${occupancy} SCU coordinate is missing`);
+    assert.equal(
+      await occupied.locator('.scu-unit.is-used').count(),
+      occupancy,
+      `${occupancy} SCU must render ${occupancy} distinct units`
+    );
+  }
+  const overflow = await page.locator(gridSelector).evaluate((grid) => {
+    const bounds = grid.getBoundingClientRect();
+    return bounds.right > document.documentElement.clientWidth + 1 || grid.scrollWidth > grid.clientWidth + 1;
+  });
+  assert.equal(overflow, false, 'cargo grid must not overflow horizontally');
+}
+
+async function assertLocationStrip() {
+  const strip = page.locator('.command-panel .location-status-strip');
+  assert.equal(await strip.count(), 1, 'active step must expose one location status strip');
+  for (const service of ['risk', 'hangars', 'refuel', 'repair', 'food', 'medical', 'cargo-services', 'security']) {
+    const item = strip.locator(`[data-service="${service}"]`);
+    assert.equal(await item.count(), 1, `${service} status is missing`);
+    assert.ok(await item.getAttribute('aria-label'), `${service} needs an aria-label`);
+    assert.ok(await item.getAttribute('data-tooltip'), `${service} needs a keyboard tooltip`);
+  }
+  return strip;
 }
 
 async function acquire(text) {
@@ -72,6 +110,7 @@ deliver baijini 2scu etam 1scu neon`;
 
 await ready('live', true);
 assert.match(await page.locator('main').innerText(), /No active session/i);
+assert.equal(await page.locator('.location-status-strip').count(), 0);
 await capture('live-empty-1600x900');
 
 await page.locator('.primary-nav [data-nav="contracts"]').click();
@@ -89,6 +128,45 @@ assert.match(await page.locator('main').innerText(), /Need attention/i);
 assert.ok(await page.locator('.issue-list').count());
 await capture('contracts-review-errors-1600x900');
 
+const occupancySample = `One SCU
+collect teasa 1scu laranite
+deliver area18 1scu laranite
+
+Two SCU
+collect teasa 2scu etam
+deliver baijini 2scu etam
+
+Three SCU
+collect teasa 3scu titanium
+deliver port tressler 3scu titanium`;
+await ready('contracts', true);
+await buildFromText(occupancySample, 180);
+await page.locator('[data-start-session="0"]').click();
+await assertCargoSquaresAndUnits([1, 2, 3]);
+assert.ok(await page.locator('.cargo-cell.is-current').count() > 0, 'pickup cells must be highlighted');
+assert.equal(await page.evaluate(() => window.SCCompanionSession.getState().cargoLayoutGroupingMode ?? 'destination'), 'destination');
+await page.locator('[data-action="toggle-grouping"]').click();
+assert.equal(await page.evaluate(() => window.SCCompanionSession.getState().cargoLayoutGroupingMode), 'mission');
+assert.ok(await page.locator('.cargo-cell.is-current').count() > 0, 'mission grouping must preserve pickup highlight');
+await page.locator('[data-action="toggle-grouping"]').click();
+await capture('live-cargo-units-1-2-3-1700x900', { viewport: { width: 1700, height: 900 } });
+
+await page.locator('[data-open-drawer="cargo"]').click();
+await page.locator('[data-editor-mode="reserve"]').click();
+await page.locator('.cargo-editor-grid .cargo-cell:not(.is-filled):not(.is-reserved):not(.is-keep-empty)').first().click();
+await page.locator('[data-editor-mode="empty"]').click();
+await page.locator('.cargo-editor-grid .cargo-cell:not(.is-filled):not(.is-reserved):not(.is-keep-empty)').first().click();
+assert.equal(await page.locator('.cargo-editor-grid .cargo-cell.is-reserved').count(), 1);
+assert.equal(await page.locator('.cargo-editor-grid .cargo-cell.is-keep-empty').count(), 1);
+await page.reload({ waitUntil: 'domcontentloaded' });
+await page.waitForFunction(() => window.SCCompanionUI && window.SCCompanionSession);
+await page.locator('[data-open-drawer="cargo"]').click();
+assert.equal(await page.locator('.cargo-editor-grid .cargo-cell.is-reserved').count(), 1, 'reserved cell must persist after reload');
+assert.equal(await page.locator('.cargo-editor-grid .cargo-cell.is-keep-empty').count(), 1, 'keep-empty cell must persist after reload');
+await assertCargoSquaresAndUnits([1, 2, 3]);
+await capture('cargo-editor-overrides-1664x800', { viewport: { width: 1664, height: 800 } });
+await page.locator('[data-close-drawer]').last().click();
+
 await ready('contracts', true);
 await acquire(sample);
 assert.match(await page.locator('main').innerText(), /All mission objectives are valid/i);
@@ -104,6 +182,10 @@ await capture('plan-multiple-sessions-1600x900');
 await page.locator('[data-start-session="0"]').click();
 assert.match(await page.locator('.command-panel').innerText(), /Pick up/i);
 assert.ok(await page.locator('.cargo-cell.is-current').count() > 0);
+await assertCargoSquaresAndUnits([2]);
+const pickupStrip = await assertLocationStrip();
+assert.ok(await pickupStrip.locator('[data-service="risk"]').getAttribute('data-status'));
+const pickupLocationId = await pickupStrip.getAttribute('data-location-id');
 await capture('live-pickup-1600x900');
 await capture('live-cargo-partial-1700x900', { viewport: { width: 1700, height: 900 } });
 
@@ -120,15 +202,30 @@ await page.locator('[data-close-drawer]').last().click();
 
 await page.locator('[data-action="complete-step"]').click();
 assert.match(await page.locator('.command-panel').innerText(), /Travel/i);
+const travelStrip = await assertLocationStrip();
+assert.notEqual(await travelStrip.getAttribute('data-location-id'), pickupLocationId, 'travel must show destination context');
 await capture('live-travel-1366x768', { viewport: { width: 1366, height: 768 } });
 const shortMetrics = await page.evaluate(() => ({
   height: document.documentElement.scrollHeight,
-  viewport: document.documentElement.clientHeight
+  viewport: document.documentElement.clientHeight,
+  offenders: [...document.querySelectorAll('body *')]
+    .filter((element) => element.offsetParent !== null)
+    .map((element) => ({ tag: element.tagName, className: element.className?.baseVal ?? element.className, bottom: element.getBoundingClientRect().bottom }))
+    .sort((left, right) => right.bottom - left.bottom)
+    .slice(0, 4),
+  boxes: Object.fromEntries(['.mission-bar', '.live-grid', '.route-rail', '.workspace'].map((selector) => {
+    const bounds = document.querySelector(selector).getBoundingClientRect();
+    return [selector, { top: bounds.top, height: bounds.height, bottom: bounds.bottom }];
+  }))
 }));
-assert.ok(shortMetrics.height <= shortMetrics.viewport + 1, 'common travel state must fit 1366×768');
+assert.ok(
+  shortMetrics.height <= shortMetrics.viewport + 1,
+  `common travel state must fit 1366×768 (${shortMetrics.height}px document / ${shortMetrics.viewport}px viewport; ${JSON.stringify(shortMetrics.boxes)}; ${JSON.stringify(shortMetrics.offenders)})`
+);
 
 await page.locator('[data-action="complete-step"]').click();
 assert.match(await page.locator('.command-panel').innerText(), /cargo operation/i);
+assert.ok(await page.locator('.cargo-grid.is-delivery .cargo-cell.is-current').count() > 0, 'delivery cells must be highlighted');
 await capture('live-delivery-mixed-1664x800', { viewport: { width: 1664, height: 800 } });
 
 await capture('live-tablet-768x1024', { viewport: { width: 768, height: 1024 } });
@@ -184,11 +281,53 @@ async function showOperationalKind(kind, screenshotName) {
     const state = window.SCCompanionSession.getState();
     return window.SCCompanionOperationalSteps.derive(state.route, state).currentStep?.kind === requestedKind;
   }, kind);
+  const expectedLocationId = await page.evaluate(() => {
+    const state = window.SCCompanionSession.getState();
+    return window.SCCompanionOperationalSteps.derive(state.route, state).currentStep?.to?.id;
+  });
+  assert.equal(await page.locator('.command-panel .location-status-strip').getAttribute('data-location-id'), expectedLocationId);
   await capture(screenshotName, { viewport: { width: 1600, height: 900 } });
 }
 
 await showOperationalKind('gateway-approach', 'live-gateway-approach-1600x900');
 await showOperationalKind('jump', 'live-jump-1600x900');
+
+await page.evaluate(() => {
+  const state = window.SCCompanionSession.getState();
+  const progress = window.SCCompanionOperationalSteps.derive(state.route, state);
+  const index = progress.steps.findIndex((step) => step.kind === 'action' && step.location?.id.includes('checkmate'));
+  const prior = progress.steps.slice(0, index);
+  const actions = prior.filter((step) => step.kind === 'action');
+  window.SCCompanionSession.patch({
+    operationalRouteKey: progress.routeKey,
+    completedOperationalStepIds: prior.map((step) => step.id),
+    completedStopIds: actions.map((step) => step.stopId),
+    currentStopIndex: actions.length
+  });
+});
+await page.waitForFunction(() => document.querySelector('.location-status-item.is-danger'));
+assert.match(await page.locator('[data-service="risk"]').innerText(), /HIGH|EXTREME/i);
+await capture('live-high-risk-services-1600x900', { viewport: { width: 1600, height: 900 } });
+
+await page.evaluate(() => {
+  const state = window.SCCompanionSession.getState();
+  const route = structuredClone(state.route);
+  route.stops[0].locationId = 'custom-unknown-facility';
+  route.stops[0].locationLabel = 'Unknown facility';
+  window.SCCompanionSession.patch({
+    route,
+    operationalRouteKey: null,
+    completedOperationalStepIds: [],
+    completedStopIds: [],
+    currentStopIndex: 0
+  });
+});
+await page.waitForFunction(() => document.querySelector('.location-status-strip')?.dataset.locationId === 'custom-unknown-facility');
+const unknownItems = page.locator('.command-panel .location-status-item:not([data-service="risk"])');
+assert.ok(await unknownItems.count() > 0);
+assert.equal(await unknownItems.evaluateAll((items) => items.every((item) => item.dataset.status === 'unknown')), true);
+assert.equal(await page.locator('.command-panel .location-status-item.is-unavailable').count(), 0, 'unknown must not be classified as unavailable');
+await capture('live-unknown-services-1600x900', { viewport: { width: 1600, height: 900 } });
 
 await page.locator('.primary-nav [data-nav="fleet"]').click();
 assert.match(await page.locator('main').innerText(), /Active configuration/i);
