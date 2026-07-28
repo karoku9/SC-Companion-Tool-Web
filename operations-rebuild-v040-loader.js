@@ -12,5 +12,6 @@ function appendStyle(path, marker) {
 appendStyle('operations-rebuild-v040.css', 'data-operations-v040-style');
 appendStyle('operations-rebuild-v040-compat.css', 'data-operations-v040-compat-style');
 
+await import('./cargo-grid-geometry-compat-v040.js?v=0.40.0');
 await import('./operations-rebuild-v040.js?v=0.40.0');
 await import('./operations-v040-manual-grid-bridge.js?v=0.40.0');
