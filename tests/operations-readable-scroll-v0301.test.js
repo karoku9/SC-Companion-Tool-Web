@@ -11,6 +11,7 @@ const read = (name) => fs.readFileSync(path.join(root, name), 'utf8');
 test('Operations fits supported desktop viewports while cargo remains primary', () => {
   const cargoLoader = read('operations-cargo-primary-v0302.js');
   const adaptiveCss = read('operations-adaptive-fit-v0303.css');
+  const adaptiveReadableCss = read('operations-adaptive-fit-v0303-readable.css');
   const adaptiveLoader = read('operations-adaptive-fit-v0303.js');
   const app = read('app.js');
   const index = read('index.html');
@@ -19,12 +20,13 @@ test('Operations fits supported desktop viewports while cargo remains primary', 
   assert.doesNotThrow(() => new Function(adaptiveLoader));
   assert.match(cargoLoader, /primary\.insertBefore\(cargoPanel, currentPanel\)/);
   assert.match(cargoLoader, /mapPanel\.remove\(\)/);
-  assert.match(adaptiveLoader, /operations-adaptive-fit-v0303\.css\?v=\$\{STYLE_VERSION\}/);
+  assert.match(adaptiveLoader, /appendStyle\('operations-adaptive-fit-v0303\.css'/);
+  assert.match(adaptiveLoader, /appendStyle\('operations-adaptive-fit-v0303-readable\.css'/);
   assert.match(adaptiveLoader, /if \(width < 1280 \|\| height < 680\) return 'flow'/);
   assert.match(adaptiveLoader, /if \(width < 1450 \|\| height < 760\) return 'tight'/);
   assert.match(adaptiveLoader, /if \(height < 860\) return 'compact'/);
   assert.match(app, /operations-cargo-primary-v0302\.js'[\s\S]*operations-adaptive-fit-v0303\.js'[\s\S]*ship-selector-sync\.js'/);
-  assert.match(index, /app\.js\?v=0\.30\.3/);
+  assert.match(index, /app\.js\?v=0\.30\.2/);
 
   assert.match(adaptiveCss, /grid-template-rows:\s*\n\s*var\(--ops-command-height\)\s*\n\s*minmax\(0, 1fr\)\s*\n\s*var\(--ops-timeline-height\)\s*\n\s*var\(--ops-tools-height\)/);
   assert.match(adaptiveCss, /height:\s*100dvh/);
@@ -33,4 +35,5 @@ test('Operations fits supported desktop viewports while cargo remains primary', 
   assert.match(adaptiveCss, /current-operation-panel[\s\S]*grid-template-rows:\s*var\(--ops-panel-header-height\) minmax\(0, 1fr\) var\(--ops-controls-height\)/);
   assert.match(adaptiveCss, /ops-v027-timeline-panel[\s\S]*height:\s*var\(--ops-timeline-height\)/);
   assert.match(adaptiveCss, /data-ops-density="flow"/);
+  assert.match(adaptiveReadableCss, /font-size:\s*11\.5px/);
 });
