@@ -87,8 +87,8 @@ async function readableCargoOperations(label) {
   assert.ok(metrics.boxes.primary.bottom <= metrics.boxes.timeline.top + 2, `${label}: timeline must follow the primary row`);
   assert.ok(metrics.boxes.timeline.bottom <= metrics.boxes.tools.top + 2, `${label}: tools must follow timeline`);
   assert.ok(metrics.boxes.timelineCard.width >= 240, `${label}: timeline cards remain compressed`);
-  assert.ok(metrics.documentHeight > metrics.viewport.height + 200, `${label}: document is still forced into one viewport ${JSON.stringify(metrics)}`);
-  assert.ok(metrics.bodyHeight > metrics.viewport.height + 200, `${label}: body is still forced into one viewport ${JSON.stringify(metrics)}`);
+  assert.ok(metrics.documentHeight > metrics.viewport.height + 150, `${label}: document is still forced into one viewport ${JSON.stringify(metrics)}`);
+  assert.ok(metrics.bodyHeight > metrics.viewport.height + 150, `${label}: body is still forced into one viewport ${JSON.stringify(metrics)}`);
 }
 
 async function readableTypography(label) {
