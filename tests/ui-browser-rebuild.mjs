@@ -90,6 +90,32 @@ async function assertLocationStrip() {
   return strip;
 }
 
+async function assertLiveDensity(label, maximumPanelHeight) {
+  const geometry = await page.evaluate(() => {
+    const bounds = (selector) => {
+      const box = document.querySelector(selector).getBoundingClientRect();
+      return { top: box.top, bottom: box.bottom, width: box.width, height: box.height };
+    };
+    const readableText = [...document.querySelectorAll('.command-panel *, .cargo-panel *, .route-rail *')]
+      .filter((element) => element.offsetParent !== null && [...element.childNodes].some((node) => node.nodeType === 3 && node.textContent.trim()))
+      .map((element) => ({ text: element.textContent.trim().slice(0, 50), size: Number.parseFloat(getComputedStyle(element).fontSize) }))
+      .filter((item) => item.text);
+    return {
+      command: bounds('.command-panel'),
+      cargo: bounds('.cargo-panel'),
+      route: bounds('.route-rail'),
+      execution: bounds('.execution-bar'),
+      smallestText: readableText.sort((left, right) => left.size - right.size)[0]
+    };
+  });
+  assert.ok(geometry.command.height <= maximumPanelHeight, `${label} primary panel is too tall: ${geometry.command.height}px`);
+  assert.ok(geometry.cargo.height <= maximumPanelHeight, `${label} cargo panel is too tall: ${geometry.cargo.height}px`);
+  assert.ok(geometry.route.height >= 92, `${label} route orientation lost useful height: ${JSON.stringify(geometry)}`);
+  assert.ok(geometry.route.bottom <= geometry.execution.top + 2, `${label} route orientation is obscured by the action bar: ${JSON.stringify(geometry)}`);
+  assert.ok(geometry.smallestText.size >= 11, `${label} contains text below 11px: ${JSON.stringify(geometry.smallestText)}`);
+  return geometry;
+}
+
 async function acquire(text) {
   await page.locator('.primary-nav [data-nav="contracts"]').click();
   await page.locator('#contract-text').fill(text);
@@ -245,6 +271,7 @@ assert.match(await page.locator('.command-panel').innerText(), /Travel context/i
 const travelStrip = await assertLocationStrip();
 assert.notEqual(await travelStrip.getAttribute('data-location-id'), pickupLocationId, 'travel must show destination context');
 await capture('live-travel-1366x768', { viewport: { width: 1366, height: 768 } });
+await assertLiveDensity('1366×768 travel', 470);
 const shortMetrics = await page.evaluate(() => ({
   height: document.documentElement.scrollHeight,
   viewport: document.documentElement.clientHeight,
@@ -267,6 +294,7 @@ await page.locator('[data-action="complete-step"]').click();
 assert.match(await page.locator('.command-panel').innerText(), /cargo operation/i);
 assert.ok(await page.locator('.cargo-grid.is-delivery .cargo-cell.is-current').count() > 0, 'delivery cells must be highlighted');
 await capture('live-delivery-mixed-1664x800', { viewport: { width: 1664, height: 800 } });
+await assertLiveDensity('1664×800 cargo operation', 450);
 
 await capture('live-tablet-768x1024', { viewport: { width: 768, height: 1024 } });
 await capture('live-mobile-390x844', { viewport: { width: 390, height: 844 } });
@@ -332,6 +360,7 @@ async function showOperationalKind(kind, screenshotName) {
   assert.equal(await page.locator('.command-panel .location-status-strip').getAttribute('data-location-id'), expectedLocationId);
   assert.match(await page.locator('.command-panel').innerText(), kind === 'jump' ? /Jump transit/i : /Gateway context/i);
   await capture(screenshotName, { viewport: { width: 1600, height: 900 } });
+  await assertLiveDensity(`1600×900 ${kind}`, 460);
 }
 
 await showOperationalKind('gateway-approach', 'live-gateway-approach-1600x900');

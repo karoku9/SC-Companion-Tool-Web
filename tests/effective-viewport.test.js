@@ -10,7 +10,10 @@ test('Live Ops fits short desktop viewports without scaling the document', () =>
   const css = read('ui/app.css');
   assert.match(css, /@media \(min-width: 821px\) and \(max-height: 820px\)/);
   assert.match(css, /\.workspace\.live-workspace/);
-  assert.match(css, /\.cargo-panel \.cargo-grid \{ width: min\(100%, 180px\)/);
+  assert.match(css, /\.cargo-panel \.cargo-grid \{ width: min\(100%, 200px\)/);
+  assert.match(css, /\.cargo-panel\.is-navigation-compact \.cargo-grid \{ width: min\(100%, 190px\)/);
+  assert.match(css, /\.command-panel, \.cargo-panel \{ min-height: 300px/);
+  assert.match(css, /\.route-step \{ min-height: 50px/);
   assert.match(css, /aspect-ratio: 1 \/ 1/);
   assert.match(css, /\.execution-bar[\s\S]*position: fixed/);
   assert.doesNotMatch(css, /transform:\s*scale|zoom\s*:/);
