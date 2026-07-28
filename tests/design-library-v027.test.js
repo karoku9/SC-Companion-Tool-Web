@@ -53,22 +53,15 @@ test('visual laboratory uses only local project runtimes', () => {
   assert.doesNotMatch(html, /https?:\/\//);
 });
 
-test('shared design-library foundations load before standalone Operations 0.40', () => {
-  const entry = read('ui-v2.css');
+test('approved industrial direction is consolidated into the active stylesheet', () => {
   const app = read('app.js');
-  const shell = read('product-shell.js');
-  const operations = read('operations-rebuild-v040.js');
-  const loader = read('operations-rebuild-v040-loader.js');
-
-  assert.ok(entry.indexOf('industrial-theme-v027.css') < entry.indexOf('ui-v2-shell.css'));
-  assert.ok(entry.indexOf('ui-v2-shell.css') < entry.indexOf('design-library-v027.css'));
-  assert.ok(entry.indexOf('design-library-v027.css') < entry.indexOf('design-library-app-v027.css'));
-  assert.doesNotMatch(entry, /operations-design-v027\.css|operations-flow-v028\.css|operations-single-screen/);
-  assert.ok(app.indexOf('mission-location-picker.js') < app.indexOf('operations-rebuild-v040-loader.js'));
-  assert.match(shell, /dataset\.theme = 'industrial'/);
-  assert.match(shell, /SC Companion/);
-  assert.match(loader, /operations-rebuild-v040\.css/);
-  assert.match(operations, /ops40-topbar/);
-  assert.match(operations, /ops40-cargo-panel/);
-  assert.match(operations, /ops40-timeline-panel/);
+  const css = read('ui/app.css');
+  assert.match(app, /ui\/app-shell\.js/);
+  assert.match(css, /--surface:/);
+  assert.match(css, /--amber:/);
+  assert.match(css, /--cyan:/);
+  assert.match(css, /--green:/);
+  assert.match(css, /--red:/);
+  assert.match(css, /\.command-panel/);
+  assert.doesNotMatch(app, /operations-rebuild-v040|ui-v2/);
 });

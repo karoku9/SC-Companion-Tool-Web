@@ -105,26 +105,16 @@ test('Replay protection rejects already processed exact log lines', () => {
   assert.equal(replay.events.length, 1);
 });
 
-test('Game.log UI uses explicit file access, stable incremental generations and existing mission review', () => {
-  const view = readProject('game-log-intake-view.js');
+test('Game.log UI keeps local file access and routes the draft through Contracts review', () => {
   const store = readProject('session-store.js');
-  const css = readProject('game-log-intake.css');
   const app = readProject('app.js');
-
-  assert.match(view, /showOpenFilePicker/);
-  assert.match(view, /file\.slice\(startOffset\)/);
-  assert.match(view, /previousSource\.offset/);
-  assert.match(view, /HEAD_PROBE_BYTES = 4096/);
-  assert.match(view, /stableHeadComparable/);
-  assert.match(view, /file\.size < previousSource\.offset \|\| headChanged/);
-  assert.match(view, /generationNumber/);
-  assert.match(view, /processedIds/);
-  assert.match(view, /rawLine/);
-  assert.match(view, /form\.requestSubmit\(\)/);
-  assert.match(view, /never replaces the active route automatically/);
+  const ui = readProject('ui/app-shell.js');
   assert.match(store, /gameLogImport/);
   assert.match(store, /normalizeGameLogImport/);
-  assert.match(css, /\.game-log-event\.is-complete/);
-  assert.match(app, /game-log-intake-correlation\.js/);
-  assert.match(app, /game-log-intake-view\.js/);
+  assert.match(app, /game-log-intake\.js/);
+  assert.match(ui, /Game\.log · Experimental/);
+  assert.match(ui, /file\.text\(\)/);
+  assert.match(ui, /parseLines/);
+  assert.match(ui, /buildDraft/);
+  assert.match(ui, /reviewContracts/);
 });

@@ -33,14 +33,14 @@ test('Win Shift S screenshots can enter OCR through paste and drag drop', () => 
   assert.match(access, /dataTransfer\?\.files/);
 });
 
-test('access layer is loaded after the assisted intake views and uses design tokens', () => {
+test('assisted sources are progressively disclosed inside the shared Contracts flow', () => {
   const app = read('app.js');
-  const entry = read('ui-v2.css');
-  const css = read('assisted-intake-access.css');
-  assert.ok(app.indexOf("import('./ocr-intake-view.js')") < app.indexOf("import('./assisted-intake-access.js')"));
-  assert.match(entry, /assisted-intake-access\.css/);
-  assert.match(css, /var\(--ds-/);
-  assert.doesNotMatch(css, /#[0-9a-f]{3,8}/i);
-  assert.match(css, /\.is-dragover/);
-  assert.match(css, /@media \(max-width: 560px\)/);
+  const ui = read('ui/app-shell.js');
+  assert.match(app, /ocr-intake\.js/);
+  assert.match(app, /game-log-intake\.js/);
+  assert.match(ui, /role="tablist" aria-label="Contract source"/);
+  assert.match(ui, /Screenshot \/ OCR/);
+  assert.match(ui, /Game\.log · Experimental/);
+  assert.match(ui, /type="file"/);
+  assert.match(ui, /reviewContracts/);
 });

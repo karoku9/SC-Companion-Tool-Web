@@ -148,25 +148,8 @@ jobs:
           node --check cargo-corrections-view.js
           node --check cargo-zone-editor-view.js
           node --check changelog-view.js
-          node --check ux-shell.js
-          node --check workspace-shell.js
-          node --check hangar-view.js
-          node --check starmap-view.js
-          node --check location-intel-view.js
-          node --check roadmap-view.js
-          node --check ui-v2.js
-          node --check ui-v2-operations.js
-          node --check ui-v2-shell.js
-          node --check ui-v2-accessibility.js
-          node --check tests/ui-browser-smoke.mjs
-          node --check tests/ui-browser-hardening.mjs
-          node --check tests/ui-mission-validation.mjs
-          node --check tests/ui-location-context.mjs
-          node --check tests/ui-fleet-loadouts.mjs
-          node --check tests/ui-starmap-ux.mjs
-          node --check tests/ui-ocr-intake.mjs
-          node --check tests/ui-assisted-intake-access.mjs
-          node --check tests/ui-cargo-manual-grid.mjs
+          node --check ui/app-shell.js
+          node --check tests/ui-browser-rebuild.mjs
       - name: Install browser smoke dependencies
         run: |
           npm install --no-save playwright@1.55.0
@@ -174,15 +157,7 @@ jobs:
       - name: Test interface in Chromium
         run: |
           python3 -m http.server 4173 >/tmp/sc-companion-http.log 2>&1 &
-          UI_BASE_URL=http://127.0.0.1:4173 node tests/ui-browser-smoke.mjs
-          UI_BASE_URL=http://127.0.0.1:4173 node tests/ui-mission-validation.mjs
-          UI_BASE_URL=http://127.0.0.1:4173 node tests/ui-location-context.mjs
-          UI_BASE_URL=http://127.0.0.1:4173 node tests/ui-fleet-loadouts.mjs
-          UI_BASE_URL=http://127.0.0.1:4173 node tests/ui-browser-hardening.mjs
-          UI_BASE_URL=http://127.0.0.1:4173 node tests/ui-starmap-ux.mjs
-          UI_BASE_URL=http://127.0.0.1:4173 node tests/ui-ocr-intake.mjs
-          UI_BASE_URL=http://127.0.0.1:4173 node tests/ui-assisted-intake-access.mjs
-          UI_BASE_URL=http://127.0.0.1:4173 node tests/ui-cargo-manual-grid.mjs
+          UI_BASE_URL=http://127.0.0.1:4173 node tests/ui-browser-rebuild.mjs
       - name: Upload interface screenshots
         if: always()
         uses: actions/upload-artifact@v4

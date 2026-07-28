@@ -1,227 +1,23 @@
 <!doctype html>
-<html lang="en" data-theme="drake" data-ui-generation="2">
+<html lang="en" data-theme="industrial">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="dark">
-  <meta name="theme-color" content="#070705">
-  <meta name="sc-companion-ui" content="0.40.0">
-  <title>SC Companion MFD</title>
+  <meta name="theme-color" content="#0b0d0d">
+  <meta name="sc-companion-ui" content="rebuild">
+  <title>SC Companion — Hauling Operations</title>
   <link rel="icon" href="companion-mark.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="design-system.css?v=0.29.2">
-  <link rel="stylesheet" href="ui-v2.css?v=0.29.2">
+  <link rel="stylesheet" href="ui/app.css?v=6">
 </head>
 <body>
-  <div class="app-frame">
-    <aside class="app-nav" aria-label="Primary navigation">
-      <header class="brand-panel">
-        <div class="brand-emblem" aria-hidden="true"><span>D</span></div>
-        <div class="brand-text">
-          <small>Drake Interplanetary</small>
-          <strong>Hauling MFD</strong>
-          <em>Unofficial fan software</em>
-        </div>
-        <button type="button" class="icon-button nav-toggle" id="sidebar-toggle" aria-label="Collapse navigation" aria-pressed="false">≡</button>
-      </header>
-      <nav id="product-navigation" class="product-navigation"></nav>
-      <footer class="nav-footer">
-        <span>BUILD 0.15</span>
-        <small>Local-only session data</small>
-      </footer>
-    </aside>
-
-    <main class="app-main">
-      <header class="app-topbar">
-        <div class="page-context">
-          <small id="shell-page-eyebrow">Flight deck</small>
-          <h1 id="shell-page-title">Current operation</h1>
-        </div>
-        <div class="topbar-status">
-          <label class="mobile-page-picker">Workspace
-            <select id="mobile-page-select" aria-label="Select workspace"></select>
-          </label>
-          <button type="button" class="session-chip" id="global-route-status" data-shell-link="route">
-            <span class="status-lamp"></span>
-            <strong>No active route</strong>
-            <small>Generate missions to begin</small>
-          </button>
-        </div>
-      </header>
-
-      <div id="future-pages-root"></div>
-
-      <section class="app-view page-view operations-page" data-view="route" id="route" hidden>
-        <div class="operations-grid">
-          <section class="mfd-panel current-operation-panel" aria-labelledby="current-stop-name">
-            <header class="mfd-header">
-              <div><small>OPS / CURRENT STOP</small><strong id="ops-stop-state">STANDBY</strong></div>
-              <span id="ops-current-index">00 / 00</span>
-            </header>
-            <div class="current-operation-body">
-              <p class="display-label">Current destination</p>
-              <h2 id="current-stop-name">Generate a session first</h2>
-              <div id="current-stop-operations" class="operation-list"></div>
-            </div>
-            <footer class="operation-controls">
-              <button type="button" class="button button--secondary" id="previous-stop" disabled>Previous stop</button>
-              <button type="button" class="button button--primary" id="complete-stop" disabled>Complete stop and continue</button>
-            </footer>
-          </section>
-
-          <aside class="mfd-panel route-sequence-panel" aria-label="Route sequence">
-            <header class="mfd-header">
-              <div><small>NAV / ACTIVE SEQUENCE</small><strong>Route index</strong></div>
-              <span id="route-progress-label">0 / 0</span>
-            </header>
-            <ol class="route-stop-list" id="route-stop-list"></ol>
-          </aside>
-
-          <section class="operations-tools" aria-label="Operational tools">
-            <nav class="tool-keys" aria-label="Auxiliary display selection">
-              <button type="button" data-ops-tool="moves" aria-pressed="false"><span>F1</span><strong>Moves</strong><small id="workspace-move-preview">No active moves</small></button>
-              <button type="button" data-ops-tool="cargo" aria-pressed="false"><span>F2</span><strong>Cargo</strong><small id="workspace-cargo-preview">0 SCU onboard</small></button>
-              <button type="button" data-ops-tool="adjust" aria-pressed="false"><span>F3</span><strong>Adjust</strong><small>Reality overrides</small></button>
-              <button type="button" data-ops-tool="route" aria-pressed="false"><span>F4</span><strong>Route</strong><small>Skip, lock, reorder</small></button>
-            </nav>
-
-            <section class="mfd-panel tool-panel" id="ops-tool-panel" hidden aria-live="polite">
-              <header class="mfd-header tool-panel-header">
-                <div><small>AUXILIARY DISPLAY</small><strong id="ops-tool-title">Moves</strong></div>
-                <div class="tool-panel-actions">
-                  <button type="button" class="icon-button" id="ops-tool-expand" aria-label="Expand auxiliary display" aria-pressed="false">□</button>
-                  <button type="button" class="icon-button" id="ops-tool-close" aria-label="Close auxiliary display">×</button>
-                </div>
-              </header>
-              <div class="tool-panel-body" id="ops-tool-body"></div>
-            </section>
-          </section>
-        </div>
-      </section>
-
-      <section class="app-view page-view missions-page" data-view="missions" id="missions" hidden>
-        <header class="page-header">
-          <div><small>CONTRACT INTAKE</small><h2>Build a hauling session</h2><p>Paste compact mission instructions, review the parsed contracts, then generate the live route.</p></div>
-          <span class="status-tag status-tag--ready">Live</span>
-        </header>
-        <div class="missions-grid">
-          <form class="mfd-panel mission-editor" id="mission-form">
-            <header class="mfd-header"><div><small>INPUT / RAW CONTRACTS</small><strong>Mission text</strong></div><span>MANUAL</span></header>
-            <textarea id="mission-text" spellcheck="false" aria-label="Mission text"></textarea>
-            <div class="form-actions">
-              <button type="submit" class="button button--primary">Generate session</button>
-              <button type="button" class="button button--secondary" id="reset-session">Reset</button>
-            </div>
-            <p class="field-help">Commands: <code>collect</code>, <code>pickup</code>, <code>deliver</code>. Example: <code>collect teasa 2scu etam</code></p>
-            <div class="form-message" id="mission-message" aria-live="polite"></div>
-          </form>
-          <section class="mfd-panel mission-preview" aria-labelledby="mission-preview-title">
-            <header class="mfd-header"><div><small>OUTPUT / PARSED CONTRACTS</small><strong id="mission-preview-title">No generated session</strong></div><span id="mission-summary-count">0</span></header>
-            <div id="mission-cards" class="mission-cards"></div>
-          </section>
-        </div>
-      </section>
-
-      <section class="app-view page-view fleet-page" data-view="hangar" id="hangar" hidden>
-        <header class="page-header">
-          <div><small>SHIP SYSTEMS</small><h2>Fleet and cargo configuration</h2><p>Select the active ship, inspect its schematic and edit its operational cargo zones.</p></div>
-          <span class="status-tag">Reference geometry</span>
-        </header>
-        <div class="fleet-grid">
-          <aside class="mfd-panel fleet-list-panel">
-            <header class="mfd-header"><div><small>HANGAR / SAVED SHIPS</small><strong>Fleet</strong></div><span id="fleet-count">0</span></header>
-            <div class="hangar-list" id="hangar-list"></div>
-          </aside>
-
-          <section class="mfd-panel ship-display-panel">
-            <header class="mfd-header"><div><small>VISUAL / SELECTED SHIP</small><strong id="fleet-selected-name">No ship selected</strong></div><span id="fleet-selected-capacity">—</span></header>
-            <div class="ship-hologram" id="ship-hologram" aria-label="Selected ship schematic"></div>
-            <dl class="ship-stats">
-              <div><dt>Manufacturer</dt><dd id="fleet-manufacturer">—</dd></div>
-              <div><dt>Physical grid</dt><dd id="fleet-grid-capacity">—</dd></div>
-              <div><dt>Quantum drive</dt><dd id="fleet-quantum-drive">—</dd></div>
-              <div><dt>Travel factor</dt><dd id="fleet-quantum-factor">—</dd></div>
-            </dl>
-            <p class="schematic-note">Schematic visual only. Cargo zones are operational planning abstractions, not a certified ship blueprint.</p>
-          </section>
-
-          <form class="mfd-panel hangar-form" id="hangar-form">
-            <header class="mfd-header"><div><small>CONFIG / ADD SHIP</small><strong>Ship configuration</strong></div><span>NEW</span></header>
-            <label>Ship model<select id="hangar-model"></select></label>
-            <label>Nickname<input id="hangar-nickname" type="text" placeholder="Optional"></label>
-            <label>Quantum drive<input id="hangar-quantum" type="text" value="Stock"></label>
-            <label>Quantum time factor<input id="hangar-factor" type="number" min="0.1" step="0.01" value="1"><small>0.85 means approximately 15% less quantum travel time.</small></label>
-            <label>Notes<textarea id="hangar-notes" rows="3"></textarea></label>
-            <button type="submit" class="button button--primary">Add and select ship</button>
-          </form>
-        </div>
-
-        <section class="mfd-panel cargo-zone-editor" id="fleet-zone-editor">
-          <header class="mfd-header"><div><small>CARGO / LOGICAL HOLD</small><strong>Cargo zones</strong></div><span id="fleet-zone-total">—</span></header>
-          <div class="zone-editor-body">
-            <div class="zone-schematic" id="fleet-zone-schematic"></div>
-            <form class="zone-form" id="fleet-zone-form"></form>
-          </div>
-        </section>
-      </section>
-
-      <section class="app-view page-view starmap-page" data-view="map" id="map" hidden>
-        <header class="page-header">
-          <div><small>NAV DISPLAY</small><h2>Route-first starmap</h2><p>Predictable 2D navigation focused on the active hauling route, not free-camera exploration.</p></div>
-          <span class="status-tag status-tag--ready">Interactive</span>
-        </header>
-        <div class="starmap-grid">
-          <section class="mfd-panel map-display-panel">
-            <header class="mfd-header map-toolbar">
-              <div><small>MAP MODE</small><strong id="starmap-mode">Active route</strong></div>
-              <nav aria-label="Starmap modes">
-                <button type="button" data-map-mode="route" aria-pressed="true">Route</button>
-                <button type="button" data-map-mode="stanton" aria-pressed="false">Stanton</button>
-                <button type="button" data-map-mode="network" aria-pressed="false">Systems</button>
-              </nav>
-            </header>
-            <svg id="starmap-canvas" class="starmap-canvas" viewBox="0 0 1000 600" role="img" aria-label="Interactive route map"></svg>
-          </section>
-          <aside class="mfd-panel map-info-panel">
-            <header class="mfd-header"><div><small>SELECTED OBJECT</small><strong id="starmap-selection-title">Active route</strong></div><span id="starmap-selection-type">Route</span></header>
-            <p id="starmap-selection-detail">Generate a session to display route stops.</p>
-            <div class="map-route-summary">
-              <small>ACTIVE ROUTE</small>
-              <strong id="starmap-route-status">No mapped route</strong>
-              <ol id="starmap-route-list"></ol>
-            </div>
-            <p class="data-note" id="starmap-data-note">Positions are schematic and optimized for navigation clarity, not physical scale.</p>
-          </aside>
-        </div>
-      </section>
-
-      <section class="internal-source" id="locations" hidden>
-        <form id="location-search"><label for="location-query">Search destination</label><div><input id="location-query" type="search" value="Lorville"><button type="submit">Find</button></div><div id="search-results"></div></form>
-        <article><h2 id="destination-title">—</h2><strong id="navigation-target">—</strong><dl><div><dt>Type</dt><dd id="location-type">—</dd></div><div><dt>Hierarchy</dt><dd id="location-path">—</dd></div></dl></article>
-        <article><h3 id="intel-location-name">—</h3><dl><div><dt>Data status</dt><dd id="intel-data-status">—</dd></div><div><dt>Traffic</dt><dd id="intel-traffic">—</dd></div></dl><strong id="estimate-total">—</strong><ol id="estimate-segments"></ol><div id="intel-services"></div></article>
-      </section>
-
-      <section class="app-view page-view development-page" data-view="roadmap" id="roadmap" hidden>
-        <header class="page-header">
-          <div><small>DEVELOPMENT SYSTEM</small><h2 id="roadmap-title">Release path to v1.0</h2><p>One linear release sequence. Each version lists only the work actually delivered.</p></div>
-        </header>
-        <nav class="development-tabs" aria-label="Development views">
-          <button type="button" data-development-tab="roadmap" aria-selected="true">Roadmap</button>
-          <button type="button" data-development-tab="changelog" aria-selected="false">Changelog</button>
-          <button type="button" data-development-tab="ui-kit" aria-selected="false">UI Kit</button>
-        </nav>
-        <div data-development-pane="roadmap"><div class="roadmap-board" id="roadmap-board"></div></div>
-        <div data-development-pane="changelog" id="development-changelog" hidden></div>
-        <div data-development-pane="ui-kit" id="development-ui-kit" hidden></div>
-      </section>
-
-      <footer class="app-footer">Drake Interplanetary is part of the Star Citizen universe. This is an unofficial fan project.</footer>
-    </main>
+  <div id="app" aria-live="polite">
+    <div class="boot-screen">
+      <img src="companion-mark.svg" alt="">
+      <p>Initializing cargo systems…</p>
+    </div>
   </div>
 
-  <script src="design-system.js"></script>
-  <script src="mfd-icons.js"></script>
-  <script src="product-pages.js"></script>
-  <script src="product-shell.js?v=0.29.2"></script>
   <script src="locations.js"></script>
   <script src="location-field-registry.js"></script>
   <script src="location-profiles.js"></script>
@@ -229,19 +25,12 @@
   <script src="arrival-estimates.js"></script>
   <script src="missions.js"></script>
   <script src="mission-text.js"></script>
+  <script src="mission-validation.js"></script>
   <script src="route-planner.js"></script>
   <script src="ship-catalog.js"></script>
   <script src="cargo-planner.js"></script>
   <script src="session-store.js"></script>
   <script src="starmap-data.js"></script>
-  <script src="roadmap.js"></script>
-  <script src="app.js?v=0.40.0"></script>
-  <script src="sections.js"></script>
-  <script src="mission-view.js"></script>
-  <script src="route-view.js"></script>
-  <script src="hangar-view.js"></script>
-  <script src="starmap-view.js"></script>
-  <script src="location-intel-view.js"></script>
-  <script src="roadmap-view.js"></script>
+  <script src="app.js?v=3"></script>
 </body>
 </html>
