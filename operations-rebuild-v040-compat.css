@@ -27,7 +27,11 @@
   height: 19px;
 }
 
-.ops40-page .ops40-cargo-tools label > span {
+.ops40-page .ops40-cargo-tools label > span,
+.ops40-page .ops40-cargo-cell > span,
+.ops40-page .ops40-upcoming article b,
+.ops40-page .ops40-stop > b,
+.ops40-page .ops40-stop footer small {
   font-size: 11px;
 }
 
