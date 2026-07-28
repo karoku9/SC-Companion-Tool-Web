@@ -4,24 +4,33 @@
    free space intentionally, and the recovered height belongs to the route timeline. */
 
 html[data-active-view="route"][data-ops-density="comfortable"] {
-  --ops-command-height: 92px;
-  --ops-timeline-height: 218px;
+  --ops-fit-gap: 8px;
+  --ops-fit-pad: 8px;
+  --ops-command-height: 88px;
+  --ops-timeline-height: 230px;
+  --ops-tools-height: 52px;
   --ops-primary-column: 410px;
-  --ops-cargo-manifest-height: 86px;
+  --ops-cargo-manifest-height: 56px;
 }
 
 html[data-active-view="route"][data-ops-density="compact"] {
-  --ops-command-height: 82px;
-  --ops-timeline-height: 202px;
+  --ops-fit-gap: 6px;
+  --ops-fit-pad: 6px;
+  --ops-command-height: 78px;
+  --ops-timeline-height: 194px;
+  --ops-tools-height: 48px;
   --ops-primary-column: 390px;
-  --ops-cargo-manifest-height: 78px;
+  --ops-cargo-manifest-height: 48px;
 }
 
 html[data-active-view="route"][data-ops-density="tight"] {
-  --ops-command-height: 74px;
-  --ops-timeline-height: 176px;
+  --ops-fit-gap: 5px;
+  --ops-fit-pad: 5px;
+  --ops-command-height: 70px;
+  --ops-timeline-height: 170px;
+  --ops-tools-height: 44px;
   --ops-primary-column: 360px;
-  --ops-cargo-manifest-height: 72px;
+  --ops-cargo-manifest-height: 44px;
 }
 
 html[data-active-view="route"][data-ops-density]:not([data-ops-density="flow"]) .operations-v028 .ops-v027-primary-grid {
@@ -54,7 +63,7 @@ html[data-active-view="route"][data-ops-density]:not([data-ops-density="flow"]) 
   grid-area: cargo-grid;
   width: 100%;
   height: 100%;
-  padding: 6px 8px 3px;
+  padding: 4px 7px 2px;
 }
 
 html[data-active-view="route"][data-ops-density]:not([data-ops-density="flow"]) .operations-v028 .ops-v0302-primary-cargo .ops-v028-cargo-grid {
@@ -80,16 +89,16 @@ html[data-active-view="route"][data-ops-density]:not([data-ops-density="flow"]) 
   min-width: 210px;
   min-height: 0;
   display: grid;
-  grid-template-columns: 14px minmax(0, 1fr);
+  grid-template-columns: 12px minmax(0, 1fr);
   align-items: center;
-  gap: 7px;
-  padding: 7px 9px;
+  gap: 6px;
+  padding: 4px 8px;
   border-right: 1px solid var(--scx-border-subtle);
 }
 
 html[data-active-view="route"][data-ops-density]:not([data-ops-density="flow"]) .operations-v028 .ops-v0302-primary-cargo .ops-v028-cargo-legend > article > span {
-  width: 12px;
-  height: 12px;
+  width: 11px;
+  height: 11px;
 }
 
 html[data-active-view="route"][data-ops-density]:not([data-ops-density="flow"]) .operations-v028 .ops-v0302-primary-cargo .ops-v028-cargo-legend > article > div {
@@ -101,6 +110,7 @@ html[data-active-view="route"][data-ops-density]:not([data-ops-density="flow"]) 
 html[data-active-view="route"][data-ops-density]:not([data-ops-density="flow"]) .operations-v028 .ops-v0302-primary-cargo .ops-v028-cargo-legend small {
   display: block;
   overflow: hidden;
+  line-height: 1.05;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -111,13 +121,14 @@ html[data-active-view="route"][data-ops-density]:not([data-ops-density="flow"]) 
 
 html[data-active-view="route"][data-ops-density]:not([data-ops-density="flow"]) .operations-v028 .ops-v0302-primary-cargo .ops-v028-cargo-legend footer {
   position: static;
-  flex: 0 0 150px;
-  min-width: 150px;
+  flex: 0 0 145px;
+  min-width: 145px;
   min-height: 0;
-  display: grid;
-  align-content: center;
-  gap: 4px;
-  padding: 7px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 8px;
   border-left: 0;
 }
 
