@@ -110,7 +110,7 @@ try {
   assert.equal(stored.missionValidation.status, 'ready');
   assert.equal(stored.missionValidation.sourceText, brokenSource);
   assert.match(stored.missionValidation.reviewedText, /deliver Area18/i);
-  assert.match(stored.missionValidation.reviewedText, /Teasa Spaceport/i);
+  assert.match(stored.missionValidation.reviewedText, /collect Lorville/i);
   assert.match(stored.missionValidation.sourceText, /delver/);
   assert.ok(stored.route.stops.some((stop) => stop.locationId === 'stanton-hurston-lorville-teasa'));
   assert.equal(stored.missions[0].cargoLots[0].pickupLocationId, 'stanton-hurston-lorville-teasa');
