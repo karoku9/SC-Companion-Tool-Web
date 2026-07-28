@@ -4,3 +4,14 @@
 html[data-active-view="route"][data-ops-density]:not([data-ops-density="flow"]) .operations-v028 .current-stop-intel {
   display: none;
 }
+
+/* Shorter desktop windows recover space through tighter grouping, not smaller text. */
+html[data-active-view="route"][data-ops-density="compact"] .operations-v028 .current-operation-body {
+  gap: 3px;
+  padding-block: 5px;
+}
+
+html[data-active-view="route"][data-ops-density="tight"] .operations-v028 .current-operation-body {
+  gap: 2px;
+  padding-block: 4px;
+}
