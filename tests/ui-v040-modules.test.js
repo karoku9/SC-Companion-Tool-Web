@@ -22,7 +22,9 @@ test('the module loader and document use the final 0.40 cache generation', () =>
   const loader = read('operations-rebuild-v040-loader.js');
   const html = read('index.html');
 
-  assert.match(loader, /operations-rebuild-v040\.css\?v=0\.40\.0/);
+  assert.match(loader, /new URL\(`\.\/\$\{path\}\?v=0\.40\.0`/);
+  assert.match(loader, /appendStyle\('operations-rebuild-v040\.css'/);
+  assert.match(loader, /appendStyle\('operations-rebuild-v040-compat\.css'/);
   assert.match(loader, /operations-rebuild-v040\.js\?v=0\.40\.0/);
   assert.match(loader, /cargo-grid-geometry-compat-v040\.js\?v=0\.40\.0/);
   assert.match(html, /name="sc-companion-ui" content="0\.40\.0"/);
