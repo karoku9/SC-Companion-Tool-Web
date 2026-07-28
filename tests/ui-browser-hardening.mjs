@@ -45,15 +45,19 @@ async function noHorizontalOverflow(label) {
   assert.ok(metrics.bodyWidth <= metrics.viewport + 2, `${label}: body overflow ${JSON.stringify(metrics)}`);
 }
 
-async function singleScreenOperationsFit(label) {
+async function readableScrollingOperations(label) {
   const metrics = await page.evaluate(() => {
     const root = document.querySelector('.operations-page.operations-v028');
     const grid = root?.querySelector('.operations-grid');
     const selectors = {
       command: '.ops-v027-command-deck',
       primary: '.ops-v027-primary-grid',
+      map: '.ops-live-navigation',
+      current: '.current-operation-panel',
       timeline: '.ops-v027-timeline-panel',
+      timelineCard: '.ops-v028-stop-card',
       cargo: '.ops-v028-cargo-panel',
+      cargoGrid: '.ops-v028-cargo-grid',
       tools: '.operations-tools'
     };
     const boxes = Object.fromEntries(Object.entries(selectors).map(([key, selector]) => {
@@ -64,7 +68,6 @@ async function singleScreenOperationsFit(label) {
     const gridBox = grid?.getBoundingClientRect();
     return {
       viewport: { width: innerWidth, height: innerHeight },
-      compactMedia: matchMedia('(min-width: 1450px) and (min-height: 820px)').matches,
       documentHeight: document.documentElement.scrollHeight,
       bodyHeight: document.body.scrollHeight,
       root: rootBox ? { top: rootBox.top, bottom: rootBox.bottom, height: rootBox.height } : null,
@@ -73,18 +76,18 @@ async function singleScreenOperationsFit(label) {
     };
   });
 
-  assert.equal(metrics.compactMedia, true, `${label}: compact desktop media query is inactive`);
   assert.ok(metrics.root && metrics.grid, `${label}: Operations root or grid is missing`);
-  assert.ok(metrics.root.bottom <= metrics.viewport.height + 1, `${label}: Operations root leaves the viewport ${JSON.stringify(metrics)}`);
-  assert.ok(metrics.grid.bottom <= metrics.viewport.height - 6, `${label}: Operations grid leaves the viewport ${JSON.stringify(metrics)}`);
-  Object.entries(metrics.boxes).forEach(([key, box]) => {
-    assert.ok(box, `${label}: missing ${key} panel`);
-    assert.ok(box.top >= metrics.grid.top - 1, `${label}: ${key} starts above the grid`);
-    assert.ok(box.bottom <= metrics.grid.bottom + 1, `${label}: ${key} extends below the grid: ${JSON.stringify(box)}`);
-  });
-  assert.ok(Math.abs(metrics.boxes.timeline.top - metrics.boxes.cargo.top) <= 2, `${label}: timeline and cargo are not aligned in the same row`);
-  assert.ok(Math.abs(metrics.boxes.timeline.bottom - metrics.boxes.cargo.bottom) <= 2, `${label}: lower panels have mismatched heights`);
-  assert.ok(metrics.boxes.tools.bottom <= metrics.viewport.height - 6, `${label}: action bar is not visible without page scrolling`);
+  Object.entries(metrics.boxes).forEach(([key, box]) => assert.ok(box, `${label}: missing ${key} panel`));
+  assert.ok(metrics.boxes.command.bottom <= metrics.boxes.primary.top + 2, `${label}: command deck order is wrong`);
+  assert.ok(Math.abs(metrics.boxes.map.top - metrics.boxes.current.top) <= 2, `${label}: map/current row is misaligned`);
+  assert.ok(metrics.boxes.map.height >= 520 && metrics.boxes.current.height >= 520, `${label}: primary instruments remain compressed ${JSON.stringify(metrics.boxes)}`);
+  assert.ok(metrics.boxes.primary.bottom <= metrics.boxes.timeline.top + 2, `${label}: timeline must follow the primary row`);
+  assert.ok(metrics.boxes.timeline.bottom <= metrics.boxes.cargo.top + 2, `${label}: cargo must have its own row`);
+  assert.ok(metrics.boxes.cargo.bottom <= metrics.boxes.tools.top + 2, `${label}: tools must follow cargo`);
+  assert.ok(metrics.boxes.timelineCard.width >= 240, `${label}: timeline cards remain compressed`);
+  assert.ok(metrics.boxes.cargo.height >= 390 && metrics.boxes.cargoGrid.height >= 280, `${label}: cargo plan remains clipped`);
+  assert.ok(metrics.documentHeight > metrics.viewport.height + 400, `${label}: document is still forced into one viewport ${JSON.stringify(metrics)}`);
+  assert.ok(metrics.bodyHeight > metrics.viewport.height + 400, `${label}: body is still forced into one viewport ${JSON.stringify(metrics)}`);
 }
 
 async function readableTypography(label) {
@@ -130,7 +133,9 @@ try {
     localStorage.removeItem('sc-companion-nav-collapsed');
   });
   await page.reload({ waitUntil: 'networkidle' });
-  await page.locator('#sidebar-toggle').waitFor({ state: 'visible' });
+  await page.locator('.product-navigation').waitFor({ state: 'visible' });
+  await page.locator('#sidebar-toggle').waitFor({ state: 'attached' });
+  assert.equal(await page.locator('#sidebar-toggle').isVisible(), false, 'Operations uses a fixed icon rail, so its expand control must remain hidden');
 
   step = 'verify empty Operations cockpit';
   assert.match(await page.locator('#current-stop-name').textContent(), /Generate a session/i);
@@ -202,12 +207,13 @@ try {
   await noHorizontalOverflow('Integrated Operations desktop');
   await readableTypography('Integrated Operations desktop');
 
-  step = 'verify single-screen Operations at 1700x900';
+  step = 'verify readable scrolling Operations at 1700x900';
   await page.setViewportSize({ width: 1700, height: 900 });
+  await page.evaluate(() => scrollTo(0, 0));
   await page.locator('.ops-v028-cargo-panel').waitFor({ state: 'visible' });
-  await singleScreenOperationsFit('1700x900 Operations');
+  await readableScrollingOperations('1700x900 Operations');
   await noHorizontalOverflow('1700x900 Operations');
-  await page.screenshot({ path: `${output}/operations-single-screen-1700x900.png`, fullPage: false });
+  await page.screenshot({ path: `${output}/operations-readable-scroll-1700x900.png`, fullPage: true });
 
   step = 'complete route in Operations';
   let guard = 20;
