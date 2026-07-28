@@ -96,6 +96,7 @@
     return {
       locations,
       locationProfiles: root.SCCompanionLocationProfiles,
+      locationContext: root.SCCompanionLocationContext,
       arrivalEstimates: root.SCCompanionArrivalEstimates,
       navigationEstimates: root.SCCompanionNavigationEstimates,
       starmap: root.SCCompanionStarmapData,
@@ -111,7 +112,7 @@
         locationLabel: locations.formatOperationalLabel(startLocation),
         operations: Object.freeze([])
       }) : null,
-      initialOnboardLots: []
+      initialOnboardLots: options.initialOnboardLots ?? []
     };
   }
 
@@ -370,14 +371,49 @@
   }
 
   function buildRoute(missions, missionModel, options = {}) {
-    const base = originalBuildRoute(missions, missionModel);
+    return buildRouteCandidates(missions, missionModel, options)[0];
+  }
+
+  function buildRouteCandidates(missions, missionModel, options = {}) {
+    const original = originalBuildRoute(missions, missionModel);
+    const base = root.SCCompanionRouteOptimization ? consolidate(original) : original;
     const context = comparisonContext(base, options);
+    const optimizer = root.SCCompanionRouteOptimization;
+    if (optimizer) {
+      const comparison = optimizer.optimize(base, context, engine, {
+        strategy: options.routeStrategy ?? options.strategy ?? 'balanced',
+        weights: options.routeStrategyWeights ?? options.weights
+      });
+      if (comparison.recommended) {
+        return Object.freeze(comparison.candidates.map((candidate) => {
+          const phaseSafeStops = mergeAdjacentStops(candidate.result.stops);
+          return indexedRoute(base, phaseSafeStops, {
+            strategy: comparison.effectiveStrategy,
+            requestedStrategy: comparison.requestedStrategy,
+            candidateId: candidate.id,
+            candidateLabel: candidate.label,
+            rationale: candidate.rationale,
+            metrics: candidate.metrics,
+            weights: comparison.weights.raw,
+            availability: comparison.availability,
+            candidateCount: comparison.candidateCount,
+            originalStopCount: base.stops.length,
+            consolidatedStopCount: phaseSafeStops.length,
+            physicalCapacityScu: context.physicalCapacityScu,
+            peakOnboardScu: candidate.metrics.peakOnboardScu,
+            capacityFeasible: true,
+            repeatedLocationsAllowed: true
+          }, comparisonContext({ ...base, stops: phaseSafeStops, allStops: phaseSafeStops }, options));
+        }));
+      }
+    }
+
     const comparison = chooseGatewayEfficient(base, context);
     const fastest = comparison.result;
 
     if (fastest?.capacityFeasible) {
       const phaseSafeStops = mergeAdjacentStops(fastest.stops);
-      return indexedRoute(base, phaseSafeStops, {
+      return Object.freeze([indexedRoute(base, phaseSafeStops, {
         strategy: 'phase-safe-fastest',
         originalStopCount: base.stops.length,
         consolidatedStopCount: phaseSafeStops.length,
@@ -393,13 +429,13 @@
         systemStickyCandidateAdded: comparison.systemStickyCandidateAdded,
         systemStickySelected: comparison.systemStickySelected,
         safetyAdjusted: comparison.safetyAdjusted
-      }, comparisonContext({ ...base, stops: phaseSafeStops, allStops: phaseSafeStops }, options));
+      }, comparisonContext({ ...base, stops: phaseSafeStops, allStops: phaseSafeStops }, options))]);
     }
 
     const fallbackStops = mergeAdjacentStops(base.stops);
     const fallbackRoute = { ...base, stops: fallbackStops, allStops: fallbackStops };
     const fallbackContext = comparisonContext(fallbackRoute, options);
-    return indexedRoute(fallbackRoute, fallbackStops, {
+    return Object.freeze([indexedRoute(fallbackRoute, fallbackStops, {
       strategy: 'phase-safe-dependency-fallback',
       originalStopCount: base.stops.length,
       consolidatedStopCount: fallbackStops.length,
@@ -413,12 +449,57 @@
       gatewayEfficient: true,
       systemStickyCandidateAdded: comparison.systemStickyCandidateAdded,
       systemStickySelected: false
-    }, fallbackContext);
+    }, fallbackContext)]);
+  }
+
+  function replanRemaining(route, completedStopIds = [], options = {}) {
+    const completed = new Set(completedStopIds.map(String));
+    const lockedStops = route.stops.filter((stop) => completed.has(String(stop.id)));
+    const futureStops = route.stops.filter((stop) => !completed.has(String(stop.id)));
+    if (futureStops.length < 2 || !root.SCCompanionRouteOptimization) {
+      return Object.freeze({ route, completedStopIds: Object.freeze([...completedStopIds]), changed: false });
+    }
+    const futureRoute = { ...route, stops: Object.freeze(futureStops), allStops: Object.freeze(futureStops) };
+    const startLocationId = lockedStops.at(-1)?.locationId ?? options.startLocationId ?? route.optimization?.startLocationId;
+    const context = comparisonContext(futureRoute, { ...options, startLocationId });
+    const comparison = root.SCCompanionRouteOptimization.optimize(futureRoute, context, engine, {
+      strategy: options.routeStrategy ?? options.strategy ?? 'balanced',
+      weights: options.routeStrategyWeights ?? options.weights
+    });
+    if (!comparison.recommended) {
+      return Object.freeze({ route, completedStopIds: Object.freeze([...completedStopIds]), changed: false });
+    }
+    const future = comparison.recommended.result.stops;
+    const combined = [...lockedStops, ...future];
+    const rebuilt = indexedRoute(route, combined, {
+      ...route.optimization,
+      strategy: comparison.effectiveStrategy,
+      requestedStrategy: comparison.requestedStrategy,
+      candidateId: 'recommended',
+      candidateLabel: 'Recommended',
+      rationale: comparison.recommended.rationale,
+      metrics: comparison.recommended.metrics,
+      weights: comparison.weights.raw,
+      availability: comparison.availability,
+      replanLockedStopCount: lockedStops.length
+    }, comparisonContext({ ...route, stops: combined, allStops: combined }, options));
+    const nextCompletedIds = rebuilt.stops.slice(0, lockedStops.length).map((stop) => stop.id);
+    const oldFuture = futureStops.map((stop) => stop.locationId).join('|');
+    const newFuture = future.map((stop) => stop.locationId).join('|');
+    return Object.freeze({
+      route: rebuilt,
+      completedStopIds: Object.freeze(nextCompletedIds),
+      changed: oldFuture !== newFuture,
+      previousOrder: Object.freeze(futureStops.map((stop) => stop.locationLabel)),
+      nextOrder: Object.freeze(future.map((stop) => stop.locationLabel))
+    });
   }
 
   const api = Object.freeze({
     ...planner,
     buildRoute,
+    buildRouteCandidates,
+    replanRemaining,
     focusedOptimization: true,
     consolidate,
     mergeAdjacentStops,

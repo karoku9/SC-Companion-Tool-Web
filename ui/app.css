@@ -283,6 +283,36 @@ input::placeholder, textarea::placeholder { color: #696d68; }
 .mode-option[aria-pressed="true"] { border-color: var(--amber); background: rgba(229,162,42,.08); }
 .mode-option strong, .mode-option span { display: block; }
 .mode-option span { margin-top: 6px; color: var(--muted); font-size: 12px; }
+.route-preference { margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--line-soft); }
+.preference-heading, .candidate-heading, .custom-strategy-head, .context-heading {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;
+}
+.preference-heading p, .custom-strategy-head p { margin-bottom: 4px; color: var(--muted); }
+.strategy-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; margin-top: 10px; }
+.strategy-option {
+  min-height: 76px; display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; gap: 9px; align-items: start;
+  padding: 10px; border: 1px solid var(--line); background: #0d100f; text-align: left; cursor: pointer;
+}
+.strategy-option[aria-pressed="true"] { border-color: var(--amber); background: rgba(229,162,42,.08); box-shadow: inset 3px 0 var(--amber); }
+.strategy-option:disabled { cursor: not-allowed; opacity: .45; }
+.strategy-icon { color: var(--amber); font: 20px/1 "Cascadia Mono", Consolas, monospace; }
+.strategy-option strong, .strategy-option small, .strategy-option em { display: block; }
+.strategy-option small { margin-top: 3px; color: var(--muted); font-size: 11px; line-height: 1.35; }
+.strategy-option em { margin-top: 5px; color: var(--dim); font: normal 11px "Cascadia Mono", Consolas, monospace; text-transform: uppercase; }
+.strategy-option .tag { font-size: 11px; }
+.coverage-note { margin: 10px 0 0; color: var(--muted); font-size: 11px; }
+.custom-strategy { margin-top: 12px; padding: 14px; border: 1px solid var(--line); background: #0d100f; }
+.weight-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 16px; margin-top: 12px; }
+.weight-control { display: grid; grid-template-columns: 1fr 36px; gap: 4px 10px; }
+.weight-control span strong, .weight-control span small { display: block; }
+.weight-control span small { color: var(--muted); font-size: 11px; }
+.weight-control output { color: var(--amber); font: 600 12px "Cascadia Mono", Consolas, monospace; text-align: right; }
+.weight-control input { grid-column: 1 / -1; width: 100%; accent-color: var(--amber); }
+.plan-readiness { margin-top: 22px; padding-top: 14px; border-top: 1px solid var(--line-soft); }
+.plan-readiness dl { margin: 8px 0 0; }
+.plan-readiness dl div { display: flex; justify-content: space-between; gap: 14px; padding: 6px 0; border-bottom: 1px solid var(--line-soft); }
+.plan-readiness dt { color: var(--muted); }
+.plan-readiness dd { margin: 0; text-align: right; }
 .verified-list { margin: 0; padding: 0; list-style: none; }
 .verified-list li { display: flex; justify-content: space-between; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--line-soft); }
 
@@ -297,6 +327,19 @@ input::placeholder, textarea::placeholder { color: #696d68; }
 .capacity-bar { width: 120px; height: 5px; margin-top: 6px; background: #303431; }
 .capacity-bar i { display: block; height: 100%; background: var(--green); }
 .plan-detail { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 16px; margin-top: 16px; }
+.candidate-comparison { margin-top: 16px; padding: 16px; border: 1px solid var(--line); background: var(--surface); }
+.candidate-heading h2 { margin: 3px 0 0; font-size: 24px; text-transform: uppercase; }
+.candidate-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 12px; }
+.candidate-card { min-height: 132px; padding: 13px; border: 1px solid var(--line); background: #0d100f; color: var(--text); text-align: left; cursor: pointer; }
+.candidate-card[aria-pressed="true"] { border-color: var(--amber); box-shadow: inset 3px 0 var(--amber); background: rgba(229,162,42,.07); }
+.candidate-card > strong { display: block; margin: 7px 0 3px; font: 26px "Bahnschrift Condensed", "Arial Narrow", sans-serif; }
+.candidate-card > span:not(.eyebrow), .candidate-card small { display: block; color: var(--muted); font-size: 11px; }
+.candidate-card small { margin-top: 9px; line-height: 1.4; }
+.route-scorecard { margin-top: 12px; border: 1px solid var(--line); background: var(--surface); }
+.scorecard-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; background: var(--line-soft); }
+.scorecard-grid > div { min-width: 0; padding: 12px 14px; background: #111413; }
+.scorecard-grid span { display: block; color: var(--dim); font: 11px "Cascadia Mono", Consolas, monospace; text-transform: uppercase; }
+.scorecard-grid strong { display: block; margin-top: 4px; font-size: 16px; }
 .route-order { margin: 0; padding: 0; list-style: none; }
 .route-order li { display: grid; grid-template-columns: 28px 1fr auto; gap: 10px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line-soft); }
 .route-order b { color: var(--amber); font: 11px "Cascadia Mono", Consolas, monospace; }
@@ -322,6 +365,33 @@ input::placeholder, textarea::placeholder { color: #696d68; }
 .command-main h1 { max-width: 780px; margin: 8px 0 10px; font-size: clamp(31px, 4vw, 56px); line-height: .94; text-transform: uppercase; overflow-wrap: anywhere; }
 .nav-target { color: var(--cyan); font-size: 14px; }
 .command-instruction { margin: 15px 0 0; color: var(--muted); }
+.step-context { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line-soft); }
+.context-heading { align-items: center; margin-bottom: 10px; }
+.context-heading > strong { color: var(--cyan); font: 600 11px "Cascadia Mono", Consolas, monospace; letter-spacing: .06em; }
+.context-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; background: var(--line-soft); }
+.context-grid.compact { grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 10px; }
+.context-datum { min-width: 0; padding: 9px 11px; background: #111413; }
+.context-datum > span { display: block; color: var(--dim); font: 11px "Cascadia Mono", Consolas, monospace; text-transform: uppercase; }
+.context-datum > strong, .context-datum > small { display: block; overflow-wrap: anywhere; }
+.context-datum > strong { margin-top: 4px; font-size: 13px; }
+.context-datum > small { margin-top: 3px; color: var(--muted); font-size: 11px; }
+.optimizer-rationale { margin: 10px 0 0; color: var(--muted); font-size: 12px; }
+.manifest-columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.manifest-group h3 { margin: 0; padding: 7px 9px; color: var(--amber); background: rgba(229,162,42,.08); font-size: 12px; }
+.manifest-group.is-delivery h3 { color: var(--cyan); background: rgba(100,184,194,.08); }
+.manifest-group article { display: flex; justify-content: space-between; gap: 12px; padding: 8px 9px; border-bottom: 1px solid var(--line-soft); }
+.manifest-group article strong, .manifest-group article small { display: block; }
+.manifest-group article small { margin-top: 2px; color: var(--muted); font-size: 11px; }
+.manifest-group article b { white-space: nowrap; }
+.completion-panel { max-width: 1050px; margin-inline: auto; padding: 24px; border: 1px solid var(--line); background: var(--surface); }
+.completion-hero { display: flex; align-items: center; gap: 18px; }
+.completion-hero .empty-symbol { flex: 0 0 auto; width: 58px; height: 58px; display: grid; place-items: center; border: 1px solid var(--line); font-size: 24px; }
+.completion-hero h2 { margin-bottom: 4px; font-size: 32px; text-transform: uppercase; }
+.completion-hero p { margin-bottom: 0; color: var(--muted); }
+.completion-summary { margin: 18px 0; }
+.completion-summary .scorecard-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); background: transparent; }
+.route-tools { display: grid; grid-template-columns: auto minmax(180px, 1fr) auto; gap: 8px; align-items: end; margin: 14px 0; }
+.route-tools label { font-size: 11px; }
 .move-list { display: grid; gap: 7px; margin-top: 14px; }
 .location-status-strip { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
 .location-status-item {
@@ -575,6 +645,9 @@ input::placeholder, textarea::placeholder { color: #696d68; }
   .cargo-panel > .panel-heading, .route-rail > .panel-heading { min-height: 48px; padding-top: 3px; padding-bottom: 3px; }
   .command-main { padding: 20px 28px; }
   .command-main h1 { font-size: clamp(30px, 3.4vw, 46px); }
+  .command-instruction { margin-top: 9px; }
+  .step-context { margin-top: 10px; padding-top: 9px; }
+  .context-datum { padding: 6px 8px; }
   .move-list { margin-top: 14px; }
   .cargo-metrics div { padding-top: 3px; padding-bottom: 3px; }
   .cargo-metrics strong { font-size: 18px; }
@@ -612,12 +685,14 @@ input::placeholder, textarea::placeholder { color: #696d68; }
   .workspace-header { align-items: flex-start; margin-bottom: 16px; }
   .workspace-header p { display: none; }
   .workspace-header h1 { font-size: 32px; }
+  .strategy-grid, .weight-grid, .candidate-grid, .scorecard-grid, .context-grid, .context-grid.compact, .manifest-columns { grid-template-columns: 1fr; }
   .acquire-layout, .review-layout, .configure-grid, .plan-detail, .live-grid, .live-grid.is-cargo-step, .fleet-layout, .intel-layout { grid-template-columns: 1fr; }
   .review-layout > .panel:first-child { order: 2; }
   .live-grid .command-panel { order: 1; }
   .live-grid .cargo-panel { order: 2; }
   .live-grid .cargo-panel .cargo-hold { display: none; }
   .command-panel { min-height: 340px; }
+  .route-tools { grid-template-columns: 1fr; }
   .cargo-panel { min-height: auto; }
   .route-rail { margin-bottom: 12px; }
   .execution-bar { left: 0; bottom: 64px; padding: 8px 14px; min-height: 64px; }
@@ -646,6 +721,8 @@ input::placeholder, textarea::placeholder { color: #696d68; }
   .objective-row label:nth-child(1), .objective-row label:nth-child(2), .objective-row label:nth-child(3) { grid-column: 1; }
   .objective-row .icon-button { grid-column: 2; grid-row: 1; }
   .form-row, .mode-picker { grid-template-columns: 1fr; }
+  .strategy-option { grid-template-columns: 24px minmax(0, 1fr); }
+  .strategy-option .tag { grid-column: 2; justify-self: start; }
   .mission-bar { grid-template-columns: 1fr auto; }
   .mission-bar > div:nth-child(n+3):not(:last-child) { display: none; }
   .mission-bar > div { border-bottom: 0; }

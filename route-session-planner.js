@@ -52,11 +52,22 @@
 
   function buildCandidate(missions, missionModel, startLocationId, options = {}) {
     try {
-      const route = root.SCCompanionRoutePlanner.buildRoute(missions, missionModel, {
+      const planner = root.SCCompanionRoutePlanner;
+      const routeOptions = {
         startLocationId,
-        selectedShipId: options.selectedShipId
+        selectedShipId: options.selectedShipId,
+        routeStrategy: options.routeStrategy,
+        routeStrategyWeights: options.routeStrategyWeights
+      };
+      const routes = planner.buildRouteCandidates
+        ? planner.buildRouteCandidates(missions, missionModel, routeOptions)
+        : [planner.buildRoute(missions, missionModel, routeOptions)];
+      const route = routes[0];
+      return Object.freeze({
+        route,
+        routes: Object.freeze(routes),
+        estimate: travelEstimateOf(route)
       });
-      return Object.freeze({ route, estimate: travelEstimateOf(route) });
     } catch (error) {
       return Object.freeze({ route: null, estimate: null, error });
     }
@@ -117,7 +128,7 @@
     return Object.freeze({ missions: Object.freeze(selected), candidate: current });
   }
 
-  function describeSession(index, missions, route, startLocationId, targetMinutes) {
+  function describeSession(index, missions, route, startLocationId, targetMinutes, routes = [route]) {
     const estimate = travelEstimateOf(route);
     const lastStop = route.stops.at(-1) ?? null;
     const rewardAuec = missions.reduce((sum, mission) => sum + missionReward(mission), 0);
@@ -138,6 +149,14 @@
       totalCargoScu,
       estimate,
       route,
+      routeCandidates: Object.freeze(routes.map((candidateRoute, candidateIndex) => Object.freeze({
+        id: candidateRoute.optimization?.candidateId ?? (candidateIndex ? `alternative-${candidateIndex}` : 'recommended'),
+        label: candidateRoute.optimization?.candidateLabel ?? (candidateIndex ? `Alternative ${candidateIndex}` : 'Recommended'),
+        rationale: candidateRoute.optimization?.rationale ?? '',
+        metrics: candidateRoute.optimization?.metrics ?? null,
+        route: candidateRoute
+      }))),
+      selectedRouteCandidateId: routes[0]?.optimization?.candidateId ?? 'recommended',
       overTarget: estimate.travelMinutes > targetMinutes,
       gatewaySegments: route.gatewaySegments ?? Object.freeze([])
     });
@@ -145,7 +164,10 @@
 
   function plan(missions, missionModel, options = {}) {
     const targetMinutes = Math.max(MIN_TARGET_MINUTES, Math.round(number(options.targetMinutes, DEFAULT_TARGET_MINUTES)));
-    const mode = options.mode === 'fastest' ? 'fastest' : 'sessions';
+    const legacyMode = options.mode;
+    const playMode = options.playMode === 'full' || legacyMode === 'fastest' ? 'full' : 'sessions';
+    const mode = options.playMode ? playMode : legacyMode === 'fastest' ? 'fastest' : 'sessions';
+    const routeStrategy = String(options.routeStrategy ?? (legacyMode === 'fastest' ? 'fastest' : 'balanced'));
     const startLocationId = String(options.startLocationId ?? '').trim();
     if (!startLocationId) throw new Error('Select your current location before building a route.');
     if (!Array.isArray(missions) || !missions.length) throw new Error('At least one mission is required.');
@@ -153,10 +175,13 @@
     const fullCandidate = buildCandidate(missions, missionModel, startLocationId, options);
     if (!fullCandidate.route) throw fullCandidate.error ?? new Error('Unable to build the full route.');
 
-    if (mode === 'fastest') {
-      const session = describeSession(0, missions, fullCandidate.route, startLocationId, targetMinutes);
+    if (playMode === 'full') {
+      const session = describeSession(0, missions, fullCandidate.route, startLocationId, targetMinutes, fullCandidate.routes);
       return Object.freeze({
         mode,
+        playMode,
+        routeStrategy,
+        routeStrategyWeights: options.routeStrategyWeights ?? null,
         targetMinutes,
         estimateBasis: 'travel-only',
         startLocationId,
@@ -176,7 +201,7 @@
       const seed = pickSeed(remaining, missionModel, sessionStartId, targetMinutes, options);
       if (!seed) throw new Error(`No capacity-feasible route can be built from ${startLabel(sessionStartId)}.`);
       const filled = fillSession(seed, remaining, missionModel, sessionStartId, targetMinutes, options);
-      const session = describeSession(sessions.length, filled.missions, filled.candidate.route, sessionStartId, targetMinutes);
+      const session = describeSession(sessions.length, filled.missions, filled.candidate.route, sessionStartId, targetMinutes, filled.candidate.routes);
       sessions.push(session);
       const selectedIds = new Set(filled.missions.map((mission) => mission.id));
       remaining = remaining.filter((mission) => !selectedIds.has(mission.id));
@@ -185,6 +210,9 @@
 
     return Object.freeze({
       mode,
+      playMode,
+      routeStrategy,
+      routeStrategyWeights: options.routeStrategyWeights ?? null,
       targetMinutes,
       estimateBasis: 'travel-only',
       startLocationId,

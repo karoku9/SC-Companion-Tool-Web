@@ -19,11 +19,17 @@ const consoleErrors = [];
 page.on('console', (message) => { if (message.type() === 'error') consoleErrors.push(message.text()); });
 page.on('pageerror', (error) => consoleErrors.push(error.message));
 
+let navigationSequence = 0;
+
 async function ready(route = 'live', clear = false) {
-  await page.goto(`${baseUrl}/#${route}`, { waitUntil: 'domcontentloaded' });
+  const navigate = () => page.goto(
+    `${baseUrl}/?smoke=${navigationSequence += 1}#${route}`,
+    { waitUntil: 'domcontentloaded' }
+  );
+  await navigate();
   if (clear) {
     await page.evaluate(() => localStorage.removeItem('sc-companion-session-v1'));
-    await page.reload({ waitUntil: 'domcontentloaded' });
+    await navigate();
   }
   await page.waitForFunction(() => window.SCCompanionUI && window.SCCompanionSession);
   if (clear && route !== 'live') await page.locator(`.primary-nav [data-nav="${route}"]`).click();
@@ -93,7 +99,7 @@ async function acquire(text) {
 async function buildFromText(text, targetMinutes = 60) {
   await acquire(text);
   await page.locator('[data-action="configure-route"]').click();
-  await page.locator('[data-route-mode="sessions"]').click();
+  await page.locator('[data-play-mode="sessions"]').click();
   await page.locator('#route-duration').fill(String(targetMinutes));
   await page.locator('[data-action="build-plan"]').click();
   await page.waitForSelector('[data-start-session]');
@@ -141,6 +147,10 @@ collect teasa 3scu titanium
 deliver port tressler 3scu titanium`;
 await ready('contracts', true);
 await buildFromText(occupancySample, 180);
+assert.ok(await page.locator('.candidate-card').count() >= 2, 'multi-stop plan must expose distinct route candidates');
+await page.locator('.candidate-card').nth(1).click();
+assert.equal(await page.locator('.candidate-card').nth(1).getAttribute('aria-pressed'), 'true');
+await capture('plan-distinct-candidates-1664x800', { viewport: { width: 1664, height: 800 } });
 await page.locator('[data-start-session="0"]').click();
 await assertCargoSquaresAndUnits([1, 2, 3]);
 assert.ok(await page.locator('.cargo-cell.is-current').count() > 0, 'pickup cells must be highlighted');
@@ -172,15 +182,44 @@ await acquire(sample);
 assert.match(await page.locator('main').innerText(), /All mission objectives are valid/i);
 await capture('contracts-review-valid-1600x900');
 await page.locator('[data-action="configure-route"]').click();
-await page.locator('[data-route-mode="sessions"]').click();
+await page.locator('[data-play-mode="sessions"]').click();
+assert.equal(await page.locator('[data-play-mode="sessions"]').getAttribute('aria-pressed'), 'true');
+assert.equal(await page.locator('[data-route-strategy="balanced"]').getAttribute('aria-pressed'), 'true');
+await capture('plan-balanced-config-1664x800', { viewport: { width: 1664, height: 800 } });
+await page.locator('[data-route-strategy="complete-missions"]').click();
+assert.equal(await page.evaluate(() => window.SCCompanionSession.getState().routeStrategy), 'complete-missions');
+await capture('plan-complete-missions-config-1664x800', { viewport: { width: 1664, height: 800 } });
+await page.locator('[data-route-strategy="fewest-jumps"]').click();
+await capture('plan-fewest-jumps-config-1664x800', { viewport: { width: 1664, height: 800 } });
+await page.locator('[data-action="toggle-more-strategies"]').click();
+assert.ok(await page.locator('[data-route-strategy="low-traffic"]').count());
+assert.match(await page.locator('[data-route-strategy="low-traffic"]').innerText(), /Experimental/i);
+await page.locator('[data-route-strategy="low-traffic"]').scrollIntoViewIfNeeded();
+await capture('plan-low-traffic-config-1664x800', { viewport: { width: 1664, height: 800 } });
+await page.locator('[data-route-strategy="custom"]').click();
+assert.ok(await page.locator('.custom-strategy').count());
+await page.locator('[data-strategy-weight="travelTime"]').fill('85');
+assert.equal(await page.evaluate(() => window.SCCompanionSession.getState().routeStrategyWeights.travelTime), 85);
+await page.locator('.custom-strategy').scrollIntoViewIfNeeded();
+await capture('plan-custom-weights-1664x800', { viewport: { width: 1664, height: 800 } });
+await page.locator('[data-route-strategy="balanced"]').click();
 await page.locator('#route-duration').fill('5');
 await page.locator('[data-action="build-plan"]').click();
 await page.waitForSelector('[data-start-session]');
 assert.ok(await page.locator('[data-session-row]').count() >= 2);
+assert.ok(await page.locator('.route-scorecard').count());
+const candidateCardCount = await page.locator('.candidate-card').count();
+if (!candidateCardCount) assert.match(await page.locator('.candidate-comparison').innerText(), /Only one valid route/i);
+if (candidateCardCount > 1) {
+  await page.locator('.candidate-card').nth(1).click();
+  assert.equal(await page.locator('.candidate-card').nth(1).getAttribute('aria-pressed'), 'true');
+}
 await capture('plan-multiple-sessions-1600x900');
+await capture('plan-candidate-comparison-1664x800', { viewport: { width: 1664, height: 800 } });
 
 await page.locator('[data-start-session="0"]').click();
 assert.match(await page.locator('.command-panel').innerText(), /Pick up/i);
+assert.match(await page.locator('.command-panel').innerText(), /Operation manifest/i);
 assert.ok(await page.locator('.cargo-cell.is-current').count() > 0);
 await assertCargoSquaresAndUnits([2]);
 const pickupStrip = await assertLocationStrip();
@@ -202,6 +241,7 @@ await page.locator('[data-close-drawer]').last().click();
 
 await page.locator('[data-action="complete-step"]').click();
 assert.match(await page.locator('.command-panel').innerText(), /Travel/i);
+assert.match(await page.locator('.command-panel').innerText(), /Travel context/i);
 const travelStrip = await assertLocationStrip();
 assert.notEqual(await travelStrip.getAttribute('data-location-id'), pickupLocationId, 'travel must show destination context');
 await capture('live-travel-1366x768', { viewport: { width: 1366, height: 768 } });
@@ -237,6 +277,10 @@ const mobileOrder = await page.evaluate(() => ({
 }));
 assert.ok(mobileOrder.action < mobileOrder.cargo);
 assert.equal(mobileOrder.fullGridVisible, false);
+await page.setViewportSize({ width: 1600, height: 900 });
+await page.locator('[data-action="complete-step"]').click();
+assert.match(await page.locator('main').innerText(), /Operation summary/i);
+await capture('live-route-complete-1600x900');
 
 const nearlyFull = `Capacity run
 collect teasa 69scu titanium
@@ -286,6 +330,7 @@ async function showOperationalKind(kind, screenshotName) {
     return window.SCCompanionOperationalSteps.derive(state.route, state).currentStep?.to?.id;
   });
   assert.equal(await page.locator('.command-panel .location-status-strip').getAttribute('data-location-id'), expectedLocationId);
+  assert.match(await page.locator('.command-panel').innerText(), kind === 'jump' ? /Jump transit/i : /Gateway context/i);
   await capture(screenshotName, { viewport: { width: 1600, height: 900 } });
 }
 

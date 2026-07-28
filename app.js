@@ -23,10 +23,11 @@
     await import('./cargo-auto-layout-v0292.js');
     await import('./cargo-manual-layout-v030.js');
     await import('./fleet-estimate-adapter.js');
+    await import('./route-optimization.js');
     await import('./focused-route-optimizer.js');
     await import('./route-locality-hotfix-v0294.js');
     await import('./route-session-planner.js');
-    await import('./ui/app-shell.js?v=5');
+    await import('./ui/app-shell.js?v=7');
     window.dispatchEvent(new Event('sc:app-ready'));
   } catch (error) {
     console.error('Application runtime failed to load.', error);
