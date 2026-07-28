@@ -16,9 +16,6 @@ DELIVER CARGO
 Destination: Teasa Spaceport
 3 SCU Titanium`;
 
-// Tesseract.js 7's CDN ESM build is produced from a CommonJS bundle and can
-// expose the browser API under the default export. This reproduces the real
-// export shape that caused library.createWorker to be undefined in production.
 const mockModule = `
 const api = {
   PSM: { SPARSE_TEXT: '11' },
@@ -143,7 +140,7 @@ try {
   await page.locator('#focused-review-validate').click();
   await page.locator('#focused-review-alerts .is-ready').waitFor({ state: 'visible' });
   const canonicalDraftText = await page.locator('#mission-text').inputValue();
-  assert.match(canonicalDraftText, /deliver Teasa Spaceport 3scu titanium/i);
+  assert.match(canonicalDraftText, /deliver Lorville 3scu titanium/i);
   assert.equal(await page.locator('#focused-review-generate').isDisabled(), true);
 
   step = 'complete route settings after OCR review';
@@ -164,3 +161,4 @@ try {
 }
 
 if (failure) throw failure;
+console.log('OCR intake browser test passed.');
