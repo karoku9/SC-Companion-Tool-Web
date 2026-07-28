@@ -7,11 +7,23 @@ html[data-active-view="route"][data-ops-density]:not([data-ops-density="flow"]) 
 
 /* Shorter desktop windows recover space through tighter grouping, not smaller text. */
 html[data-active-view="route"][data-ops-density="compact"] .operations-v028 .current-operation-body {
-  gap: 3px;
-  padding-block: 5px;
+  gap: 1px;
+  padding-block: 2px;
+}
+
+html[data-active-view="route"][data-ops-density="compact"] .operations-v028 .ops-v028-after-step,
+html[data-active-view="route"][data-ops-density="compact"] .operations-v028 .ops-v028-upcoming {
+  margin-top: 0;
+  padding-top: 2px;
 }
 
 html[data-active-view="route"][data-ops-density="tight"] .operations-v028 .current-operation-body {
-  gap: 2px;
-  padding-block: 4px;
+  gap: 0;
+  padding-block: 1px;
+}
+
+html[data-active-view="route"][data-ops-density="tight"] .operations-v028 .ops-v028-after-step,
+html[data-active-view="route"][data-ops-density="tight"] .operations-v028 .ops-v028-upcoming {
+  margin-top: 0;
+  padding-top: 1px;
 }
