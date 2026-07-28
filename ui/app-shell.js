@@ -821,9 +821,9 @@
             <p class="command-instruction">${escapeHtml(moves.length ? 'Handle the listed cargo at this stop, then confirm the operation.' : step.from?.label ? `Depart ${step.from.label} and follow the navigation target.` : 'Follow the in-game navigation target to continue.')}</p>
             ${moves.length ? operationManifest(step, state, layout, capacity) : navigationContext(step, next, state, onboard)}
           </div>
-          <div class="next-preview"><span class="eyebrow">Next meaningful step</span><br><b>${escapeHtml(next ? `${kindLabel(next.kind)} · ${stepDestination(next)}` : 'Complete session')}</b></div>
+          <div class="next-preview"><span class="eyebrow">Next meaningful step</span><b>${escapeHtml(next ? `${kindLabel(next.kind)} · ${stepDestination(next)}` : 'Complete session')}</b></div>
         </section>
-        <section class="panel cargo-panel${isNavigationFocus ? ' is-navigation-muted' : ''}">
+        <section class="panel cargo-panel${!isAction ? ' is-navigation-compact' : ''}${isNavigationFocus ? ' is-navigation-muted' : ''}">
           <div class="panel-heading"><strong>${escapeHtml(selectedModel(state).manufacturer)} ${escapeHtml(selectedModel(state).model)} · Cargo hold</strong><div><button class="button" type="button" data-action="toggle-grouping">${state.cargoLayoutGroupingMode === 'mission' ? 'By mission' : 'By destination'}</button> <button class="button" type="button" data-open-drawer="cargo">Edit grid</button></div></div>
           <div class="cargo-metrics"><div><strong>${formatScu(onboard)}</strong><span>Onboard</span></div><div><strong>${formatScu(free)}</strong><span>Free</span></div><div><strong>${formatScu(layout?.reservedScu ?? 0)}</strong><span>Reserved</span></div></div>
           <div class="cargo-hold">${layout?.error ? `<p class="danger">Layout impossible: ${escapeHtml(layout.error)}</p>` : cargoGridMarkup(layout, step)}</div>
