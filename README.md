@@ -1,60 +1,39 @@
-# SC Companion Tool — Clean Rebuild
+# SC Companion Tool
 
-A local-first Star Citizen mission, cargo and route companion built through small, independently testable releases.
+A local-first Star Citizen hauling companion for acquiring contracts, planning capacity-safe sessions and executing cargo operations.
 
-The previous implementation is preserved unchanged on the branch:
+## Product workflow
 
-`backup/pre-zero-rebuild-2026-07-21`
+The interface follows one continuous hauling workflow:
 
-## Current release
+`Contracts → Plan → Live Ops → Fleet → Intel`
 
-**v0.24 — OCR Assisted Intake**
+- **Contracts** supports manual text, screenshot/OCR and experimental Game.log intake. Every source enters the same mission review and ambiguity-resolution flow.
+- **Plan** compares fastest or time-boxed sessions by travel time, route, gateways, mission count, cargo operations and peak capacity.
+- **Live Ops** keeps the current action, exact navigation target and affected cargo cells dominant. Travel, gateway approach, jump, pickup and delivery remain explicit steps.
+- **Fleet** manages saved ships, active capacity, quantum configuration, travel factor and tool-defined cargo zones.
+- **Intel** combines location lookup with a separate route-focused starmap.
 
-The current application includes:
+The approved UX contract and acceptance criteria are documented in [`docs/codex-ui-ux-rebuild.md`](docs/codex-ui-ux-rebuild.md).
 
-- explicit screenshot and cropped-contract image selection inside **Missions**;
-- PNG, JPEG, WebP and BMP input, with up to six images per OCR batch;
-- a pinned Tesseract.js 7.0.0 browser worker loaded only when OCR is requested;
-- bounded-resolution preprocessing with grayscale, contrast and automatic dark-HUD inversion;
-- independent extraction and confidence for action, destination, SCU and commodity;
-- source filename, image hash, dimensions and OCR-line provenance for every extracted field;
-- editable OCR fields before draft handoff, plus a raw-text fallback for manual cleanup;
-- no persistence of source image bytes or previews; only sanitized extracted text, source metadata and field provenance remain in local browser state;
-- the same mission-validation, ambiguity, custom-location and explicit-generation gates used by manual and Game.log intake;
-- no automatic replacement of the active route;
-- explicit, user-initiated local `Game.log` selection with incremental reads, source generations, replay protection and raw event provenance;
-- one sourced and versioned location model with 130 normalized records and 84 operational destinations;
-- complete reviewed destination services and static-risk guidance;
-- guided Operations with travel, final-approach, landing support and service information at the current stop;
-- dependency-safe, capacity-safe multi-stop route planning;
-- itinerary, system and network navigation layers for Stanton, Pyro and Nyx;
-- per-ship cargo zones and structured named loadouts;
-- authoritative Node and Chromium tests, including an end-to-end mocked OCR upload and review workflow.
+## Data and persistence
 
-### OCR workflow
+The rebuild preserves the existing `sc-companion-session-v1` localStorage session and reuses the established:
 
-1. Open **Missions** and choose one or more screenshots.
-2. Wait for local recognition and inspect the image preview, extracted text and field-level confidence.
-3. Correct mission title, action, destination, SCU or commodity directly in the OCR review panel.
-4. Use **Load OCR draft into review**.
-5. Resolve any blocker in the normal mission-validation panel.
-6. Generate the route explicitly only after validation.
+- mission parser and validation;
+- route and time-boxed session planners;
+- gateway-aware operational steps;
+- cargo state and automatic layout;
+- per-ship manual cargo layout;
+- ship catalog and cargo zones;
+- OCR and Game.log parsers;
+- location registry and static context.
 
-The selected image is handled by the browser OCR worker and is not retained in saved session state. On first OCR use, the pinned JavaScript module, WebAssembly OCR core and English language model must be downloaded. Later availability depends on browser caching and network policy; fully offline first-use OCR is not claimed.
-
-### Game.log workflow
-
-1. Choose `Game.log` explicitly.
-2. Inspect complete and unresolved candidate events with raw provenance.
-3. Read newer complete lines during the same page session, or reselect the file where a persistent handle is unavailable.
-4. Load the extracted draft into the normal mission review.
-5. Generate only after explicit validation.
-
-The browser cannot silently monitor the Star Citizen installation. File permission is not claimed across a page reload.
+Manual cargo planning for the Drake Corsair uses the existing 72 SCU, 6 × 4, 3 SCU-per-cell configuration. Grid geometry is a planning aid, not an official ship blueprint.
 
 ## Run locally
 
-Serve the repository root through any static HTTP server, for example:
+Serve the repository root through any static HTTP server:
 
 ```bash
 python -m http.server 4173
@@ -64,25 +43,20 @@ Then open `http://localhost:4173`.
 
 ## Test
 
+Run the complete Node matrix:
+
 ```bash
 node --test tests/*.test.js
 ```
 
-GitHub Actions also runs JavaScript syntax checks and Playwright/Chromium workflows across operational states and supported viewport sizes. OCR coverage verifies field extraction, unresolved-field preservation, correction serialization, image upload, browser preprocessing, field provenance, validation handoff, mobile layout and the rule that route state remains unchanged until explicit generation.
+Run the Chromium behavior and screenshot matrix after starting the local server:
 
-## Data boundaries
+```bash
+UI_BASE_URL=http://127.0.0.1:4173 node tests/ui-browser-rebuild.mjs
+```
 
-Official/static universe facts, reviewed community and unpacked game-data records, project-derived estimates, user-entered component data and unavailable information remain visibly separate. Schematic map anchors are not presented as verified coordinates. Static danger guidance is not a live report of players, piracy, comm-array state or shard conditions. Service records do not claim current stock or uptime.
+The browser matrix covers valid and blocked contract review, assisted intake, multiple sessions, all Live Ops step types, cargo states, the manual editor, Fleet, Intel, long location names and desktop/tablet/mobile viewports. Screenshots are written to `ui-smoke-artifacts/` and uploaded by GitHub Actions.
 
-OCR confidence is recognition evidence, not proof that an extracted field matches the in-game contract. Low-confidence and incomplete fields remain editable and must still pass mission validation. The public Game.log fixture uses an observed notification envelope with synthetic hauling payloads; unsupported real-world variants remain unresolved rather than receiving invented data.
+## Boundaries
 
-## Development direction
-
-The roadmap displayed inside the site is the active product roadmap. Content is stored in `roadmap.js`; detailed architecture and verification rules are documented in `PROJECT-STATE.md`, `PROJECT-CHECKLIST.md` and the project documents under `docs/`.
-
-The locked remaining core sequence is:
-
-1. **v0.25 — Release hardening**: backup, migrations, recovery, performance, accessibility, offline/static deployment and cross-browser verification.
-2. **v1.0 — Core companion release**: a stable mission-to-execution workflow.
-
-Session history, companion pairing and commodity trading are intentionally deferred until after v1.0.
+All session data stays local. Static risk guidance is not live telemetry. Service records do not claim current stock or uptime. Schematic map anchors are not verified coordinates. Unknown or ambiguous mission fields remain unresolved rather than receiving invented values.
