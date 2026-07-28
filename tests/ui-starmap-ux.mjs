@@ -59,18 +59,16 @@ try {
   assert.match(await page.locator('#focused-route-summary').textContent(), /Stanton Gateway/i);
   assert.match(await page.locator('#focused-route-summary').textContent(), /Pyro Gateway/i);
 
-  step = 'inspect focused desktop route map';
+  step = 'inspect cargo-first desktop route workflow';
   await page.locator('#focused-route-open').click();
-  await page.locator('#ops-live-map .ops-map-node').first().waitFor({ state: 'visible' });
+  await page.locator('.operations-cargo-primary-v0302').waitFor({ state: 'visible' });
+  await page.locator('.ops-v0302-primary-cargo .ops-v028-cargo-cell').first().waitFor({ state: 'visible' });
   assert.equal(await page.locator('[data-view-target="map"]').count(), 0, 'Standalone Starmap must not remain in visible navigation');
-  const nodeCount = await page.locator('#ops-live-map .ops-map-node').count();
-  const legCount = await page.locator('#ops-live-map .ops-map-leg').count();
-  assert.ok(nodeCount >= 1 && nodeCount <= 5, `Focused map should display only the active segment and immediate continuation, found ${nodeCount} nodes`);
-  assert.equal(legCount, Math.max(0, nodeCount - 1));
-  assert.equal(await page.locator('#ops-live-map .ops-map-node.is-current').count(), 1);
-  assert.ok(await page.locator('#ops-live-map .ops-v028-map-leg.is-current').count() >= 1);
-  assert.match(await page.locator('#ops-next-leg-strip').textContent(), /Area18|Riker Memorial Spaceport|Gateway/i);
-  assert.notEqual((await page.locator('#ops-next-leg-title').textContent())?.trim(), 'No active route');
+  assert.equal(await page.locator('.ops-live-navigation').count(), 0, 'Operations route map must be removed');
+  assert.equal(await page.locator('.ops-v0302-primary-cargo').count(), 1);
+  assert.ok(await page.locator('.ops-v028-stop-card').count() >= 3);
+  assert.notEqual((await page.locator('#current-stop-name').textContent())?.trim(), 'Generate a session first');
+  assert.notEqual((await page.locator('#ops-v027-current').textContent())?.trim(), '—');
 
   const routeFlow = await page.evaluate(() => {
     const state = window.SCCompanionSession.getState();
@@ -86,58 +84,53 @@ try {
   assert.equal(routeFlow.gatewayApproaches.length, 2);
   assert.ok(routeFlow.kinds.includes('travel'));
   assert.ok(routeFlow.kinds.includes('action'));
-  await noHorizontalOverflow('focused desktop map');
-  await page.screenshot({ path: `${output}/integrated-route-map-desktop.png`, fullPage: true });
+  await noHorizontalOverflow('cargo-first desktop route workflow');
+  await page.screenshot({ path: `${output}/cargo-first-route-desktop.png`, fullPage: true });
 
-  step = 'verify map updates with operational progress';
-  const firstCurrentId = await page.locator('#ops-live-map .ops-map-node.is-current').getAttribute('data-reference-id');
+  step = 'verify current instruction and cargo update with progress';
   const firstCurrentName = (await page.locator('#current-stop-name').textContent())?.trim();
+  const firstProgress = (await page.locator('#ops-v028-cargo-title').textContent())?.trim();
   await page.locator('#complete-stop').click();
   await page.waitForFunction((previousName) => document.querySelector('#current-stop-name')?.textContent?.trim() !== previousName, firstCurrentName);
-  const secondCurrentId = await page.locator('#ops-live-map .ops-map-node.is-current').getAttribute('data-reference-id');
   const secondCurrentName = (await page.locator('#current-stop-name').textContent())?.trim();
-  const focusedNodeCount = await page.locator('#ops-live-map .ops-map-node').count();
-  assert.equal(await page.locator('#ops-live-map .ops-map-node.is-current').count(), 1);
-  assert.ok(focusedNodeCount <= 5);
-  assert.notEqual(secondCurrentName, firstCurrentName, 'Completing a travel step must advance the current instruction');
-  if (secondCurrentId === firstCurrentId) {
-    assert.ok(focusedNodeCount >= 1 && focusedNodeCount <= 2, 'An action at the just-reached location may retain only that location and the immediate next navigation target');
-    assert.match(secondCurrentName ?? '', /Pick up|Drop|Complete/i);
-    if (focusedNodeCount === 2) {
-      assert.ok(await page.locator('#ops-live-map .ops-map-gateway').count() >= 1, 'The only continuation shown from an action location should be its next gateway or destination');
-    }
-  }
-  await page.screenshot({ path: `${output}/integrated-route-map-progress-desktop.png`, fullPage: true });
+  const secondProgress = (await page.locator('#ops-v028-cargo-title').textContent())?.trim();
+  assert.notEqual(secondCurrentName, firstCurrentName, 'Completing a route step must advance the current instruction');
+  assert.ok(secondProgress, 'Cargo projection heading must remain populated after progress');
+  assert.equal(await page.locator('.ops-live-navigation').count(), 0);
+  assert.equal(await page.locator('.ops-v027-route-step.is-current, .ops-v028-stop-card.is-current').count() >= 1, true);
+  assert.ok(firstProgress || secondProgress);
+  await page.screenshot({ path: `${output}/cargo-first-route-progress-desktop.png`, fullPage: true });
 
-  step = 'complete route and verify focused map completion';
+  step = 'complete route and verify cargo-first completion';
   let safety = 24;
   while (!(await page.locator('#complete-stop').isDisabled()) && safety > 0) {
     await page.locator('#complete-stop').click();
     safety -= 1;
   }
   assert.ok(safety > 0, 'Route completion exceeded safety limit');
-  await page.locator('#ops-next-leg-title').filter({ hasText: /Session complete/i }).waitFor({ state: 'visible' });
+  await page.locator('#current-stop-name').filter({ hasText: /Session complete/i }).waitFor({ state: 'visible' });
   assert.match((await page.locator('#global-route-status').textContent()) ?? '', /complete/i);
-  assert.equal(await page.locator('#ops-live-map .ops-map-node').count(), 0);
-  assert.equal(await page.locator('#ops-live-map .ops-map-node.is-current').count(), 0);
+  assert.equal(await page.locator('.ops-live-navigation').count(), 0);
+  assert.equal(await page.locator('.ops-v0302-primary-cargo').count(), 1);
 
-  step = 'verify completed map at tablet size';
+  step = 'verify completed cargo-first layout at tablet size';
   await page.setViewportSize({ width: 768, height: 1024 });
-  await page.locator('#ops-live-map').waitFor({ state: 'visible' });
-  assert.match(await page.locator('#ops-next-leg-title').textContent(), /complete/i);
-  await noHorizontalOverflow('tablet completed integrated map');
-  const tabletBox = await page.locator('#ops-live-map').boundingBox();
-  assert.ok(tabletBox && tabletBox.width <= 768 + 2 && tabletBox.height > 300);
-  await page.screenshot({ path: `${output}/integrated-route-map-complete-tablet.png`, fullPage: true });
+  await page.locator('.ops-v0302-primary-cargo').waitFor({ state: 'visible' });
+  assert.match(await page.locator('#current-stop-name').textContent(), /complete/i);
+  await noHorizontalOverflow('tablet completed cargo-first Operations');
+  const tabletBox = await page.locator('.ops-v0302-primary-cargo').boundingBox();
+  assert.ok(tabletBox && tabletBox.width <= 768 + 2 && tabletBox.height > 250);
+  await page.screenshot({ path: `${output}/cargo-first-route-complete-tablet.png`, fullPage: true });
 
-  step = 'verify mobile integrated map and controls';
+  step = 'verify mobile cargo-first layout and controls';
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.locator('#ops-live-map').waitFor({ state: 'visible' });
-  await noHorizontalOverflow('mobile integrated map');
-  const mobileBox = await page.locator('#ops-live-map').boundingBox();
-  assert.ok(mobileBox && mobileBox.x >= 0 && mobileBox.x + mobileBox.width <= 392, `Mobile map escapes viewport: ${JSON.stringify(mobileBox)}`);
+  await page.locator('.ops-v0302-primary-cargo').waitFor({ state: 'visible' });
+  await noHorizontalOverflow('mobile cargo-first Operations');
+  const mobileBox = await page.locator('.ops-v0302-primary-cargo').boundingBox();
+  assert.ok(mobileBox && mobileBox.x >= 0 && mobileBox.x + mobileBox.width <= 392, `Mobile cargo panel escapes viewport: ${JSON.stringify(mobileBox)}`);
+  assert.equal(await page.locator('.ops-live-navigation').count(), 0);
   assert.equal(await page.locator('.ops-action-bar [data-ops-action]').count(), 5);
-  await page.screenshot({ path: `${output}/integrated-route-map-mobile.png`, fullPage: true });
+  await page.screenshot({ path: `${output}/cargo-first-route-mobile.png`, fullPage: true });
 
   step = 'check browser errors';
   assert.deepEqual(errors, [], `Browser errors:\n${errors.join('\n')}`);
