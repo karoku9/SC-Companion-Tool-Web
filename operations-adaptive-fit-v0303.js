@@ -15,6 +15,7 @@
   function installStyles() {
     appendStyle('operations-adaptive-fit-v0303.css', 'data-operations-adaptive-fit-style');
     appendStyle('operations-adaptive-fit-v0303-readable.css', 'data-operations-adaptive-fit-readable-style');
+    appendStyle('operations-adaptive-fit-v0303-cleanup.css', 'data-operations-adaptive-fit-cleanup-style');
   }
 
   function resolveDensity() {
