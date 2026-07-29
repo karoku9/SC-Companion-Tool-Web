@@ -47,6 +47,7 @@
     editorMode: 'move',
     editorGroup: null,
     editorSource: null,
+    expandedStepActionsId: null,
     toastTimer: null
   };
 
@@ -702,22 +703,71 @@
     return `<div class="context-datum"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value ?? 'Unknown')}</strong>${detail ? `<small>${escapeHtml(detail)}</small>` : ''}</div>`;
   }
 
-  function renderStepDetail(type, title, state, items, footer = '') {
+  function renderStepDetail(type, title, state, content, footer = '') {
     return `<div class="step-detail" data-step-detail="${escapeHtml(type)}">
       <div class="context-heading"><span class="eyebrow">${escapeHtml(title)}</span><strong>${routeMetricLine(state)}</strong></div>
-      <div class="context-grid">${items.map((item) => contextDatum(item.label, item.value, item.detail)).join('')}</div>
+      ${content}
       ${footer}
     </div>`;
   }
 
-  function operationManifest(step, state, layout, capacity) {
+  function renderDetailPath(items) {
+    return `<div class="step-detail-path">${items.map((item) => contextDatum(item.label, item.value, item.detail)).join('')}</div>`;
+  }
+
+  function renderDetailMetrics(items) {
+    return `<div class="step-metrics" role="list">${items.map((item) => `<div role="listitem"><strong>${escapeHtml(item.value)}</strong><span>${escapeHtml(item.label)}</span>${item.detail ? `<small>${escapeHtml(item.detail)}</small>` : ''}</div>`).join('')}</div>`;
+  }
+
+  function getVisibleStepActions(actions, limit = 3, expanded = false) {
+    return expanded ? [...actions] : actions.slice(0, limit);
+  }
+
+  function renderExpandableActionList(step, actions, limit = 3) {
+    const expanded = ui.expandedStepActionsId === step.id;
+    const visible = getVisibleStepActions(actions, limit, expanded);
+    const remaining = Math.max(0, actions.length - limit);
+    const listId = `step-actions-${String(step.id).replace(/[^a-z0-9_-]/gi, '-')}`;
+    return `<section class="step-action-list" aria-labelledby="${listId}-label">
+      <div class="step-action-heading"><span class="eyebrow" id="${listId}-label">First actions after transit</span><strong>${actions.length ? `${actions.length} cargo action${actions.length === 1 ? '' : 's'}` : 'No cargo action queued'}</strong></div>
+      ${actions.length ? `<ul id="${listId}">${visible.map((operation) => `<li>
+        <span>${escapeHtml(operationVerb(operation.type))}</span>
+        <strong>${escapeHtml(formatScu(operation.scu))} ${escapeHtml(operation.commodity)}</strong>
+        <small>${escapeHtml(operation.missionTitle ?? 'Current session')} · ${escapeHtml(operation.destinationLocationLabel ?? operation.deliveryLocationLabel ?? operation.locationLabel ?? 'Next stop')}</small>
+      </li>`).join('')}</ul>` : '<p class="muted">Continue to the next operational objective.</p>'}
+      ${remaining ? `<button class="step-action-toggle" type="button" data-action="toggle-step-actions" data-step-actions-id="${escapeHtml(step.id)}" aria-controls="${listId}" aria-expanded="${expanded}" aria-label="${expanded ? 'Collapse actions after transit' : `Show ${remaining} more actions after transit`}">${expanded ? 'Show fewer actions' : `+${remaining} more action${remaining === 1 ? '' : 's'}`}</button>` : ''}
+    </section>`;
+  }
+
+  function nextCargoActionStep(step, state) {
+    const routeProgress = progress(state);
+    const currentIndex = routeProgress?.steps?.findIndex((candidate) => candidate.id === step.id) ?? -1;
+    return routeProgress?.steps?.slice(currentIndex + 1).find((candidate) => candidate.kind === 'action') ?? null;
+  }
+
+  function estimateDuration(estimate = {}) {
+    const minimum = Math.round(safeNumber(estimate.minMinutes));
+    const maximum = Math.round(safeNumber(estimate.maxMinutes, minimum));
+    return minimum === maximum ? `${maximum} min` : `${minimum}–${maximum} min`;
+  }
+
+  function affectedCargoCoordinates(step, layout, state) {
+    const mode = state.cargoLayoutGroupingMode === 'mission' ? 'mission' : 'destination';
+    const keys = new Set((step.operations ?? []).map((operation) => (
+      mode === 'mission'
+        ? `mission:${operation.missionId}`
+        : `destination:${operation.destinationLocationId ?? operation.locationId}`
+    )));
+    return (layout?.floorCells ?? [])
+      .filter((cell) => keys.has(String(cell.groupKey ?? '')) && !cell.reserved)
+      .map((cell) => String(cell.coordinate ?? cell.label ?? cell.id).replace(':', '·'));
+  }
+
+  function renderCargoOperationDetails(step, state, layout, capacity) {
     const leg = state.route?.estimate?.legs?.[step.stopIndex] ?? {};
     const before = safeNumber(leg.onboardBeforeScu);
     const after = safeNumber(leg.onboardAfterScu, before + safeNumber(step.totals?.delta));
-    const coordinates = (layout?.floorCells ?? [])
-      .filter((cell) => cell.groupKey && !cell.reserved)
-      .slice(0, 8)
-      .map((cell) => String(cell.coordinate ?? cell.label ?? cell.id).replace(':', '·'));
+    const coordinates = affectedCargoCoordinates(step, layout, state);
     const group = (type, label) => {
       const operations = (step.operations ?? []).filter((operation) => type === 'delivery'
         ? operation.type === 'delivery'
@@ -731,46 +781,81 @@
     return `<div class="step-detail operation-manifest" data-step-detail="cargo-operation">
       <div class="context-heading"><span class="eyebrow">Operation manifest</span><strong>${formatScu(before)} → ${formatScu(after)} onboard</strong></div>
       <div class="manifest-columns">${group('pickup', 'PICKUP')}${group('delivery', 'DELIVERY')}</div>
-      <div class="context-grid compact">${contextDatum('Onboard before', formatScu(before))}${contextDatum('Onboard after', formatScu(after))}${contextDatum('Free after', formatScu(Math.max(0, capacity - after)))}${contextDatum('Cargo cells', coordinates.length ? coordinates.join(', ') : 'Auto-assigned')}</div>
+      ${renderDetailMetrics([
+        { label: 'Onboard before', value: formatScu(before) },
+        { label: 'Onboard after', value: formatScu(after) },
+        { label: 'Remaining capacity', value: formatScu(Math.max(0, capacity - after)) },
+        { label: 'Affected cells', value: coordinates.length ? coordinates.join(', ') : 'Auto-assigned' }
+      ])}
     </div>`;
   }
 
-  function navigationStepDetail(step, next, state, onboard) {
+  function renderTravelDetails(step, state, onboard) {
     const estimate = step.estimate ?? {};
-    const metrics = state.route?.optimization?.metrics ?? {};
     const rationale = state.route?.optimization?.rationale ?? '';
-    const nextAction = progress(state)?.steps?.find((candidate, index) => index > progress(state).currentIndex && candidate.kind === 'action');
-    const nextCargo = (nextAction?.operations ?? []).map((operation) => `${operationVerb(operation.type)} ${operation.scu} SCU ${operation.commodity}`).join(' · ');
-    if (step.kind === 'gateway-approach') {
-      const crossing = (state.route.gatewaySegments ?? []).find((segment) => segment.connectionId === step.segment?.connectionId) ?? step.segment;
-      const required = state.route.missions?.map((mission) => mission.title).join(', ') ?? '';
-      return renderStepDetail('gateway-approach', 'Gateway transfer', state, [
-        { label: 'Departure gateway', value: crossing?.fromGateway ?? step.to?.label },
-        { label: 'Arrival gateway', value: crossing?.toGateway ?? 'Next system gateway' },
-        { label: 'Systems', value: `${step.from?.systemName ?? 'Unknown'} → ${crossing?.toSystemId ?? step.to?.systemName ?? 'Unknown'}` },
-        { label: 'Jump sequence', value: `${safeNumber(step.segment?.legIndex, 0) + 1} / ${Math.max(1, state.route.gatewaySegments?.length ?? 1)}` },
-        { label: 'Cargo crossing', value: formatScu(onboard), detail: required },
-        { label: 'Exposure', value: `Risk ${safeNumber(metrics.riskExposureScore)}`, detail: 'Gateway services shown above' }
-      ]);
-    }
-    if (step.kind === 'jump') {
-      return renderStepDetail('jump', 'Jump transit', state, [
+    const nextAction = nextCargoActionStep(step, state);
+    const operations = nextAction?.operations ?? [];
+    return renderStepDetail('travel', 'Arrival detail', state, `
+      ${renderDetailPath([
+        { label: 'Origin', value: step.from?.label },
+        { label: 'Destination', value: step.to?.label },
+        { label: 'Systems', value: `${step.from?.systemName ?? 'Unknown'} → ${step.to?.systemName ?? 'Unknown'}` }
+      ])}
+      ${renderDetailMetrics([
+        { label: 'Estimated travel', value: estimateDuration(estimate), detail: estimate.distanceLabel },
+        { label: 'Gateway count', value: `${safeNumber(estimate.jumpCount)} jumps` },
+        { label: 'Cargo at arrival', value: formatScu(onboard) },
+        { label: 'Next cargo operation', value: operations.length ? `${operations.length} action${operations.length === 1 ? '' : 's'}` : 'None', detail: nextAction ? stepDestination(nextAction) : 'Continue route' }
+      ])}
+    `, rationale ? `<p class="optimizer-rationale">${escapeHtml(rationale)}</p>` : '');
+  }
+
+  function renderGatewayApproachDetails(step, state, onboard) {
+    const crossing = (state.route.gatewaySegments ?? []).find((segment) => segment.connectionId === step.segment?.connectionId) ?? step.segment;
+    const missionTitles = state.route.missions?.map((mission) => mission.title).filter(Boolean) ?? [];
+    const jumpIndex = Math.max(1, (state.route.gatewaySegments ?? []).findIndex((segment) => segment.connectionId === crossing?.connectionId) + 1);
+    const totalJumps = Math.max(1, state.route.gatewaySegments?.length ?? 1);
+    return renderStepDetail('gateway-approach', 'Gateway transfer', state, `
+      ${renderDetailPath([
+        { label: 'Current system', value: step.from?.systemName },
+        { label: 'Gateway approached', value: crossing?.fromGateway ?? step.to?.label },
+        { label: 'Destination system', value: crossing?.toSystemId ?? step.to?.systemName }
+      ])}
+      ${renderDetailMetrics([
+        { label: 'Jump number', value: `${jumpIndex} / ${totalJumps}` },
+        { label: 'Cargo in transfer', value: formatScu(onboard) },
+        { label: 'Missions in transfer', value: String(missionTitles.length) },
+        { label: 'Gateway pair', value: `${crossing?.fromGateway ?? step.to?.label} → ${crossing?.toGateway ?? 'Next gateway'}` }
+      ])}
+      <p class="step-mission-line"><span>Transit missions</span><strong title="${escapeHtml(missionTitles.join(' · '))}">${escapeHtml(missionTitles.length ? missionTitles.join(' · ') : 'No mission cargo in transfer')}</strong></p>
+    `);
+  }
+
+  function renderJumpTransitDetails(step, state, onboard) {
+    const metrics = state.route?.optimization?.metrics ?? {};
+    const nextAction = nextCargoActionStep(step, state);
+    const actions = nextAction?.operations ?? [];
+    return renderStepDetail('jump', 'Jump transit', state, `
+      ${renderDetailPath([
         { label: 'Leaving system', value: step.from?.systemName },
         { label: 'Reaching system', value: step.to?.systemName },
-        { label: 'Gateway pair', value: `${step.from?.shortLabel ?? step.from?.label} → ${step.to?.shortLabel ?? step.to?.label}` },
+        { label: 'Gateway pair', value: `${step.from?.shortLabel ?? step.from?.label} → ${step.to?.shortLabel ?? step.to?.label}` }
+      ])}
+      ${renderDetailMetrics([
+        { label: 'Jump count', value: `${safeNumber(metrics.gatewayJumpCount, state.route.gatewaySegments?.length)} jumps` },
+        { label: 'Estimated duration', value: estimateDuration(step.estimate) },
         { label: 'Cargo onboard', value: formatScu(onboard) },
-        { label: 'Missions in transfer', value: String(state.route.missions?.length ?? 0) },
-        { label: 'Next objective', value: nextCargo || stepDestination(next), detail: 'First action after transit' }
-      ]);
-    }
-    return renderStepDetail('travel', 'Arrival detail', state, [
-      { label: 'Origin', value: step.from?.label },
-      { label: 'Destination', value: step.to?.label },
-      { label: 'Systems', value: `${step.from?.systemName ?? 'Unknown'} → ${step.to?.systemName ?? 'Unknown'}` },
-      { label: 'Estimated travel', value: `${safeNumber(estimate.minMinutes)}–${safeNumber(estimate.maxMinutes)} min`, detail: estimate.distanceLabel },
-      { label: 'Cargo at arrival', value: formatScu(onboard), detail: nextCargo || 'No cargo operation at next step' },
-      { label: 'Arrival operation', value: nextAction ? `${operationVerb(nextAction.operations?.[0]?.type)} · ${stepDestination(nextAction)}` : 'Continue route', detail: nextCargo }
-    ], rationale ? `<p class="optimizer-rationale">${escapeHtml(rationale)}</p>` : '');
+        { label: 'Missions in transfer', value: String(state.route.missions?.length ?? 0) }
+      ])}
+      ${renderExpandableActionList(step, actions)}
+    `);
+  }
+
+  function renderStepDetails(step, state, layout, capacity, onboard) {
+    if (step.kind === 'action') return renderCargoOperationDetails(step, state, layout, capacity);
+    if (step.kind === 'gateway-approach') return renderGatewayApproachDetails(step, state, onboard);
+    if (step.kind === 'jump') return renderJumpTransitDetails(step, state, onboard);
+    return renderTravelDetails(step, state, onboard);
   }
 
   function routeCompleteSummary(state) {
@@ -784,6 +869,7 @@
       ${contextDatum('Stops', String(safeNumber(metrics.stopCount, state.route?.stops?.length)))}
       ${contextDatum('Gateway jumps', String(safeNumber(metrics.gatewayJumpCount, state.route?.estimate?.totalJumpCount)))}
       ${contextDatum('Estimated travel', formatMinutes(metrics.totalTravelMinutes ?? state.route?.estimate?.midpoint))}
+      ${contextDatum('Route strategy', strategyLabel(state))}
       ${contextDatum('Outside session', excluded ? `${excluded} missions` : 'None')}
     </div></div>`;
   }
@@ -827,9 +913,9 @@
             <p class="nav-target">NAV TARGET · ${escapeHtml(stepNavTarget(step))}</p>
             ${renderLocationStatusStrip(locationStatus)}
             <p class="command-instruction">${escapeHtml(moves.length ? 'Handle the listed cargo at this stop, then confirm the operation.' : step.from?.label ? `Depart ${step.from.label} and follow the navigation target.` : 'Follow the in-game navigation target to continue.')}</p>
-            ${moves.length ? operationManifest(step, state, layout, capacity) : navigationStepDetail(step, next, state, onboard)}
+            ${renderStepDetails(step, state, layout, capacity, onboard)}
           </div>
-          <div class="next-preview"><span class="eyebrow">Next meaningful step</span><b>${escapeHtml(next ? `${kindLabel(next.kind)} · ${stepDestination(next)}` : 'Complete session')}</b></div>
+          <div class="next-preview"><span class="eyebrow">Next meaningful step</span><b title="${escapeHtml(next ? `${kindLabel(next.kind)} · ${stepDestination(next)}` : 'Complete session')}">${escapeHtml(next ? `${kindLabel(next.kind)} · ${stepDestination(next)}` : 'Complete session')}</b></div>
         </section>
         <section class="panel cargo-panel${!isAction ? ' is-navigation-compact' : ''}${isNavigationFocus ? ' is-navigation-muted' : ''}">
           <div class="panel-heading"><strong>${escapeHtml(selectedModel(state).manufacturer)} ${escapeHtml(selectedModel(state).model)} · Cargo hold</strong><div><button class="button" type="button" data-action="toggle-grouping">${state.cargoLayoutGroupingMode === 'mission' ? 'By mission' : 'By destination'}</button> <button class="button" type="button" data-open-drawer="cargo">Edit grid</button></div></div>
@@ -1248,8 +1334,14 @@
         ui.reviewDrafts.splice(ui.selectedMission, 1); ui.selectedMission = Math.max(0, ui.selectedMission - 1); refreshReportFromDrafts(); render(); break;
       case 'add-objective':
         ui.reviewDrafts[ui.selectedMission]?.objectives.push({ action: 'collect', location: '', cargo: '' }); refreshReportFromDrafts(); render(); break;
-      case 'previous-step': completeStep('previous'); break;
-      case 'complete-step': completeStep('complete'); break;
+      case 'previous-step': ui.expandedStepActionsId = null; completeStep('previous'); break;
+      case 'complete-step': ui.expandedStepActionsId = null; completeStep('complete'); break;
+      case 'toggle-step-actions':
+        ui.expandedStepActionsId = ui.expandedStepActionsId === target.dataset.stepActionsId
+          ? null
+          : target.dataset.stepActionsId;
+        render();
+        break;
       case 'toggle-grouping':
         store.patch({ cargoLayoutGroupingMode: store.getState().cargoLayoutGroupingMode === 'mission' ? 'destination' : 'mission' }); break;
       case 'reset-layout':

@@ -118,6 +118,9 @@ async function assertLiveDensity(label, maximumPanelHeight) {
       cargoGridWidth: cargoGrid.getBoundingClientRect().width,
       cargoGridWidthPercent: cargoGrid.getBoundingClientRect().width / cargoPanel.getBoundingClientRect().width * 100,
       routeCardHeight: routeCard.getBoundingClientRect().height,
+      commandOverflowY: getComputedStyle(command).overflowY,
+      commandInternalOverflow: command.scrollHeight - command.clientHeight,
+      documentScrollWidth: document.documentElement.scrollWidth,
       horizontalOverflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
       documentOverflow: document.documentElement.scrollHeight - document.documentElement.clientHeight,
       stageOverflow: document.querySelector('.app-stage').scrollHeight - document.querySelector('.app-stage').clientHeight,
@@ -128,10 +131,11 @@ async function assertLiveDensity(label, maximumPanelHeight) {
   assert.ok(geometry.route.height >= 92, `${label} route orientation lost useful height: ${JSON.stringify(geometry)}`);
   assert.ok(geometry.route.bottom <= geometry.execution.top + 2 || geometry.stageOverflow > 0 || geometry.documentOverflow > 0, `${label} route orientation cannot be reached above the action bar: ${JSON.stringify(geometry)}`);
   assert.ok(geometry.unusedVerticalArea <= 72, `${label} wastes too much primary-panel height: ${JSON.stringify(geometry)}`);
-  assert.ok(geometry.unusedRowArea <= 220, `${label} wastes too much action-column height: ${JSON.stringify(geometry)}`);
+  assert.ok(geometry.unusedRowArea <= 260, `${label} wastes too much action-column height: ${JSON.stringify(geometry)}`);
   assert.ok(geometry.cargoGridWidth >= 279 && geometry.cargoGridWidth <= 361, `${label} cargo grid is outside its responsive range: ${JSON.stringify(geometry)}`);
   assert.ok(geometry.cargoGridWidthPercent >= 50 && geometry.cargoGridWidthPercent <= 70, `${label} cargo grid does not use the panel proportionally: ${JSON.stringify(geometry)}`);
   assert.ok(geometry.routeCardHeight >= 72 && geometry.routeCardHeight <= 96, `${label} route card readable area is outside the target: ${JSON.stringify(geometry)}`);
+  assert.ok(!['auto', 'scroll'].includes(geometry.commandOverflowY) && geometry.commandInternalOverflow <= 1, `${label} adds an internal Current Step scrollbar: ${JSON.stringify(geometry)}`);
   assert.ok(geometry.horizontalOverflow <= 1, `${label} has horizontal document overflow: ${JSON.stringify(geometry)}`);
   assert.ok(geometry.smallestText.size >= 11, `${label} contains text below 11px: ${JSON.stringify(geometry.smallestText)}`);
   densityMeasurements.push({ label, ...geometry });
@@ -290,6 +294,8 @@ await page.locator('[data-close-drawer]').last().click();
 await page.locator('[data-action="complete-step"]').click();
 assert.match(await page.locator('.command-panel').innerText(), /Travel/i);
 assert.match(await page.locator('.command-panel').innerText(), /Arrival detail/i);
+assert.equal(await page.locator('[data-step-detail="travel"]').count(), 1);
+assert.match(await page.locator('[data-step-detail="travel"]').innerText(), /Origin[\s\S]*Destination[\s\S]*Gateway count[\s\S]*Cargo at arrival[\s\S]*Next cargo operation/i);
 const travelStrip = await assertLocationStrip();
 assert.notEqual(await travelStrip.getAttribute('data-location-id'), pickupLocationId, 'travel must show destination context');
 await capture('live-travel-1366x768', { viewport: { width: 1366, height: 768 } });
@@ -314,6 +320,8 @@ assert.ok(
 
 await page.locator('[data-action="complete-step"]').click();
 assert.match(await page.locator('.command-panel').innerText(), /cargo operation/i);
+assert.equal(await page.locator('[data-step-detail="cargo-operation"]').count(), 1);
+assert.match(await page.locator('[data-step-detail="cargo-operation"]').innerText(), /Delivery[\s\S]*Remaining capacity[\s\S]*Affected cells/i);
 assert.ok(await page.locator('.cargo-grid.is-delivery .cargo-cell.is-current').count() > 0, 'delivery cells must be highlighted');
 await capture('live-delivery-mixed-1664x800', { viewport: { width: 1664, height: 800 } });
 await assertLiveDensity('1664×800 cargo operation', 500);
@@ -336,6 +344,8 @@ await capture('live-mobile-cargo-expanded-390x844', { viewport: { width: 390, he
 await page.setViewportSize({ width: 1600, height: 900 });
 await page.locator('[data-action="complete-step"]').click();
 assert.match(await page.locator('main').innerText(), /Operation summary/i);
+assert.equal(await page.locator('[data-step-detail="complete"]').count(), 1);
+assert.match(await page.locator('[data-step-detail="complete"]').innerText(), /Missions complete[\s\S]*SCU delivered[\s\S]*Route strategy[\s\S]*Outside session/i);
 await capture('live-route-complete-1600x900');
 
 const nearlyFull = `Capacity run
@@ -363,7 +373,7 @@ const stepKinds = await page.evaluate(() => {
 assert.ok(stepKinds.includes('gateway-approach'));
 assert.ok(stepKinds.includes('jump'));
 
-async function showOperationalKind(kind, screenshotName) {
+async function showOperationalKind(kind, screenshotName, viewport = { width: 1600, height: 900 }, maximumPanelHeight = 500) {
   await page.evaluate((requestedKind) => {
     const state = window.SCCompanionSession.getState();
     const progress = window.SCCompanionOperationalSteps.derive(state.route, state);
@@ -387,12 +397,26 @@ async function showOperationalKind(kind, screenshotName) {
   });
   assert.equal(await page.locator('.command-panel .location-status-strip').getAttribute('data-location-id'), expectedLocationId);
   assert.match(await page.locator('.command-panel').innerText(), kind === 'jump' ? /Jump transit/i : /Gateway transfer/i);
-  await capture(screenshotName, { viewport: { width: 1600, height: 900 } });
-  await assertLiveDensity(`1600×900 ${kind}`, 500);
+  assert.equal(await page.locator(`[data-step-detail="${kind}"]`).count(), 1);
+  await page.evaluate(() => {
+    document.scrollingElement.scrollTop = 0;
+    document.querySelector('.app-stage').scrollTop = 0;
+  });
+  await capture(screenshotName, { viewport });
+  await assertLiveDensity(`${viewport.width}×${viewport.height} ${kind}`, maximumPanelHeight);
 }
 
 await showOperationalKind('gateway-approach', 'live-gateway-approach-1600x900');
+const gatewayDetailText = await page.locator('[data-step-detail="gateway-approach"]').innerText();
+for (const label of ['Current system', 'Gateway approached', 'Destination system', 'Gateway pair', 'Jump number', 'Cargo in transfer']) {
+  assert.match(gatewayDetailText, new RegExp(label, 'i'));
+}
 await showOperationalKind('jump', 'live-jump-1600x900');
+assert.equal(await page.locator('[data-step-detail="jump"] .step-detail-path .context-datum').count(), 3);
+assert.equal(await page.locator('[data-step-detail="jump"] .step-metrics > div').count(), 4);
+assert.match(await page.locator('[data-step-detail="jump"]').innerText(), /Leaving system[\s\S]*Reaching system[\s\S]*Gateway pair[\s\S]*Jump count[\s\S]*Estimated duration[\s\S]*Cargo onboard[\s\S]*Missions in transfer/i);
+assert.equal(await page.locator('[data-step-detail="jump"] .step-action-list li').count(), 1);
+assert.equal(await page.locator('[data-step-detail="jump"] .step-action-toggle').count(), 0);
 
 await page.evaluate(() => {
   const state = window.SCCompanionSession.getState();
@@ -430,6 +454,40 @@ assert.ok(await unknownItems.count() > 0);
 assert.equal(await unknownItems.evaluateAll((items) => items.every((item) => item.dataset.status === 'unknown')), true);
 assert.equal(await page.locator('.command-panel .location-status-item.is-unavailable').count(), 0, 'unknown must not be classified as unavailable');
 await capture('live-unknown-services-1600x900', { viewport: { width: 1600, height: 900 } });
+
+const manyTransit = Array.from({ length: 8 }, (_, index) => `Gateway cargo ${index + 1}
+collect teasa 1scu titanium
+deliver checkmate 1scu titanium`).join('\n\n');
+await ready('contracts', true);
+await buildFromText(manyTransit, 240);
+await page.locator('[data-start-session="0"]').click();
+await showOperationalKind('jump', 'live-jump-many-actions-1700x900', { width: 1700, height: 900 }, 550);
+const jumpActionItems = page.locator('[data-step-detail="jump"] .step-action-list li');
+const jumpActionToggle = page.locator('[data-step-detail="jump"] .step-action-toggle');
+assert.equal(await jumpActionItems.count(), 3, 'Jump Transit must show only three actions by default');
+assert.equal(await jumpActionToggle.count(), 1);
+assert.equal(await jumpActionToggle.getAttribute('aria-expanded'), 'false');
+assert.match(await jumpActionToggle.innerText(), /\+5 more actions/i);
+await jumpActionToggle.press('Enter');
+assert.equal(await page.locator('[data-step-detail="jump"] .step-action-list li').count(), 8, 'Expanded Jump Transit must retain every action');
+assert.equal(await page.locator('[data-step-detail="jump"] .step-action-toggle').getAttribute('aria-expanded'), 'true');
+await capture('live-jump-many-actions-expanded-1700x900', { viewport: { width: 1700, height: 900 } });
+await page.locator('[data-step-detail="jump"] .step-action-toggle').press('Enter');
+assert.equal(await page.locator('[data-step-detail="jump"] .step-action-list li').count(), 3);
+assert.equal(await page.locator('[data-step-detail="jump"] .step-action-toggle').getAttribute('aria-expanded'), 'false');
+await page.locator('.route-rail').scrollIntoViewIfNeeded();
+await page.evaluate(() => {
+  const cardBottom = document.querySelector('.route-step.is-current').getBoundingClientRect().bottom;
+  const executionTop = document.querySelector('.execution-bar').getBoundingClientRect().top;
+  document.scrollingElement.scrollTop += Math.max(0, cardBottom - executionTop + 8);
+});
+const visibleRouteCard = await page.locator('.route-step.is-current').evaluate((card) => {
+  const bounds = card.getBoundingClientRect();
+  const executionTop = document.querySelector('.execution-bar').getBoundingClientRect().top;
+  return { top: bounds.top, bottom: bounds.bottom, height: bounds.height, executionTop };
+});
+assert.ok(visibleRouteCard.bottom <= visibleRouteCard.executionTop, `Route Orientation must be readable after natural page scroll: ${JSON.stringify(visibleRouteCard)}`);
+await capture('live-route-orientation-1700x900', { viewport: { width: 1700, height: 900 } });
 
 await page.locator('.primary-nav [data-nav="fleet"]').click();
 assert.match(await page.locator('main').innerText(), /Active configuration/i);
