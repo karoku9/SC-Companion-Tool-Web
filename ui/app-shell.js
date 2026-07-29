@@ -140,6 +140,7 @@
   function shellMarkup(content) {
     const state = store.getState();
     const current = progress(state);
+    const liveViewport = ui.page === 'live' && Boolean(state.route) && !current?.complete;
     const currentNav = NAV.find((item) => item.id === ui.page);
     const missionCount = state.missions?.length ?? 0;
     const counts = {
@@ -150,7 +151,7 @@
       intel: ''
     };
     return `
-      <div class="app-shell">
+      <div class="app-shell${liveViewport ? ' is-live-active' : ''}">
         <aside class="side-rail">
           <div class="brand">
             <img src="companion-mark.svg" alt="">
@@ -660,7 +661,9 @@
       operation.type === 'delivery' ? 'delivery' : 'pickup'
     )));
     const currentMove = moveTypes.size === 1 ? [...moveTypes][0] : moveTypes.size ? 'mixed' : '';
-    return `<div class="cargo-grid${editor ? ' cargo-editor-grid' : ''}${currentMove ? ` is-${currentMove}` : ''}" style="--grid-columns:${geometry.columns};--grid-rows:${geometry.rows}">
+    const foldable = !editor && geometry.rows === 6 && geometry.columns === 4;
+    return `${foldable ? '<div class="cargo-bank-labels" aria-hidden="true"><span>AFT / F–D</span><span>RAMP / C–A</span></div>' : ''}
+    <div class="cargo-grid${editor ? ' cargo-editor-grid' : ''}${foldable ? ' is-foldable' : ''}${currentMove ? ` is-${currentMove}` : ''}" style="--grid-columns:${geometry.columns};--grid-rows:${geometry.rows}">
       ${sorted.map((cell) => {
         const key = String(cell.groupKey ?? '');
         const group = groups.find((item) => String(item.key) === key);
@@ -670,11 +673,14 @@
         const manual = Boolean(cell.manual);
         const occupancy = getCargoCellOccupancy(cell, geometry.layers ?? 3);
         const coordinate = cell.coordinate ?? cell.label ?? cell.id;
+        const row = safeNumber(cell.row);
+        const foldedRow = row >= 3 ? geometry.rows - row : 3 - row;
+        const foldedColumn = safeNumber(cell.column) + (row >= 3 ? 1 : 6);
         const stateLabel = reserved
           ? 'Reserved'
           : keepEmpty ? 'Keep empty' : key ? `${occupancy} of 3 SCU occupied` : 'Free';
         const detail = group?.label ? `${group.label}, ${stateLabel}` : stateLabel;
-        return `<button type="button" class="cargo-cell${key ? ' is-filled' : ''}${current ? ' is-current' : ''}${reserved ? ' is-reserved' : ''}${keepEmpty ? ' is-keep-empty' : ''}${manual ? ' is-manual' : ''}" data-cargo-cell="${escapeHtml(cell.id)}" data-group="${escapeHtml(key)}" data-occupancy="${occupancy}" aria-label="${escapeHtml(`${coordinate}: ${detail}`)}" ${editor && key ? 'draggable="true"' : ''} style="--group-color:${groupColor.get(key) ?? '#8f948e'}" title="${escapeHtml(detail)}"><span class="cargo-coordinate">${escapeHtml(String(coordinate).replace(':', '·'))}</span>${reserved || keepEmpty ? `<span class="cargo-cell-state">${reserved ? 'Reserved' : 'Keep empty'}</span>` : renderScuUnits(occupancy, geometry.layers ?? 3)}${key ? `<span class="cargo-quantity">${occupancy}/3</span>` : ''}${manual ? '<span class="manual-mark" aria-hidden="true">M</span>' : ''}</button>`;
+        return `<button type="button" class="cargo-cell${key ? ' is-filled' : ''}${current ? ' is-current' : ''}${reserved ? ' is-reserved' : ''}${keepEmpty ? ' is-keep-empty' : ''}${manual ? ' is-manual' : ''}" data-cargo-cell="${escapeHtml(cell.id)}" data-cargo-coordinate="${escapeHtml(coordinate)}" data-cargo-row="${escapeHtml(String(coordinate).charAt(0))}" data-group="${escapeHtml(key)}" data-occupancy="${occupancy}" aria-label="${escapeHtml(`${coordinate}: ${detail}`)}" ${editor && key ? 'draggable="true"' : ''} style="--group-color:${groupColor.get(key) ?? '#8f948e'};--fold-row:${foldedRow};--fold-column:${foldedColumn}" title="${escapeHtml(detail)}"><span class="cargo-coordinate">${escapeHtml(String(coordinate).replace(':', '·'))}</span>${reserved || keepEmpty ? `<span class="cargo-cell-state">${reserved ? 'Reserved' : 'Keep empty'}</span>` : renderScuUnits(occupancy, geometry.layers ?? 3)}${key ? `<span class="cargo-quantity">${occupancy}/3</span>` : ''}${manual ? '<span class="manual-mark" aria-hidden="true">M</span>' : ''}</button>`;
       }).join('')}
     </div>
     <div class="ramp-marker">RAMP / ACCESS · ROW A</div>
