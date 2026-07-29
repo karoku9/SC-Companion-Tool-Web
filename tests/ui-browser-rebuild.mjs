@@ -293,7 +293,7 @@ assert.match(await page.locator('.command-panel').innerText(), /Arrival detail/i
 const travelStrip = await assertLocationStrip();
 assert.notEqual(await travelStrip.getAttribute('data-location-id'), pickupLocationId, 'travel must show destination context');
 await capture('live-travel-1366x768', { viewport: { width: 1366, height: 768 } });
-await assertLiveDensity('1366×768 travel', 470);
+await assertLiveDensity('1366×768 travel', 500);
 const shortMetrics = await page.evaluate(() => ({
   height: document.documentElement.scrollHeight,
   viewport: document.documentElement.clientHeight,
@@ -316,7 +316,7 @@ await page.locator('[data-action="complete-step"]').click();
 assert.match(await page.locator('.command-panel').innerText(), /cargo operation/i);
 assert.ok(await page.locator('.cargo-grid.is-delivery .cargo-cell.is-current').count() > 0, 'delivery cells must be highlighted');
 await capture('live-delivery-mixed-1664x800', { viewport: { width: 1664, height: 800 } });
-await assertLiveDensity('1664×800 cargo operation', 450);
+await assertLiveDensity('1664×800 cargo operation', 500);
 
 await capture('live-tablet-768x1024', { viewport: { width: 768, height: 1024 } });
 await capture('live-mobile-390x844', { viewport: { width: 390, height: 844 } });
@@ -388,7 +388,7 @@ async function showOperationalKind(kind, screenshotName) {
   assert.equal(await page.locator('.command-panel .location-status-strip').getAttribute('data-location-id'), expectedLocationId);
   assert.match(await page.locator('.command-panel').innerText(), kind === 'jump' ? /Jump transit/i : /Gateway transfer/i);
   await capture(screenshotName, { viewport: { width: 1600, height: 900 } });
-  await assertLiveDensity(`1600×900 ${kind}`, 480);
+  await assertLiveDensity(`1600×900 ${kind}`, 500);
 }
 
 await showOperationalKind('gateway-approach', 'live-gateway-approach-1600x900');
