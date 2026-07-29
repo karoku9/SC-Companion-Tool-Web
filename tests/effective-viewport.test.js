@@ -10,7 +10,7 @@ test('Live Ops fits short desktop viewports without scaling the document', () =>
   const css = read('ui/app.css');
   assert.match(css, /@media \(min-width: 821px\) and \(max-height: 820px\)/);
   assert.match(css, /\.workspace\.live-workspace/);
-  assert.match(css, /width: clamp\(280px, 55%, 360px\)/);
+  assert.match(css, /width: clamp\(280px, 58%, 360px\)/);
   assert.match(css, /max-width: 100%/);
   assert.equal(css.match(/font-size: clamp\(32px, 3vw, 44px\)/g)?.length, 2);
   assert.match(css, /\.command-panel, \.cargo-panel \{ min-height: 300px/);
