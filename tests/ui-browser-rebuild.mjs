@@ -107,36 +107,77 @@ async function assertLiveDensity(label, maximumPanelHeight) {
     const cargoGrid = document.querySelector('.cargo-panel .cargo-grid');
     const routeCard = document.querySelector('.route-step.is-current');
     const cargoPanel = document.querySelector('.cargo-panel');
+    const rowACells = [...document.querySelectorAll('.cargo-panel [data-cargo-row="A"]')];
+    const rowABounds = rowACells.map((cell) => cell.getBoundingClientRect());
+    const controls = [...document.querySelectorAll('.execution-bar button')].map((button) => {
+      const box = button.getBoundingClientRect();
+      return { top: box.top, bottom: box.bottom, height: box.height };
+    });
     return {
+      innerWidth: window.innerWidth,
+      innerHeight: window.innerHeight,
       command: bounds('.command-panel'),
       cargo: bounds('.cargo-panel'),
+      rowA: {
+        top: Math.min(...rowABounds.map((box) => box.top)),
+        bottom: Math.max(...rowABounds.map((box) => box.bottom)),
+        height: Math.max(...rowABounds.map((box) => box.height))
+      },
+      ramp: bounds('.ramp-marker'),
+      legend: bounds('.cargo-legend'),
       route: bounds('.route-rail'),
       execution: bounds('.execution-bar'),
+      controls,
       currentStepContentHeight: commandMain.scrollHeight,
       unusedVerticalArea: Math.max(0, command.clientHeight - commandMain.offsetHeight - nextPreview.offsetHeight),
       unusedRowArea: Math.max(0, cargoPanel.getBoundingClientRect().height - command.getBoundingClientRect().height),
       cargoGridWidth: cargoGrid.getBoundingClientRect().width,
       cargoGridWidthPercent: cargoGrid.getBoundingClientRect().width / cargoPanel.getBoundingClientRect().width * 100,
+      cargoCellSize: cargoGrid.querySelector('.cargo-cell').getBoundingClientRect().width,
+      foldedCargo: cargoGrid.classList.contains('is-foldable') && getComputedStyle(document.querySelector('.cargo-bank-labels')).display !== 'none',
       routeCardHeight: routeCard.getBoundingClientRect().height,
       commandOverflowY: getComputedStyle(command).overflowY,
       commandInternalOverflow: command.scrollHeight - command.clientHeight,
+      executionPosition: getComputedStyle(document.querySelector('.execution-bar')).position,
       documentScrollWidth: document.documentElement.scrollWidth,
+      documentScrollHeight: document.documentElement.scrollHeight,
+      documentClientHeight: document.documentElement.clientHeight,
       horizontalOverflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
       documentOverflow: document.documentElement.scrollHeight - document.documentElement.clientHeight,
       stageOverflow: document.querySelector('.app-stage').scrollHeight - document.querySelector('.app-stage').clientHeight,
+      documentTransform: getComputedStyle(document.documentElement).transform,
+      bodyTransform: getComputedStyle(document.body).transform,
+      documentZoom: getComputedStyle(document.documentElement).zoom,
       smallestText: readableText.sort((left, right) => left.size - right.size)[0]
     };
   });
-  assert.ok(geometry.command.height <= maximumPanelHeight, `${label} primary panel is too tall: ${geometry.command.height}px`);
-  assert.ok(geometry.route.height >= 92, `${label} route orientation lost useful height: ${JSON.stringify(geometry)}`);
-  assert.ok(geometry.route.bottom <= geometry.execution.top + 2 || geometry.stageOverflow > 0 || geometry.documentOverflow > 0, `${label} route orientation cannot be reached above the action bar: ${JSON.stringify(geometry)}`);
-  assert.ok(geometry.unusedVerticalArea <= 72, `${label} wastes too much primary-panel height: ${JSON.stringify(geometry)}`);
+  assert.ok(geometry.currentStepContentHeight <= maximumPanelHeight, `${label} Current Step content is too tall: ${geometry.currentStepContentHeight}px`);
+  assert.ok(geometry.route.height >= 100 && geometry.route.height <= 125, `${label} route orientation lost useful height: ${JSON.stringify(geometry)}`);
+  assert.ok(geometry.route.bottom <= geometry.execution.top + 2, `${label} route orientation is covered by the action bar: ${JSON.stringify(geometry)}`);
+  assert.ok(geometry.unusedVerticalArea <= 200, `${label} wastes too much primary-panel height: ${JSON.stringify(geometry)}`);
   assert.ok(geometry.unusedRowArea <= 260, `${label} wastes too much action-column height: ${JSON.stringify(geometry)}`);
-  assert.ok(geometry.cargoGridWidth >= 279 && geometry.cargoGridWidth <= 361, `${label} cargo grid is outside its responsive range: ${JSON.stringify(geometry)}`);
-  assert.ok(geometry.cargoGridWidthPercent >= 50 && geometry.cargoGridWidthPercent <= 70, `${label} cargo grid does not use the panel proportionally: ${JSON.stringify(geometry)}`);
-  assert.ok(geometry.routeCardHeight >= 72 && geometry.routeCardHeight <= 96, `${label} route card readable area is outside the target: ${JSON.stringify(geometry)}`);
+  if (geometry.innerHeight <= 850) {
+    assert.equal(geometry.foldedCargo, true, `${label} must use the folded cargo presentation`);
+    assert.ok(geometry.cargoCellSize >= 45 && geometry.cargoCellSize <= 60, `${label} folded cargo cell size is outside the target: ${JSON.stringify(geometry)}`);
+  } else {
+    assert.equal(geometry.foldedCargo, false, `${label} must retain the vertical cargo presentation`);
+    assert.ok(geometry.cargoGridWidth >= 270 && geometry.cargoGridWidth <= 361, `${label} cargo grid is outside its useful range: ${JSON.stringify(geometry)}`);
+  }
+  assert.ok(geometry.routeCardHeight >= 64 && geometry.routeCardHeight <= 76, `${label} route card readable area is outside the target: ${JSON.stringify(geometry)}`);
   assert.ok(!['auto', 'scroll'].includes(geometry.commandOverflowY) && geometry.commandInternalOverflow <= 1, `${label} adds an internal Current Step scrollbar: ${JSON.stringify(geometry)}`);
   assert.ok(geometry.horizontalOverflow <= 1, `${label} has horizontal document overflow: ${JSON.stringify(geometry)}`);
+  assert.ok(geometry.documentScrollHeight <= geometry.innerHeight + 2, `${label} has vertical document overflow: ${JSON.stringify(geometry)}`);
+  assert.ok(geometry.cargo.bottom <= geometry.route.top + 1, `${label} cargo overlaps Route Orientation: ${JSON.stringify(geometry)}`);
+  assert.ok(geometry.route.bottom <= geometry.execution.top + 2, `${label} Route Orientation overlaps execution controls: ${JSON.stringify(geometry)}`);
+  assert.ok(geometry.rowA.top >= geometry.cargo.top && geometry.rowA.bottom <= geometry.cargo.bottom + 1, `${label} row A is clipped: ${JSON.stringify(geometry)}`);
+  assert.ok(geometry.ramp.bottom <= geometry.cargo.bottom + 1, `${label} ramp marker is clipped: ${JSON.stringify(geometry)}`);
+  assert.ok(geometry.legend.bottom <= geometry.cargo.bottom + 1, `${label} cargo legend is clipped: ${JSON.stringify(geometry)}`);
+  assert.ok(geometry.execution.bottom <= geometry.innerHeight + 1, `${label} execution controls leave the viewport: ${JSON.stringify(geometry)}`);
+  assert.ok(geometry.controls.every((control) => control.height >= 44 && control.top >= 0 && control.bottom <= geometry.innerHeight + 1), `${label} has hidden or undersized primary controls: ${JSON.stringify(geometry)}`);
+  assert.equal(geometry.executionPosition, 'static', `${label} desktop execution controls must participate in layout`);
+  assert.equal(geometry.documentTransform, 'none', `${label} must not scale the document`);
+  assert.equal(geometry.bodyTransform, 'none', `${label} must not scale the body`);
+  assert.ok(['1', 'normal'].includes(geometry.documentZoom), `${label} must remain at 100% CSS zoom`);
   assert.ok(geometry.smallestText.size >= 11, `${label} contains text below 11px: ${JSON.stringify(geometry.smallestText)}`);
   densityMeasurements.push({ label, ...geometry });
   return geometry;
@@ -211,7 +252,21 @@ await page.locator('[data-action="toggle-grouping"]').click();
 assert.equal(await page.evaluate(() => window.SCCompanionSession.getState().cargoLayoutGroupingMode), 'mission');
 assert.ok(await page.locator('.cargo-cell.is-current').count() > 0, 'mission grouping must preserve pickup highlight');
 await page.locator('[data-action="toggle-grouping"]').click();
+await capture('live-cargo-folded-1664x800', { viewport: { width: 1664, height: 800 } });
+await assertLiveDensity('1664×800 folded cargo operation', 520);
+const foldedPlacement = await page.evaluate(() => {
+  const f1 = document.querySelector('[data-cargo-coordinate="F1"]').getBoundingClientRect();
+  const a1 = document.querySelector('[data-cargo-coordinate="A1"]').getBoundingClientRect();
+  return {
+    f1: { left: f1.left, top: f1.top },
+    a1: { left: a1.left, top: a1.top },
+    labels: [...document.querySelectorAll('.cargo-bank-labels span')].map((label) => label.textContent.trim())
+  };
+});
+assert.ok(foldedPlacement.a1.left > foldedPlacement.f1.left, `row A must remain in the ramp-side bank: ${JSON.stringify(foldedPlacement)}`);
+assert.deepEqual(foldedPlacement.labels, ['AFT / F–D', 'RAMP / C–A']);
 await capture('live-cargo-units-1-2-3-1700x900', { viewport: { width: 1700, height: 900 } });
+await assertLiveDensity('1700×900 vertical cargo operation', 620);
 
 await page.locator('[data-open-drawer="cargo"]').click();
 await page.locator('[data-editor-mode="reserve"]').click();
@@ -318,13 +373,24 @@ assert.ok(
   `common travel state must fit 1366×768 (${shortMetrics.height}px document / ${shortMetrics.viewport}px viewport; ${JSON.stringify(shortMetrics.boxes)}; ${JSON.stringify(shortMetrics.offenders)})`
 );
 
+await capture('live-below-supported-1366x680', { viewport: { width: 1366, height: 680 } });
+const belowSupported = await page.evaluate(() => ({
+  innerHeight: window.innerHeight,
+  scrollHeight: document.documentElement.scrollHeight,
+  shellOverflow: getComputedStyle(document.querySelector('.app-shell')).overflow,
+  executionPosition: getComputedStyle(document.querySelector('.execution-bar')).position
+}));
+assert.ok(belowSupported.scrollHeight > belowSupported.innerHeight, `below 700px the desktop must return to natural document flow: ${JSON.stringify(belowSupported)}`);
+assert.notEqual(belowSupported.shellOverflow, 'hidden');
+assert.equal(belowSupported.executionPosition, 'static');
+
 await page.locator('[data-action="complete-step"]').click();
 assert.match(await page.locator('.command-panel').innerText(), /cargo operation/i);
 assert.equal(await page.locator('[data-step-detail="cargo-operation"]').count(), 1);
 assert.match(await page.locator('[data-step-detail="cargo-operation"]').innerText(), /Delivery[\s\S]*Remaining capacity[\s\S]*Affected cells/i);
 assert.ok(await page.locator('.cargo-grid.is-delivery .cargo-cell.is-current').count() > 0, 'delivery cells must be highlighted');
 await capture('live-delivery-mixed-1664x800', { viewport: { width: 1664, height: 800 } });
-await assertLiveDensity('1664×800 cargo operation', 500);
+await assertLiveDensity('1664×800 cargo operation', 520);
 
 await capture('live-tablet-768x1024', { viewport: { width: 768, height: 1024 } });
 await capture('live-mobile-390x844', { viewport: { width: 390, height: 844 } });
@@ -417,6 +483,7 @@ assert.equal(await page.locator('[data-step-detail="jump"] .step-metrics > div')
 assert.match(await page.locator('[data-step-detail="jump"]').innerText(), /Leaving system[\s\S]*Reaching system[\s\S]*Gateway pair[\s\S]*Jump count[\s\S]*Estimated duration[\s\S]*Cargo onboard[\s\S]*Missions in transfer/i);
 assert.equal(await page.locator('[data-step-detail="jump"] .step-action-list li').count(), 1);
 assert.equal(await page.locator('[data-step-detail="jump"] .step-action-toggle').count(), 0);
+await showOperationalKind('jump', 'live-jump-real-short-1664x744', { width: 1664, height: 744 }, 500);
 
 await page.evaluate(() => {
   const state = window.SCCompanionSession.getState();

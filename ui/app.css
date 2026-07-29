@@ -502,6 +502,7 @@ input::placeholder, textarea::placeholder { color: #696d68; }
 .cargo-metrics strong { display: block; font: 21px/1 "Bahnschrift Condensed", "Arial Narrow", sans-serif; }
 .cargo-metrics span { color: var(--dim); font: 11px "Cascadia Mono", Consolas, monospace; text-transform: uppercase; }
 .cargo-hold { padding: 8px 8px; }
+.cargo-bank-labels { display: none; }
 .cargo-disclosure > summary {
   display: none;
   min-height: 44px;
@@ -692,43 +693,191 @@ input::placeholder, textarea::placeholder { color: #696d68; }
   .ship-detail { grid-template-columns: 1fr; }
 }
 
-@media (min-width: 821px) and (max-height: 820px) {
-  .app-shell { height: 100vh; min-height: 0; overflow: hidden; }
-  .app-stage { height: 100vh; overflow-x: hidden; overflow-y: auto; }
-  .workspace.live-workspace { padding-top: 10px; padding-bottom: 68px; }
-  .mission-bar { min-height: 48px; }
-  .mission-bar > div { padding-top: 4px; padding-bottom: 4px; }
-  .live-grid { margin-top: 8px; gap: 8px; }
-  .command-panel, .cargo-panel { min-height: 300px; }
-  .cargo-panel > .panel-heading { min-height: 42px; padding-top: 3px; padding-bottom: 3px; }
-  .route-rail > .panel-heading { min-height: 40px; padding-top: 3px; padding-bottom: 3px; }
-  .command-main { padding: 12px 22px; }
-  .command-main h1 { margin-top: 3px; margin-bottom: 4px; font-size: clamp(32px, 3vw, 44px); }
-  .command-instruction { margin-top: 6px; }
-  .step-detail { margin-top: 7px; padding-top: 6px; }
-  .context-heading { margin-bottom: 4px; }
-  .context-datum { padding: 4px 7px; }
-  .step-metrics { margin-top: 4px; }
-  .step-metrics > div { padding: 4px 7px; }
-  .step-action-list { margin-top: 4px; padding: 5px 7px; }
-  .step-action-list ul { margin-top: 4px; }
-  .step-action-list li { padding: 4px 7px; }
-  .optimizer-rationale { margin-top: 3px; }
-  .move-list { margin-top: 10px; }
-  .next-preview { min-height: 36px; padding-top: 4px; padding-bottom: 4px; }
-  .cargo-metrics div { padding-top: 3px; padding-bottom: 3px; }
-  .cargo-metrics strong { font-size: 18px; }
-  .cargo-hold { padding: 3px 6px; }
-  .cargo-panel .cargo-grid { gap: 3px; }
-  .cargo-cell { padding: 3px; }
-  .cargo-coordinate { top: 2px; left: 3px; }
-  .cargo-quantity { right: 2px; bottom: 1px; }
-  .scu-units { gap: 2px; margin-top: 24%; }
-  .ramp-marker { margin-top: 4px; padding: 2px; }
-  .cargo-legend { margin-top: 4px; }
-  .route-rail { margin-top: 8px; }
-  .route-step { min-height: 72px; padding: 8px 10px; }
-  .execution-bar { min-height: 58px; padding-top: 6px; padding-bottom: 6px; }
+@media (min-width: 821px) {
+  .app-shell.is-live-active .execution-bar {
+    position: static;
+    z-index: auto;
+    min-height: 56px;
+    padding-top: 6px;
+    padding-bottom: 6px;
+  }
+}
+
+@media (min-width: 1024px) and (min-height: 700px) {
+  .app-shell.is-live-active {
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+  }
+  .app-shell.is-live-active .app-stage {
+    height: 100dvh;
+    min-height: 0;
+    display: grid;
+    grid-template-rows: 64px minmax(0, 1fr);
+    overflow: hidden;
+  }
+  .app-shell.is-live-active .topbar { position: relative; }
+  .app-shell.is-live-active .workspace.live-workspace {
+    height: 100%;
+    min-height: 0;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto auto;
+    gap: 8px;
+    padding: 10px 24px;
+    overflow: hidden;
+  }
+  .app-shell.is-live-active .mission-bar,
+  .app-shell.is-live-active .live-grid,
+  .app-shell.is-live-active .route-rail,
+  .app-shell.is-live-active .execution-bar {
+    width: 100%;
+    min-width: 0;
+  }
+  .app-shell.is-live-active .mission-bar { min-height: 46px; }
+  .app-shell.is-live-active .mission-bar > div { padding-top: 4px; padding-bottom: 4px; }
+  .app-shell.is-live-active .live-grid {
+    height: 100%;
+    min-height: 0;
+    gap: 10px;
+    margin-top: 0;
+  }
+  .app-shell.is-live-active .command-panel,
+  .app-shell.is-live-active .cargo-panel {
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+  }
+  .app-shell.is-live-active .command-main { min-height: 0; }
+  .app-shell.is-live-active .cargo-panel {
+    display: grid;
+    grid-template-rows: auto auto minmax(0, 1fr);
+  }
+  .app-shell.is-live-active .cargo-panel > .panel-heading {
+    min-height: 42px;
+    padding: 2px 9px 2px 11px;
+  }
+  .app-shell.is-live-active .cargo-metrics div { padding: 4px 9px; }
+  .app-shell.is-live-active .cargo-disclosure,
+  .app-shell.is-live-active .cargo-hold {
+    height: 100%;
+    min-height: 0;
+  }
+  .app-shell.is-live-active .cargo-disclosure {
+    display: grid;
+    grid-template-rows: minmax(0, 1fr);
+    overflow: hidden;
+  }
+  .app-shell.is-live-active .cargo-hold {
+    container-type: size;
+    display: grid;
+    grid-template-rows: minmax(0, 1fr) auto auto;
+    align-items: start;
+    overflow: hidden;
+  }
+  .app-shell.is-live-active .cargo-grid {
+    width: min(clamp(280px, 58cqw, 360px), calc(66.667cqh - 28px));
+    align-self: start;
+  }
+  .app-shell.is-live-active .route-rail { min-height: 0; margin-top: 0; }
+  .app-shell.is-live-active .route-rail > .panel-heading { min-height: 40px; }
+  .app-shell.is-live-active .route-step { min-height: 72px; padding: 8px 10px; }
+  .app-shell.is-live-active .execution-bar { min-height: 54px; }
+}
+
+@media (min-width: 1024px) and (min-height: 700px) and (max-height: 850px) {
+  .app-shell.is-live-active .app-stage { grid-template-rows: 52px minmax(0, 1fr); }
+  .app-shell.is-live-active .topbar { height: 52px; padding-inline: 18px; }
+  .app-shell.is-live-active .workspace.live-workspace {
+    gap: 6px;
+    padding: 6px 16px;
+  }
+  .app-shell.is-live-active .mission-bar { min-height: 42px; }
+  .app-shell.is-live-active .mission-bar > div { padding: 3px 10px; }
+  .app-shell.is-live-active .live-grid { gap: 8px; }
+  .app-shell.is-live-active .command-main { padding: 9px 16px; }
+  .app-shell.is-live-active .command-main h1 {
+    margin-top: 3px;
+    margin-bottom: 3px;
+    font-size: clamp(32px, 3vw, 44px);
+    line-height: .88;
+  }
+  .app-shell.is-live-active .command-panel .location-status-strip { margin-top: 5px; }
+  .app-shell.is-live-active .command-panel .location-status-item { min-height: 25px; padding: 2px 5px; }
+  .app-shell.is-live-active .command-instruction { margin-top: 5px; font-size: 12px; line-height: 1.25; }
+  .app-shell.is-live-active .step-detail { margin-top: 5px; padding-top: 5px; }
+  .app-shell.is-live-active .context-heading { margin-bottom: 3px; }
+  .app-shell.is-live-active .context-datum,
+  .app-shell.is-live-active .step-metrics > div { padding: 3px 6px; }
+  .app-shell.is-live-active .step-metrics { margin-top: 3px; }
+  .app-shell.is-live-active .step-action-list { margin-top: 3px; padding: 3px 6px; }
+  .app-shell.is-live-active .step-action-list ul { margin-top: 3px; }
+  .app-shell.is-live-active .step-action-list li { padding: 3px 6px; }
+  .app-shell.is-live-active .step-action-toggle { margin-top: 3px; }
+  .app-shell.is-live-active .optimizer-rationale { margin-top: 2px; }
+  .app-shell.is-live-active .next-preview { min-height: 34px; padding: 3px 10px; }
+  .app-shell.is-live-active .cargo-panel > .panel-heading {
+    min-height: 38px;
+    padding: 2px 7px 2px 9px;
+  }
+  .app-shell.is-live-active .cargo-panel > .panel-heading .button {
+    min-height: 36px;
+    padding-inline: 8px;
+  }
+  .app-shell.is-live-active .cargo-metrics div { padding: 3px 8px; }
+  .app-shell.is-live-active .cargo-metrics strong { font-size: 18px; }
+  .app-shell.is-live-active .cargo-hold {
+    grid-template-rows: auto auto auto auto;
+    align-content: start;
+    padding: 3px 5px;
+  }
+  .app-shell.is-live-active .cargo-bank-labels {
+    width: min(100%, 500px);
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+    justify-self: center;
+    padding: 0 2px 2px;
+    color: var(--dim);
+    font: 600 11px "Cascadia Mono", Consolas, monospace;
+  }
+  .app-shell.is-live-active .cargo-bank-labels span:last-child { text-align: right; color: var(--amber); }
+  .app-shell.is-live-active .cargo-grid.is-foldable {
+    width: min(100%, 500px);
+    max-width: 100%;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) 10px repeat(4, minmax(0, 1fr));
+    grid-template-rows: repeat(3, auto);
+    gap: 3px;
+    align-self: start;
+  }
+  .app-shell.is-live-active .cargo-grid.is-foldable .cargo-cell {
+    grid-row: var(--fold-row);
+    grid-column: var(--fold-column);
+    min-width: 0;
+    padding: 3px;
+  }
+  .app-shell.is-live-active .cargo-coordinate { top: 2px; left: 3px; }
+  .app-shell.is-live-active .cargo-quantity { right: 2px; bottom: 1px; }
+  .app-shell.is-live-active .scu-units { gap: 2px; margin-top: 24%; }
+  .app-shell.is-live-active .ramp-marker {
+    width: min(100%, 500px);
+    justify-self: center;
+    margin-top: 3px;
+    padding: 2px;
+  }
+  .app-shell.is-live-active .cargo-legend {
+    width: min(100%, 500px);
+    justify-self: center;
+    margin-top: 3px;
+  }
+  .app-shell.is-live-active .route-rail > .panel-heading {
+    min-height: 38px;
+    padding: 2px 8px 2px 10px;
+  }
+  .app-shell.is-live-active .route-step { min-height: 68px; padding: 6px 9px; }
+  .app-shell.is-live-active .execution-bar {
+    min-height: 54px;
+    padding: 5px 16px;
+  }
 }
 
 @media (max-width: 820px) {
@@ -769,7 +918,7 @@ input::placeholder, textarea::placeholder { color: #696d68; }
   .next-preview { align-items: flex-start; flex-direction: column; gap: 2px; }
   .next-preview b { white-space: normal; }
   .route-rail { margin-bottom: 12px; }
-  .execution-bar { left: 0; bottom: 64px; padding: 8px 14px; min-height: 64px; }
+  .execution-bar { position: fixed; left: 0; bottom: 64px; padding: 8px 14px; min-height: 64px; }
   .execution-bar .button-primary { min-width: 0; flex: 1; }
   .workspace.live-workspace { padding-bottom: 156px; }
   .fleet-layout > .panel:first-child { order: 2; }

@@ -42,5 +42,6 @@ test('step context reflows without shrinking operational typography', () => {
   assert.match(css, /\.step-action-list ul \{[\s\S]*grid-template-columns: repeat\(auto-fit, minmax\(210px, 1fr\)\)/);
   assert.match(css, /\.command-main h1 \{[\s\S]*font-size: clamp\(32px, 3vw, 44px\)/);
   assert.match(css, /\.cargo-grid \{[\s\S]*width: clamp\(280px, 58%, 360px\)/);
+  assert.match(css, /\.app-shell\.is-live-active \.command-main h1 \{[\s\S]*font-size: clamp\(32px, 3vw, 44px\)/);
   assert.doesNotMatch(css, /\.command-panel[\s\S]{0,100}overflow-y:\s*(auto|scroll)/);
 });
