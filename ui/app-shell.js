@@ -729,18 +729,130 @@
     return expanded ? [...actions] : actions.slice(0, limit);
   }
 
-  function renderExpandableActionList(step, actions, limit = 3) {
+  function getCargoActionJourney(operation) {
+    return missionModel.getCargoActionJourney?.(operation) ?? {
+      kind: operation?.type === 'delivery' ? 'unload' : 'load',
+      label: operation?.type === 'delivery' ? 'UNLOAD' : 'LOAD',
+      symbol: operation?.type === 'delivery' ? '↓' : '↑',
+      origin: operation?.pickupLocationLabel ?? operation?.locationLabel ?? 'ORIGIN UNKNOWN',
+      destination: operation?.destinationLocationLabel ?? operation?.deliveryLocationLabel ?? 'DESTINATION UNKNOWN'
+    };
+  }
+
+  function groupCargoActionsByKind(actions) {
+    return {
+      unload: actions.filter((operation) => getCargoActionJourney(operation).kind === 'unload'),
+      load: actions.filter((operation) => getCargoActionJourney(operation).kind === 'load')
+    };
+  }
+
+  function cargoCoordinatesByLot(layout) {
+    const coordinates = new Map();
+    (layout?.groups ?? []).forEach((group) => {
+      const assignments = (layout?.assignments ?? [])
+        .filter((assignment) => String(assignment.groupKey ?? '') === String(group.key ?? ''))
+        .sort((left, right) => safeNumber(left.row) - safeNumber(right.row)
+          || safeNumber(left.column) - safeNumber(right.column)
+          || safeNumber(left.layer) - safeNumber(right.layer));
+      (group.lots ?? []).forEach((lot) => {
+        const key = String(lot.key ?? `${lot.missionId}::${lot.lotId}`);
+        const lotCoordinates = [...new Set(assignments
+          .filter((assignment) => String(assignment.lotKey ?? `${assignment.missionId ?? ''}::${assignment.lotId ?? ''}`) === key)
+          .map((assignment) => String(assignment.coordinate ?? assignment.floorId ?? '').replace(':', '·'))
+          .filter(Boolean))];
+        if (lotCoordinates.length) coordinates.set(key, lotCoordinates);
+      });
+      if ((group.lots ?? []).length === 1) {
+        const lot = group.lots[0];
+        const key = String(lot.key ?? `${lot.missionId}::${lot.lotId}`);
+        if (!coordinates.has(key)) {
+          coordinates.set(key, [...new Set(assignments
+            .map((assignment) => String(assignment.coordinate ?? assignment.floorId ?? '').replace(':', '·'))
+            .filter(Boolean))]);
+        }
+      }
+    });
+    return coordinates;
+  }
+
+  function formatCargoCoordinates(coordinates) {
+    const rows = new Map();
+    [...new Set(coordinates)].forEach((coordinate) => {
+      const match = String(coordinate).replace('·', '').match(/^([A-Za-z]+)(\d+)$/);
+      if (!match) return;
+      const row = match[1].toUpperCase();
+      const columns = rows.get(row) ?? [];
+      columns.push(Number(match[2]));
+      rows.set(row, columns);
+    });
+    return [...rows.entries()].sort(([left], [right]) => left.localeCompare(right)).flatMap(([row, rawColumns]) => {
+      const columns = [...new Set(rawColumns)].sort((left, right) => left - right);
+      const ranges = [];
+      let start = columns[0];
+      let end = start;
+      columns.slice(1).forEach((column) => {
+        if (column === end + 1) end = column;
+        else {
+          ranges.push(start === end ? `${row}${start}` : `${row}${start}–${row}${end}`);
+          start = column;
+          end = column;
+        }
+      });
+      if (start != null) ranges.push(start === end ? `${row}${start}` : `${row}${start}–${row}${end}`);
+      return ranges;
+    }).join(', ');
+  }
+
+  function renderCargoActionItem(operation, coordinateMap) {
+    const journey = getCargoActionJourney(operation);
+    const coordinates = coordinateMap.get(`${operation.missionId}::${operation.lotId}`) ?? [];
+    const cells = formatCargoCoordinates(coordinates);
+    const mission = operation.missionTitle ? ` Mission: ${operation.missionTitle}.` : '';
+    const accessible = `${journey.label} ${formatScu(operation.scu)} ${operation.commodity}. From ${journey.origin}. To ${journey.destination}.${cells ? ` Cells ${cells}.` : ''}${mission}`;
+    return `<li class="cargo-action-item is-${journey.kind}" aria-label="${escapeHtml(accessible)}" title="${escapeHtml(operation.missionTitle ?? '')}">
+      <div class="cargo-action-primary"><span class="cargo-action-badge"><i aria-hidden="true">${journey.symbol}</i>${journey.label}</span><strong>${escapeHtml(formatScu(operation.scu))} ${escapeHtml(operation.commodity)}</strong></div>
+      <small class="cargo-action-journey"><span><b>FROM</b> ${escapeHtml(journey.origin)}</span><i aria-hidden="true">·</i><span><b>TO</b> ${escapeHtml(journey.destination)}</span></small>
+      ${cells ? `<small class="cargo-action-cells"><b>CELLS</b> ${escapeHtml(cells)}</small>` : ''}
+    </li>`;
+  }
+
+  function renderGroupedCargoActions(actions, layout, options = {}) {
+    const groups = groupCargoActionsByKind(actions);
+    const mixed = options.mixed ?? Boolean(groups.unload.length && groups.load.length);
+    const coordinateMap = cargoCoordinatesByLot(layout);
+    return ['unload', 'load'].map((kind) => {
+      const operations = groups[kind];
+      if (!operations.length) return '';
+      const journey = getCargoActionJourney(operations[0]);
+      const totalScu = operations.reduce((sum, operation) => sum + safeNumber(operation.scu), 0);
+      const label = mixed
+        ? kind === 'unload' ? 'UNLOAD FIRST' : 'LOAD AFTER'
+        : journey.label;
+      return `<section class="cargo-action-group is-${kind}">
+        <div class="cargo-action-group-heading"><strong><i aria-hidden="true">${journey.symbol}</i>${label}</strong><span>${operations.length} action${operations.length === 1 ? '' : 's'} · ${formatScu(totalScu)}</span></div>
+        <ul>${operations.map((operation) => renderCargoActionItem(operation, coordinateMap)).join('')}</ul>
+      </section>`;
+    }).join('');
+  }
+
+  function cargoActionSummary(actions) {
+    const groups = groupCargoActionsByKind(actions);
+    return [
+      groups.unload.length ? `${groups.unload.length} unload` : '',
+      groups.load.length ? `${groups.load.length} load` : ''
+    ].filter(Boolean).join(' · ') || 'No cargo action queued';
+  }
+
+  function renderExpandableActionList(step, actions, layout, limit = 3) {
     const expanded = ui.expandedStepActionsId === step.id;
-    const visible = getVisibleStepActions(actions, limit, expanded);
+    const grouped = groupCargoActionsByKind(actions);
+    const ordered = [...grouped.unload, ...grouped.load];
+    const visible = getVisibleStepActions(ordered, limit, expanded);
     const remaining = Math.max(0, actions.length - limit);
     const listId = `step-actions-${String(step.id).replace(/[^a-z0-9_-]/gi, '-')}`;
     return `<section class="step-action-list" aria-labelledby="${listId}-label">
-      <div class="step-action-heading"><span class="eyebrow" id="${listId}-label">First actions after transit</span><strong>${actions.length ? `${actions.length} cargo action${actions.length === 1 ? '' : 's'}` : 'No cargo action queued'}</strong></div>
-      ${actions.length ? `<ul id="${listId}">${visible.map((operation) => `<li>
-        <span>${escapeHtml(operationVerb(operation.type))}</span>
-        <strong>${escapeHtml(formatScu(operation.scu))} ${escapeHtml(operation.commodity)}</strong>
-        <small>${escapeHtml(operation.missionTitle ?? 'Current session')} · ${escapeHtml(operation.destinationLocationLabel ?? operation.deliveryLocationLabel ?? operation.locationLabel ?? 'Next stop')}</small>
-      </li>`).join('')}</ul>` : '<p class="muted">Continue to the next operational objective.</p>'}
+      <div class="step-action-heading"><span class="eyebrow" id="${listId}-label">First actions after transit</span><strong>${cargoActionSummary(actions)}</strong></div>
+      ${actions.length ? `<div id="${listId}" class="cargo-action-groups">${renderGroupedCargoActions(visible, layout, { mixed: Boolean(grouped.unload.length && grouped.load.length) })}</div>` : '<p class="muted">Continue to the next operational objective.</p>'}
       ${remaining ? `<button class="step-action-toggle" type="button" data-action="toggle-step-actions" data-step-actions-id="${escapeHtml(step.id)}" aria-controls="${listId}" aria-expanded="${expanded}" aria-label="${expanded ? 'Collapse actions after transit' : `Show ${remaining} more actions after transit`}">${expanded ? 'Show fewer actions' : `+${remaining} more action${remaining === 1 ? '' : 's'}`}</button>` : ''}
     </section>`;
   }
@@ -757,36 +869,21 @@
     return minimum === maximum ? `${maximum} min` : `${minimum}–${maximum} min`;
   }
 
-  function affectedCargoCoordinates(step, layout, state) {
-    const mode = state.cargoLayoutGroupingMode === 'mission' ? 'mission' : 'destination';
-    const keys = new Set((step.operations ?? []).map((operation) => (
-      mode === 'mission'
-        ? `mission:${operation.missionId}`
-        : `destination:${operation.destinationLocationId ?? operation.locationId}`
-    )));
-    return (layout?.floorCells ?? [])
-      .filter((cell) => keys.has(String(cell.groupKey ?? '')) && !cell.reserved)
-      .map((cell) => String(cell.coordinate ?? cell.label ?? cell.id).replace(':', '·'));
+  function affectedCargoCoordinates(step, layout) {
+    const coordinateMap = cargoCoordinatesByLot(layout);
+    return [...new Set((step.operations ?? []).flatMap((operation) => (
+      coordinateMap.get(`${operation.missionId}::${operation.lotId}`) ?? []
+    )))];
   }
 
   function renderCargoOperationDetails(step, state, layout, capacity) {
     const leg = state.route?.estimate?.legs?.[step.stopIndex] ?? {};
     const before = safeNumber(leg.onboardBeforeScu);
     const after = safeNumber(leg.onboardAfterScu, before + safeNumber(step.totals?.delta));
-    const coordinates = affectedCargoCoordinates(step, layout, state);
-    const group = (type, label) => {
-      const operations = (step.operations ?? []).filter((operation) => type === 'delivery'
-        ? operation.type === 'delivery'
-        : operation.type !== 'delivery');
-      if (!operations.length) return '';
-      return `<section class="manifest-group is-${type}"><h3>${label}</h3>${operations.map((operation) => `<article>
-        <span><strong>${escapeHtml(operation.commodity)}</strong><small>${escapeHtml(operation.missionTitle)} · ${escapeHtml(operation.pickupLocationLabel ?? step.location?.label)} → ${escapeHtml(operation.destinationLocationLabel ?? operation.deliveryLocationLabel ?? step.location?.label)}</small></span>
-        <b>${formatScu(operation.scu)}</b>
-      </article>`).join('')}</section>`;
-    };
+    const coordinates = affectedCargoCoordinates(step, layout);
     return `<div class="step-detail operation-manifest" data-step-detail="cargo-operation">
       <div class="context-heading"><span class="eyebrow">Operation manifest</span><strong>${formatScu(before)} → ${formatScu(after)} onboard</strong></div>
-      <div class="manifest-columns">${group('pickup', 'PICKUP')}${group('delivery', 'DELIVERY')}</div>
+      <div class="manifest-columns cargo-action-groups">${renderGroupedCargoActions(step.operations ?? [], layout)}</div>
       ${renderDetailMetrics([
         { label: 'Onboard before', value: formatScu(before) },
         { label: 'Onboard after', value: formatScu(after) },
@@ -811,7 +908,7 @@
         { label: 'Estimated travel', value: estimateDuration(estimate), detail: estimate.distanceLabel },
         { label: 'Gateway count', value: `${safeNumber(estimate.jumpCount)} jumps` },
         { label: 'Cargo at arrival', value: formatScu(onboard) },
-        { label: 'Next cargo operation', value: operations.length ? `${operations.length} action${operations.length === 1 ? '' : 's'}` : 'None', detail: nextAction ? stepDestination(nextAction) : 'Continue route' }
+        { label: 'Next cargo operation', value: operations.length ? cargoActionSummary(operations) : 'None', detail: nextAction ? stepDestination(nextAction) : 'Continue route' }
       ])}
     `, rationale ? `<p class="optimizer-rationale">${escapeHtml(rationale)}</p>` : '');
   }
@@ -837,7 +934,7 @@
     `);
   }
 
-  function renderJumpTransitDetails(step, state, onboard) {
+  function renderJumpTransitDetails(step, state, onboard, layout) {
     const metrics = state.route?.optimization?.metrics ?? {};
     const nextAction = nextCargoActionStep(step, state);
     const actions = nextAction?.operations ?? [];
@@ -853,14 +950,14 @@
         { label: 'Cargo onboard', value: formatScu(onboard) },
         { label: 'Missions in transfer', value: String(state.route.missions?.length ?? 0) }
       ])}
-      ${renderExpandableActionList(step, actions)}
+      ${renderExpandableActionList(step, actions, layout)}
     `);
   }
 
   function renderStepDetails(step, state, layout, capacity, onboard) {
     if (step.kind === 'action') return renderCargoOperationDetails(step, state, layout, capacity);
     if (step.kind === 'gateway-approach') return renderGatewayApproachDetails(step, state, onboard);
-    if (step.kind === 'jump') return renderJumpTransitDetails(step, state, onboard);
+    if (step.kind === 'jump') return renderJumpTransitDetails(step, state, onboard, layout);
     return renderTravelDetails(step, state, onboard);
   }
 
