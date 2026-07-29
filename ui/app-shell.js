@@ -702,6 +702,14 @@
     return `<div class="context-datum"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value ?? 'Unknown')}</strong>${detail ? `<small>${escapeHtml(detail)}</small>` : ''}</div>`;
   }
 
+  function renderStepDetail(type, title, state, items, footer = '') {
+    return `<div class="step-detail" data-step-detail="${escapeHtml(type)}">
+      <div class="context-heading"><span class="eyebrow">${escapeHtml(title)}</span><strong>${routeMetricLine(state)}</strong></div>
+      <div class="context-grid">${items.map((item) => contextDatum(item.label, item.value, item.detail)).join('')}</div>
+      ${footer}
+    </div>`;
+  }
+
   function operationManifest(step, state, layout, capacity) {
     const leg = state.route?.estimate?.legs?.[step.stopIndex] ?? {};
     const before = safeNumber(leg.onboardBeforeScu);
@@ -720,14 +728,14 @@
         <b>${formatScu(operation.scu)}</b>
       </article>`).join('')}</section>`;
     };
-    return `<div class="step-context operation-manifest">
+    return `<div class="step-detail operation-manifest" data-step-detail="cargo-operation">
       <div class="context-heading"><span class="eyebrow">Operation manifest</span><strong>${formatScu(before)} → ${formatScu(after)} onboard</strong></div>
       <div class="manifest-columns">${group('pickup', 'PICKUP')}${group('delivery', 'DELIVERY')}</div>
       <div class="context-grid compact">${contextDatum('Onboard before', formatScu(before))}${contextDatum('Onboard after', formatScu(after))}${contextDatum('Free after', formatScu(Math.max(0, capacity - after)))}${contextDatum('Cargo cells', coordinates.length ? coordinates.join(', ') : 'Auto-assigned')}</div>
     </div>`;
   }
 
-  function navigationContext(step, next, state, onboard) {
+  function navigationStepDetail(step, next, state, onboard) {
     const estimate = step.estimate ?? {};
     const metrics = state.route?.optimization?.metrics ?? {};
     const rationale = state.route?.optimization?.rationale ?? '';
@@ -736,33 +744,33 @@
     if (step.kind === 'gateway-approach') {
       const crossing = (state.route.gatewaySegments ?? []).find((segment) => segment.connectionId === step.segment?.connectionId) ?? step.segment;
       const required = state.route.missions?.map((mission) => mission.title).join(', ') ?? '';
-      return `<div class="step-context"><div class="context-heading"><span class="eyebrow">Gateway context</span><strong>${routeMetricLine(state)}</strong></div><div class="context-grid">
-        ${contextDatum('Departure gateway', crossing?.fromGateway ?? step.to?.label)}
-        ${contextDatum('Arrival gateway', crossing?.toGateway ?? 'Next system gateway')}
-        ${contextDatum('Systems', `${step.from?.systemName ?? 'Unknown'} → ${crossing?.toSystemId ?? step.to?.systemName ?? 'Unknown'}`)}
-        ${contextDatum('Jump sequence', `${safeNumber(step.segment?.legIndex, 0) + 1} / ${Math.max(1, state.route.gatewaySegments?.length ?? 1)}`)}
-        ${contextDatum('Cargo crossing', formatScu(onboard), required)}
-        ${contextDatum('Exposure', `Risk ${safeNumber(metrics.riskExposureScore)}`, 'Gateway services shown above')}
-      </div></div>`;
+      return renderStepDetail('gateway-approach', 'Gateway transfer', state, [
+        { label: 'Departure gateway', value: crossing?.fromGateway ?? step.to?.label },
+        { label: 'Arrival gateway', value: crossing?.toGateway ?? 'Next system gateway' },
+        { label: 'Systems', value: `${step.from?.systemName ?? 'Unknown'} → ${crossing?.toSystemId ?? step.to?.systemName ?? 'Unknown'}` },
+        { label: 'Jump sequence', value: `${safeNumber(step.segment?.legIndex, 0) + 1} / ${Math.max(1, state.route.gatewaySegments?.length ?? 1)}` },
+        { label: 'Cargo crossing', value: formatScu(onboard), detail: required },
+        { label: 'Exposure', value: `Risk ${safeNumber(metrics.riskExposureScore)}`, detail: 'Gateway services shown above' }
+      ]);
     }
     if (step.kind === 'jump') {
-      return `<div class="step-context"><div class="context-heading"><span class="eyebrow">Jump transit</span><strong>${routeMetricLine(state)}</strong></div><div class="context-grid">
-        ${contextDatum('Leaving system', step.from?.systemName)}
-        ${contextDatum('Reaching system', step.to?.systemName)}
-        ${contextDatum('Gateway pair', `${step.from?.shortLabel ?? step.from?.label} → ${step.to?.shortLabel ?? step.to?.label}`)}
-        ${contextDatum('Cargo onboard', formatScu(onboard))}
-        ${contextDatum('Missions in transfer', String(state.route.missions?.length ?? 0))}
-        ${contextDatum('First objective after jump', nextCargo || stepDestination(next))}
-      </div></div>`;
+      return renderStepDetail('jump', 'Jump transit', state, [
+        { label: 'Leaving system', value: step.from?.systemName },
+        { label: 'Reaching system', value: step.to?.systemName },
+        { label: 'Gateway pair', value: `${step.from?.shortLabel ?? step.from?.label} → ${step.to?.shortLabel ?? step.to?.label}` },
+        { label: 'Cargo onboard', value: formatScu(onboard) },
+        { label: 'Missions in transfer', value: String(state.route.missions?.length ?? 0) },
+        { label: 'Next objective', value: nextCargo || stepDestination(next), detail: 'First action after transit' }
+      ]);
     }
-    return `<div class="step-context"><div class="context-heading"><span class="eyebrow">Travel context</span><strong>${routeMetricLine(state)}</strong></div><div class="context-grid">
-      ${contextDatum('Origin', step.from?.label)}
-      ${contextDatum('Destination', step.to?.label)}
-      ${contextDatum('Systems', `${step.from?.systemName ?? 'Unknown'} → ${step.to?.systemName ?? 'Unknown'}`)}
-      ${contextDatum('Estimated travel', `${safeNumber(estimate.minMinutes)}–${safeNumber(estimate.maxMinutes)} min`, estimate.distanceLabel)}
-      ${contextDatum('Gateways', String(safeNumber(estimate.jumpCount)), estimate.transitionKind)}
-      ${contextDatum('Cargo at arrival', formatScu(onboard), nextCargo || 'No cargo operation at next step')}
-    </div>${rationale ? `<p class="optimizer-rationale">${escapeHtml(rationale)}</p>` : ''}</div>`;
+    return renderStepDetail('travel', 'Arrival detail', state, [
+      { label: 'Origin', value: step.from?.label },
+      { label: 'Destination', value: step.to?.label },
+      { label: 'Systems', value: `${step.from?.systemName ?? 'Unknown'} → ${step.to?.systemName ?? 'Unknown'}` },
+      { label: 'Estimated travel', value: `${safeNumber(estimate.minMinutes)}–${safeNumber(estimate.maxMinutes)} min`, detail: estimate.distanceLabel },
+      { label: 'Cargo at arrival', value: formatScu(onboard), detail: nextCargo || 'No cargo operation at next step' },
+      { label: 'Arrival operation', value: nextAction ? `${operationVerb(nextAction.operations?.[0]?.type)} · ${stepDestination(nextAction)}` : 'Continue route', detail: nextCargo }
+    ], rationale ? `<p class="optimizer-rationale">${escapeHtml(rationale)}</p>` : '');
   }
 
   function routeCompleteSummary(state) {
@@ -770,7 +778,7 @@
     const missions = state.route?.missions ?? state.missions ?? [];
     const delivered = missions.reduce((sum, mission) => sum + (mission.cargoLots ?? []).reduce((lotSum, lot) => lotSum + safeNumber(lot.scu), 0), 0);
     const excluded = Math.max(0, (state.missions?.length ?? 0) - missions.length);
-    return `<div class="completion-summary"><div class="context-heading"><span class="eyebrow">Operation summary</span><strong>${routeMetricLine(state)}</strong></div><div class="scorecard-grid">
+    return `<div class="step-detail completion-summary" data-step-detail="complete"><div class="context-heading"><span class="eyebrow">Operation summary</span><strong>${routeMetricLine(state)}</strong></div><div class="scorecard-grid">
       ${contextDatum('Missions complete', String(missions.length))}
       ${contextDatum('SCU delivered', formatScu(delivered))}
       ${contextDatum('Stops', String(safeNumber(metrics.stopCount, state.route?.stops?.length)))}
@@ -819,14 +827,17 @@
             <p class="nav-target">NAV TARGET · ${escapeHtml(stepNavTarget(step))}</p>
             ${renderLocationStatusStrip(locationStatus)}
             <p class="command-instruction">${escapeHtml(moves.length ? 'Handle the listed cargo at this stop, then confirm the operation.' : step.from?.label ? `Depart ${step.from.label} and follow the navigation target.` : 'Follow the in-game navigation target to continue.')}</p>
-            ${moves.length ? operationManifest(step, state, layout, capacity) : navigationContext(step, next, state, onboard)}
+            ${moves.length ? operationManifest(step, state, layout, capacity) : navigationStepDetail(step, next, state, onboard)}
           </div>
           <div class="next-preview"><span class="eyebrow">Next meaningful step</span><b>${escapeHtml(next ? `${kindLabel(next.kind)} · ${stepDestination(next)}` : 'Complete session')}</b></div>
         </section>
         <section class="panel cargo-panel${!isAction ? ' is-navigation-compact' : ''}${isNavigationFocus ? ' is-navigation-muted' : ''}">
           <div class="panel-heading"><strong>${escapeHtml(selectedModel(state).manufacturer)} ${escapeHtml(selectedModel(state).model)} · Cargo hold</strong><div><button class="button" type="button" data-action="toggle-grouping">${state.cargoLayoutGroupingMode === 'mission' ? 'By mission' : 'By destination'}</button> <button class="button" type="button" data-open-drawer="cargo">Edit grid</button></div></div>
           <div class="cargo-metrics"><div><strong>${formatScu(onboard)}</strong><span>Onboard</span></div><div><strong>${formatScu(free)}</strong><span>Free</span></div><div><strong>${formatScu(layout?.reservedScu ?? 0)}</strong><span>Reserved</span></div></div>
-          <div class="cargo-hold">${layout?.error ? `<p class="danger">Layout impossible: ${escapeHtml(layout.error)}</p>` : cargoGridMarkup(layout, step)}</div>
+          <details class="cargo-disclosure"${root.matchMedia('(min-width: 821px)').matches ? ' open' : ''}>
+            <summary><span>Cargo grid</span><strong>${formatScu(onboard)} onboard · ${formatScu(free)} free</strong></summary>
+            <div class="cargo-hold">${layout?.error ? `<p class="danger">Layout impossible: ${escapeHtml(layout.error)}</p>` : cargoGridMarkup(layout, step)}</div>
+          </details>
         </section>
       </div>
       <section class="route-rail"><div class="panel-heading"><strong>Route orientation</strong><button class="button" type="button" data-open-drawer="route">Full route</button></div><ol class="route-rail-list">
@@ -1322,6 +1333,14 @@
     if (NAV.some((item) => item.id === page)) { ui.page = page; render(); }
   });
   root.addEventListener('sc:session-change', () => render());
+  let compactViewport = root.matchMedia('(max-width: 820px)').matches;
+  root.addEventListener('resize', () => {
+    const nextCompactViewport = root.matchMedia('(max-width: 820px)').matches;
+    if (nextCompactViewport !== compactViewport) {
+      compactViewport = nextCompactViewport;
+      if (ui.page === 'live') render();
+    }
+  });
   root.addEventListener('keydown', (event) => {
     if (event.key === 'Escape' && ui.drawer) { ui.drawer = null; render(); }
   });

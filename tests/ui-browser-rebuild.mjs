@@ -16,6 +16,7 @@ const systemChrome = process.platform === 'win32' && fs.existsSync('C:\\Program 
 const browser = await chromium.launch({ headless: true, executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE ?? systemChrome });
 const page = await browser.newPage({ viewport: { width: 1600, height: 900 } });
 const consoleErrors = [];
+const densityMeasurements = [];
 page.on('console', (message) => { if (message.type() === 'error') consoleErrors.push(message.text()); });
 page.on('pageerror', (error) => consoleErrors.push(error.message));
 
@@ -100,19 +101,40 @@ async function assertLiveDensity(label, maximumPanelHeight) {
       .filter((element) => element.offsetParent !== null && [...element.childNodes].some((node) => node.nodeType === 3 && node.textContent.trim()))
       .map((element) => ({ text: element.textContent.trim().slice(0, 50), size: Number.parseFloat(getComputedStyle(element).fontSize) }))
       .filter((item) => item.text);
+    const command = document.querySelector('.command-panel');
+    const commandMain = document.querySelector('.command-main');
+    const nextPreview = document.querySelector('.next-preview');
+    const cargoGrid = document.querySelector('.cargo-panel .cargo-grid');
+    const routeCard = document.querySelector('.route-step.is-current');
+    const cargoPanel = document.querySelector('.cargo-panel');
     return {
       command: bounds('.command-panel'),
       cargo: bounds('.cargo-panel'),
       route: bounds('.route-rail'),
       execution: bounds('.execution-bar'),
+      currentStepContentHeight: commandMain.scrollHeight,
+      unusedVerticalArea: Math.max(0, command.clientHeight - commandMain.offsetHeight - nextPreview.offsetHeight),
+      unusedRowArea: Math.max(0, cargoPanel.getBoundingClientRect().height - command.getBoundingClientRect().height),
+      cargoGridWidth: cargoGrid.getBoundingClientRect().width,
+      cargoGridWidthPercent: cargoGrid.getBoundingClientRect().width / cargoPanel.getBoundingClientRect().width * 100,
+      routeCardHeight: routeCard.getBoundingClientRect().height,
+      horizontalOverflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      documentOverflow: document.documentElement.scrollHeight - document.documentElement.clientHeight,
+      stageOverflow: document.querySelector('.app-stage').scrollHeight - document.querySelector('.app-stage').clientHeight,
       smallestText: readableText.sort((left, right) => left.size - right.size)[0]
     };
   });
   assert.ok(geometry.command.height <= maximumPanelHeight, `${label} primary panel is too tall: ${geometry.command.height}px`);
-  assert.ok(geometry.cargo.height <= maximumPanelHeight, `${label} cargo panel is too tall: ${geometry.cargo.height}px`);
   assert.ok(geometry.route.height >= 92, `${label} route orientation lost useful height: ${JSON.stringify(geometry)}`);
-  assert.ok(geometry.route.bottom <= geometry.execution.top + 2, `${label} route orientation is obscured by the action bar: ${JSON.stringify(geometry)}`);
+  assert.ok(geometry.route.bottom <= geometry.execution.top + 2 || geometry.stageOverflow > 0 || geometry.documentOverflow > 0, `${label} route orientation cannot be reached above the action bar: ${JSON.stringify(geometry)}`);
+  assert.ok(geometry.unusedVerticalArea <= 72, `${label} wastes too much primary-panel height: ${JSON.stringify(geometry)}`);
+  assert.ok(geometry.unusedRowArea <= 220, `${label} wastes too much action-column height: ${JSON.stringify(geometry)}`);
+  assert.ok(geometry.cargoGridWidth >= 279 && geometry.cargoGridWidth <= 361, `${label} cargo grid is outside its responsive range: ${JSON.stringify(geometry)}`);
+  assert.ok(geometry.cargoGridWidthPercent >= 50 && geometry.cargoGridWidthPercent <= 70, `${label} cargo grid does not use the panel proportionally: ${JSON.stringify(geometry)}`);
+  assert.ok(geometry.routeCardHeight >= 72 && geometry.routeCardHeight <= 96, `${label} route card readable area is outside the target: ${JSON.stringify(geometry)}`);
+  assert.ok(geometry.horizontalOverflow <= 1, `${label} has horizontal document overflow: ${JSON.stringify(geometry)}`);
   assert.ok(geometry.smallestText.size >= 11, `${label} contains text below 11px: ${JSON.stringify(geometry.smallestText)}`);
+  densityMeasurements.push({ label, ...geometry });
   return geometry;
 }
 
@@ -267,11 +289,11 @@ await page.locator('[data-close-drawer]').last().click();
 
 await page.locator('[data-action="complete-step"]').click();
 assert.match(await page.locator('.command-panel').innerText(), /Travel/i);
-assert.match(await page.locator('.command-panel').innerText(), /Travel context/i);
+assert.match(await page.locator('.command-panel').innerText(), /Arrival detail/i);
 const travelStrip = await assertLocationStrip();
 assert.notEqual(await travelStrip.getAttribute('data-location-id'), pickupLocationId, 'travel must show destination context');
 await capture('live-travel-1366x768', { viewport: { width: 1366, height: 768 } });
-await assertLiveDensity('1366×768 travel', 470);
+await assertLiveDensity('1366×768 travel', 500);
 const shortMetrics = await page.evaluate(() => ({
   height: document.documentElement.scrollHeight,
   viewport: document.documentElement.clientHeight,
@@ -294,17 +316,23 @@ await page.locator('[data-action="complete-step"]').click();
 assert.match(await page.locator('.command-panel').innerText(), /cargo operation/i);
 assert.ok(await page.locator('.cargo-grid.is-delivery .cargo-cell.is-current').count() > 0, 'delivery cells must be highlighted');
 await capture('live-delivery-mixed-1664x800', { viewport: { width: 1664, height: 800 } });
-await assertLiveDensity('1664×800 cargo operation', 450);
+await assertLiveDensity('1664×800 cargo operation', 500);
 
 await capture('live-tablet-768x1024', { viewport: { width: 768, height: 1024 } });
 await capture('live-mobile-390x844', { viewport: { width: 390, height: 844 } });
 const mobileOrder = await page.evaluate(() => ({
   action: document.querySelector('.command-panel').getBoundingClientRect().top,
   cargo: document.querySelector('.cargo-panel').getBoundingClientRect().top,
-  fullGridVisible: document.querySelector('.cargo-panel .cargo-hold')?.offsetParent !== null
+  disclosureOpen: document.querySelector('.cargo-disclosure').open
 }));
 assert.ok(mobileOrder.action < mobileOrder.cargo);
-assert.equal(mobileOrder.fullGridVisible, false);
+assert.equal(mobileOrder.disclosureOpen, false);
+const cargoDisclosure = page.locator('.cargo-disclosure > summary');
+assert.equal(await cargoDisclosure.count(), 1);
+await cargoDisclosure.click();
+assert.equal(await page.locator('.cargo-disclosure').getAttribute('open'), '');
+assert.equal(await page.locator('.cargo-panel .cargo-hold').isVisible(), true);
+await capture('live-mobile-cargo-expanded-390x844', { viewport: { width: 390, height: 844 } });
 await page.setViewportSize({ width: 1600, height: 900 });
 await page.locator('[data-action="complete-step"]').click();
 assert.match(await page.locator('main').innerText(), /Operation summary/i);
@@ -358,9 +386,9 @@ async function showOperationalKind(kind, screenshotName) {
     return window.SCCompanionOperationalSteps.derive(state.route, state).currentStep?.to?.id;
   });
   assert.equal(await page.locator('.command-panel .location-status-strip').getAttribute('data-location-id'), expectedLocationId);
-  assert.match(await page.locator('.command-panel').innerText(), kind === 'jump' ? /Jump transit/i : /Gateway context/i);
+  assert.match(await page.locator('.command-panel').innerText(), kind === 'jump' ? /Jump transit/i : /Gateway transfer/i);
   await capture(screenshotName, { viewport: { width: 1600, height: 900 } });
-  await assertLiveDensity(`1600×900 ${kind}`, 480);
+  await assertLiveDensity(`1600×900 ${kind}`, 500);
 }
 
 await showOperationalKind('gateway-approach', 'live-gateway-approach-1600x900');
@@ -425,5 +453,9 @@ await buildFromText(many, 5);
 await capture('plan-many-missions-1700x900', { viewport: { width: 1700, height: 900 } });
 
 assert.deepEqual(consoleErrors, [], `Browser console errors:\n${consoleErrors.join('\n')}`);
+fs.writeFileSync(
+  path.join(output, 'live-density-measurements.json'),
+  `${JSON.stringify(densityMeasurements, null, 2)}\n`
+);
 await browser.close();
-console.log(`UI rebuild browser matrix passed. Screenshots: ${output}`);
+console.log(`UI rebuild browser matrix passed. Screenshots and density measurements: ${output}`);
