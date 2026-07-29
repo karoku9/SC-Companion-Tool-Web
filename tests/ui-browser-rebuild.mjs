@@ -328,11 +328,17 @@ await page.locator('[data-start-session="0"]').click();
 assert.match(await page.locator('.command-panel').innerText(), /Pick up/i);
 assert.match(await page.locator('.command-panel').innerText(), /Operation manifest/i);
 assert.ok(await page.locator('.cargo-cell.is-current').count() > 0);
+assert.equal(await page.locator('[data-step-detail="cargo-operation"] .cargo-action-group.is-load').count(), 1);
+assert.equal(await page.locator('[data-step-detail="cargo-operation"] .cargo-action-group.is-unload').count(), 0);
+assert.ok(await page.locator('[data-step-detail="cargo-operation"] .cargo-action-badge').evaluateAll(
+  (badges) => badges.every((badge) => /↑\s*LOAD/.test(badge.textContent))
+));
+assert.ok(await page.locator('.cargo-grid.is-pickup .cargo-cell.is-current').count() > 0);
 await assertCargoSquaresAndUnits([2]);
 const pickupStrip = await assertLocationStrip();
 assert.ok(await pickupStrip.locator('[data-service="risk"]').getAttribute('data-status'));
 const pickupLocationId = await pickupStrip.getAttribute('data-location-id');
-await capture('live-pickup-1600x900');
+await capture('live-cargo-load-only-1600x900');
 await capture('live-cargo-partial-1700x900', { viewport: { width: 1700, height: 900 } });
 
 await page.locator('[data-open-drawer="cargo"]').click();
@@ -387,13 +393,25 @@ assert.equal(belowSupported.executionPosition, 'static');
 await page.locator('[data-action="complete-step"]').click();
 assert.match(await page.locator('.command-panel').innerText(), /cargo operation/i);
 assert.equal(await page.locator('[data-step-detail="cargo-operation"]').count(), 1);
-assert.match(await page.locator('[data-step-detail="cargo-operation"]').innerText(), /Delivery[\s\S]*Remaining capacity[\s\S]*Affected cells/i);
-assert.ok(await page.locator('.cargo-grid.is-delivery .cargo-cell.is-current').count() > 0, 'delivery cells must be highlighted');
-await capture('live-delivery-mixed-1664x800', { viewport: { width: 1664, height: 800 } });
+assert.match(await page.locator('[data-step-detail="cargo-operation"]').innerText(), /UNLOAD[\s\S]*Remaining capacity[\s\S]*Affected cells/i);
+assert.equal(await page.locator('[data-step-detail="cargo-operation"] .cargo-action-group.is-unload').count(), 1);
+assert.equal(await page.locator('[data-step-detail="cargo-operation"] .cargo-action-group.is-load').count(), 0);
+const unloadJourneys = await page.locator('[data-step-detail="cargo-operation"] .cargo-action-journey').allTextContents();
+assert.ok(unloadJourneys.some((text) => /FROM\s+Teasa Spaceport[\s\S]*TO\s+Riker Memorial Spaceport/i.test(text)), `Unload must retain original pickup: ${unloadJourneys}`);
+assert.equal(unloadJourneys.some((text) => /Mission X|Mission Y/i.test(text)), false, 'mission title must not replace the journey line');
+assert.ok(await page.locator('[data-step-detail="cargo-operation"] .cargo-action-item[aria-label*="Mission:"]').count() > 0, 'mission title remains available to assistive technology');
+assert.ok(await page.locator('[data-step-detail="cargo-operation"] .cargo-action-cells').count() > 0, 'affected cargo coordinates must be shown when available');
+assert.ok(await page.locator('.cargo-grid.is-delivery .cargo-cell.is-current').count() > 0, 'delivery cargo cells must expose the unload cue');
+await capture('live-cargo-unload-only-1664x800', { viewport: { width: 1664, height: 800 } });
 await assertLiveDensity('1664×800 cargo operation', 520);
 
 await capture('live-tablet-768x1024', { viewport: { width: 768, height: 1024 } });
-await capture('live-mobile-390x844', { viewport: { width: 390, height: 844 } });
+await page.setViewportSize({ width: 390, height: 844 });
+await page.evaluate(() => {
+  document.scrollingElement.scrollTop = 0;
+  document.querySelector('.app-stage').scrollTop = 0;
+});
+await capture('live-cargo-unload-mobile-390x844');
 const mobileOrder = await page.evaluate(() => ({
   action: document.querySelector('.command-panel').getBoundingClientRect().top,
   cargo: document.querySelector('.cargo-panel').getBoundingClientRect().top,
@@ -413,6 +431,46 @@ assert.match(await page.locator('main').innerText(), /Operation summary/i);
 assert.equal(await page.locator('[data-step-detail="complete"]').count(), 1);
 assert.match(await page.locator('[data-step-detail="complete"]').innerText(), /Missions complete[\s\S]*SCU delivered[\s\S]*Route strategy[\s\S]*Outside session/i);
 await capture('live-route-complete-1600x900');
+
+const mixedCargo = `Inbound cargo
+collect teasa 6scu titanium
+deliver area18 6scu titanium
+
+Outbound cargo
+collect area18 2scu etam
+deliver baijini 2scu etam`;
+await ready('contracts', true);
+await buildFromText(mixedCargo, 240);
+await page.locator('[data-start-session="0"]').click();
+await page.evaluate(() => {
+  const state = window.SCCompanionSession.getState();
+  const progress = window.SCCompanionOperationalSteps.derive(state.route, state);
+  const index = progress.steps.findIndex((step) => step.kind === 'action' && step.location?.id.includes('area18'));
+  const prior = progress.steps.slice(0, index);
+  const actions = prior.filter((step) => step.kind === 'action');
+  window.SCCompanionSession.patch({
+    operationalRouteKey: progress.routeKey,
+    completedOperationalStepIds: prior.map((step) => step.id),
+    completedStopIds: actions.map((step) => step.stopId),
+    currentStopIndex: actions.length
+  });
+});
+await page.waitForFunction(() => document.querySelectorAll('[data-step-detail="cargo-operation"] .cargo-action-group').length === 2);
+const mixedActionGroups = page.locator('[data-step-detail="cargo-operation"] .cargo-action-group');
+assert.match(await mixedActionGroups.nth(0).innerText(), /↓\s*UNLOAD FIRST/i);
+assert.match(await mixedActionGroups.nth(1).innerText(), /↑\s*LOAD AFTER/i);
+const mixedJourneys = await page.locator('[data-step-detail="cargo-operation"] .cargo-action-journey').allTextContents();
+assert.ok(mixedJourneys.some((text) => /FROM\s+Teasa Spaceport[\s\S]*TO\s+Riker Memorial Spaceport/i.test(text)), `Mixed unload origin is wrong: ${mixedJourneys}`);
+assert.ok(mixedJourneys.some((text) => /FROM\s+Riker Memorial Spaceport[\s\S]*TO\s+Baijini Point/i.test(text)), `Mixed load destination is wrong: ${mixedJourneys}`);
+assert.ok(await page.locator('.cargo-grid.is-mixed .cargo-cell.is-current').count() > 0);
+await capture('live-cargo-mixed-1664x800', { viewport: { width: 1664, height: 800 } });
+await assertLiveDensity('1664×800 mixed cargo operation', 540);
+await page.setViewportSize({ width: 390, height: 844 });
+await page.evaluate(() => {
+  document.scrollingElement.scrollTop = 0;
+  document.querySelector('.app-stage').scrollTop = 0;
+});
+await capture('live-cargo-mixed-mobile-390x844');
 
 const nearlyFull = `Capacity run
 collect teasa 69scu titanium
@@ -483,6 +541,8 @@ assert.equal(await page.locator('[data-step-detail="jump"] .step-metrics > div')
 assert.match(await page.locator('[data-step-detail="jump"]').innerText(), /Leaving system[\s\S]*Reaching system[\s\S]*Gateway pair[\s\S]*Jump count[\s\S]*Estimated duration[\s\S]*Cargo onboard[\s\S]*Missions in transfer/i);
 assert.equal(await page.locator('[data-step-detail="jump"] .step-action-list li').count(), 1);
 assert.equal(await page.locator('[data-step-detail="jump"] .step-action-toggle').count(), 0);
+assert.match(await page.locator('[data-step-detail="jump"] .cargo-action-group').innerText(), /↓\s*UNLOAD/i);
+assert.match(await page.locator('[data-step-detail="jump"] .cargo-action-journey').innerText(), /FROM\s+Teasa Spaceport[\s\S]*TO\s+Checkmate Station/i);
 await showOperationalKind('jump', 'live-jump-real-short-1664x744', { width: 1664, height: 744 }, 500);
 
 await page.evaluate(() => {
@@ -500,7 +560,9 @@ await page.evaluate(() => {
 });
 await page.waitForFunction(() => document.querySelector('.location-status-item.is-danger'));
 assert.match(await page.locator('[data-service="risk"]').innerText(), /HIGH|EXTREME/i);
-await capture('live-high-risk-services-1600x900', { viewport: { width: 1600, height: 900 } });
+assert.equal(await page.locator('[data-step-detail="cargo-operation"] .cargo-action-group.is-unload').count(), 1);
+assert.equal(await page.locator('[data-step-detail="cargo-operation"] .cargo-action-group.is-load').count(), 0);
+await capture('live-cargo-unload-high-risk-1664x800', { viewport: { width: 1664, height: 800 } });
 
 await page.evaluate(() => {
   const state = window.SCCompanionSession.getState();
@@ -521,6 +583,25 @@ assert.ok(await unknownItems.count() > 0);
 assert.equal(await unknownItems.evaluateAll((items) => items.every((item) => item.dataset.status === 'unknown')), true);
 assert.equal(await page.locator('.command-panel .location-status-item.is-unavailable').count(), 0, 'unknown must not be classified as unavailable');
 await capture('live-unknown-services-1600x900', { viewport: { width: 1600, height: 900 } });
+
+const mixedTransit = `Inbound cargo
+collect teasa 6scu titanium
+deliver checkmate 6scu titanium
+
+Outbound cargo
+collect checkmate 2scu etam
+deliver ruin station 2scu etam`;
+await ready('contracts', true);
+await buildFromText(mixedTransit, 240);
+await page.locator('[data-start-session="0"]').click();
+await showOperationalKind('jump', 'live-jump-mixed-1366x768', { width: 1366, height: 768 }, 540);
+const mixedJumpGroups = page.locator('[data-step-detail="jump"] .cargo-action-group');
+assert.equal(await mixedJumpGroups.count(), 2);
+assert.match(await mixedJumpGroups.nth(0).innerText(), /↓\s*UNLOAD FIRST/i);
+assert.match(await mixedJumpGroups.nth(1).innerText(), /↑\s*LOAD AFTER/i);
+const mixedJumpJourneys = await page.locator('[data-step-detail="jump"] .cargo-action-journey').allTextContents();
+assert.ok(mixedJumpJourneys.some((text) => /FROM\s+Teasa Spaceport[\s\S]*TO\s+Checkmate Station/i.test(text)));
+assert.ok(mixedJumpJourneys.some((text) => /FROM\s+Checkmate Station[\s\S]*TO\s+Ruin Station/i.test(text)));
 
 const manyTransit = Array.from({ length: 8 }, (_, index) => `Gateway cargo ${index + 1}
 collect teasa 1scu titanium

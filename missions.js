@@ -191,7 +191,48 @@
     return [...stops.values()].map((stop) => Object.freeze({ locationId: stop.locationId, locationLabel: stop.locationLabel, operations: Object.freeze([...stop.operations]) }));
   }
 
-  const api = Object.freeze({ normalizeMission, buildOperations, groupOperationsByLocation });
+  function getCargoActionKind(operation) {
+    return operation?.type === 'delivery' ? 'unload' : 'load';
+  }
+
+  function getCargoActionJourney(operation) {
+    const kind = getCargoActionKind(operation);
+    const pickupLocations = Array.isArray(operation?.pickupLocations)
+      ? operation.pickupLocations.filter((location) => location?.id || location?.label)
+      : [];
+    const assignedOrigin = String(
+      operation?.assignedPickupLocationLabel
+      ?? operation?.assignedOriginLocationLabel
+      ?? ''
+    ).trim();
+    const ambiguousOrigin = Boolean(operation?.sharedPickupTotal || pickupLocations.length > 1);
+    const origin = kind === 'load'
+      ? String(operation?.pickupLocationLabel ?? operation?.locationLabel ?? '').trim()
+      : assignedOrigin || (!ambiguousOrigin
+        ? String(operation?.originLocationLabel ?? operation?.pickupLocationLabel ?? pickupLocations[0]?.label ?? '').trim()
+        : '');
+    const destination = String(
+      operation?.destinationLocationLabel
+      ?? operation?.deliveryLocationLabel
+      ?? (kind === 'unload' ? operation?.locationLabel : '')
+      ?? ''
+    ).trim();
+    return Object.freeze({
+      kind,
+      label: kind === 'unload' ? 'UNLOAD' : 'LOAD',
+      symbol: kind === 'unload' ? '↓' : '↑',
+      origin: origin || 'ORIGIN UNKNOWN',
+      destination: destination || 'DESTINATION UNKNOWN'
+    });
+  }
+
+  const api = Object.freeze({
+    normalizeMission,
+    buildOperations,
+    groupOperationsByLocation,
+    getCargoActionKind,
+    getCargoActionJourney
+  });
   root.SCCompanionMissions = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 }(typeof globalThis !== 'undefined' ? globalThis : window));
