@@ -9,6 +9,10 @@
   <title>SC Companion — Hauling Operations</title>
   <link rel="icon" href="companion-mark.svg" type="image/svg+xml">
   <link rel="stylesheet" href="ui/app.css?v=15">
+  <style>
+    .fleet-db-launch{position:fixed;right:16px;bottom:16px;z-index:1000;padding:10px 14px;border:1px solid #36535d;border-radius:8px;background:#10242d;color:#dffcff;text-decoration:none;font:700 12px/1 system-ui;letter-spacing:.04em;box-shadow:0 12px 30px rgba(0,0,0,.35)}
+    .fleet-db-launch:hover{border-color:#5ee7f0;color:#5ee7f0}
+  </style>
 </head>
 <body>
   <div id="app" aria-live="polite">
@@ -17,6 +21,7 @@
       <p>Initializing cargo systems…</p>
     </div>
   </div>
+  <a class="fleet-db-launch" href="fleet.html">Fleet database</a>
 
   <script src="locations.js"></script>
   <script src="location-field-registry.js"></script>
