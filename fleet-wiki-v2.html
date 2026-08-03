@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>SC Companion — Wiki Fleet Stats</title>
+  <style>
+    :root{color-scheme:dark;--bg:#061017;--panel:#0b1a22;--panel2:#102731;--line:#294852;--text:#eef8f9;--muted:#91aab0;--cyan:#62e5ed;--green:#61cf98}
+    *{box-sizing:border-box}body{margin:0;background:linear-gradient(180deg,#061017,#07151c);color:var(--text);font:14px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}
+    .shell{max-width:1840px;margin:auto;padding:18px}.top{display:flex;justify-content:space-between;gap:16px;align-items:flex-start}.eyebrow{color:var(--cyan);font-size:10px;font-weight:900;letter-spacing:.14em;text-transform:uppercase}h1{margin:4px 0;font-size:40px;line-height:1}.muted{color:var(--muted)}
+    .actions{display:flex;gap:8px;flex-wrap:wrap}.btn{border:1px solid var(--line);background:var(--panel2);color:var(--text);padding:9px 12px;border-radius:8px;text-decoration:none;cursor:pointer}.btn:hover{border-color:var(--cyan)}
+    .filters{display:grid;grid-template-columns:2fr repeat(4,minmax(150px,1fr));gap:8px;margin:14px 0;padding:10px;border:1px solid var(--line);border-radius:10px;background:#071820}
+    input,select{width:100%;background:#08171e;color:var(--text);border:1px solid var(--line);padding:10px;border-radius:7px;font:inherit}.summary{grid-column:1/-1;color:var(--muted)}
+    .layout{display:grid;grid-template-columns:minmax(500px,.9fr) minmax(650px,1.3fr);gap:12px}.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+    .list{max-height:calc(100vh - 220px);overflow:auto}table{width:100%;border-collapse:collapse;min-width:720px}th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}th{position:sticky;top:0;z-index:1;background:#12313b;font-size:10px;text-transform:uppercase;letter-spacing:.06em}tr[data-id]{cursor:pointer}tr[data-id]:hover,tr.selected{background:#12313b}.name{font-weight:800}.sub{display:block;color:var(--muted);font-size:11px}
+    .detail{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto}.detail-head{padding:14px;border-bottom:1px solid var(--line)}.detail-head h2{margin:2px 0;font-size:28px}.badges{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}.badge{border:1px solid var(--line);border-radius:999px;padding:3px 8px;font-size:11px}.badge.now{border-color:#2d8f66;color:#8ce3b5}.wiki-link{display:inline-block;margin-top:8px}
+    .status{padding:18px;color:var(--muted)}iframe{display:block;width:100%;min-height:900px;border:0;background:#101416}.note{padding:10px 14px;border-top:1px solid var(--line);color:var(--muted);font-size:12px}
+    @media(max-width:1100px){.layout{grid-template-columns:1fr}.detail{position:relative;top:auto;max-height:none}.list{max-height:520px}}@media(max-width:760px){.shell{padding:10px}.top{display:block}.actions{margin-top:10px}.filters{grid-template-columns:1fr 1fr}.filters input{grid-column:1/-1}h1{font-size:32px}}
+  </style>
+</head>
+<body>
+<div class="shell">
+  <header class="top">
+    <div><div class="eyebrow">SC Companion / Star Citizen Wiki</div><h1>Fleet Stats</h1><p class="muted">La lista arriva dall’API veicoli. La scheda a destra carica la sezione <b>Stats</b> originale della Wiki, senza ricalcolare o reinterpretare i valori.</p></div>
+    <div class="actions"><a class="btn" href="./">← Hauling tool</a><button class="btn" id="refresh">Aggiorna dati</button></div>
+  </header>
+
+  <section class="filters">
+    <input id="q" placeholder="Corsair, RSI, gunship…">
+    <select id="maker"><option value="">Tutti i produttori</option></select>
+    <select id="role"><option value="">Tutti i ruoli</option></select>
+    <select id="sale"><option value="all">Tutte</option><option value="now">Acquistabili ora</option><option value="last">Ultimo prezzo noto</option></select>
+    <select id="cargo"><option value="0">Qualsiasi cargo</option><option value="24">24+ SCU</option><option value="72">72+ SCU</option><option value="100">100+ SCU</option></select>
+    <div class="summary" id="summary">Caricamento…</div>
+  </section>
+
+  <div class="layout">
+    <section class="panel list"><table><thead><tr><th>Nave</th><th>Ruolo</th><th>Prezzo aUEC</th><th>SCU</th><th>Size</th></tr></thead><tbody id="rows"><tr><td colspan="5">Caricamento…</td></tr></tbody></table></section>
+    <aside class="panel detail" id="detail"><div class="status">Seleziona una nave.</div></aside>
+  </div>
+</div>
+<script>
+'use strict';
+(() => {
+  const VEHICLES_API='https://api.star-citizen.wiki/api/vehicles';
+  const WIKI_API='https://starcitizen.tools/api.php';
+  const PAGE_SIZE=200;
+  const pageCache=new Map();
+  const LAST_KNOWN={
+    'Corsair':6224400,'Constellation Andromeda':9652608,'Constellation Aquila':11577384,'Constellation Taurus':7641648,'Constellation Phoenix':14076720,
+    '600i Explorer':27231750,'400i':8398063,'Carrack':34398000,'890 Jump':62088392,'Caterpillar':11850300,'C2 Hercules Starlifter':18900000,
+    'M2 Hercules Starlifter':28009800,'A2 Hercules Starlifter':37800200,'Starfarer Gemini':14244300,'Starlancer MAX':12127500,'Starlancer TAC':13381200,
+    'Redeemer':9803430,'Reclaimer':30164400,'Hull C':16537500,'Cutlass Black':2010960,'C1 Spirit':3118500,'Zeus Mk II CL':6463800,
+    'Zeus Mk II ES':4201470,'Vanguard Warden':7354900,'Vanguard Sentinel':7776700,'Vanguard Harbinger':8200400,'Scorpius':5171040,
+    'Ares Ion':4725000,'Ares Inferno':4725000,'Eclipse':7541100,'Retaliator':7541100,'Paladin':15876000,'Asgard':17860500,
+    'Valkyrie':19845000,'Prospector':2926350,'Vulture':2646000,'MOLE':8946000,'Nomad':1512000,'Freelancer MAX':4252500
+  };
+  const state={all:[],filtered:[],selected:null};
+  const $=s=>document.querySelector(s);
+  const number=v=>{if(v===null||v===undefined||v==='')return null;const n=Number(v);return Number.isFinite(n)?n:null};
+  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+  const localized=v=>Array.isArray(v)?v.map(localized).filter(Boolean).join(' / '):typeof v==='string'?v:v?.it_IT||v?.en_EN||v?.en||v?.name||'';
+  const fmt=v=>number(v)===null?'—':Math.round(Number(v)).toLocaleString('it-IT');
+  const normalizeName=v=>String(v||'').replace(/^(Aegis|Anvil|Drake|MISC|Mirai|Origin|RSI|Crusader|ARGO|Aopoa|Esperia|Gatac|Consolidated Outland)\s+/i,'').trim();
+  const editions=/best in show|bis\s?29|pirate edition|emerald|executive edition|heartseeker|renegade|valiant|comet|advocacy|foundation festival/i;
+
+  function roleOf(raw){return localized(raw.role)||localized(raw.career)||localized(raw.type)||localized(raw.foci?.[0])||'Speciale'}
+  function lastPrice(name){if(LAST_KNOWN[name])return LAST_KNOWN[name];const norm=normalizeName(name);const key=Object.keys(LAST_KNOWN).find(k=>normalizeName(k)===norm);return key?LAST_KNOWN[key]:null}
+  function purchases(raw){return (raw.uex_prices?.purchase||raw.prices?.purchase||[]).map(x=>({price:number(x.price_buy??x.price),terminal:x.terminal_name||x.location_name||''})).filter(x=>x.price&&x.price>0)}
+  function compact(raw){const name=raw.shipmatrix_name||raw.name||raw.game_name||'Senza nome';const buy=purchases(raw);return{id:String(raw.uuid||raw.class_name||raw.slug||name),name,maker:raw.manufacturer?.name||localized(raw.manufacturer),role:roleOf(raw),isShip:raw.is_spaceship===true||raw.is_spaceship===1,status:localized(raw.production_status).toLowerCase().replace(/[\s_-]/g,''),size:number(raw.size_class),cargo:number(raw.cargo_capacity)||0,current:buy.length?Math.min(...buy.map(x=>x.price)):null,terminal:buy.sort((a,b)=>a.price-b.price)[0]?.terminal||''}}
+  function availability(v){if(v.current)return{kind:'now',label:'Ora',price:v.current,terminal:v.terminal};const p=lastPrice(v.name);return p?{kind:'last',label:'Ultimo noto',price:p,terminal:''}:{kind:'none',label:'N/D',price:null,terminal:''}}
+
+  async function fetchVehicles(){const all=[];for(let page=1;page<=10;page++){const url=new URL(VEHICLES_API);url.searchParams.set('page[size]',String(PAGE_SIZE));url.searchParams.set('page[number]',String(page));$('#summary').textContent=`Caricamento elenco, pagina ${page}…`;const response=await fetch(url,{headers:{Accept:'application/json'}});if(!response.ok)throw new Error(`API veicoli HTTP ${response.status}`);const json=await response.json();const batch=Array.isArray(json)?json:json.data||[];all.push(...batch);if(batch.length<PAGE_SIZE)break}return all}
+  function clean(rawList){const map=new Map();for(const raw of rawList){const v=compact(raw),sale=availability(v);if(!v.isShip||!v.size||!sale.price)continue;if(v.status&&!v.status.includes('flightready')&&!v.status.includes('flyable'))continue;if(editions.test(v.name))continue;const key=v.name.toLowerCase();const previous=map.get(key);if(!previous||(v.current&&!previous.current))map.set(key,v)}return[...map.values()].sort((a,b)=>a.name.localeCompare(b.name,'it'))}
+
+  function fillFilters(){const makers=[...new Set(state.all.map(v=>v.maker).filter(Boolean))].sort();const roles=[...new Set(state.all.map(v=>v.role).filter(Boolean))].sort();$('#maker').innerHTML='<option value="">Tutti i produttori</option>'+makers.map(v=>`<option>${esc(v)}</option>`).join('');$('#role').innerHTML='<option value="">Tutti i ruoli</option>'+roles.map(v=>`<option>${esc(v)}</option>`).join('')}
+  function apply(){const q=$('#q').value.trim().toLowerCase(),maker=$('#maker').value,role=$('#role').value,saleFilter=$('#sale').value,cargo=Number($('#cargo').value);state.filtered=state.all.filter(v=>{const sale=availability(v),hay=`${v.name} ${v.maker} ${v.role}`.toLowerCase();return(!q||hay.includes(q))&&(!maker||v.maker===maker)&&(!role||v.role===role)&&(saleFilter==='all'||sale.kind===saleFilter)&&v.cargo>=cargo});if(!state.selected||!state.filtered.some(v=>v.id===state.selected.id))state.selected=state.filtered[0]||null;renderList();if(state.selected)loadStats(state.selected);else $('#detail').innerHTML='<div class="status">Nessuna nave corrisponde ai filtri.</div>'}
+  function renderList(){const now=state.filtered.filter(v=>availability(v).kind==='now').length;$('#summary').textContent=`${state.filtered.length} navi visibili su ${state.all.length} · ${now} acquistabili ora`;$('#rows').innerHTML=state.filtered.map(v=>{const sale=availability(v);return`<tr data-id="${esc(v.id)}" class="${state.selected?.id===v.id?'selected':''}"><td class="name">${esc(v.name)}<span class="sub">${esc(v.maker)}</span></td><td>${esc(v.role)}</td><td>${sale.label} · ${fmt(sale.price)}</td><td>${fmt(v.cargo)}</td><td>S${fmt(v.size)}</td></tr>`}).join('')||'<tr><td colspan="5">Nessun risultato.</td></tr>';document.querySelectorAll('tr[data-id]').forEach(row=>row.onclick=()=>{const v=state.all.find(x=>x.id===row.dataset.id);if(v){state.selected=v;renderList();loadStats(v)}})}
+
+  function wikiTitle(name){return name.replaceAll(' ','_')}
+  async function wikiRequest(params){const url=new URL(WIKI_API);url.searchParams.set('origin','*');url.searchParams.set('format','json');url.searchParams.set('formatversion','2');for(const [key,value] of Object.entries(params))url.searchParams.set(key,value);const response=await fetch(url);if(!response.ok)throw new Error(`Wiki HTTP ${response.status}`);const json=await response.json();if(json.error)throw new Error(json.error.info||json.error.code);return json}
+  async function exactStats(name){if(pageCache.has(name))return pageCache.get(name);const title=wikiTitle(name);const sections=await wikiRequest({action:'parse',page:title,prop:'sections'});const section=(sections.parse?.sections||[]).find(s=>String(s.line||'').trim().toLowerCase()==='stats');if(!section)throw new Error('La pagina Wiki non contiene una sezione Stats indicizzata.');const parsed=await wikiRequest({action:'parse',page:title,section:String(section.index),prop:'text|modules|modulestyles|headhtml'});const payload={html:parsed.parse?.text||'',modules:parsed.parse?.modules||[],styles:parsed.parse?.modulestyles||[],head:parsed.parse?.headhtml||''};pageCache.set(name,payload);return payload}
+  function srcdoc(name,payload){const styleModules=[...new Set([...(payload.styles||[]),...(payload.modules||[])])];const scriptModules=[...new Set(payload.modules||[])];const styles=styleModules.length?`<link rel="stylesheet" href="https://starcitizen.tools/load.php?lang=en&modules=${encodeURIComponent(styleModules.join('|'))}&only=styles&skin=vector-2022">`:'';const scripts=scriptModules.length?`<script src="https://starcitizen.tools/load.php?lang=en&modules=startup&only=scripts&raw=1&skin=vector-2022"><\/script><script src="https://starcitizen.tools/load.php?lang=en&modules=${encodeURIComponent(scriptModules.join('|'))}&only=scripts&raw=1&skin=vector-2022"><\/script>`:'';return`<!doctype html><html lang="en"><head><meta charset="utf-8"><base href="https://starcitizen.tools/">${styles}<style>html{background:#101416;color:#eaeeee;font:14px system-ui}body{margin:0;padding:14px}.mw-parser-output{max-width:none!important}.mw-editsection,.vector-page-titlebar,.catlinks{display:none!important}a{color:#58c9e8}img{max-width:100%;height:auto}.portable-infobox,.infobox{float:none!important;width:100%!important;max-width:none!important;margin:0!important}</style><title>${esc(name)} Stats</title></head><body><main class="mw-parser-output">${payload.html}</main>${scripts}</body></html>`}
+  async function loadStats(v){const sale=availability(v);$('#detail').innerHTML=`<div class="detail-head"><div class="eyebrow">${esc(v.maker)} / ${esc(v.role)}</div><h2>${esc(v.name)}</h2><div class="badges"><span class="badge ${sale.kind==='now'?'now':''}">${sale.label}: ${fmt(sale.price)} aUEC</span><span class="badge">${fmt(v.cargo)} SCU</span><span class="badge">Size ${fmt(v.size)}</span></div><a class="wiki-link" target="_blank" rel="noopener" href="https://starcitizen.tools/${encodeURIComponent(wikiTitle(v.name))}#Stats">Apri Stats sulla Wiki ↗</a></div><div class="status">Caricamento della sezione Stats originale…</div>`;try{const payload=await exactStats(v.name);const frame=document.createElement('iframe');frame.title=`Stats Wiki — ${v.name}`;frame.srcdoc=srcdoc(v.name,payload);$('#detail').querySelector('.status').replaceWith(frame);frame.addEventListener('load',()=>{try{const height=Math.max(900,frame.contentDocument.documentElement.scrollHeight+30);frame.style.height=`${height}px`}catch{}});$('#detail').insertAdjacentHTML('beforeend','<div class="note">Contenuto e punteggi provengono direttamente dalla sezione Stats della Star Citizen Wiki. Questa pagina non li ricalcola.</div>')}catch(error){$('#detail').querySelector('.status').innerHTML=`Impossibile caricare Stats: ${esc(error.message)}<br><br><a target="_blank" rel="noopener" href="https://starcitizen.tools/${encodeURIComponent(wikiTitle(v.name))}#Stats">Apri direttamente la Wiki</a>`}}
+
+  async function boot(){try{const raw=await fetchVehicles();state.all=clean(raw);fillFilters();apply()}catch(error){$('#rows').innerHTML=`<tr><td colspan="5">Errore: ${esc(error.message)}</td></tr>`;$('#summary').textContent='Caricamento fallito.'}}
+  ['q','maker','role','sale','cargo'].forEach(id=>$('#'+id).addEventListener(id==='q'?'input':'change',apply));$('#refresh').onclick=()=>{pageCache.clear();state.selected=null;boot()};boot();
+})();
+</script>
+</body>
+</html>
