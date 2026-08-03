@@ -1,0 +1,29 @@
+name: Validate Fleet Stats
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - fleet-v3.js
+      - fleet-v3.html
+      - .github/workflows/validate-fleet.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Check JavaScript syntax
+        run: node --check fleet-v3.js
+      - name: Check required UI hooks
+        run: |
+          grep -q 'id="rows"' fleet-v3.html
+          grep -q 'id="detail"' fleet-v3.html
+          grep -q 'fleet-v3.js' fleet-v3.html
