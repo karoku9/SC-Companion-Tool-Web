@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="it" data-theme="industrial">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#071016">
+  <title>SC Companion — Fleet Database</title>
+  <link rel="stylesheet" href="fleet-v2.css?v=1">
+</head>
+<body>
+<div class="shell">
+  <header class="topbar">
+    <div class="brand">
+      <span class="eyebrow">SC Companion / Fleet</span>
+      <h1>Fleet Database</h1>
+      <p>Solo navi flight-ready con prezzo aUEC attuale o ultimo prezzo noto. Indici sintetici 0–100, filtri immediati e schede stock/easy/meta.</p>
+    </div>
+    <div class="actions">
+      <a class="button" href="./">← Hauling tool</a>
+      <button class="button" id="refresh" type="button">Aggiorna dati</button>
+      <button class="button primary" id="reset" type="button">Azzera filtri</button>
+    </div>
+  </header>
+
+  <div class="notice"><b>IAE 2956:</b> fine novembre è una previsione basata sulle edizioni precedenti, non una data ufficiale. L’IAE amplia soprattutto disponibilità e free-fly nel pledge store: non rende automaticamente le navi acquistabili nei concessionari aUEC. Le navi non vendute oggi compaiono soltanto quando esiste un ultimo prezzo aUEC noto.</div>
+
+  <section class="toolbar">
+    <div class="filters">
+      <label class="field search"><span>Cerca</span><input id="search" placeholder="Corsair, RSI, gunship…"></label>
+      <label class="field"><span>Produttore</span><select id="manufacturer"><option value="">Tutti</option></select></label>
+      <label class="field"><span>Ruolo</span><select id="role"><option value="">Tutti</option></select></label>
+      <label class="field"><span>Disponibilità aUEC</span><select id="availability"><option value="all">Tutte</option><option value="now">Acquistabili ora</option><option value="last">Ultimo prezzo noto</option></select></label>
+      <label class="field"><span>Minimo cargo</span><select id="cargo"><option value="0">Qualsiasi</option><option value="1">1+ SCU</option><option value="24">24+ SCU</option><option value="72">72+ SCU</option><option value="100">100+ SCU</option><option value="500">500+ SCU</option></select></label>
+      <label class="field"><span>Ordina</span><select id="sort"><option value="solo">Indice solo</option><option value="price">Prezzo crescente</option><option value="damage">Danno</option><option value="defense">Difesa</option><option value="agility">Agilità</option><option value="range">Autonomia</option><option value="utility">Utilità</option><option value="cargo">Cargo</option><option value="name">Nome</option></select></label>
+    </div>
+    <div class="toolbar-foot"><div><span id="summary">Caricamento…</span><div class="progress" id="progress"></div></div><div class="chips"><span class="chip">Clicca una colonna per ordinare</span><span class="chip">Clicca una nave per i dettagli</span></div></div>
+  </section>
+
+  <div class="layout">
+    <main class="main">
+      <div class="stats" id="stats"></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th data-sort="name">Nave</th><th data-sort="role">Ruolo</th><th data-sort="price">Prezzo aUEC</th><th data-sort="cargo">SCU</th>
+            <th data-sort="damage">Danno</th><th data-sort="defense">Difesa</th><th data-sort="agility">Agilità</th><th data-sort="range">Autonomia</th>
+            <th data-sort="utility">Utilità</th><th data-sort="solo">Solo</th><th>SCM / NAV</th><th>Equipaggio</th>
+          </tr></thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+      <div class="cards" id="cards"></div>
+      <div class="loading" id="loading">Recupero di tutte le pagine API…</div>
+    </main>
+    <aside class="detail" id="detail"><div class="detail-empty">Seleziona una nave per vedere grafico, statistiche e build.</div></aside>
+  </div>
+</div>
+<script src="fleet-v2.js?v=1"></script>
+</body>
+</html>
